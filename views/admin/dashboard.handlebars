@@ -1,0 +1,151 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        <i class="bi bi-speedometer2 text-primary me-2"></i>
+        Dashboard
+    </h2>
+    <div class="text-muted">
+        <i class="bi bi-calendar-today me-1"></i>
+        Bem-vindo, {{user.username}}!
+    </div>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{error}}
+</div>
+{{/if}}
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-calendar-check display-4 mb-2"></i>
+            <h3 class="fw-bold">{{monthlyStats}}</h3>
+            <p class="mb-0">Agendamentos este mês</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-clock display-4 mb-2"></i>
+            <h3 class="fw-bold">{{todayAppointments.length}}</h3>
+            <p class="mb-0">Agendamentos hoje</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-people display-4 mb-2"></i>
+            <h3 class="fw-bold">-</h3>
+            <p class="mb-0">Clientes ativos</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-currency-dollar display-4 mb-2"></i>
+            <h3 class="fw-bold">-</h3>
+            <p class="mb-0">Receita do mês</p>
+        </div>
+    </div>
+</div>
+
+<!-- Agendamentos de Hoje -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-calendar-today text-primary me-2"></i>
+            Agendamentos de Hoje
+        </h5>
+    </div>
+    <div class="card-body">
+        {{#if todayAppointments.length}}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Horário</th>
+                        <th>Cliente</th>
+                        <th>Barbeiro</th>
+                        <th>Serviço</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each todayAppointments}}
+                    <tr>
+                        <td class="fw-semibold">{{formatTime appointmentTime}}</td>
+                        <td>{{client.firstName}} {{client.lastName}}</td>
+                        <td>{{barber.name}}</td>
+                        <td>{{serviceType.name}}</td>
+                        <td>
+                            {{#eq status 'scheduled'}}
+                            <span class="badge bg-warning">Agendado</span>
+                            {{/eq}}
+                            {{#eq status 'confirmed'}}
+                            <span class="badge bg-success">Confirmado</span>
+                            {{/eq}}
+                            {{#eq status 'completed'}}
+                            <span class="badge bg-primary">Concluído</span>
+                            {{/eq}}
+                            {{#eq status 'cancelled'}}
+                            <span class="badge bg-danger">Cancelado</span>
+                            {{/eq}}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                {{#eq status 'scheduled'}}
+                                <button class="btn btn-outline-success" onclick="updateStatus({{id}}, 'confirmed')">
+                                    <i class="bi bi-check"></i>
+                                </button>
+                                {{/eq}}
+                                {{#eq status 'confirmed'}}
+                                <button class="btn btn-outline-primary" onclick="updateStatus({{id}}, 'completed')">
+                                    <i class="bi bi-check-all"></i>
+                                </button>
+                                {{/eq}}
+                                <button class="btn btn-outline-danger" onclick="updateStatus({{id}}, 'cancelled')">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum agendamento para hoje</h5>
+            <p class="text-muted">Quando houver agendamentos, eles aparecerão aqui.</p>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<script>
+function updateStatus(appointmentId, newStatus) {
+    if (confirm('Tem certeza que deseja alterar o status deste agendamento?')) {
+        fetch(`/admin/appointments/${appointmentId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao atualizar status');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao atualizar status');
+        });
+    }
+}
+</script>
+

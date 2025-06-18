@@ -1,0 +1,293 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        <i class="bi bi-graph-up text-primary me-2"></i>
+        Relatórios
+    </h2>
+    <a href="/admin/dashboard" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i>
+        Voltar ao Dashboard
+    </a>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{error}}
+</div>
+{{/if}}
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="/admin/reports" class="row g-3">
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" value="{{filters.startDate}}">
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">Data Final</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" value="{{filters.endDate}}">
+            </div>
+            <div class="col-md-3">
+                <label for="barberId" class="form-label">Barbeiro</label>
+                <select class="form-select" id="barberId" name="barberId">
+                    <option value="">Todos os barbeiros</option>
+                    {{#each barbers}}
+                    <option value="{{id}}" {{#eq id ../filters.barberId}}selected{{/eq}}>{{name}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search me-1"></i>
+                    Gerar Relatório
+                </button>
+                <button type="button" class="btn btn-success export-btn me-2" data-format="pdf">
+                    <i class="bi bi-file-pdf me-1"></i>
+                    Exportar PDF
+                </button>
+                <button type="button" class="btn btn-outline-success export-btn" data-format="csv">
+                    <i class="bi bi-file-spreadsheet me-1"></i>
+                    Exportar CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+{{#if stats}}
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-calendar-check display-4 mb-2"></i>
+            <h3 class="fw-bold">{{stats.total}}</h3>
+            <p class="mb-0">Total de Agendamentos</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-currency-dollar display-4 mb-2"></i>
+            <h3 class="fw-bold">R$ {{stats.totalRevenue}}</h3>
+            <p class="mb-0">Receita Total</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-check-circle display-4 mb-2"></i>
+            <h3 class="fw-bold">{{stats.byStatus.completed}}</h3>
+            <p class="mb-0">Concluídos</p>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card card p-4 text-center">
+            <i class="bi bi-x-circle display-4 mb-2"></i>
+            <h3 class="fw-bold">{{stats.byStatus.cancelled}}</h3>
+            <p class="mb-0">Cancelados</p>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Agendamentos por Status</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Agendamentos por Barbeiro</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="barberChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<!-- Lista Detalhada -->
+{{#if appointments.length}}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Detalhamento dos Agendamentos</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="appointmentsTable">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Cliente</th>
+                        <th>Telefone</th>
+                        <th>Barbeiro</th>
+                        <th>Serviço</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each appointments}}
+                    <tr>
+                        <td>{{formatDate appointmentDate}}</td>
+                        <td>{{formatTime appointmentTime}}</td>
+                        <td>{{client.firstName}} {{client.lastName}}</td>
+                        <td>{{client.phone}}</td>
+                        <td>{{barber.name}}</td>
+                        <td>{{serviceType.name}}</td>
+                        <td>R$ {{totalPrice}}</td>
+                        <td>
+                            {{#eq status 'scheduled'}}
+                            <span class="badge bg-warning">Agendado</span>
+                            {{/eq}}
+                            {{#eq status 'confirmed'}}
+                            <span class="badge bg-success">Confirmado</span>
+                            {{/eq}}
+                            {{#eq status 'completed'}}
+                            <span class="badge bg-primary">Concluído</span>
+                            {{/eq}}
+                            {{#eq status 'cancelled'}}
+                            <span class="badge bg-danger">Cancelado</span>
+                            {{/eq}}
+                            {{#eq status 'no_show'}}
+                            <span class="badge bg-secondary">Não compareceu</span>
+                            {{/eq}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{else}}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-graph-down display-4 text-muted mb-3"></i>
+        <h5 class="text-muted">Nenhum dado encontrado</h5>
+        <p class="text-muted">Selecione um período para gerar o relatório.</p>
+    </div>
+</div>
+{{/if}}
+
+<script>
+{{#if stats}}
+// Gráfico de Status
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusChart = new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {{#each stats.byStatus}}
+            '{{@key}}',
+            {{/each}}
+        ],
+        datasets: [{
+            data: [
+                {{#each stats.byStatus}}
+                {{this}},
+                {{/each}}
+            ],
+            backgroundColor: [
+                '#ffc107', // scheduled
+                '#28a745', // confirmed
+                '#007bff', // completed
+                '#dc3545', // cancelled
+                '#6c757d'  // no_show
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Gráfico de Barbeiros
+const barberCtx = document.getElementById('barberChart').getContext('2d');
+const barberChart = new Chart(barberCtx, {
+    type: 'bar',
+    data: {
+        labels: [
+            {{#each stats.byBarber}}
+            '{{@key}}',
+            {{/each}}
+        ],
+        datasets: [{
+            label: 'Agendamentos',
+            data: [
+                {{#each stats.byBarber}}
+                {{this}},
+                {{/each}}
+            ],
+            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+{{/if}}
+
+function exportToPDF() {
+    alert('Funcionalidade de exportação PDF será implementada em breve.');
+}
+
+function exportToCSV() {
+    const table = document.getElementById('appointmentsTable');
+    if (!table) {
+        alert('Nenhum dado para exportar');
+        return;
+    }
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [];
+        const cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length; j++) {
+            let text = cols[j].innerText;
+            // Remove quebras de linha e aspas
+            text = text.replace(/"/g, '""').replace(/\n/g, ' ');
+            row.push('"' + text + '"');
+        }
+        csv.push(row.join(','));
+    }
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'relatorio_agendamentos.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+</script>
+

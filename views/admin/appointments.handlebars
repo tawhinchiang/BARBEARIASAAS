@@ -1,0 +1,216 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        <i class="bi bi-calendar-check text-primary me-2"></i>
+        Gerenciar Agendamentos
+    </h2>
+    <a href="/admin/dashboard" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i>
+        Voltar ao Dashboard
+    </a>
+</div>
+
+{{#if error}}
+<div class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{error}}
+</div>
+{{/if}}
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="/admin/appointments" class="row g-3">
+            <div class="col-md-3">
+                <label for="date" class="form-label">Data</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{filters.date}}">
+            </div>
+            <div class="col-md-3">
+                <label for="barberId" class="form-label">Barbeiro</label>
+                <select class="form-select" id="barberId" name="barberId">
+                    <option value="">Todos os barbeiros</option>
+                    {{#each barbers}}
+                    <option value="{{id}}" {{#eq id ../filters.barberId}}selected{{/eq}}>{{name}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos os status</option>
+                    <option value="scheduled" {{#eq "scheduled" filters.status}}selected{{/eq}}>Agendado</option>
+                    <option value="confirmed" {{#eq "confirmed" filters.status}}selected{{/eq}}>Confirmado</option>
+                    <option value="completed" {{#eq "completed" filters.status}}selected{{/eq}}>Concluído</option>
+                    <option value="cancelled" {{#eq "cancelled" filters.status}}selected{{/eq}}>Cancelado</option>
+                    <option value="no_show" {{#eq "no_show" filters.status}}selected{{/eq}}>Não compareceu</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search me-1"></i>
+                    Filtrar
+                </button>
+                <a href="/admin/appointments" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Lista de Agendamentos -->
+<div class="card">
+    <div class="card-body">
+        {{#if appointments.length}}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Horário</th>
+                        <th>Cliente</th>
+                        <th>Telefone</th>
+                        <th>Barbeiro</th>
+                        <th>Serviço</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>WhatsApp</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each appointments}}
+                    <tr>
+                        <td>{{formatDate appointmentDate}}</td>
+                        <td class="fw-semibold">{{formatTime appointmentTime}}</td>
+                        <td>{{client.firstName}} {{client.lastName}}</td>
+                        <td>{{client.phone}}</td>
+                        <td>{{barber.name}}</td>
+                        <td>{{serviceType.name}}</td>
+                        <td>R$ {{totalPrice}}</td>
+                        <td>
+                            {{#eq status 'scheduled'}}
+                            <span class="badge bg-warning">Agendado</span>
+                            {{/eq}}
+                            {{#eq status 'confirmed'}}
+                            <span class="badge bg-success">Confirmado</span>
+                            {{/eq}}
+                            {{#eq status 'completed'}}
+                            <span class="badge bg-primary">Concluído</span>
+                            {{/eq}}
+                            {{#eq status 'cancelled'}}
+                            <span class="badge bg-danger">Cancelado</span>
+                            {{/eq}}
+                            {{#eq status 'no_show'}}
+                            <span class="badge bg-secondary">Não compareceu</span>
+                            {{/eq}}
+                        </td>
+                        <td>
+                            {{#if whatsappSent}}
+                            <i class="bi bi-check-circle text-success" title="Enviado"></i>
+                            {{else}}
+                            <i class="bi bi-x-circle text-danger" title="Não enviado"></i>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {{#eq status 'scheduled'}}
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{id}}, 'confirmed')">
+                                        <i class="bi bi-check me-2"></i>Confirmar
+                                    </a></li>
+                                    {{/eq}}
+                                    {{#eq status 'confirmed'}}
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{id}}, 'completed')">
+                                        <i class="bi bi-check-all me-2"></i>Concluir
+                                    </a></li>
+                                    {{/eq}}
+                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{id}}, 'no_show')">
+                                        <i class="bi bi-person-x me-2"></i>Não compareceu
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus({{id}}, 'cancelled')">
+                                        <i class="bi bi-x me-2"></i>Cancelar
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginação -->
+        {{#if pagination}}
+        <nav aria-label="Paginação" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {{#if pagination.hasPrev}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{subtract pagination.currentPage 1}}{{#if filters.date}}&date={{filters.date}}{{/if}}{{#if filters.barberId}}&barberId={{filters.barberId}}{{/if}}{{#if filters.status}}&status={{filters.status}}{{/if}}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {{/if}}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{pagination.currentPage}} de {{pagination.totalPages}}</span>
+                </li>
+                
+                {{#if pagination.hasNext}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{add pagination.currentPage 1}}{{#if filters.date}}&date={{filters.date}}{{/if}}{{#if filters.barberId}}&barberId={{filters.barberId}}{{/if}}{{#if filters.status}}&status={{filters.status}}{{/if}}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {{/if}}
+            </ul>
+        </nav>
+        {{/if}}
+        
+        {{else}}
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum agendamento encontrado</h5>
+            <p class="text-muted">Tente ajustar os filtros ou aguarde novos agendamentos.</p>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+<script>
+function updateStatus(appointmentId, newStatus) {
+    const statusNames = {
+        'scheduled': 'Agendado',
+        'confirmed': 'Confirmado',
+        'completed': 'Concluído',
+        'cancelled': 'Cancelado',
+        'no_show': 'Não compareceu'
+    };
+    
+    if (confirm(`Tem certeza que deseja alterar o status para "${statusNames[newStatus]}"?`)) {
+        fetch(`/admin/appointments/${appointmentId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao atualizar status');
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao atualizar status');
+        });
+    }
+}
+</script>
+
