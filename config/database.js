@@ -18,6 +18,11 @@ const sequelize = new Sequelize(
     }
   }
 );
+console.log('DB config:', {
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  typeOfPassword: typeof process.env.DB_PASSWORD,
+});
 
 module.exports = sequelize;
 
