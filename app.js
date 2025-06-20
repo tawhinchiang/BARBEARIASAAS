@@ -9,15 +9,15 @@ require('dotenv').config();
 
 const app = express();
 
-// Configurar Handlebars
+// Configurar Handlebars - CORRIGIDO
 const hbs = engine({
   defaultLayout: 'main',
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
+  extname: '.hbs',
   helpers: require('./config/handlebars-helpers')
 });
 
-app.engine('handlebars', hbs);
 app.engine('hbs', hbs);
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
@@ -35,8 +35,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // true apenas em HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    secure: false,
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
