@@ -3,157 +3,543 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}}</title>
+    <title>{{#if title}}{{title}} - {{/if}}Admin - BarberShop</title>
     
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8f9fa;
-        }
-        
-        .sidebar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            border-radius: 10px;
-            margin: 5px 0;
-            transition: all 0.3s ease;
-        }
-        
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            color: white;
-            background: rgba(255,255,255,0.2);
-            transform: translateX(5px);
-        }
-        
-        .main-content {
-            background: white;
-            border-radius: 20px 0 0 20px;
-            min-height: 100vh;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .table {
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        
-        .table thead th {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-        
-        .badge {
-            border-radius: 20px;
-            padding: 8px 12px;
-        }
-        
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
-        }
-    </style>
+    <!-- CSS Customizado -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- Meta tags -->
+    <meta name="description" content="Painel Administrativo - BarberShop">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
-<body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 px-0">
-                <div class="sidebar p-3">
-                    <div class="text-center mb-4">
-                        <h4 class="fw-bold">
-                            <i class="bi bi-scissors"></i>
-                            Admin Panel
-                        </h4>
-                        {{#if user}}
-                        <small class="text-white-50">Olá, {{user.username}}</small>
-                        {{/if}}
-                    </div>
-                    
-                    <nav class="nav flex-column">
-                        <a class="nav-link" href="/admin/dashboard">
-                            <i class="bi bi-speedometer2 me-2"></i>
-                            Dashboard
-                        </a>
-                        <a class="nav-link" href="/admin/appointments">
-                            <i class="bi bi-calendar-check me-2"></i>
-                            Agendamentos
-                        </a>
-                        <a class="nav-link" href="/admin/reports">
-                            <i class="bi bi-graph-up me-2"></i>
-                            Relatórios
-                        </a>
-                        <hr class="my-3">
-                        <a class="nav-link" href="/" target="_blank">
-                            <i class="bi bi-globe me-2"></i>
-                            Ver Site
-                        </a>
-                        <a class="nav-link" href="/admin/logout">
-                            <i class="bi bi-box-arrow-right me-2"></i>
-                            Sair
-                        </a>
-                    </nav>
-                </div>
-            </div>
+<body class="admin-body">
+    <!-- Navbar Administrativa -->
+    {{#unless hideNavbar}}
+    <nav class="navbar navbar-expand-lg navbar-dark admin-navbar">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="/admin/dashboard">
+                <div class="logo-icon me-2">B</div>
+                <span class="fw-bold">BarberShop Admin</span>
+            </a>
             
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 px-0">
-                <div class="main-content p-4">
-                    {{{body}}}
+            <!-- Toggle para mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Menu de navegação -->
+            <div class="collapse navbar-collapse" id="adminNavbar">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{#eq currentPage 'dashboard'}}active{{/eq}}" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{#eq currentPage 'appointments'}}active{{/eq}}" href="/admin/appointments">
+                            <i class="fas fa-calendar-alt me-1"></i> Agendamentos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{#eq currentPage 'reports'}}active{{/eq}}" href="/admin/reports">
+                            <i class="fas fa-chart-bar me-1"></i> Relatórios
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cogs me-1"></i> Gerenciar
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/barbers">
+                                <i class="fas fa-user-tie me-2"></i> Barbeiros
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/services">
+                                <i class="fas fa-cut me-2"></i> Serviços
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/clients">
+                                <i class="fas fa-users me-2"></i> Clientes
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/settings">
+                                <i class="fas fa-cog me-2"></i> Configurações
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- Menu do usuário -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/" target="_blank">
+                            <i class="fas fa-external-link-alt me-1"></i> Ver Site
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <div class="user-avatar me-2">
+                                {{#if user.username}}{{substring user.username 0 1}}{{else}}A{{/if}}
+                            </div>
+                            <span>{{#if user.username}}{{user.username}}{{else}}Admin{{/if}}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/admin/profile">
+                                <i class="fas fa-user me-2"></i> Meu Perfil
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/settings">
+                                <i class="fas fa-cog me-2"></i> Configurações
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i> Sair
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {{/unless}}
+    
+    <!-- Conteúdo principal -->
+    <main class="admin-main">
+        {{{body}}}
+    </main>
+    
+    <!-- Footer administrativo -->
+    {{#unless hideFooter}}
+    <footer class="admin-footer">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        © 2024 BarberShop. Todos os direitos reservados.
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">
+                        Versão 1.0.0 | 
+                        <span id="currentTime"></span>
+                    </small>
                 </div>
             </div>
         </div>
-    </div>
+    </footer>
+    {{/unless}}
     
     <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Chart.js para gráficos -->
+    <!-- Font Awesome JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <!-- Chart.js (para gráficos) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Custom JS -->
+    <!-- Scripts administrativos -->
     <script src="/js/admin.js"></script>
+    
+    <!-- Script para atualizar horário -->
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+        
+        // Atualizar horário a cada segundo
+        setInterval(updateTime, 1000);
+        updateTime(); // Atualizar imediatamente
+        
+        // Marcar link ativo na navegação
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
+
+<style>
+/* ===== ESTILOS ADMINISTRATIVOS PADRONIZADOS ===== */
+
+/* Layout administrativo */
+.admin-body {
+    background: var(--bg-light);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.admin-main {
+    flex: 1;
+    padding: 0;
+}
+
+/* Navbar administrativa */
+.admin-navbar {
+    background: var(--primary-color) !important;
+    border-bottom: 2px solid var(--secondary-color);
+    box-shadow: var(--shadow);
+    padding: 1rem 0;
+}
+
+.admin-navbar .navbar-brand .logo-icon {
+    width: 35px;
+    height: 35px;
+    background: var(--text-light);
+    color: var(--primary-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.admin-navbar .nav-link {
+    color: var(--text-light) !important;
+    font-weight: 500;
+    padding: 0.75rem 1rem !important;
+    border-radius: 6px;
+    margin: 0 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.admin-navbar .nav-link:hover,
+.admin-navbar .nav-link.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light) !important;
+}
+
+.admin-navbar .nav-link.active {
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* User avatar */
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--text-light);
+    color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Dropdown menus */
+.admin-navbar .dropdown-menu {
+    background: var(--bg-light) !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow) !important;
+    margin-top: 0.5rem;
+}
+
+.admin-navbar .dropdown-item {
+    color: var(--text-dark) !important;
+    padding: 0.75rem 1rem !important;
+    transition: all 0.3s ease !important;
+    border-radius: 4px;
+    margin: 0.25rem;
+}
+
+.admin-navbar .dropdown-item:hover,
+.admin-navbar .dropdown-item:focus {
+    background: var(--primary-color) !important;
+    color: var(--text-light) !important;
+}
+
+.admin-navbar .dropdown-divider {
+    border-color: var(--border-color) !important;
+    margin: 0.5rem 0;
+}
+
+/* Footer administrativo */
+.admin-footer {
+    background: var(--bg-light);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 0;
+    margin-top: auto;
+}
+
+/* Cards administrativos */
+.admin-card {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.admin-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Dashboard específico */
+.admin-dashboard {
+    background: var(--bg-light);
+    min-height: calc(100vh - 140px);
+    padding: 2rem 0;
+}
+
+/* Tabelas administrativas */
+.admin-table {
+    background: var(--bg-light);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+}
+
+.admin-table .table {
+    margin-bottom: 0;
+    color: var(--text-dark);
+}
+
+.admin-table .table thead th {
+    background: var(--bg-gray);
+    border-color: var(--border-color);
+    color: var(--text-dark);
+    font-weight: 600;
+    padding: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.admin-table .table tbody td {
+    background: var(--bg-light);
+    border-color: var(--border-color);
+    color: var(--text-dark);
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.admin-table .table tbody tr:hover td {
+    background: var(--bg-gray);
+}
+
+/* Filtros administrativos */
+.admin-filters {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.admin-filters .filter-group {
+    margin-bottom: 1rem;
+}
+
+.admin-filters .form-label {
+    color: var(--text-dark);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.admin-filters .form-control,
+.admin-filters .form-select {
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: var(--text-dark);
+    background: var(--bg-light);
+}
+
+.admin-filters .form-control:focus,
+.admin-filters .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-confirmed {
+    background: var(--success-color);
+    color: white;
+}
+
+.status-pending {
+    background: var(--warning-color);
+    color: var(--text-dark);
+}
+
+.status-cancelled {
+    background: var(--danger-color);
+    color: white;
+}
+
+.status-completed {
+    background: var(--info-color);
+    color: white;
+}
+
+/* Avatars */
+.avatar-sm {
+    width: 35px;
+    height: 35px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+/* Botões */
+.admin-card .btn,
+.admin-filters .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.admin-card .btn-primary,
+.admin-filters .btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.admin-card .btn-primary:hover,
+.admin-filters .btn-primary:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.admin-card .btn-secondary,
+.admin-filters .btn-secondary {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    color: var(--text-dark);
+}
+
+.admin-card .btn-secondary:hover,
+.admin-filters .btn-secondary:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-gray);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .admin-navbar .navbar-brand span {
+        display: none;
+    }
+    
+    .admin-footer .col-md-6:last-child {
+        text-align: start !important;
+        margin-top: 0.5rem;
+    }
+    
+    .admin-card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .admin-dashboard {
+        padding: 1rem 0;
+    }
+    
+    .admin-filters {
+        padding: 1rem;
+    }
+    
+    .admin-table .table thead th,
+    .admin-table .table tbody td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Animações */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Notificações */
+.admin-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    color: var(--text-dark);
+    box-shadow: var(--shadow);
+    z-index: 9999;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+.admin-notification.show {
+    transform: translateX(0);
+}
+
+.admin-notification.success {
+    border-color: var(--success-color);
+    background: #f0f9ff;
+}
+
+.admin-notification.error {
+    border-color: var(--danger-color);
+    background: #fef2f2;
+}
+
+.admin-notification.warning {
+    border-color: var(--warning-color);
+    background: #fffbeb;
+}
+</style>
 

@@ -98,5 +98,45 @@ handlebars.registerHelper('monthName', function(monthNumber) {
   return months[monthNumber] || '';
 });
 
+// Helper para substring - ADICIONADO
+handlebars.registerHelper('substring', function(str, start, end) {
+  if (!str) return '';
+  return str.substring(start, end);
+});
+
+// Helper para criar novo objeto Date - ADICIONADO
+handlebars.registerHelper('new', function(type) {
+  if (type === 'Date') {
+    return new Date();
+  }
+  return null;
+});
+
+// Helper para verificar se array tem elementos
+handlebars.registerHelper('hasItems', function(array) {
+  return array && array.length > 0;
+});
+
+// Helper para obter primeiro item do array
+handlebars.registerHelper('first', function(array) {
+  return array && array.length > 0 ? array[0] : null;
+});
+
+// Helper para obter último item do array
+handlebars.registerHelper('last', function(array) {
+  return array && array.length > 0 ? array[array.length - 1] : null;
+});
+
+// Helper para contar itens
+handlebars.registerHelper('count', function(array) {
+  return array ? array.length : 0;
+});
+
+// Helper para debug (apenas em desenvolvimento)
+handlebars.registerHelper('debug', function(value) {
+  console.log('[HANDLEBARS DEBUG]', value);
+  return '';
+});
+
 module.exports = handlebars;
 

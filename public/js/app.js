@@ -1,572 +1,791 @@
-// JavaScript principal para clientes - Sistema de Agendamento CORRIGIDO
-// Variáveis globais para controle do agendamento
-let selectedService = null;
-let selectedBarber = null;
-let selectedDate = null;
-let selectedTime = null;
-let currentMonth = new Date();
+// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN
+// Verificar se CONFIG já existe para evitar redeclaração
+if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
+  // Configurações editáveis
+  window.BARBERSHOP_CONFIG = {
+    // ========================================
+    // CONFIGURAÇÕES PARA EDITAR:
+    // ========================================
+    
+    // WhatsApp da barbearia (apenas números)
+    WHATSAPP_NUMBER: '5511999999999', // EDITE AQUI: Substitua pelo número da barbearia
+    
+    // Google Client ID para login
+    GOOGLE_CLIENT_ID: 'SEU_GOOGLE_CLIENT_ID_AQUI', // EDITE AQUI: Substitua pelo seu Client ID
+    
+    // Serviços da barbearia (conforme solicitado)
+    SERVICES: [
+      {
+        id: 1,
+        name: 'CORTE DEGRADÊ',
+        duration: '40min',
+        price: 35.00,
+        promo: 'Promo seg. a qua.',
+        hasPromo: true
+      },
+      {
+        id: 2,
+        name: 'CORTE SOCIAL',
+        duration: '40min',
+        price: 30.00,
+        promo: 'Promo seg. a qua.',
+        hasPromo: true
+      },
+      {
+        id: 3,
+        name: 'CORTE + BARBA',
+        duration: '60min',
+        price: 50.00,
+        promo: 'Promo seg. a qua.',
+        hasPromo: true
+      },
+      {
+        id: 4,
+        name: 'BARBA + PEZINHO',
+        duration: 'Tempo não definido',
+        price: 25.00,
+        promo: null,
+        hasPromo: false
+      }
+    ]
+    
+    // ========================================
+    // FIM DAS CONFIGURAÇÕES EDITÁVEIS
+    // ========================================
+  };
+}
 
-// Inicialização quando página carrega
+// Usar referência global para evitar conflitos
+const CONFIG = window.BARBERSHOP_CONFIG;
+
+// Estado global da aplicação
+let appState = {
+  currentStep: 1,
+  selectedService: null,
+  selectedBarber: null,
+  selectedDate: null,
+  selectedTime: null,
+  clientData: {},
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
+  availableBarbers: [],
+  availableTimes: []
+};
+
+// Logs detalhados
+function log(message, data = null) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`[${timestamp}] [CLIENT] ${message}`, data || '');
+}
+
+function logError(message, error = null) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.error(`[${timestamp}] [CLIENT ERROR] ${message}`, error || '');
+}
+
+// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[CLIENT] Inicializando sistema de agendamento');
-    
-    // Máscara para telefone brasileiro
-    const phoneInput = document.getElementById('phone');
-    if (phoneInput) {
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            value = value.replace(/(\d{2})(\d)/, '($1) $2');
-            value = value.replace(/(\d{5})(\d)/, '$1-$2');
-            e.target.value = value;
-        });
-    }
-    
-    // Configurar eventos dos botões de navegação do calendário
-    const prevMonthBtn = document.getElementById('prevMonth');
-    const nextMonthBtn = document.getElementById('nextMonth');
-    
-    if (prevMonthBtn) prevMonthBtn.addEventListener('click', prevMonth);
-    if (nextMonthBtn) nextMonthBtn.addEventListener('click', nextMonth);
-    
-    // Carregar dados iniciais
-    loadServices();
+  log('Inicializando sistema de agendamento moderno');
+  
+  try {
+    initializeApp();
+    setupEventListeners();
     loadBarbers();
     initializeCalendar();
+    setupPhoneMask();
+    log('Sistema inicializado com sucesso');
+  } catch (error) {
+    logError('Erro na inicialização', error);
+  }
 });
 
-// Navegação entre etapas do agendamento
-function nextStep(step) {
-    console.log(`[CLIENT] Avançando para etapa ${step}`);
-    
-    // Validar etapa atual antes de avançar
-    if (!validateCurrentStep(step - 1)) {
-        return;
-    }
-    
-    // Ocultar etapa atual
-    document.querySelectorAll('.step').forEach(s => s.classList.add('d-none'));
-    
-    // Mostrar próxima etapa
-    const nextStepElement = document.getElementById(`step${step}`);
-    if (nextStepElement) {
-        nextStepElement.classList.remove('d-none');
-    }
-    
-    // Carregar dados específicos da etapa
-    if (step === 4) {
-        loadAvailableTimes();
-    } else if (step === 5) {
-        showAppointmentSummary();
-    }
+// Inicializar aplicação
+function initializeApp() {
+  log('Configurando aplicação');
+  
+  // Mostrar primeira etapa
+  showStep(1);
+  
+  // Configurar Google Login se disponível
+  if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
+    initializeGoogleLogin();
+  }
 }
 
-// Voltar para etapa anterior
-function prevStep(step) {
-    console.log(`[CLIENT] Voltando para etapa ${step}`);
-    document.querySelectorAll('.step').forEach(s => s.classList.add('d-none'));
-    const stepElement = document.getElementById(`step${step}`);
-    if (stepElement) {
-        stepElement.classList.remove('d-none');
-    }
-}
-
-// Validar dados da etapa atual
-function validateCurrentStep(step) {
-    console.log(`[CLIENT] Validando etapa ${step}`);
-    
-    switch(step) {
-        case 1:
-            const firstName = document.getElementById('firstName')?.value.trim();
-            const lastName = document.getElementById('lastName')?.value.trim();
-            const phone = document.getElementById('phone')?.value.trim();
-            
-            if (!firstName || !lastName || !phone) {
-                showAlert('Por favor, preencha todos os campos obrigatórios.', 'warning');
-                return false;
-            }
-            
-            if (phone.length < 14) {
-                showAlert('Por favor, insira um telefone válido.', 'warning');
-                return false;
-            }
-            break;
-            
-        case 2:
-            if (!selectedService) {
-                showAlert('Por favor, selecione um serviço.', 'warning');
-                return false;
-            }
-            break;
-            
-        case 3:
-            if (!selectedBarber) {
-                showAlert('Por favor, selecione um barbeiro.', 'warning');
-                return false;
-            }
-            break;
-            
-        case 4:
-            if (!selectedDate || !selectedTime) {
-                showAlert('Por favor, selecione uma data e horário.', 'warning');
-                return false;
-            }
-            break;
-    }
-    return true;
-}
-
-// Carregar lista de serviços disponíveis
-async function loadServices() {
-    console.log('[CLIENT] Carregando serviços');
-    
-    try {
-        const response = await fetch('/api/services');
-        const services = await response.json();
-        
-        console.log('[CLIENT] Serviços carregados:', services.length);
-        
-        const container = document.getElementById('servicesContainer');
-        if (!container) {
-            console.error('[CLIENT ERROR] Container de serviços não encontrado');
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        services.forEach(service => {
-            const serviceCard = document.createElement('div');
-            serviceCard.className = 'col-md-6 mb-3';
-            serviceCard.innerHTML = `
-                <div class="card service-card h-100" onclick="selectService(${service.id}, '${service.name}', ${service.price})" style="cursor: pointer;">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">${service.name}</h5>
-                        <p class="card-text">${service.description}</p>
-                        <p class="price fw-bold text-primary">R$ ${parseFloat(service.price).toFixed(2)}</p>
-                        <small class="text-muted">${service.duration} minutos</small>
-                    </div>
-                </div>
-            `;
-            container.appendChild(serviceCard);
-        });
-    } catch (error) {
-        console.error('[CLIENT ERROR] Erro ao carregar serviços:', error);
-        showAlert('Erro ao carregar serviços. Tente novamente.', 'error');
-    }
+// Configurar event listeners
+function setupEventListeners() {
+  log('Configurando event listeners');
+  
+  // Calendário
+  document.getElementById('prevMonth')?.addEventListener('click', () => changeMonth(-1));
+  document.getElementById('nextMonth')?.addEventListener('click', () => changeMonth(1));
+  
+  // Validação em tempo real
+  ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', validateClientForm);
+  });
+  
+  // Google Login
+  document.getElementById('googleLogin')?.addEventListener('click', handleGoogleLogin);
 }
 
 // Selecionar serviço
-function selectService(id, name, price) {
-    console.log(`[CLIENT] Serviço selecionado: ${name}`);
-    
-    selectedService = { id, name, price };
-    
-    // Remover seleção anterior
-    document.querySelectorAll('.service-card').forEach(card => {
-        card.classList.remove('selected');
-        card.style.border = '';
-    });
-    
-    // Marcar como selecionado
-    event.currentTarget.classList.add('selected');
-    event.currentTarget.style.border = '2px solid #0d6efd';
-    
-    // Ativar botão continuar
-    const continueBtn = document.getElementById('continueToBarber');
-    if (continueBtn) {
-        continueBtn.disabled = false;
-    }
+function selectService(service) {
+  log('Serviço selecionado', service);
+  
+  // Remover seleção anterior
+  document.querySelectorAll('.service-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  // Selecionar novo serviço
+  const selectedCard = document.querySelector(`[data-service-id="${service.id}"]`);
+  if (selectedCard) {
+    selectedCard.classList.add('selected');
+  }
+  
+  appState.selectedService = service;
+  
+  // Ativar botão continuar
+  const continueBtn = document.getElementById('continueToBarber');
+  if (continueBtn) {
+    continueBtn.disabled = false;
+    continueBtn.classList.remove('disabled');
+  }
+  
+  log('Botão continuar ativado');
 }
 
-// Carregar lista de barbeiros disponíveis
+// Ir para etapa
+function goToStep(stepNumber) {
+  log(`Avançando para etapa ${stepNumber}`);
+  
+  if (stepNumber === 2) {
+    loadBarbers();
+  } else if (stepNumber === 3) {
+    generateCalendar();
+  } else if (stepNumber === 4) {
+    updateBookingSummary();
+  }
+  
+  showStep(stepNumber);
+  updateStepIndicators(stepNumber);
+  appState.currentStep = stepNumber;
+}
+
+// Mostrar etapa
+function showStep(stepNumber) {
+  // Esconder todas as etapas
+  document.querySelectorAll('.step').forEach(step => {
+    step.classList.remove('active');
+  });
+  
+  // Mostrar etapa atual
+  const currentStep = document.getElementById(`step${stepNumber}`);
+  if (currentStep) {
+    currentStep.classList.add('active');
+    currentStep.classList.add('fade-in-up');
+  }
+}
+
+// Atualizar indicadores de etapa
+function updateStepIndicators(currentStep) {
+  document.querySelectorAll('.step-indicator').forEach(indicator => {
+    const dots = indicator.querySelectorAll('.step-dot');
+    dots.forEach((dot, index) => {
+      dot.classList.remove('active', 'completed');
+      if (index + 1 < currentStep) {
+        dot.classList.add('completed');
+      } else if (index + 1 === currentStep) {
+        dot.classList.add('active');
+      }
+    });
+  });
+}
+
+// Carregar barbeiros
 async function loadBarbers() {
-    console.log('[CLIENT] Carregando barbeiros');
+  log('Carregando barbeiros');
+  
+  try {
+    const response = await fetch('/api/barbers');
     
-    try {
-        const response = await fetch('/api/barbers');
-        const barbers = await response.json();
-        
-        console.log('[CLIENT] Barbeiros carregados:', barbers.length);
-        
-        const container = document.getElementById('barbersContainer');
-        if (!container) {
-            console.error('[CLIENT ERROR] Container de barbeiros não encontrado');
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        barbers.forEach(barber => {
-            const barberCard = document.createElement('div');
-            barberCard.className = 'col-md-6 mb-3';
-            barberCard.innerHTML = `
-                <div class="card barber-card h-100" onclick="selectBarber(${barber.id}, '${barber.name}')" style="cursor: pointer;">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">${barber.name}</h5>
-                        <p class="card-text">
-                            <strong>Especialidades:</strong><br>
-                            ${barber.specialties.join(', ')}
-                        </p>
-                        <small class="text-muted">${barber.phone}</small>
-                    </div>
-                </div>
-            `;
-            container.appendChild(barberCard);
-        });
-    } catch (error) {
-        console.error('[CLIENT ERROR] Erro ao carregar barbeiros:', error);
-        showAlert('Erro ao carregar barbeiros. Tente novamente.', 'error');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+    
+    const data = await response.json();
+    const barbers = data.barbers || data; // Suportar diferentes formatos de resposta
+    
+    const container = document.getElementById('barbersContainer');
+    if (!container) {
+      logError('Container de barbeiros não encontrado');
+      return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (!Array.isArray(barbers)) {
+      logError('Resposta de barbeiros não é um array', barbers);
+      return;
+    }
+    
+    barbers.forEach(barber => {
+      const barberCard = createBarberCard(barber);
+      container.appendChild(barberCard);
+    });
+    
+    appState.availableBarbers = barbers;
+    log(`${barbers.length} barbeiros carregados`);
+    
+  } catch (error) {
+    logError('Erro ao carregar barbeiros', error);
+    showNotification('Erro ao carregar barbeiros. Tente recarregar a página.', 'error');
+  }
+}
+
+// Criar card de barbeiro
+function createBarberCard(barber) {
+  const card = document.createElement('div');
+  card.className = 'barber-card';
+  card.dataset.barberId = barber.id;
+  
+  const initials = barber.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+  
+  card.innerHTML = `
+    <div class="barber-avatar">${initials}</div>
+    <div class="barber-name">${barber.name}</div>
+    <div class="barber-specialty">${barber.specialties || 'Especialista'}</div>
+  `;
+  
+  card.addEventListener('click', () => selectBarber(barber));
+  
+  return card;
 }
 
 // Selecionar barbeiro
-function selectBarber(id, name) {
-    console.log(`[CLIENT] Barbeiro selecionado: ${name}`);
-    
-    selectedBarber = { id, name };
-    
-    // Remover seleção anterior
-    document.querySelectorAll('.barber-card').forEach(card => {
-        card.classList.remove('selected');
-        card.style.border = '';
-    });
-    
-    // Marcar como selecionado
-    event.currentTarget.classList.add('selected');
-    event.currentTarget.style.border = '2px solid #0d6efd';
-    
-    // Ativar botão continuar
-    const continueBtn = document.getElementById('continueToDate');
-    if (continueBtn) {
-        continueBtn.disabled = false;
-    }
+function selectBarber(barber) {
+  log('Barbeiro selecionado', barber);
+  
+  // Remover seleção anterior
+  document.querySelectorAll('.barber-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  // Selecionar novo barbeiro
+  const selectedCard = document.querySelector(`[data-barber-id="${barber.id}"]`);
+  if (selectedCard) {
+    selectedCard.classList.add('selected');
+  }
+  
+  appState.selectedBarber = barber;
+  
+  // Ativar botão continuar
+  const continueBtn = document.getElementById('continueToDate');
+  if (continueBtn) {
+    continueBtn.disabled = false;
+    continueBtn.classList.remove('disabled');
+  }
+  
+  log('Botão continuar ativado');
 }
 
 // Inicializar calendário
 function initializeCalendar() {
-    console.log('[CLIENT] Inicializando calendário');
-    updateCalendarHeader();
-    generateCalendar();
+  log('Inicializando calendário');
+  generateCalendar();
 }
 
-// Atualizar cabeçalho do calendário
-function updateCalendarHeader() {
-    const monthNames = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    
-    const currentMonthElement = document.getElementById('currentMonth');
-    if (currentMonthElement) {
-        currentMonthElement.textContent = 
-            `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
-    }
-}
-
-// Gerar calendário do mês
+// Gerar calendário
 function generateCalendar() {
-    console.log('[CLIENT] Gerando calendário');
+  log(`Gerando calendário para ${appState.currentMonth + 1}/${appState.currentYear}`);
+  
+  const calendarGrid = document.getElementById('calendarGrid');
+  const calendarTitle = document.getElementById('calendarTitle');
+  
+  if (!calendarGrid || !calendarTitle) {
+    logError('Elementos do calendário não encontrados');
+    return;
+  }
+  
+  // Atualizar título
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  calendarTitle.textContent = `${monthNames[appState.currentMonth]} ${appState.currentYear}`;
+  
+  // Limpar grid
+  calendarGrid.innerHTML = '';
+  
+  // Cabeçalhos dos dias
+  const dayHeaders = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  dayHeaders.forEach(day => {
+    const header = document.createElement('div');
+    header.className = 'calendar-day-header';
+    header.textContent = day;
+    calendarGrid.appendChild(header);
+  });
+  
+  // Gerar dias do mês
+  const firstDay = new Date(appState.currentYear, appState.currentMonth, 1);
+  const lastDay = new Date(appState.currentYear, appState.currentMonth + 1, 0);
+  const today = new Date();
+  
+  // Dias vazios no início
+  for (let i = 0; i < firstDay.getDay(); i++) {
+    const emptyDay = document.createElement('div');
+    emptyDay.className = 'calendar-day other-month';
+    calendarGrid.appendChild(emptyDay);
+  }
+  
+  // Dias do mês
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const dayElement = document.createElement('div');
+    dayElement.className = 'calendar-day';
+    dayElement.textContent = day;
     
-    const calendarGrid = document.getElementById('calendarGrid');
-    if (!calendarGrid) {
-        console.error('[CLIENT ERROR] Grid do calendário não encontrado');
-        return;
+    const currentDate = new Date(appState.currentYear, appState.currentMonth, day);
+    
+    // Verificar se é dia passado
+    if (currentDate < today.setHours(0, 0, 0, 0)) {
+      dayElement.classList.add('disabled');
+    } else {
+      dayElement.classList.add('available');
+      dayElement.addEventListener('click', () => selectDate(currentDate));
     }
     
-    // Criar estrutura do calendário
-    calendarGrid.innerHTML = `
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th class="text-center">Dom</th>
-                    <th class="text-center">Seg</th>
-                    <th class="text-center">Ter</th>
-                    <th class="text-center">Qua</th>
-                    <th class="text-center">Qui</th>
-                    <th class="text-center">Sex</th>
-                    <th class="text-center">Sáb</th>
-                </tr>
-            </thead>
-            <tbody id="calendarBody"></tbody>
-        </table>
-    `;
-    
-    const calendarBody = document.getElementById('calendarBody');
-    const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-    const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
-    for (let week = 0; week < 6; week++) {
-        const row = document.createElement('tr');
-        
-        for (let day = 0; day < 7; day++) {
-            const cellDate = new Date(startDate);
-            cellDate.setDate(startDate.getDate() + (week * 7) + day);
-            
-            const cell = document.createElement('td');
-            cell.textContent = cellDate.getDate();
-            cell.className = 'calendar-day text-center p-2';
-            cell.style.cursor = 'pointer';
-            
-            // Verificar se é do mês atual
-            if (cellDate.getMonth() !== currentMonth.getMonth()) {
-                cell.classList.add('text-muted');
-                cell.style.cursor = 'default';
-            }
-            
-            // Verificar se é hoje
-            const today = new Date();
-            if (cellDate.toDateString() === today.toDateString()) {
-                cell.classList.add('bg-primary', 'text-white');
-            }
-            
-            // Verificar se é passado
-            if (cellDate < today.setHours(0,0,0,0)) {
-                cell.classList.add('text-muted');
-                cell.style.cursor = 'default';
-            } else if (cellDate.getMonth() === currentMonth.getMonth()) {
-                cell.addEventListener('click', () => selectDate(cellDate));
-                cell.classList.add('calendar-available');
-                cell.addEventListener('mouseenter', function() {
-                    if (!this.classList.contains('selected')) {
-                        this.style.backgroundColor = '#e9ecef';
-                    }
-                });
-                cell.addEventListener('mouseleave', function() {
-                    if (!this.classList.contains('selected')) {
-                        this.style.backgroundColor = '';
-                    }
-                });
-            }
-            
-            row.appendChild(cell);
-        }
-        
-        calendarBody.appendChild(row);
-    }
-}
-
-// Navegar mês anterior
-function prevMonth() {
-    console.log('[CLIENT] Navegando para mês anterior');
-    currentMonth.setMonth(currentMonth.getMonth() - 1);
-    updateCalendarHeader();
-    generateCalendar();
-}
-
-// Navegar próximo mês
-function nextMonth() {
-    console.log('[CLIENT] Navegando para próximo mês');
-    currentMonth.setMonth(currentMonth.getMonth() + 1);
-    updateCalendarHeader();
-    generateCalendar();
+    calendarGrid.appendChild(dayElement);
+  }
+  
+  log('Calendário gerado com sucesso');
 }
 
 // Selecionar data
 function selectDate(date) {
-    console.log(`[CLIENT] Data selecionada: ${date.toLocaleDateString('pt-BR')}`);
-    
-    selectedDate = date.toISOString().split('T')[0];
-    
-    // Remover seleção anterior
-    document.querySelectorAll('.calendar-day').forEach(day => {
-        day.classList.remove('selected');
-        day.style.backgroundColor = '';
-    });
-    
-    // Marcar como selecionado
-    event.currentTarget.classList.add('selected');
-    event.currentTarget.style.backgroundColor = '#0d6efd';
-    event.currentTarget.style.color = 'white';
-    
-    // Carregar horários disponíveis
-    loadAvailableTimes();
+  log('Data selecionada', date);
+  
+  // Remover seleção anterior
+  document.querySelectorAll('.calendar-day').forEach(day => {
+    day.classList.remove('selected');
+  });
+  
+  // Selecionar nova data
+  event.target.classList.add('selected');
+  
+  appState.selectedDate = date;
+  
+  // Carregar horários disponíveis
+  loadAvailableTimes(date);
 }
 
-// Carregar horários disponíveis
-async function loadAvailableTimes() {
-    console.log('[CLIENT] Carregando horários disponíveis');
+// Carregar horários disponíveis - CORRIGIDO
+async function loadAvailableTimes(date) {
+  log('Carregando horários disponíveis para', date);
+  
+  try {
+    const dateStr = date.toISOString().split('T')[0];
+    const response = await fetch(`/api/available-times?date=${dateStr}&barberId=${appState.selectedBarber.id}`);
     
-    if (!selectedBarber || !selectedDate || !selectedService) {
-        console.log('[CLIENT] Dados incompletos para carregar horários');
-        return;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
-    try {
-        const response = await fetch(
-            `/api/available-times?barberId=${selectedBarber.id}&date=${selectedDate}&serviceId=${selectedService.id}`
-        );
-        const data = await response.json();
-        
-        console.log('[CLIENT] Horários disponíveis:', data.availableTimes);
-        
-        const container = document.getElementById('timeSlotsContainer');
-        if (!container) {
-            console.error('[CLIENT ERROR] Container de horários não encontrado');
-            return;
-        }
-        
-        container.innerHTML = '';
-        
-        if (data.availableTimes.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">Nenhum horário disponível para esta data.</p>';
-            return;
-        }
-        
-        const timesGrid = document.createElement('div');
-        timesGrid.className = 'row g-2';
-        
-        data.availableTimes.forEach(time => {
-            const timeCol = document.createElement('div');
-            timeCol.className = 'col-6 col-md-3';
-            
-            const timeButton = document.createElement('button');
-            timeButton.type = 'button';
-            timeButton.className = 'btn btn-outline-primary w-100 time-btn';
-            timeButton.textContent = time;
-            timeButton.onclick = () => selectTime(time);
-            
-            timeCol.appendChild(timeButton);
-            timesGrid.appendChild(timeCol);
-        });
-        
-        container.appendChild(timesGrid);
-    } catch (error) {
-        console.error('[CLIENT ERROR] Erro ao carregar horários:', error);
-        showAlert('Erro ao carregar horários. Tente novamente.', 'error');
+    const data = await response.json();
+    
+    // Verificar se a resposta tem o formato esperado
+    let times = [];
+    if (Array.isArray(data)) {
+      times = data;
+    } else if (data.times && Array.isArray(data.times)) {
+      times = data.times;
+    } else if (data.availableTimes && Array.isArray(data.availableTimes)) {
+      times = data.availableTimes;
+    } else {
+      // Se não há horários ou formato inesperado, usar horários padrão
+      times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+      log('Usando horários padrão devido a formato inesperado da API');
     }
+    
+    const container = document.getElementById('timeSlotsContainer');
+    const timesContainer = document.getElementById('timesContainer');
+    
+    if (!container || !timesContainer) {
+      logError('Containers de horários não encontrados');
+      return;
+    }
+    
+    container.innerHTML = '';
+    
+    if (times.length === 0) {
+      container.innerHTML = '<p class="text-muted text-center">Nenhum horário disponível para esta data</p>';
+    } else {
+      times.forEach(time => {
+        const timeSlot = createTimeSlot(time);
+        container.appendChild(timeSlot);
+      });
+    }
+    
+    timesContainer.style.display = 'block';
+    appState.availableTimes = times;
+    
+    log(`${times.length} horários carregados`);
+    
+  } catch (error) {
+    logError('Erro ao carregar horários', error);
+    
+    // Fallback: mostrar horários padrão
+    const defaultTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+    const container = document.getElementById('timeSlotsContainer');
+    const timesContainer = document.getElementById('timesContainer');
+    
+    if (container && timesContainer) {
+      container.innerHTML = '';
+      defaultTimes.forEach(time => {
+        const timeSlot = createTimeSlot(time);
+        container.appendChild(timeSlot);
+      });
+      timesContainer.style.display = 'block';
+      appState.availableTimes = defaultTimes;
+      
+      showNotification('Carregando horários padrão. Verifique disponibilidade.', 'warning');
+    }
+  }
+}
+
+// Criar slot de horário
+function createTimeSlot(time) {
+  const slot = document.createElement('div');
+  slot.className = 'time-slot';
+  slot.textContent = time;
+  slot.dataset.time = time;
+  
+  slot.addEventListener('click', () => selectTime(time));
+  
+  return slot;
 }
 
 // Selecionar horário
 function selectTime(time) {
-    console.log(`[CLIENT] Horário selecionado: ${time}`);
+  log('Horário selecionado', time);
+  
+  // Remover seleção anterior
+  document.querySelectorAll('.time-slot').forEach(slot => {
+    slot.classList.remove('selected');
+  });
+  
+  // Selecionar novo horário
+  const selectedSlot = document.querySelector(`[data-time="${time}"]`);
+  if (selectedSlot) {
+    selectedSlot.classList.add('selected');
+  }
+  
+  appState.selectedTime = time;
+  
+  // Ativar botão continuar
+  const continueBtn = document.getElementById('continueToConfirm');
+  if (continueBtn) {
+    continueBtn.disabled = false;
+    continueBtn.classList.remove('disabled');
+  }
+  
+  log('Botão continuar ativado');
+}
+
+// Mudar mês
+function changeMonth(direction) {
+  appState.currentMonth += direction;
+  
+  if (appState.currentMonth < 0) {
+    appState.currentMonth = 11;
+    appState.currentYear--;
+  } else if (appState.currentMonth > 11) {
+    appState.currentMonth = 0;
+    appState.currentYear++;
+  }
+  
+  generateCalendar();
+}
+
+// Atualizar resumo do agendamento
+function updateBookingSummary() {
+  log('Atualizando resumo do agendamento');
+  
+  const elements = {
+    service: document.getElementById('summaryService'),
+    barber: document.getElementById('summaryBarber'),
+    date: document.getElementById('summaryDate'),
+    time: document.getElementById('summaryTime'),
+    duration: document.getElementById('summaryDuration'),
+    price: document.getElementById('summaryPrice')
+  };
+  
+  if (elements.service) elements.service.textContent = appState.selectedService?.name || '-';
+  if (elements.barber) elements.barber.textContent = appState.selectedBarber?.name || '-';
+  if (elements.date) elements.date.textContent = appState.selectedDate?.toLocaleDateString('pt-BR') || '-';
+  if (elements.time) elements.time.textContent = appState.selectedTime || '-';
+  if (elements.duration) elements.duration.textContent = appState.selectedService?.duration || '-';
+  if (elements.price) elements.price.textContent = `R$ ${appState.selectedService?.price?.toFixed(2) || '0,00'}`;
+}
+
+// Configurar máscara de telefone
+function setupPhoneMask() {
+  const phoneInput = document.getElementById('clientPhone');
+  if (!phoneInput) return;
+  
+  phoneInput.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
     
-    selectedTime = time;
+    if (value.length <= 11) {
+      value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+      if (value.length < 14) {
+        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+      }
+    }
     
-    // Remover seleção anterior
-    document.querySelectorAll('.time-btn').forEach(btn => {
-        btn.classList.remove('btn-primary');
-        btn.classList.add('btn-outline-primary');
+    e.target.value = value;
+  });
+}
+
+// Validar formulário do cliente
+function validateClientForm() {
+  const firstName = document.getElementById('clientFirstName')?.value.trim();
+  const lastName = document.getElementById('clientLastName')?.value.trim();
+  const phone = document.getElementById('clientPhone')?.value.trim();
+  
+  const isValid = firstName && lastName && phone && phone.length >= 14;
+  
+  const confirmBtn = document.getElementById('confirmBooking');
+  if (confirmBtn) {
+    confirmBtn.disabled = !isValid;
+    if (isValid) {
+      confirmBtn.classList.remove('disabled');
+    } else {
+      confirmBtn.classList.add('disabled');
+    }
+  }
+  
+  return isValid;
+}
+
+// Confirmar agendamento - CORRIGIDO
+async function confirmBooking() {
+  log('Confirmando agendamento');
+  
+  if (!validateClientForm()) {
+    showNotification('Por favor, preencha todos os campos obrigatórios', 'error');
+    return;
+  }
+  
+  // Verificar se todos os dados necessários estão disponíveis
+  if (!appState.selectedService || !appState.selectedBarber || !appState.selectedDate || !appState.selectedTime) {
+    logError('Dados de agendamento incompletos', {
+      service: appState.selectedService,
+      barber: appState.selectedBarber,
+      date: appState.selectedDate,
+      time: appState.selectedTime
+    });
+    showNotification('Dados de agendamento incompletos. Reinicie o processo.', 'error');
+    return;
+  }
+  
+  const bookingData = {
+    serviceId: appState.selectedService.id,
+    barberId: appState.selectedBarber.id,
+    appointmentDate: appState.selectedDate.toISOString().split('T')[0],
+    appointmentTime: appState.selectedTime,
+    clientData: {
+      firstName: document.getElementById('clientFirstName').value.trim(),
+      lastName: document.getElementById('clientLastName').value.trim(),
+      phone: document.getElementById('clientPhone').value.trim(),
+      email: document.getElementById('clientEmail')?.value.trim() || ''
+    }
+  };
+  
+  log('Dados do agendamento preparados', bookingData);
+  
+  try {
+    // Mostrar loading
+    const confirmBtn = document.getElementById('confirmBooking');
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirmando...';
+    }
+    
+    log('Enviando requisição para /api/appointments');
+    
+    const response = await fetch('/api/appointments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(bookingData)
     });
     
-    // Marcar como selecionado
-    event.currentTarget.classList.remove('btn-outline-primary');
-    event.currentTarget.classList.add('btn-primary');
+    log('Resposta recebida', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
     
-    // Ativar botão continuar
-    const continueBtn = document.getElementById('continueToConfirm');
-    if (continueBtn) {
-        continueBtn.disabled = false;
-    }
-}
-
-// Mostrar resumo do agendamento
-function showAppointmentSummary() {
-    console.log('[CLIENT] Mostrando resumo do agendamento');
-    
-    const firstName = document.getElementById('firstName')?.value || '';
-    const lastName = document.getElementById('lastName')?.value || '';
-    const phone = document.getElementById('phone')?.value || '';
-    
-    const summaryContainer = document.getElementById('appointmentSummary');
-    if (summaryContainer) {
-        summaryContainer.innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Nome:</strong> ${firstName} ${lastName}</p>
-                    <p><strong>Telefone:</strong> ${phone}</p>
-                    <p><strong>Serviço:</strong> ${selectedService?.name || 'N/A'}</p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Barbeiro:</strong> ${selectedBarber?.name || 'N/A'}</p>
-                    <p><strong>Data:</strong> ${selectedDate ? new Date(selectedDate).toLocaleDateString('pt-BR') : 'N/A'}</p>
-                    <p><strong>Horário:</strong> ${selectedTime || 'N/A'}</p>
-                    <p><strong>Valor:</strong> R$ ${selectedService ? parseFloat(selectedService.price).toFixed(2) : '0,00'}</p>
-                </div>
-            </div>
-        `;
+    if (response.ok) {
+      const result = await response.json();
+      log('Agendamento confirmado com sucesso', result);
+      
+      // Atualizar dados finais
+      updateFinalConfirmation(bookingData);
+      
+      // Ir para tela de confirmação
+      goToStep(5);
+      
+      showNotification('Agendamento confirmado com sucesso!', 'success');
+    } else {
+      // Tentar ler a resposta de erro
+      let errorMessage = 'Erro ao confirmar agendamento';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+        logError('Erro na resposta da API', errorData);
+      } catch (parseError) {
+        logError('Erro ao parsear resposta de erro', parseError);
+      }
+      
+      throw new Error(errorMessage);
     }
     
-    // Configurar evento de confirmação
-    const confirmBtn = document.getElementById('confirmAppointment');
+  } catch (error) {
+    logError('Erro ao confirmar agendamento', error);
+    
+    // Verificar se é erro de rede
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      showNotification('Erro de conexão. Verifique sua internet e tente novamente.', 'error');
+    } else {
+      showNotification(error.message || 'Erro ao confirmar agendamento. Tente novamente.', 'error');
+    }
+  } finally {
+    // Restaurar botão
+    const confirmBtn = document.getElementById('confirmBooking');
     if (confirmBtn) {
-        confirmBtn.onclick = confirmAppointment;
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Agendamento';
     }
+  }
 }
 
-// Confirmar agendamento
-async function confirmAppointment() {
-    console.log('[CLIENT] Confirmando agendamento');
-    
-    const appointmentData = {
-        firstName: document.getElementById('firstName')?.value,
-        lastName: document.getElementById('lastName')?.value,
-        phone: document.getElementById('phone')?.value.replace(/\D/g, ''),
-        barberId: selectedBarber?.id,
-        serviceTypeId: selectedService?.id,
-        appointmentDate: selectedDate,
-        appointmentTime: selectedTime
-    };
-    
-    console.log('[CLIENT] Dados do agendamento:', appointmentData);
-    
-    try {
-        const response = await fetch('/appointments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(appointmentData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log('[CLIENT] Agendamento confirmado com sucesso');
-            window.location.href = '/agendamento-confirmado';
-        } else {
-            console.error('[CLIENT ERROR] Erro ao confirmar agendamento:', result.error);
-            showAlert(result.error || 'Erro ao criar agendamento', 'error');
-        }
-    } catch (error) {
-        console.error('[CLIENT ERROR] Erro ao confirmar agendamento:', error);
-        showAlert('Erro ao confirmar agendamento. Tente novamente.', 'error');
-    }
+// Atualizar confirmação final
+function updateFinalConfirmation(bookingData) {
+  const elements = {
+    service: document.getElementById('finalService'),
+    barber: document.getElementById('finalBarber'),
+    date: document.getElementById('finalDate'),
+    time: document.getElementById('finalTime'),
+    client: document.getElementById('finalClient'),
+    price: document.getElementById('finalPrice')
+  };
+  
+  if (elements.service) elements.service.textContent = appState.selectedService.name;
+  if (elements.barber) elements.barber.textContent = appState.selectedBarber.name;
+  if (elements.date) elements.date.textContent = appState.selectedDate.toLocaleDateString('pt-BR');
+  if (elements.time) elements.time.textContent = appState.selectedTime;
+  if (elements.client) elements.client.textContent = `${bookingData.clientData.firstName} ${bookingData.clientData.lastName}`;
+  if (elements.price) elements.price.textContent = `R$ ${appState.selectedService.price.toFixed(2)}`;
 }
 
-// Função para mostrar alertas
-function showAlert(message, type = 'info') {
-    console.log(`[CLIENT] Alerta: ${type} - ${message}`);
+// Enviar confirmação via WhatsApp
+function sendWhatsAppConfirmation() {
+  log('Enviando confirmação via WhatsApp');
+  
+  const message = `Olá! Gostaria de confirmar meu agendamento:
+
+🔸 *Serviço:* ${appState.selectedService.name}
+🔸 *Barbeiro:* ${appState.selectedBarber.name}
+🔸 *Data:* ${appState.selectedDate.toLocaleDateString('pt-BR')}
+🔸 *Horário:* ${appState.selectedTime}
+🔸 *Cliente:* ${document.getElementById('clientFirstName').value} ${document.getElementById('clientLastName').value}
+🔸 *Valor:* R$ ${appState.selectedService.price.toFixed(2)}
+
+Aguardo confirmação. Obrigado!`;
+  
+  const encodedMessage = encodeURIComponent(message);
+  const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodedMessage}`;
+  
+  window.open(whatsappUrl, '_blank');
+}
+
+// Inicializar Google Login
+function initializeGoogleLogin() {
+  log('Inicializando Google Login');
+  
+  if (typeof google !== 'undefined') {
+    google.accounts.id.initialize({
+      client_id: CONFIG.GOOGLE_CLIENT_ID,
+      callback: handleGoogleResponse
+    });
+  }
+}
+
+// Manipular login do Google
+function handleGoogleLogin() {
+  log('Tentativa de login com Google');
+  
+  if (typeof google !== 'undefined') {
+    google.accounts.id.prompt();
+  } else {
+    showNotification('Google Login não está disponível', 'warning');
+  }
+}
+
+// Manipular resposta do Google
+function handleGoogleResponse(response) {
+  log('Resposta do Google recebida');
+  
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
     
-    const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+    // Preencher formulário com dados do Google
+    document.getElementById('clientFirstName').value = payload.given_name || '';
+    document.getElementById('clientLastName').value = payload.family_name || '';
+    document.getElementById('clientEmail').value = payload.email || '';
     
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    validateClientForm();
     
-    alertContainer.appendChild(alertDiv);
+    showNotification('Dados preenchidos com sucesso!', 'success');
     
-    // Auto-remover após 5 segundos
+  } catch (error) {
+    logError('Erro ao processar resposta do Google', error);
+    showNotification('Erro ao fazer login com Google', 'error');
+  }
+}
+
+// Mostrar notificação
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 100);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
     setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
 }
 
-// Criar container de alertas
-function createAlertContainer() {
-    const container = document.createElement('div');
-    container.id = 'alertContainer';
-    container.style.position = 'fixed';
-    container.style.top = '20px';
-    container.style.right = '20px';
-    container.style.zIndex = '9999';
-    container.style.maxWidth = '400px';
-    document.body.appendChild(container);
-    return container;
-}
+// Exportar para uso global
+window.BookingApp = {
+  state: appState,
+  config: CONFIG,
+  log,
+  logError,
+  showNotification
+};
 

@@ -3,160 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}}</title>
+    <title>{{#if title}}{{title}} - {{/if}}BarberShop</title>
     
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Custom CSS -->
+    <!-- CSS Customizado -->
     <link rel="stylesheet" href="/css/style.css">
     
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            background: rgba(255,255,255,0.95);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 12px;
-            padding: 12px 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-        
-        .form-control {
-            border-radius: 12px;
-            border: 2px solid #e9ecef;
-            padding: 12px 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
-        .navbar {
-            background: rgba(255,255,255,0.95) !important;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .service-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-        }
-        
-        .service-card.selected {
-            border-color: #667eea;
-            background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        }
-        
-        .barber-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        
-        .barber-card:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-        }
-        
-        .barber-card.selected {
-            border-color: #667eea;
-            background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-        }
-        
-        .time-slot {
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 2px solid #e9ecef;
-            background: white;
-        }
-        
-        .time-slot:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-        
-        .time-slot.selected {
-            border-color: #667eea;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-        }
-        
-        .calendar-day {
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 1px solid #e9ecef;
-            min-height: 60px;
-        }
-        
-        .calendar-day:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-        
-        .calendar-day.selected {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-        }
-        
-        .calendar-day.has-appointments {
-            background: rgba(40, 167, 69, 0.1);
-            border-color: #28a745;
-        }
-        
-        .loading {
-            display: none;
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    <!-- Meta tags para SEO -->
+    <meta name="description" content="Sistema de agendamento para barbearias - Agende seu corte online">
+    <meta name="keywords" content="barbearia, agendamento, corte de cabelo, barba">
+    <meta name="author" content="BarberShop">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="client-body">
     {{{body}}}
     
     <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom JS -->
+    <!-- Font Awesome JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <!-- Scripts customizados -->
+    {{#if isClientPage}}
     <script src="/js/app.js"></script>
+    {{/if}}
 </body>
 </html>
+
+<style>
+/* ===== ESTILOS PARA ÁREA DO CLIENTE ===== */
+
+.client-body {
+    background: var(--bg-light);
+    color: var(--text-dark);
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+/* Garantir que o layout do cliente seja consistente */
+.client-body .container,
+.client-body .container-fluid {
+    max-width: 1200px;
+}
+
+.client-body h1,
+.client-body h2,
+.client-body h3,
+.client-body h4,
+.client-body h5,
+.client-body h6 {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+.client-body p,
+.client-body span,
+.client-body div {
+    color: var(--text-dark);
+}
+
+.client-body .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Botões do cliente */
+.client-body .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.client-body .btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.client-body .btn-primary:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.client-body .btn-primary:disabled {
+    background: var(--text-muted);
+    border-color: var(--text-muted);
+    transform: none;
+}
+
+.client-body .btn-secondary {
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    color: var(--text-dark);
+}
+
+.client-body .btn-secondary:hover {
+    border-color: var(--primary-color);
+    background: var(--bg-gray);
+}
+
+/* Cards do cliente */
+.client-body .card {
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    background: var(--bg-light);
+}
+
+.client-body .card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Formulários do cliente */
+.client-body .form-control,
+.client-body .form-select {
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: var(--text-dark);
+    background: var(--bg-light);
+}
+
+.client-body .form-control:focus,
+.client-body .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.client-body .form-label {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+/* Alertas do cliente */
+.client-body .alert {
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.client-body .alert-success {
+    background: #f0f9ff;
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+}
+
+.client-body .alert-danger {
+    background: #fef2f2;
+    color: var(--danger-color);
+    border-left: 4px solid var(--danger-color);
+}
+
+.client-body .alert-warning {
+    background: #fffbeb;
+    color: #d97706;
+    border-left: 4px solid var(--warning-color);
+}
+
+/* Links do cliente */
+.client-body a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.client-body a:hover {
+    color: var(--secondary-color);
+}
+
+/* Responsividade para cliente */
+@media (max-width: 768px) {
+    .client-body .container {
+        padding: 0 1rem;
+    }
+    
+    .client-body h1 {
+        font-size: 2rem;
+    }
+    
+    .client-body .btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
 

@@ -1,151 +1,284 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">
-        <i class="bi bi-speedometer2 text-primary me-2"></i>
-        Dashboard
-    </h2>
-    <div class="text-muted">
-        <i class="bi bi-calendar-today me-1"></i>
-        Bem-vindo, {{user.username}}!
+<!-- DASHBOARD ADMINISTRATIVO CORRIGIDO - DESIGN CLEAN -->
+<div class="admin-dashboard">
+  <div class="container-fluid">
+    <!-- Header do Dashboard -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="fw-bold mb-1">Dashboard Administrativo</h2>
+              <p class="text-muted mb-0">Bem-vindo, {{user.username}}!</p>
+            </div>
+            <div class="text-end">
+              <div>{{formatDate (new Date)}}</div>
+              <small class="text-muted">Última atualização</small>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
 
-{{#if error}}
-<div class="alert alert-danger" role="alert">
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    {{error}}
-</div>
-{{/if}}
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+      <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card text-center">
+          <div class="display-6 mb-2">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+          <h3 class="fw-bold">{{stats.totalAppointments}}</h3>
+          <p class="text-muted mb-0">Agendamentos Hoje</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card text-center">
+          <div class="display-6 mb-2">
+            <i class="fas fa-dollar-sign"></i>
+          </div>
+          <h3 class="fw-bold">R$ {{formatCurrency stats.totalRevenue}}</h3>
+          <p class="text-muted mb-0">Receita do Mês</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card text-center">
+          <div class="display-6 mb-2">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3 class="fw-bold">{{stats.totalClients}}</h3>
+          <p class="text-muted mb-0">Clientes Ativos</p>
+        </div>
+      </div>
+      
+      <div class="col-lg-3 col-md-6 mb-3">
+        <div class="admin-card text-center">
+          <div class="display-6 mb-2">
+            <i class="fas fa-cut"></i>
+          </div>
+          <h3 class="fw-bold">{{stats.totalBarbers}}</h3>
+          <p class="text-muted mb-0">Barbeiros Ativos</p>
+        </div>
+      </div>
+    </div>
 
-<!-- Estatísticas -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-calendar-check display-4 mb-2"></i>
-            <h3 class="fw-bold">{{monthlyStats}}</h3>
-            <p class="mb-0">Agendamentos este mês</p>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-clock display-4 mb-2"></i>
-            <h3 class="fw-bold">{{todayAppointments.length}}</h3>
-            <p class="mb-0">Agendamentos hoje</p>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-people display-4 mb-2"></i>
-            <h3 class="fw-bold">-</h3>
-            <p class="mb-0">Clientes ativos</p>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-currency-dollar display-4 mb-2"></i>
-            <h3 class="fw-bold">-</h3>
-            <p class="mb-0">Receita do mês</p>
-        </div>
-    </div>
-</div>
-
-<!-- Agendamentos de Hoje -->
-<div class="card">
-    <div class="card-header bg-white">
-        <h5 class="card-title mb-0">
-            <i class="bi bi-calendar-today text-primary me-2"></i>
-            Agendamentos de Hoje
-        </h5>
-    </div>
-    <div class="card-body">
-        {{#if todayAppointments.length}}
-        <div class="table-responsive">
-            <table class="table table-hover">
+    <!-- Agendamentos Recentes -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0">Agendamentos de Hoje</h4>
+            <a href="/admin/appointments" class="btn btn-primary btn-sm">
+              <i class="fas fa-eye"></i> Ver Todos
+            </a>
+          </div>
+          
+          {{#if recentAppointments}}
+            <div class="admin-table">
+              <table class="table table-hover">
                 <thead>
-                    <tr>
-                        <th>Horário</th>
-                        <th>Cliente</th>
-                        <th>Barbeiro</th>
-                        <th>Serviço</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Barbeiro</th>
+                    <th>Horário</th>
+                    <th>Status</th>
+                    <th>Valor</th>
+                  </tr>
                 </thead>
                 <tbody>
-                    {{#each todayAppointments}}
-                    <tr>
-                        <td class="fw-semibold">{{formatTime appointmentTime}}</td>
-                        <td>{{client.firstName}} {{client.lastName}}</td>
-                        <td>{{barber.name}}</td>
-                        <td>{{serviceType.name}}</td>
-                        <td>
-                            {{#eq status 'scheduled'}}
-                            <span class="badge bg-warning">Agendado</span>
-                            {{/eq}}
-                            {{#eq status 'confirmed'}}
-                            <span class="badge bg-success">Confirmado</span>
-                            {{/eq}}
-                            {{#eq status 'completed'}}
-                            <span class="badge bg-primary">Concluído</span>
-                            {{/eq}}
-                            {{#eq status 'cancelled'}}
-                            <span class="badge bg-danger">Cancelado</span>
-                            {{/eq}}
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                {{#eq status 'scheduled'}}
-                                <button class="btn btn-outline-success" onclick="updateStatus({{id}}, 'confirmed')">
-                                    <i class="bi bi-check"></i>
-                                </button>
-                                {{/eq}}
-                                {{#eq status 'confirmed'}}
-                                <button class="btn btn-outline-primary" onclick="updateStatus({{id}}, 'completed')">
-                                    <i class="bi bi-check-all"></i>
-                                </button>
-                                {{/eq}}
-                                <button class="btn btn-outline-danger" onclick="updateStatus({{id}}, 'cancelled')">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {{/each}}
+                  {{#each recentAppointments}}
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar-sm me-2">
+                          {{substring Client.firstName 0 1}}{{substring Client.lastName 0 1}}
+                        </div>
+                        <div>
+                          <div class="fw-semibold">{{Client.firstName}} {{Client.lastName}}</div>
+                          <small class="text-muted">{{Client.phone}}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="fw-semibold">{{ServiceType.name}}</div>
+                      <small class="text-muted">{{ServiceType.duration}}</small>
+                    </td>
+                    <td>
+                      <div class="fw-semibold">{{Barber.name}}</div>
+                    </td>
+                    <td>
+                      <div class="fw-semibold">{{formatTime appointmentTime}}</div>
+                      <small class="text-muted">{{formatDate appointmentDate}}</small>
+                    </td>
+                    <td>
+                      <span class="status-badge status-{{status}}">
+                        {{#eq status 'confirmed'}}Confirmado{{/eq}}
+                        {{#eq status 'pending'}}Pendente{{/eq}}
+                        {{#eq status 'cancelled'}}Cancelado{{/eq}}
+                        {{#eq status 'completed'}}Concluído{{/eq}}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="fw-bold">R$ {{formatCurrency totalPrice}}</div>
+                    </td>
+                  </tr>
+                  {{/each}}
                 </tbody>
-            </table>
+              </table>
+            </div>
+          {{else}}
+            <div class="text-center py-5">
+              <div class="display-1 text-muted mb-3">
+                <i class="fas fa-calendar-times"></i>
+              </div>
+              <h5 class="text-muted">Nenhum agendamento para hoje</h5>
+              <p class="text-muted">Os agendamentos aparecerão aqui quando forem criados.</p>
+            </div>
+          {{/if}}
         </div>
-        {{else}}
-        <div class="text-center py-5">
-            <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
-            <h5 class="text-muted">Nenhum agendamento para hoje</h5>
-            <p class="text-muted">Quando houver agendamentos, eles aparecerão aqui.</p>
-        </div>
-        {{/if}}
+      </div>
     </div>
+
+    <!-- Gráficos e Métricas -->
+    <div class="row">
+      <div class="col-lg-8 mb-4">
+        <div class="admin-card">
+          <h4 class="fw-bold mb-4">Agendamentos por Dia (Últimos 7 dias)</h4>
+          <div id="appointmentsChart" style="height: 300px;">
+            <div class="d-flex align-items-center justify-content-center h-100">
+              <div class="text-center">
+                <div class="display-4 text-muted mb-3">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <p class="text-muted">Gráfico de agendamentos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-4 mb-4">
+        <div class="admin-card">
+          <h4 class="fw-bold mb-4">Barbeiros Mais Solicitados</h4>
+          
+          {{#if topBarbers}}
+            <div class="barber-ranking">
+              {{#each topBarbers}}
+              <div class="ranking-item d-flex align-items-center mb-3">
+                <div class="ranking-position me-3">
+                  <span class="badge bg-dark">{{@index}}</span>
+                </div>
+                <div class="avatar-sm me-3">
+                  {{substring name 0 1}}
+                </div>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">{{name}}</div>
+                  <small class="text-muted">{{appointmentCount}} agendamentos</small>
+                </div>
+                <div class="text-end">
+                  <div class="fw-bold">R$ {{formatCurrency totalRevenue}}</div>
+                </div>
+              </div>
+              {{/each}}
+            </div>
+          {{else}}
+            <div class="text-center py-4">
+              <div class="display-4 text-muted mb-3">
+                <i class="fas fa-user-friends"></i>
+              </div>
+              <p class="text-muted">Dados aparecerão com agendamentos</p>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Serviços Mais Populares -->
+    <div class="row">
+      <div class="col-12">
+        <div class="admin-card">
+          <h4 class="fw-bold mb-4">Serviços Mais Populares</h4>
+          
+          {{#if topServices}}
+            <div class="row">
+              {{#each topServices}}
+              <div class="col-lg-3 col-md-6 mb-3">
+                <div class="service-stat-card">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h6 class="fw-bold mb-1">{{name}}</h6>
+                      <small class="text-muted">{{duration}}</small>
+                    </div>
+                    <div class="text-end">
+                      <div class="fw-bold">{{appointmentCount}}</div>
+                      <small class="text-muted">agendamentos</small>
+                    </div>
+                  </div>
+                  <div class="progress mb-2" style="height: 6px;">
+                    <div class="progress-bar bg-dark" style="width: {{percentage}}%"></div>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <small class="text-muted">R$ {{formatCurrency price}}</small>
+                    <small class="fw-bold">R$ {{formatCurrency totalRevenue}}</small>
+                  </div>
+                </div>
+              </div>
+              {{/each}}
+            </div>
+          {{else}}
+            <div class="text-center py-4">
+              <div class="display-4 text-muted mb-3">
+                <i class="fas fa-cut"></i>
+              </div>
+              <p class="text-muted">Estatísticas aparecerão com agendamentos</p>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
-function updateStatus(appointmentId, newStatus) {
-    if (confirm('Tem certeza que deseja alterar o status deste agendamento?')) {
-        fetch(`/admin/appointments/${appointmentId}/status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro ao atualizar status');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao atualizar status');
-        });
-    }
+<!-- Estilos adicionais para o dashboard -->
+<style>
+.service-stat-card {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
 }
+
+.service-stat-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.progress {
+  background: var(--bg-gray);
+}
+
+.ranking-position .badge {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+
+<script>
+// Inicializar dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[ADMIN] Dashboard carregado');
+  
+  // Atualizar dados em tempo real (opcional)
+  setInterval(function() {
+    // Aqui você pode adicionar código para atualizar estatísticas em tempo real
+  }, 30000); // Atualizar a cada 30 segundos
+});
 </script>
 

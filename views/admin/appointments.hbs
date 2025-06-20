@@ -1,216 +1,580 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">
-        <i class="bi bi-calendar-check text-primary me-2"></i>
-        Gerenciar Agendamentos
-    </h2>
-    <a href="/admin/dashboard" class="btn btn-outline-primary">
-        <i class="bi bi-arrow-left me-1"></i>
-        Voltar ao Dashboard
-    </a>
-</div>
-
-{{#if error}}
-<div class="alert alert-danger" role="alert">
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    {{error}}
-</div>
-{{/if}}
-
-<!-- Filtros -->
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="GET" action="/admin/appointments" class="row g-3">
-            <div class="col-md-3">
-                <label for="date" class="form-label">Data</label>
-                <input type="date" class="form-control" id="date" name="date" value="{{filters.date}}">
+<!-- PÁGINA DE GERENCIAMENTO DE AGENDAMENTOS - CORRIGIDA DESIGN CLEAN -->
+<div class="admin-dashboard">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="fw-bold mb-1">Gerenciar Agendamentos</h2>
+              <p class="text-muted mb-0">Visualize e gerencie todos os agendamentos</p>
             </div>
-            <div class="col-md-3">
-                <label for="barberId" class="form-label">Barbeiro</label>
-                <select class="form-select" id="barberId" name="barberId">
-                    <option value="">Todos os barbeiros</option>
-                    {{#each barbers}}
-                    <option value="{{id}}" {{#eq id ../filters.barberId}}selected{{/eq}}>{{name}}</option>
-                    {{/each}}
-                </select>
+            <div>
+              <button class="btn btn-primary" onclick="exportAppointments()">
+                <i class="fas fa-download"></i> Exportar
+              </button>
             </div>
-            <div class="col-md-3">
-                <label for="status" class="form-label">Status</label>
-                <select class="form-select" id="status" name="status">
-                    <option value="">Todos os status</option>
-                    <option value="scheduled" {{#eq "scheduled" filters.status}}selected{{/eq}}>Agendado</option>
-                    <option value="confirmed" {{#eq "confirmed" filters.status}}selected{{/eq}}>Confirmado</option>
-                    <option value="completed" {{#eq "completed" filters.status}}selected{{/eq}}>Concluído</option>
-                    <option value="cancelled" {{#eq "cancelled" filters.status}}selected{{/eq}}>Cancelado</option>
-                    <option value="no_show" {{#eq "no_show" filters.status}}selected{{/eq}}>Não compareceu</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
-                    <i class="bi bi-search me-1"></i>
-                    Filtrar
-                </button>
-                <a href="/admin/appointments" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </a>
-            </div>
-        </form>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
 
-<!-- Lista de Agendamentos -->
-<div class="card">
-    <div class="card-body">
-        {{#if appointments.length}}
-        <div class="table-responsive">
-            <table class="table table-hover">
+    <!-- Filtros Corrigidos -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-filters">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" id="startDate" class="form-control" value="{{filters.startDate}}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Data Final</label>
+                <input type="date" id="endDate" class="form-control" value="{{filters.endDate}}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Barbeiro</label>
+                <div class="dropdown">
+                  <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="barberFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="selectedBarber">Todos os barbeiros</span>
+                  </button>
+                  <ul class="dropdown-menu w-100" aria-labelledby="barberFilter">
+                    <li><a class="dropdown-item" href="#" data-barber-id="" onclick="selectBarber('', 'Todos os barbeiros')">Todos os barbeiros</a></li>
+                    {{#each barbers}}
+                    <li><a class="dropdown-item" href="#" data-barber-id="{{id}}" onclick="selectBarber('{{id}}', '{{name}}')">{{name}}</a></li>
+                    {{/each}}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Status</label>
+                <select id="statusFilter" class="form-control">
+                  <option value="">Todos os status</option>
+                  <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option>
+                  <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
+                  <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
+                  <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-12">
+              <button class="btn btn-primary" onclick="applyFilters()">
+                <i class="fas fa-filter"></i> Aplicar Filtros
+              </button>
+              <button class="btn btn-secondary ms-2" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Limpar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Agendamentos -->
+    <div class="row">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="admin-table">
+            {{#if appointments}}
+              <table class="table table-hover">
                 <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Horário</th>
-                        <th>Cliente</th>
-                        <th>Telefone</th>
-                        <th>Barbeiro</th>
-                        <th>Serviço</th>
-                        <th>Valor</th>
-                        <th>Status</th>
-                        <th>WhatsApp</th>
-                        <th>Ações</th>
-                    </tr>
+                  <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Barbeiro</th>
+                    <th>Data/Hora</th>
+                    <th>Status</th>
+                    <th>Valor</th>
+                    <th>WhatsApp</th>
+                    <th>Ações</th>
+                  </tr>
                 </thead>
                 <tbody>
-                    {{#each appointments}}
-                    <tr>
-                        <td>{{formatDate appointmentDate}}</td>
-                        <td class="fw-semibold">{{formatTime appointmentTime}}</td>
-                        <td>{{client.firstName}} {{client.lastName}}</td>
-                        <td>{{client.phone}}</td>
-                        <td>{{barber.name}}</td>
-                        <td>{{serviceType.name}}</td>
-                        <td>R$ {{totalPrice}}</td>
-                        <td>
-                            {{#eq status 'scheduled'}}
-                            <span class="badge bg-warning">Agendado</span>
-                            {{/eq}}
-                            {{#eq status 'confirmed'}}
-                            <span class="badge bg-success">Confirmado</span>
-                            {{/eq}}
-                            {{#eq status 'completed'}}
-                            <span class="badge bg-primary">Concluído</span>
-                            {{/eq}}
-                            {{#eq status 'cancelled'}}
-                            <span class="badge bg-danger">Cancelado</span>
-                            {{/eq}}
-                            {{#eq status 'no_show'}}
-                            <span class="badge bg-secondary">Não compareceu</span>
-                            {{/eq}}
-                        </td>
-                        <td>
-                            {{#if whatsappSent}}
-                            <i class="bi bi-check-circle text-success" title="Enviado"></i>
-                            {{else}}
-                            <i class="bi bi-x-circle text-danger" title="Não enviado"></i>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <div class="dropdown">
-                                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-gear"></i>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    {{#eq status 'scheduled'}}
-                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{id}}, 'confirmed')">
-                                        <i class="bi bi-check me-2"></i>Confirmar
-                                    </a></li>
-                                    {{/eq}}
-                                    {{#eq status 'confirmed'}}
-                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{id}}, 'completed')">
-                                        <i class="bi bi-check-all me-2"></i>Concluir
-                                    </a></li>
-                                    {{/eq}}
-                                    <li><a class="dropdown-item" href="#" onclick="updateStatus({{id}}, 'no_show')">
-                                        <i class="bi bi-person-x me-2"></i>Não compareceu
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus({{id}}, 'cancelled')">
-                                        <i class="bi bi-x me-2"></i>Cancelar
-                                    </a></li>
-                                </ul>
-                            </div>
-                        </td>
-                    </tr>
-                    {{/each}}
+                  {{#each appointments}}
+                  <tr>
+                    <td>
+                      <span class="fw-bold">#{{id}}</span>
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar-sm me-2">
+                          {{substring Client.firstName 0 1}}{{substring Client.lastName 0 1}}
+                        </div>
+                        <div>
+                          <div class="fw-semibold">{{Client.firstName}} {{Client.lastName}}</div>
+                          <small class="text-muted">{{Client.phone}}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="fw-semibold">{{ServiceType.name}}</div>
+                      <small class="text-muted">{{ServiceType.duration}} - R$ {{formatCurrency ServiceType.price}}</small>
+                    </td>
+                    <td>
+                      <div class="fw-semibold">{{Barber.name}}</div>
+                      <small class="text-muted">{{Barber.specialties}}</small>
+                    </td>
+                    <td>
+                      <div class="fw-semibold">{{formatDate appointmentDate}}</div>
+                      <small class="text-muted">{{formatTime appointmentTime}}</small>
+                    </td>
+                    <td>
+                      <span class="status-badge status-{{status}}">
+                        {{#eq status 'confirmed'}}Confirmado{{/eq}}
+                        {{#eq status 'pending'}}Pendente{{/eq}}
+                        {{#eq status 'cancelled'}}Cancelado{{/eq}}
+                        {{#eq status 'completed'}}Concluído{{/eq}}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="fw-bold">R$ {{formatCurrency totalPrice}}</div>
+                    </td>
+                    <td>
+                      {{#if whatsappSent}}
+                        <span class="badge bg-success">
+                          <i class="fab fa-whatsapp"></i> Enviado
+                        </span>
+                      {{else}}
+                        <span class="badge bg-warning">
+                          <i class="fas fa-clock"></i> Pendente
+                        </span>
+                      {{/if}}
+                    </td>
+                    <td>
+                      <div class="actions-menu">
+                        <button class="btn btn-sm btn-secondary" onclick="toggleActionsMenu({{id}})">
+                          <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="actions-dropdown" id="actions-{{id}}">
+                          <button class="action-item" onclick="viewAppointment({{id}})">
+                            <i class="fas fa-eye"></i> Visualizar
+                          </button>
+                          <button class="action-item" onclick="editAppointment({{id}})">
+                            <i class="fas fa-edit"></i> Editar
+                          </button>
+                          {{#unless whatsappSent}}
+                          <button class="action-item" onclick="sendWhatsApp({{id}})">
+                            <i class="fab fa-whatsapp"></i> Enviar WhatsApp
+                          </button>
+                          {{/unless}}
+                          {{#eq status 'pending'}}
+                          <button class="action-item" onclick="confirmAppointment({{id}})">
+                            <i class="fas fa-check"></i> Confirmar
+                          </button>
+                          {{/eq}}
+                          {{#eq status 'confirmed'}}
+                          <button class="action-item" onclick="completeAppointment({{id}})">
+                            <i class="fas fa-check-circle"></i> Concluir
+                          </button>
+                          {{/eq}}
+                          <button class="action-item danger" onclick="cancelAppointment({{id}})">
+                            <i class="fas fa-times"></i> Cancelar
+                          </button>
+                          <button class="action-item danger" onclick="deleteAppointment({{id}})">
+                            <i class="fas fa-trash"></i> Excluir
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {{/each}}
                 </tbody>
-            </table>
+              </table>
+            {{else}}
+              <div class="text-center py-5">
+                <div class="display-1 text-muted mb-3">
+                  <i class="fas fa-calendar-times"></i>
+                </div>
+                <h5 class="text-muted">Nenhum agendamento encontrado</h5>
+                <p class="text-muted">Ajuste os filtros ou aguarde novos agendamentos.</p>
+              </div>
+            {{/if}}
+          </div>
         </div>
-        
-        <!-- Paginação -->
-        {{#if pagination}}
-        <nav aria-label="Paginação" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {{#if pagination.hasPrev}}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{subtract pagination.currentPage 1}}{{#if filters.date}}&date={{filters.date}}{{/if}}{{#if filters.barberId}}&barberId={{filters.barberId}}{{/if}}{{#if filters.status}}&status={{filters.status}}{{/if}}">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                </li>
-                {{/if}}
-                
-                <li class="page-item active">
-                    <span class="page-link">{{pagination.currentPage}} de {{pagination.totalPages}}</span>
-                </li>
-                
-                {{#if pagination.hasNext}}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{add pagination.currentPage 1}}{{#if filters.date}}&date={{filters.date}}{{/if}}{{#if filters.barberId}}&barberId={{filters.barberId}}{{/if}}{{#if filters.status}}&status={{filters.status}}{{/if}}">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </li>
-                {{/if}}
-            </ul>
-        </nav>
-        {{/if}}
-        
-        {{else}}
-        <div class="text-center py-5">
-            <i class="bi bi-calendar-x display-4 text-muted mb-3"></i>
-            <h5 class="text-muted">Nenhum agendamento encontrado</h5>
-            <p class="text-muted">Tente ajustar os filtros ou aguarde novos agendamentos.</p>
-        </div>
-        {{/if}}
+      </div>
     </div>
+
+    <!-- Paginação -->
+    {{#if pagination}}
+    <div class="row mt-4">
+      <div class="col-12">
+        <nav aria-label="Paginação">
+          <ul class="pagination justify-content-center">
+            {{#if pagination.hasPrev}}
+            <li class="page-item">
+              <a class="page-link" href="?page={{pagination.prevPage}}&{{queryString}}">Anterior</a>
+            </li>
+            {{/if}}
+            
+            {{#each pagination.pages}}
+            <li class="page-item {{#if active}}active{{/if}}">
+              <a class="page-link" href="?page={{page}}&{{../queryString}}">{{page}}</a>
+            </li>
+            {{/each}}
+            
+            {{#if pagination.hasNext}}
+            <li class="page-item">
+              <a class="page-link" href="?page={{pagination.nextPage}}&{{queryString}}">Próximo</a>
+            </li>
+            {{/if}}
+          </ul>
+        </nav>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</div>
+
+<!-- Modal de Visualização -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalhes do Agendamento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalContent">
+        <!-- Conteúdo será carregado dinamicamente -->
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-function updateStatus(appointmentId, newStatus) {
-    const statusNames = {
-        'scheduled': 'Agendado',
-        'confirmed': 'Confirmado',
-        'completed': 'Concluído',
-        'cancelled': 'Cancelado',
-        'no_show': 'Não compareceu'
-    };
-    
-    if (confirm(`Tem certeza que deseja alterar o status para "${statusNames[newStatus]}"?`)) {
-        fetch(`/admin/appointments/${appointmentId}/status`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erro ao atualizar status');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao atualizar status');
-        });
+// Variáveis globais
+let selectedBarberId = '';
+let openMenuId = null;
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[ADMIN] Página de agendamentos carregada');
+  
+  // Fechar menus ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.actions-menu')) {
+      closeAllMenus();
     }
+  });
+  
+  // Configurar filtros de data padrão
+  setDefaultDates();
+});
+
+// Configurar datas padrão
+function setDefaultDates() {
+  const today = new Date();
+  const startDate = document.getElementById('startDate');
+  const endDate = document.getElementById('endDate');
+  
+  if (startDate && !startDate.value) {
+    startDate.value = today.toISOString().split('T')[0];
+  }
+  
+  if (endDate && !endDate.value) {
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    endDate.value = nextMonth.toISOString().split('T')[0];
+  }
+}
+
+// Selecionar barbeiro no filtro
+function selectBarber(barberId, barberName) {
+  console.log('[ADMIN] Barbeiro selecionado:', barberName);
+  selectedBarberId = barberId;
+  document.getElementById('selectedBarber').textContent = barberName;
+}
+
+// Aplicar filtros
+function applyFilters() {
+  console.log('[ADMIN] Aplicando filtros');
+  
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const status = document.getElementById('statusFilter').value;
+  
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  if (selectedBarberId) params.append('barberId', selectedBarberId);
+  if (status) params.append('status', status);
+  
+  window.location.href = `/admin/appointments?${params.toString()}`;
+}
+
+// Limpar filtros
+function clearFilters() {
+  console.log('[ADMIN] Limpando filtros');
+  window.location.href = '/admin/appointments';
+}
+
+// Toggle menu de ações
+function toggleActionsMenu(appointmentId) {
+  console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
+  
+  // Fechar outros menus
+  if (openMenuId && openMenuId !== appointmentId) {
+    closeMenu(openMenuId);
+  }
+  
+  const menu = document.getElementById(`actions-${appointmentId}`);
+  if (menu) {
+    const isOpen = menu.classList.contains('show');
+    
+    if (isOpen) {
+      closeMenu(appointmentId);
+    } else {
+      openMenu(appointmentId);
+    }
+  }
+}
+
+// Abrir menu
+function openMenu(appointmentId) {
+  const menu = document.getElementById(`actions-${appointmentId}`);
+  if (menu) {
+    menu.classList.add('show');
+    openMenuId = appointmentId;
+  }
+}
+
+// Fechar menu
+function closeMenu(appointmentId) {
+  const menu = document.getElementById(`actions-${appointmentId}`);
+  if (menu) {
+    menu.classList.remove('show');
+    if (openMenuId === appointmentId) {
+      openMenuId = null;
+    }
+  }
+}
+
+// Fechar todos os menus
+function closeAllMenus() {
+  document.querySelectorAll('.actions-dropdown').forEach(menu => {
+    menu.classList.remove('show');
+  });
+  openMenuId = null;
+}
+
+// Visualizar agendamento
+async function viewAppointment(appointmentId) {
+  console.log('[ADMIN] Visualizando agendamento:', appointmentId);
+  closeAllMenus();
+  
+  try {
+    const response = await fetch(`/admin/api/appointments/${appointmentId}`);
+    const appointment = await response.json();
+    
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="mb-3">Informações do Cliente</h6>
+          <p><strong>Nome:</strong> ${appointment.Client.firstName} ${appointment.Client.lastName}</p>
+          <p><strong>Telefone:</strong> ${appointment.Client.phone}</p>
+          <p><strong>Email:</strong> ${appointment.Client.email || 'Não informado'}</p>
+        </div>
+        <div class="col-md-6">
+          <h6 class="mb-3">Detalhes do Agendamento</h6>
+          <p><strong>Serviço:</strong> ${appointment.ServiceType.name}</p>
+          <p><strong>Barbeiro:</strong> ${appointment.Barber.name}</p>
+          <p><strong>Data:</strong> ${new Date(appointment.appointmentDate).toLocaleDateString('pt-BR')}</p>
+          <p><strong>Horário:</strong> ${appointment.appointmentTime}</p>
+          <p><strong>Status:</strong> <span class="status-badge status-${appointment.status}">${getStatusText(appointment.status)}</span></p>
+          <p><strong>Valor:</strong> R$ ${appointment.totalPrice.toFixed(2)}</p>
+        </div>
+      </div>
+      ${appointment.notes ? `<div class="mt-3"><h6>Observações:</h6><p>${appointment.notes}</p></div>` : ''}
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('viewModal'));
+    modal.show();
+    
+  } catch (error) {
+    console.error('[ADMIN ERROR] Erro ao carregar agendamento:', error);
+    showNotification('Erro ao carregar detalhes do agendamento', 'error');
+  }
+}
+
+// Outras funções (editar, confirmar, cancelar, etc.)
+function editAppointment(appointmentId) {
+  console.log('[ADMIN] Editando agendamento:', appointmentId);
+  closeAllMenus();
+  showNotification('Funcionalidade de edição em desenvolvimento', 'info');
+}
+
+async function confirmAppointment(appointmentId) {
+  console.log('[ADMIN] Confirmando agendamento:', appointmentId);
+  closeAllMenus();
+  
+  if (confirm('Confirmar este agendamento?')) {
+    try {
+      const response = await fetch(`/admin/api/appointments/${appointmentId}/confirm`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        showNotification('Agendamento confirmado com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error('Erro ao confirmar agendamento');
+      }
+    } catch (error) {
+      console.error('[ADMIN ERROR] Erro ao confirmar:', error);
+      showNotification('Erro ao confirmar agendamento', 'error');
+    }
+  }
+}
+
+async function completeAppointment(appointmentId) {
+  console.log('[ADMIN] Concluindo agendamento:', appointmentId);
+  closeAllMenus();
+  
+  if (confirm('Marcar este agendamento como concluído?')) {
+    try {
+      const response = await fetch(`/admin/api/appointments/${appointmentId}/complete`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        showNotification('Agendamento concluído com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error('Erro ao concluir agendamento');
+      }
+    } catch (error) {
+      console.error('[ADMIN ERROR] Erro ao concluir:', error);
+      showNotification('Erro ao concluir agendamento', 'error');
+    }
+  }
+}
+
+async function cancelAppointment(appointmentId) {
+  console.log('[ADMIN] Cancelando agendamento:', appointmentId);
+  closeAllMenus();
+  
+  const reason = prompt('Motivo do cancelamento (opcional):');
+  if (reason !== null) {
+    try {
+      const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+      });
+      
+      if (response.ok) {
+        showNotification('Agendamento cancelado com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error('Erro ao cancelar agendamento');
+      }
+    } catch (error) {
+      console.error('[ADMIN ERROR] Erro ao cancelar:', error);
+      showNotification('Erro ao cancelar agendamento', 'error');
+    }
+  }
+}
+
+async function deleteAppointment(appointmentId) {
+  console.log('[ADMIN] Excluindo agendamento:', appointmentId);
+  closeAllMenus();
+  
+  if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
+    try {
+      const response = await fetch(`/admin/api/appointments/${appointmentId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        showNotification('Agendamento excluído com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error('Erro ao excluir agendamento');
+      }
+    } catch (error) {
+      console.error('[ADMIN ERROR] Erro ao excluir:', error);
+      showNotification('Erro ao excluir agendamento', 'error');
+    }
+  }
+}
+
+async function sendWhatsApp(appointmentId) {
+  console.log('[ADMIN] Enviando WhatsApp para agendamento:', appointmentId);
+  closeAllMenus();
+  
+  try {
+    const response = await fetch(`/admin/api/appointments/${appointmentId}/whatsapp`, {
+      method: 'POST'
+    });
+    
+    if (response.ok) {
+      showNotification('Mensagem WhatsApp enviada com sucesso!', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      throw new Error('Erro ao enviar WhatsApp');
+    }
+  } catch (error) {
+    console.error('[ADMIN ERROR] Erro ao enviar WhatsApp:', error);
+    showNotification('Erro ao enviar mensagem WhatsApp', 'error');
+  }
+}
+
+function exportAppointments() {
+  console.log('[ADMIN] Exportando agendamentos');
+  
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const status = document.getElementById('statusFilter').value;
+  
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  if (selectedBarberId) params.append('barberId', selectedBarberId);
+  if (status) params.append('status', status);
+  params.append('export', 'csv');
+  
+  window.open(`/admin/appointments?${params.toString()}`, '_blank');
+}
+
+// Utilitários
+function getStatusText(status) {
+  const statusMap = {
+    'pending': 'Pendente',
+    'confirmed': 'Confirmado',
+    'completed': 'Concluído',
+    'cancelled': 'Cancelado'
+  };
+  return statusMap[status] || status;
+}
+
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type} show`;
+  notification.textContent = message;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
 }
 </script>
 

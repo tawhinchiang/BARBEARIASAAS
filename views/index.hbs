@@ -1,205 +1,334 @@
-<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5">
-    <div class="row w-100 justify-content-center">
-        <div class="col-12 col-lg-10 col-xl-8">
-            <!-- Header -->
-            <div class="text-center mb-5">
-                <img src="{{barbershopLogo}}" alt="{{barbershopName}}" class="mb-3" style="max-height: 80px;" onerror="this.style.display='none'">
-                <h1 class="display-4 fw-bold text-white mb-2">{{barbershopName}}</h1>
-                <p class="lead text-white-50">Agende seu horário de forma rápida e fácil</p>
-            </div>
-            
-            <!-- Formulário de Agendamento -->
-            <div class="card fade-in">
-                <div class="card-body p-5">
-                    <form id="appointmentForm">
-                        <!-- Etapa 1: Dados Pessoais -->
-                        <div class="step" id="step1">
-                            <h3 class="mb-4 text-center">
-                                <i class="bi bi-person-circle text-primary me-2"></i>
-                                Seus Dados
-                            </h3>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="firstName" class="form-label fw-semibold">Nome *</label>
-                                    <input type="text" class="form-control" id="firstName" name="firstName" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="lastName" class="form-label fw-semibold">Sobrenome *</label>
-                                    <input type="text" class="form-control" id="lastName" name="lastName" required>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="phone" class="form-label fw-semibold">Telefone/WhatsApp *</label>
-                                <input type="tel" class="form-control" id="phone" name="phone" placeholder="(11) 99999-9999" required>
-                            </div>
-                            
-                            <div class="text-center">
-                                <button type="button" class="btn btn-primary btn-lg px-5" onclick="nextStep(2)">
-                                    Continuar
-                                    <i class="bi bi-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Etapa 2: Escolher Serviço -->
-                        <div class="step d-none" id="step2">
-                            <h3 class="mb-4 text-center">
-                                <i class="bi bi-scissors text-primary me-2"></i>
-                                Escolha o Serviço
-                            </h3>
-                            
-                            <div id="servicesContainer" class="row">
-                                <div class="col-12 text-center">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Carregando...</span>
-                                    </div>
-                                    <p class="mt-2">Carregando serviços...</p>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <button type="button" class="btn btn-outline-secondary me-3" onclick="prevStep(1)">
-                                    <i class="bi bi-arrow-left me-2"></i>
-                                    Voltar
-                                </button>
-                                <button type="button" class="btn btn-primary px-5" onclick="nextStep(3)" id="continueToBarber" disabled>
-                                    Continuar
-                                    <i class="bi bi-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Etapa 3: Escolher Barbeiro -->
-                        <div class="step d-none" id="step3">
-                            <h3 class="mb-4 text-center">
-                                <i class="bi bi-person-workspace text-primary me-2"></i>
-                                Escolha o Barbeiro
-                            </h3>
-                            
-                            <div id="barbersContainer" class="row">
-                                <div class="col-12 text-center">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Carregando...</span>
-                                    </div>
-                                    <p class="mt-2">Carregando barbeiros...</p>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <button type="button" class="btn btn-outline-secondary me-3" onclick="prevStep(2)">
-                                    <i class="bi bi-arrow-left me-2"></i>
-                                    Voltar
-                                </button>
-                                <button type="button" class="btn btn-primary px-5" onclick="nextStep(4)" id="continueToDate" disabled>
-                                    Continuar
-                                    <i class="bi bi-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Etapa 4: Escolher Data e Horário -->
-                        <div class="step d-none" id="step4">
-                            <h3 class="mb-4 text-center">
-                                <i class="bi bi-calendar-event text-primary me-2"></i>
-                                Data e Horário
-                            </h3>
-                            
-                            <!-- Calendário -->
-                            <div class="mb-4">
-                                <h5 class="mb-3">Escolha a Data:</h5>
-                                <div id="calendar" class="border rounded p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" id="prevMonth">
-                                            <i class="bi bi-chevron-left"></i>
-                                        </button>
-                                        <h6 class="mb-0 fw-bold" id="currentMonth"></h6>
-                                        <button type="button" class="btn btn-outline-primary btn-sm" id="nextMonth">
-                                            <i class="bi bi-chevron-right"></i>
-                                        </button>
-                                    </div>
-                                    <div id="calendarGrid"></div>
-                                </div>
-                            </div>
-                            
-                            <!-- Horários Disponíveis -->
-                            <div class="mb-4">
-                                <h5 class="mb-3">Horários Disponíveis:</h5>
-                                <div id="timeSlotsContainer">
-                                    <p class="text-muted text-center">Selecione uma data para ver os horários disponíveis</p>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center">
-                                <button type="button" class="btn btn-outline-secondary me-3" onclick="prevStep(3)">
-                                    <i class="bi bi-arrow-left me-2"></i>
-                                    Voltar
-                                </button>
-                                <button type="button" class="btn btn-primary px-5" onclick="nextStep(5)" id="continueToConfirm" disabled>
-                                    Continuar
-                                    <i class="bi bi-arrow-right ms-2"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Etapa 5: Confirmação -->
-                        <div class="step d-none" id="step5">
-                            <h3 class="mb-4 text-center">
-                                <i class="bi bi-check-circle text-success me-2"></i>
-                                Confirmar Agendamento
-                            </h3>
-                            
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title">Resumo do Agendamento:</h5>
-                                    <div id="appointmentSummary">
-                                        <!-- Será preenchido via JavaScript -->
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <button type="button" class="btn btn-outline-secondary me-3" onclick="prevStep(4)">
-                                    <i class="bi bi-arrow-left me-2"></i>
-                                    Voltar
-                                </button>
-                                <button type="submit" class="btn btn-success btn-lg px-5" id="confirmAppointment">
-                                    <i class="bi bi-check-lg me-2"></i>
-                                    Confirmar Agendamento
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Calendário de Agendamentos -->
-            <div class="card mt-5 fade-in">
-                <div class="card-body">
-                    <h4 class="card-title text-center mb-4">
-                        <i class="bi bi-calendar3 text-primary me-2"></i>
-                        Agenda do Mês
-                    </h4>
-                    <div id="monthlyCalendar"></div>
-                </div>
-            </div>
-        </div>
+<!-- NOVA PÁGINA PRINCIPAL - DESIGN CLEAN PRETO E BRANCO -->
+<div class="main-container">
+  <!-- Header Moderno -->
+  <header class="modern-header">
+    <div class="header-content">
+      <div class="logo-section">
+        <div class="logo-icon">B</div>
+        <div class="logo-text">BarberShop</div>
+      </div>
+      
+      <!-- ÍCONES SOCIAIS - EDITAR LINKS AQUI -->
+      <div class="social-links">
+        <!-- 
+        ========================================
+        EDITAR LINKS AQUI:
+        ========================================
+        -->
+        <!-- Link do Google Maps - SUBSTITUA A URL ABAIXO -->
+        <a href="https://maps.google.com/?q=SUA_BARBEARIA_AQUI" 
+           target="_blank" 
+           class="social-btn" 
+           title="Nossa Localização">
+          <i class="fas fa-map-marker-alt"></i>
+        </a>
+        
+        <!-- Link do Instagram - SUBSTITUA A URL ABAIXO -->
+        <a href="https://instagram.com/SUA_BARBEARIA_AQUI" 
+           target="_blank" 
+           class="social-btn" 
+           title="Nosso Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <!-- 
+        ========================================
+        FIM DOS LINKS PARA EDITAR
+        ========================================
+        -->
+      </div>
     </div>
+  </header>
+
+  <!-- Etapa 1: Seleção de Serviços -->
+  <div id="step1" class="step active fade-in-up">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">Escolha seu Serviço</h1>
+        <p class="lead">Selecione o serviço desejado para continuar</p>
+      </div>
+      
+      <div class="services-grid" id="servicesContainer">
+        <!-- Serviços conforme solicitado -->
+        <div class="service-card" data-service-id="1" onclick="selectService({id: 1, name: 'CORTE DEGRADÊ', duration: '40min', price: 35.00, promo: 'Promo seg. a qua.', hasPromo: true})">
+          <div class="service-header">
+            <div>
+              <div class="service-name">CORTE DEGRADÊ</div>
+              <div class="service-duration">40min</div>
+            </div>
+            <div class="service-price">R$ 35,00</div>
+          </div>
+          <div class="service-promo">Promo seg. a qua.</div>
+        </div>
+        
+        <div class="service-card" data-service-id="2" onclick="selectService({id: 2, name: 'CORTE SOCIAL', duration: '40min', price: 30.00, promo: 'Promo seg. a qua.', hasPromo: true})">
+          <div class="service-header">
+            <div>
+              <div class="service-name">CORTE SOCIAL</div>
+              <div class="service-duration">40min</div>
+            </div>
+            <div class="service-price">R$ 30,00</div>
+          </div>
+          <div class="service-promo">Promo seg. a qua.</div>
+        </div>
+        
+        <div class="service-card" data-service-id="3" onclick="selectService({id: 3, name: 'CORTE + BARBA', duration: '60min', price: 50.00, promo: 'Promo seg. a qua.', hasPromo: true})">
+          <div class="service-header">
+            <div>
+              <div class="service-name">CORTE + BARBA</div>
+              <div class="service-duration">60min</div>
+            </div>
+            <div class="service-price">R$ 50,00</div>
+          </div>
+          <div class="service-promo">Promo seg. a qua.</div>
+        </div>
+        
+        <div class="service-card" data-service-id="4" onclick="selectService({id: 4, name: 'BARBA + PEZINHO', duration: 'Tempo não definido', price: 25.00, promo: null, hasPromo: false})">
+          <div class="service-header">
+            <div>
+              <div class="service-name">BARBA + PEZINHO</div>
+              <div class="service-duration">Tempo não definido</div>
+            </div>
+            <div class="service-price">R$ 25,00</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step-navigation">
+        <div class="step-indicator">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <button id="continueToBarber" class="btn btn-primary" disabled onclick="goToStep(2)">
+          Continuar <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Etapa 2: Seleção de Barbeiro -->
+  <div id="step2" class="step">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">Escolha seu Barbeiro</h1>
+        <p class="lead">Selecione o profissional de sua preferência</p>
+      </div>
+      
+      <div class="barbers-grid" id="barbersContainer">
+        <!-- Barbeiros serão carregados dinamicamente -->
+      </div>
+      
+      <div class="step-navigation">
+        <button id="backToService" class="btn btn-secondary" onclick="goToStep(1)">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+        <div class="step-indicator">
+          <div class="step-dot completed"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <button id="continueToDate" class="btn btn-primary" disabled onclick="goToStep(3)">
+          Continuar <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Etapa 3: Seleção de Data e Horário -->
+  <div id="step3" class="step">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">Escolha Data e Horário</h1>
+        <p class="lead">Selecione quando deseja ser atendido</p>
+      </div>
+      
+      <!-- Calendário -->
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button id="prevMonth" class="calendar-nav">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <h3 id="calendarTitle" class="calendar-title"></h3>
+          <button id="nextMonth" class="calendar-nav">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+        
+        <div class="calendar-grid" id="calendarGrid">
+          <!-- Calendário será gerado dinamicamente -->
+        </div>
+      </div>
+      
+      <!-- Horários Disponíveis -->
+      <div id="timesContainer" class="times-container" style="display: none;">
+        <h4 class="mb-3">Horários Disponíveis</h4>
+        <div class="times-grid" id="timeSlotsContainer">
+          <!-- Horários serão carregados dinamicamente -->
+        </div>
+      </div>
+      
+      <div class="step-navigation">
+        <button id="backToBarber" class="btn btn-secondary" onclick="goToStep(2)">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+        <div class="step-indicator">
+          <div class="step-dot completed"></div>
+          <div class="step-dot completed"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+        </div>
+        <button id="continueToConfirm" class="btn btn-primary" disabled onclick="goToStep(4)">
+          Continuar <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Etapa 4: Dados do Cliente e Confirmação -->
+  <div id="step4" class="step">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold mb-3">Seus Dados</h1>
+        <p class="lead">Preencha seus dados para finalizar o agendamento</p>
+      </div>
+      
+      <div class="row">
+        <div class="col-lg-6">
+          <!-- Formulário de Dados -->
+          <div class="client-form">
+            <h4 class="mb-4">Informações Pessoais</h4>
+            
+            <div class="form-group">
+              <label class="form-label">Nome *</label>
+              <input type="text" id="clientFirstName" class="form-control" placeholder="Seu nome" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Sobrenome *</label>
+              <input type="text" id="clientLastName" class="form-control" placeholder="Seu sobrenome" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Telefone *</label>
+              <input type="tel" id="clientPhone" class="form-control" placeholder="(11) 99999-9999" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">E-mail (opcional)</label>
+              <input type="email" id="clientEmail" class="form-control" placeholder="seu@email.com">
+            </div>
+            
+            <!-- Login com Google -->
+            <div class="text-center">
+              <p class="text-muted mb-2">ou</p>
+              <button id="googleLogin" class="btn btn-secondary">
+                <i class="fab fa-google"></i> Entrar com Google
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-6">
+          <!-- Resumo do Agendamento -->
+          <div class="booking-summary">
+            <h4 class="mb-4">Resumo do Agendamento</h4>
+            
+            <div class="summary-item">
+              <span class="summary-label">Serviço:</span>
+              <span class="summary-value" id="summaryService">-</span>
+            </div>
+            
+            <div class="summary-item">
+              <span class="summary-label">Barbeiro:</span>
+              <span class="summary-value" id="summaryBarber">-</span>
+            </div>
+            
+            <div class="summary-item">
+              <span class="summary-label">Data:</span>
+              <span class="summary-value" id="summaryDate">-</span>
+            </div>
+            
+            <div class="summary-item">
+              <span class="summary-label">Horário:</span>
+              <span class="summary-value" id="summaryTime">-</span>
+            </div>
+            
+            <div class="summary-item">
+              <span class="summary-label">Duração:</span>
+              <span class="summary-value" id="summaryDuration">-</span>
+            </div>
+            
+            <div class="summary-item">
+              <span class="summary-label">Valor:</span>
+              <span class="summary-value" id="summaryPrice">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="step-navigation">
+        <button id="backToDate" class="btn btn-secondary" onclick="goToStep(3)">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+        <div class="step-indicator">
+          <div class="step-dot completed"></div>
+          <div class="step-dot completed"></div>
+          <div class="step-dot completed"></div>
+          <div class="step-dot active"></div>
+        </div>
+        <button id="confirmBooking" class="btn btn-success" onclick="confirmBooking()">
+          Confirmar Agendamento <i class="fas fa-check"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Etapa 5: Confirmação Final -->
+  <div id="step5" class="step">
+    <div class="container">
+      <div class="confirmation-card">
+        <div class="confirmation-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h2 class="mb-3">Agendamento Confirmado!</h2>
+        <p class="lead mb-4">
+          Seu agendamento foi realizado com sucesso. Em breve você receberá uma confirmação via WhatsApp.
+        </p>
+        
+        <div class="booking-details mb-4">
+          <h5 class="mb-3">Detalhes do Agendamento:</h5>
+          <div class="row text-start">
+            <div class="col-md-6">
+              <p><strong>Serviço:</strong> <span id="finalService"></span></p>
+              <p><strong>Barbeiro:</strong> <span id="finalBarber"></span></p>
+              <p><strong>Data:</strong> <span id="finalDate"></span></p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Horário:</strong> <span id="finalTime"></span></p>
+              <p><strong>Cliente:</strong> <span id="finalClient"></span></p>
+              <p><strong>Valor:</strong> <span id="finalPrice"></span></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex gap-3 justify-content-center">
+          <button id="whatsappConfirm" class="btn whatsapp-btn" onclick="sendWhatsAppConfirmation()">
+            <i class="fab fa-whatsapp"></i> Confirmar via WhatsApp
+          </button>
+          <button id="newBooking" class="btn btn-secondary" onclick="location.reload()">
+            <i class="fas fa-plus"></i> Novo Agendamento
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Modal de Loading -->
-<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body text-center p-5">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Carregando...</span>
-                </div>
-                <h5>Processando seu agendamento...</h5>
-                <p class="text-muted">Por favor, aguarde.</p>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Scripts necessários -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="/js/app.js"></script>
 

@@ -144,7 +144,7 @@ router.get('/dashboard', async (req, res) => {
     
     log('Receita mensal calculada', { monthlyRevenue });
     
-    // Agendamentos de hoje
+    // Agendamentos de hoje - CORRIGIDO
     const todayAppointments = await Appointment.findAll({
       where: {
         appointmentDate: today.toISOString().split('T')[0]
@@ -205,7 +205,7 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
-// Listagem e gerenciamento de agendamentos
+// Listagem e gerenciamento de agendamentos - CORRIGIDA
 router.get('/appointments', async (req, res) => {
   try {
     log('Acessando listagem de agendamentos', { 
@@ -298,7 +298,7 @@ router.post('/appointments/:id/status', async (req, res) => {
   }
 });
 
-// Relatórios administrativos
+// Relatórios administrativos - CORRIGIDA
 router.get('/reports', async (req, res) => {
   try {
     log('Acessando relatórios', { user: req.session.user, query: req.query });
@@ -377,7 +377,7 @@ router.get('/reports', async (req, res) => {
   }
 });
 
-// Exportar relatórios (PDF/CSV)
+// Exportar relatórios (PDF/CSV) - CORRIGIDA
 router.post('/reports/export', async (req, res) => {
   try {
     log('Iniciando exportação de relatório', { body: req.body, user: req.session.user });
