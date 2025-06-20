@@ -4,6 +4,21 @@ const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 
+// ===== LOGS DETALHADOS =====
+const log = (message, data = null) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [ADMIN] ${message}`);
+  if (data) {
+    console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
+  }
+};
+
+const logError = (message, error) => {
+  const timestamp = new Date().toISOString();
+  console.error(`[${timestamp}] [ADMIN ERROR] ${message}`);
+  console.error(`[${timestamp}] [ADMIN ERROR] Stack:`, error.stack);
+};
+
 // Middleware para todas as rotas admin (exceto login)
 router.use('/dashboard', isAuthenticated);
 router.use('/appointments', isAuthenticated);
@@ -11,9 +26,14 @@ router.use('/reports', isAuthenticated);
 
 // Página de login administrativo
 router.get('/login', (req, res) => {
+  log('Acessando página de login administrativo');
+  
   if (req.session.user) {
+    log('Usuário já logado, redirecionando para dashboard', { user: req.session.user });
     return res.redirect('/admin/dashboard');
   }
+  
+  log('Renderizando página de login');
   res.render('admin/login', {
     title: 'Login Administrativo',
     layout: 'admin',
@@ -25,38 +45,81 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    log('Tentativa de login', { username, passwordLength: password ? password.length : 0 });
     
-    const user = await User.findOne({ where: { username, isActive: true } });
+    if (!username || !password) {
+      log('Login falhou: campos obrigatórios não preenchidos');
+      return res.redirect('/admin/login?error=Usuário e senha são obrigatórios');
+    }
     
-    if (!user || !await bcrypt.compare(password, user.password)) {
+    log('Buscando usuário no banco de dados', { username });
+    const user = await User.findOne({ 
+      where: { username, isActive: true },
+      attributes: ['id', 'username', 'password', 'role', 'isActive']
+    });
+    
+    if (!user) {
+      log('Login falhou: usuário não encontrado ou inativo', { username });
       return res.redirect('/admin/login?error=Credenciais inválidas');
     }
     
+    log('Usuário encontrado, verificando senha', { 
+      userId: user.id, 
+      username: user.username,
+      role: user.role,
+      isActive: user.isActive
+    });
+    
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    log('Resultado da verificação de senha', { passwordMatch });
+    
+    if (!passwordMatch) {
+      log('Login falhou: senha incorreta', { username });
+      return res.redirect('/admin/login?error=Credenciais inválidas');
+    }
+    
+    // Criar sessão
     req.session.user = {
       id: user.id,
       username: user.username,
       role: user.role
     };
     
+    log('Login realizado com sucesso', { 
+      sessionUser: req.session.user,
+      sessionId: req.sessionID
+    });
+    
     res.redirect('/admin/dashboard');
   } catch (error) {
-    console.error('Erro no login:', error);
+    logError('Erro no processo de login', error);
     res.redirect('/admin/login?error=Erro interno do servidor');
   }
 });
 
 // Logout administrativo
 router.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.redirect('/admin/login');
+  log('Realizando logout', { user: req.session.user });
+  req.session.destroy((err) => {
+    if (err) {
+      logError('Erro ao destruir sessão', err);
+    } else {
+      log('Sessão destruída com sucesso');
+    }
+    res.redirect('/admin/login');
+  });
 });
 
 // Dashboard administrativo
 router.get('/dashboard', async (req, res) => {
   try {
+    log('Acessando dashboard', { user: req.session.user });
+    
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    log('Calculando estatísticas do mês', { startOfMonth, endOfMonth });
     
     // Estatísticas do mês
     const monthlyStats = await Appointment.count({
@@ -67,6 +130,8 @@ router.get('/dashboard', async (req, res) => {
       }
     });
     
+    log('Estatísticas mensais calculadas', { monthlyStats });
+    
     // Receita do mês
     const monthlyRevenue = await Appointment.sum('totalPrice', {
       where: {
@@ -76,6 +141,8 @@ router.get('/dashboard', async (req, res) => {
         status: 'completed'
       }
     }) || 0;
+    
+    log('Receita mensal calculada', { monthlyRevenue });
     
     // Agendamentos de hoje
     const todayAppointments = await Appointment.findAll({
@@ -89,6 +156,8 @@ router.get('/dashboard', async (req, res) => {
       ],
       order: [['appointmentTime', 'ASC']]
     });
+    
+    log('Agendamentos de hoje carregados', { count: todayAppointments.length });
     
     // Estatísticas por status
     const statusStats = await Appointment.findAll({
@@ -105,7 +174,9 @@ router.get('/dashboard', async (req, res) => {
       raw: true
     });
     
-    res.render('admin/dashboard', {
+    log('Estatísticas por status carregadas', { statusStats });
+    
+    const dashboardData = {
       title: 'Dashboard Administrativo',
       layout: 'admin',
       user: req.session.user,
@@ -113,9 +184,18 @@ router.get('/dashboard', async (req, res) => {
       monthlyRevenue,
       todayAppointments,
       statusStats
+    };
+    
+    log('Renderizando dashboard com dados', { 
+      monthlyStats, 
+      monthlyRevenue, 
+      todayAppointmentsCount: todayAppointments.length,
+      statusStatsCount: statusStats.length
     });
+    
+    res.render('admin/dashboard', dashboardData);
   } catch (error) {
-    console.error('Erro no dashboard:', error);
+    logError('Erro no dashboard', error);
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
       layout: 'admin',
@@ -128,6 +208,11 @@ router.get('/dashboard', async (req, res) => {
 // Listagem e gerenciamento de agendamentos
 router.get('/appointments', async (req, res) => {
   try {
+    log('Acessando listagem de agendamentos', { 
+      user: req.session.user,
+      query: req.query
+    });
+    
     const { date, barberId, status } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = 20;
@@ -145,6 +230,8 @@ router.get('/appointments', async (req, res) => {
       whereClause.status = status;
     }
     
+    log('Filtros aplicados', { whereClause, page, limit, offset });
+    
     const { count, rows: appointments } = await Appointment.findAndCountAll({
       where: whereClause,
       include: [
@@ -157,7 +244,10 @@ router.get('/appointments', async (req, res) => {
       offset
     });
     
+    log('Agendamentos carregados', { count, appointmentsLoaded: appointments.length });
+    
     const barbers = await Barber.findAll({ where: { isActive: true } });
+    log('Barbeiros carregados', { barbersCount: barbers.length });
     
     const totalPages = Math.ceil(count / limit);
     
@@ -176,7 +266,7 @@ router.get('/appointments', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Erro ao listar agendamentos:', error);
+    logError('Erro ao listar agendamentos', error);
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       layout: 'admin',
@@ -192,14 +282,18 @@ router.post('/appointments/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
-    await Appointment.update(
+    log('Atualizando status do agendamento', { id, status, user: req.session.user });
+    
+    const result = await Appointment.update(
       { status },
       { where: { id } }
     );
     
+    log('Status atualizado', { id, status, affectedRows: result[0] });
+    
     res.json({ success: true });
   } catch (error) {
-    console.error('Erro ao atualizar status:', error);
+    logError('Erro ao atualizar status', error);
     res.status(500).json({ success: false, error: 'Erro interno' });
   }
 });
@@ -207,6 +301,8 @@ router.post('/appointments/:id/status', async (req, res) => {
 // Relatórios administrativos
 router.get('/reports', async (req, res) => {
   try {
+    log('Acessando relatórios', { user: req.session.user, query: req.query });
+    
     const { startDate, endDate, barberId } = req.query;
     
     let whereClause = {};
@@ -221,6 +317,8 @@ router.get('/reports', async (req, res) => {
       whereClause.barberId = barberId;
     }
     
+    log('Filtros de relatório aplicados', { whereClause });
+    
     const appointments = await Appointment.findAll({
       where: whereClause,
       include: [
@@ -230,6 +328,8 @@ router.get('/reports', async (req, res) => {
       ],
       order: [['appointmentDate', 'DESC']]
     });
+    
+    log('Dados do relatório carregados', { appointmentsCount: appointments.length });
     
     const barbers = await Barber.findAll({ where: { isActive: true } });
     
@@ -255,6 +355,8 @@ router.get('/reports', async (req, res) => {
       }
     });
     
+    log('Estatísticas do relatório calculadas', { stats });
+    
     res.render('admin/reports', {
       title: 'Relatórios',
       layout: 'admin',
@@ -265,7 +367,7 @@ router.get('/reports', async (req, res) => {
       filters: { startDate, endDate, barberId }
     });
   } catch (error) {
-    console.error('Erro ao gerar relatórios:', error);
+    logError('Erro ao gerar relatórios', error);
     res.render('admin/reports', {
       title: 'Relatórios',
       layout: 'admin',
@@ -278,10 +380,13 @@ router.get('/reports', async (req, res) => {
 // Exportar relatórios (PDF/CSV)
 router.post('/reports/export', async (req, res) => {
   try {
+    log('Iniciando exportação de relatório', { body: req.body, user: req.session.user });
+    
     const { startDate, endDate, barberId, format } = req.body;
     
     // Validar formato
     if (!['pdf', 'csv'].includes(format)) {
+      log('Formato de exportação inválido', { format });
       return res.status(400).json({ error: 'Formato inválido' });
     }
     
@@ -298,6 +403,8 @@ router.post('/reports/export', async (req, res) => {
       whereClause.barberId = barberId;
     }
     
+    log('Filtros de exportação aplicados', { whereClause });
+    
     // Buscar dados
     const appointments = await Appointment.findAll({
       where: whereClause,
@@ -309,7 +416,10 @@ router.post('/reports/export', async (req, res) => {
       order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
     });
     
+    log('Dados para exportação carregados', { appointmentsCount: appointments.length });
+    
     if (appointments.length === 0) {
+      log('Nenhum agendamento encontrado para exportação');
       return res.status(404).json({ error: 'Nenhum agendamento encontrado para os filtros selecionados' });
     }
     
@@ -330,6 +440,8 @@ router.post('/reports/export', async (req, res) => {
       cancelledAppointments
     };
     
+    log('Informações do relatório calculadas', { reportInfo });
+    
     const reportGenerator = require('../utils/reportGenerator');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     
@@ -347,6 +459,8 @@ router.post('/reports/export', async (req, res) => {
       contentType = 'text/csv';
     }
     
+    log('Arquivo de relatório gerado', { filename, filePath, contentType });
+    
     // Enviar arquivo
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -360,14 +474,15 @@ router.post('/reports/export', async (req, res) => {
       setTimeout(() => {
         try {
           fs.unlinkSync(filePath);
+          log('Arquivo temporário removido', { filePath });
         } catch (error) {
-          console.error('Erro ao remover arquivo temporário:', error);
+          logError('Erro ao remover arquivo temporário', error);
         }
       }, 5000);
     });
     
   } catch (error) {
-    console.error('Erro ao gerar relatório:', error);
+    logError('Erro ao gerar relatório', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
