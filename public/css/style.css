@@ -64,8 +64,43 @@ body {
   align-items: center;
   gap: 1rem;
 }
-
 .logo-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Versão com imagem */
+.logo-icon.imagem {
+    background: none;
+    border: none;
+    display: block;
+}
+
+.logo-icon.imagem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+}
+
+
+/* .logo-icon {
   width: 50px;
   height: 50px;
   background: var(--primary-color);
@@ -76,7 +111,7 @@ body {
   font-size: 1.5rem;
   font-weight: bold;
   color: var(--text-light);
-}
+} */
 
 .logo-text {
   font-size: 1.8rem;
@@ -195,16 +230,7 @@ body {
   color: var(--primary-color);
 }
 
-.service-promo {
-  background: var(--primary-color);
-  color: var(--text-light);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  display: inline-block;
-}
+
 
 /* Grid de barbeiros */
 .barbers-grid {
@@ -907,3 +933,17 @@ body {
   border-color: var(--warning-color);
 }
 
+.service-promo {
+    color: white !important;
+    background: black !important;
+    text-decoration-color: #dee2e6;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    display: inline-block;
+}
+.logo-icon imagem{
+
+}
