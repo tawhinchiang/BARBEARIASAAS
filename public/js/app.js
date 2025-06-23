@@ -382,88 +382,165 @@ function selectDate(date) {
 // Carregar horários disponíveis - CORRIGIDO
 async function loadAvailableTimes(date) {
   log('Carregando horários disponíveis para', date);
-  
+
   try {
     const dateStr = date.toISOString().split('T')[0];
     const response = await fetch(`/api/available-times?date=${dateStr}&barberId=${appState.selectedBarber.id}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
     const data = await response.json();
-    
-    // Verificar se a resposta tem o formato esperado
-    let times = [];
-    if (Array.isArray(data)) {
-      times = data;
-    } else if (data.times && Array.isArray(data.times)) {
-      times = data.times;
-    } else if (data.availableTimes && Array.isArray(data.availableTimes)) {
-      times = data.availableTimes;
-    } else {
-      // Se não há horários ou formato inesperado, usar horários padrão
-      times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
-      log('Usando horários padrão devido a formato inesperado da API');
-    }
-    
+
+    // Aqui garantimos que vem os horários certos
+    const times = Array.isArray(data.availableTimes) ? data.availableTimes : [];
+
     const container = document.getElementById('timeSlotsContainer');
     const timesContainer = document.getElementById('timesContainer');
-    
-    if (!container || !timesContainer) {
-      logError('Containers de horários não encontrados');
-      return;
-    }
-    
+
+    if (!container || !timesContainer) return;
+
     container.innerHTML = '';
-    
+
     if (times.length === 0) {
       container.innerHTML = '<p class="text-muted text-center">Nenhum horário disponível para esta data</p>';
     } else {
+      appState.availableTimes = times;
       times.forEach(time => {
         const timeSlot = createTimeSlot(time);
         container.appendChild(timeSlot);
       });
     }
-    
+
     timesContainer.style.display = 'block';
-    appState.availableTimes = times;
-    
-    log(`${times.length} horários carregados`);
-    
+
   } catch (error) {
     logError('Erro ao carregar horários', error);
-    
-    // Fallback: mostrar horários padrão
-    const defaultTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
-    const container = document.getElementById('timeSlotsContainer');
-    const timesContainer = document.getElementById('timesContainer');
-    
-    if (container && timesContainer) {
-      container.innerHTML = '';
-      defaultTimes.forEach(time => {
-        const timeSlot = createTimeSlot(time);
-        container.appendChild(timeSlot);
-      });
-      timesContainer.style.display = 'block';
-      appState.availableTimes = defaultTimes;
-      
-      showNotification('Carregando horários padrão. Verifique disponibilidade.', 'warning');
-    }
+    showNotification('Erro ao buscar horários disponíveis. Tente novamente.', 'error');
   }
 }
 
-// Criar slot de horário
+
+// Função auxiliar para gerar slots de 30 minutos (de startTime até endTime)
+function generateAllSlots(startTime, endTime) {
+  const slots = [];
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+  
+  for (let time = start; time < end; time += 30) {
+    slots.push(minutesToTime(time));
+  }
+  return slots;
+}
+
+// Atualize sua createTimeSlot para receber isAvailable e aplicar a classe e evento
 function createTimeSlot(time) {
   const slot = document.createElement('div');
   slot.className = 'time-slot';
   slot.textContent = time;
   slot.dataset.time = time;
-  
+
+  // Apenas desabilita se o horário NÃO está disponível
+  if (!appState.availableTimes.includes(time)) {
+    slot.classList.add('disabled');
+    slot.title = 'Horário indisponível';
+    return slot;
+  }
+
   slot.addEventListener('click', () => selectTime(time));
-  
   return slot;
 }
+
+
+// async function loadAvailableTimes(date) {
+//   log('Carregando horários disponíveis para', date);
+  
+//   try {
+//     const dateStr = date.toISOString().split('T')[0];
+//     const response = await fetch(`/api/available-times?date=${dateStr}&barberId=${appState.selectedBarber.id}`);
+    
+//     if (!response.ok) {
+//       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+//     }
+    
+//     const data = await response.json();
+    
+//     // Verificar se a resposta tem o formato esperado
+//     let times = [];
+//     if (Array.isArray(data)) {
+//       times = data;
+//     } else if (data.times && Array.isArray(data.times)) {
+//       times = data.times;
+//     } else if (data.availableTimes && Array.isArray(data.availableTimes)) {
+//       times = data.availableTimes;
+//     } else {
+//       // Se não há horários ou formato inesperado, usar horários padrão
+//       times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+//       log('Usando horários padrão devido a formato inesperado da API');
+//     }
+    
+//     const container = document.getElementById('timeSlotsContainer');
+//     const timesContainer = document.getElementById('timesContainer');
+    
+//     if (!container || !timesContainer) {
+//       logError('Containers de horários não encontrados');
+//       return;
+//     }
+    
+//     container.innerHTML = '';
+    
+//     if (times.length === 0) {
+//       container.innerHTML = '<p class="text-muted text-center">Nenhum horário disponível para esta data</p>';
+//     } else {
+//       times.forEach(time => {
+//         const timeSlot = createTimeSlot(time);
+//         container.appendChild(timeSlot);
+//       });
+//     }
+    
+//     timesContainer.style.display = 'block';
+//     appState.availableTimes = times;
+    
+//     log(`${times.length} horários carregados`);
+    
+//   } catch (error) {
+//     logError('Erro ao carregar horários', error);
+    
+//     // Fallback: mostrar horários padrão
+//     const defaultTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+//     const container = document.getElementById('timeSlotsContainer');
+//     const timesContainer = document.getElementById('timesContainer');
+    
+//     if (container && timesContainer) {
+//       container.innerHTML = '';
+//       defaultTimes.forEach(time => {
+//         const timeSlot = createTimeSlot(time);
+//         container.appendChild(timeSlot);
+//       });
+//       timesContainer.style.display = 'block';
+//       appState.availableTimes = defaultTimes;
+      
+//       showNotification('Carregando horários padrão. Verifique disponibilidade.', 'warning');
+//     }
+//   }
+// }
+
+
+// Criar slot de horário
+// function createTimeSlot(time, isAvailable = true) {
+//   const slot = document.createElement('div');
+//   slot.className = 'time-slot';
+//   slot.textContent = time;
+//   slot.dataset.time = time;
+
+//   if (!isAvailable) {
+//     slot.classList.add('disabled-time');  // classe visual para desabilitado
+//   } else {
+//     slot.addEventListener('click', () => selectTime(time));
+//   }
+
+//   return slot;
+// }
+
 
 // Selecionar horário
 function selectTime(time) {
@@ -779,6 +856,25 @@ function showNotification(message, type = 'info') {
     }, 300);
   }, 3000);
 }
+// Considerando que você já tem a lista `availableTimes` da API
+const allPossibleSlots = generateAllSlotsForDay(start, end); // Ex: ['09:00', '09:30', ...]
+const bookedTimes = allPossibleSlots.filter(slot => !availableTimes.includes(slot));
+
+allPossibleSlots.forEach(slot => {
+  const slotDiv = document.createElement('div');
+  slotDiv.classList.add('time-slot');
+  slotDiv.textContent = slot;
+
+  if (bookedTimes.includes(slot)) {
+    slotDiv.classList.add('disabled');
+  } else {
+    slotDiv.addEventListener('click', () => {
+      // lógica para selecionar horário
+    });
+  }
+
+  container.appendChild(slotDiv);
+});
 
 // Exportar para uso global
 window.BookingApp = {

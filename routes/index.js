@@ -169,7 +169,9 @@ router.get('/api/available-times', async (req, res) => {
       attributes: ['appointmentTime']
     });
     
-    const bookedTimes = existingAppointments.map(apt => apt.appointmentTime);
+    // const bookedTimes = existingAppointments.map(apt => apt.appointmentTime);
+    const bookedTimes = existingAppointments.map(apt => apt.appointmentTime.slice(0, 5)); // corta os segundos
+
     log('Agendamentos existentes encontrados', { count: existingAppointments.length, bookedTimes });
     
     // Gerar horários disponíveis

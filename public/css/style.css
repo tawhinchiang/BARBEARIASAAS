@@ -99,6 +99,19 @@ body {
     }
 }
 
+/* .time-slot.disabled-time {
+  background-color: #eee;
+  color: #999;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+} */
+.time-slot.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  background-color: #ddd;
+  cursor: not-allowed;
+}
 
 /* .logo-icon {
   width: 50px;
