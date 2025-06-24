@@ -136,28 +136,33 @@ router.post('/api/appointments', async (req, res) => {
     });
     
     // Retornar resposta simples sem buscar agendamento completo (para evitar erro de associação)
-    res.status(201).json({
-      success: true,
-      message: 'Agendamento criado com sucesso',
-      appointment: {
-        id: appointment.id,
-        client: {
-          name: `${client.firstName} ${client.lastName}`,
-          phone: client.phone,
-          email: client.email
-        },
-        barber: barber.name,
-        service: {
-          name: serviceType.name,
-          duration: serviceType.duration,
-          price: serviceType.price
-        },
-        date: appointment.appointmentDate,
-        time: appointment.appointmentTime,
-        totalPrice: appointment.totalPrice,
-        status: appointment.status
-      }
-    });
+ 
+// Só depois responde ao frontend
+res.status(201).json({
+  success: true,
+  message: 'Agendamento criado com sucesso',
+  appointment: {
+    id: appointment.id,
+    client: {
+      name: `${client.firstName} ${client.lastName}`,
+      phone: client.phone,
+      email: client.email
+    },
+    barber: barber.name,
+    service: {
+      name: serviceType.name,
+      duration: serviceType.duration,
+      price: serviceType.price
+    },
+    date: appointment.appointmentDate,
+    time: appointment.appointmentTime,
+    totalPrice: appointment.totalPrice,
+    status: appointment.status
+  }
+});
+
+ 
+
     
   } catch (error) {
     logError('Erro ao criar agendamento', error);
@@ -247,10 +252,23 @@ router.get('/', async (req, res) => {
 });
 
 // Buscar agendamento por ID - CORRIGIDA
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
+
     
+ 
+    
+    
+     
+router.get('/:id', async (req, res) => {
+    // const { id } = req.params;
+
+  try {
+    const id = parseInt(req.params.id, 10);
+    
+    if (isNaN(id)) {
+      log('ID inválido fornecido', { id: req.params.id });
+      return res.status(400).json({ success: false, error: 'ID inválido' });
+    }
+
     log('Buscando agendamento por ID', { id });
     
     const appointment = await Appointment.findByPk(id, {
@@ -260,30 +278,22 @@ router.get('/:id', async (req, res) => {
         { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }
       ]
     });
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
-      });
+      return res.status(404).json({ success: false, error: 'Agendamento não encontrado' });
     }
-    
+
     log('Agendamento encontrado', { id, client: `${appointment.client.firstName} ${appointment.client.lastName}` });
     
-    res.json({
-      success: true,
-      appointment
-    });
-    
+    res.json({ success: true, appointment });
+
   } catch (error) {
     logError('Erro ao buscar agendamento', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
-    });
+    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
   }
 });
+
 
 // Atualizar status do agendamento
 router.patch('/:id/status', async (req, res) => {

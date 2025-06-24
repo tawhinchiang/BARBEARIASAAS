@@ -168,7 +168,8 @@ router.get('/api/available-times', async (req, res) => {
       },
       attributes: ['appointmentTime']
     });
-    
+  
+
     // const bookedTimes = existingAppointments.map(apt => apt.appointmentTime);
     const bookedTimes = existingAppointments.map(apt => apt.appointmentTime.slice(0, 5)); // corta os segundos
 
@@ -177,8 +178,9 @@ router.get('/api/available-times', async (req, res) => {
     // Gerar horários disponíveis
     const [startTime, endTime] = workingHours.split('-');
     log('Gerando slots de tempo', { startTime, endTime });
-    
-    const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes);
+      const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes, date);
+      console.log('→ Gerando slots para:', { date, today: new Date().toISOString().slice(0,10), bookedTimes });
+    // const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes);
     
     log('Horários disponíveis gerados', { count: availableTimes.length, availableTimes });
     
@@ -199,39 +201,45 @@ router.get('/api/available-times', async (req, res) => {
 });
 
 // Função auxiliar para gerar slots de tempo - SIMPLIFICADA
-function generateTimeSlots(startTime, endTime, bookedTimes = []) {
+function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null) {
   log('Iniciando geração de slots', { startTime, endTime, bookedTimesCount: bookedTimes.length });
-  
+
   const slots = [];
-  
+
   try {
     const start = timeToMinutes(startTime);
     const end = timeToMinutes(endTime);
-    
-    log('Convertido para minutos', { start, end });
-    
-    // Gerar slots de 30 em 30 minutos
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+
     for (let time = start; time < end; time += 30) {
       const timeStr = minutesToTime(time);
-      
-      // Verificar se não está ocupado
-      if (!bookedTimes.includes(timeStr)) {
-        slots.push(timeStr);
+
+      // Já está agendado?
+      if (bookedTimes.includes(timeStr)) continue;
+
+      // Verifica se é hoje e se o horário já passou ou está a menos de 10 min do agora
+      if (selectedDateStr === todayStr) {
+        const [hour, minute] = timeStr.split(':').map(Number);
+        const slotDate = new Date(selectedDateStr + `T${timeStr}:00`);
+        const diffInMin = (slotDate.getTime() - now.getTime()) / 60000;
+        if (diffInMin < 10) continue;
       }
+
+      slots.push(timeStr);
     }
-    
-    log('Slots gerados', { totalSlots: slots.length, slots });
-    
+
+    log('Slots gerados com sucesso', { totalSlots: slots.length, slots });
   } catch (error) {
     logError('Erro ao gerar slots', error);
-    
-    // Fallback: horários padrão
     const defaultSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
     return defaultSlots.filter(time => !bookedTimes.includes(time));
   }
-  
+
   return slots;
 }
+
+
 
 function timeToMinutes(timeStr) {
   try {
