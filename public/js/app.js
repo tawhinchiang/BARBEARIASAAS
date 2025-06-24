@@ -8,7 +8,7 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
     // ========================================
     
     // WhatsApp da barbearia (apenas números)
-    WHATSAPP_NUMBER: '5511999999999', // EDITE AQUI: Substitua pelo número da barbearia
+    WHATSAPP_NUMBER: '5563992014547', // EDITE AQUI: Substitua pelo número da barbearia
     
     // Google Client ID para login
     GOOGLE_CLIENT_ID: 'SEU_GOOGLE_CLIENT_ID_AQUI', // EDITE AQUI: Substitua pelo seu Client ID
