@@ -114,13 +114,13 @@ router.get('/logout', (req, res) => {
 router.get('/dashboard', async (req, res) => {
   try {
     log('Acessando dashboard', { user: req.session.user });
-    
+
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    
+
     log('Calculando estatísticas do mês', { startOfMonth, endOfMonth });
-    
+
     // Estatísticas do mês
     const monthlyStats = await Appointment.count({
       where: {
@@ -129,9 +129,7 @@ router.get('/dashboard', async (req, res) => {
         }
       }
     });
-    
-    log('Estatísticas mensais calculadas', { monthlyStats });
-    
+
     // Receita do mês
     const monthlyRevenue = await Appointment.sum('totalPrice', {
       where: {
@@ -141,10 +139,8 @@ router.get('/dashboard', async (req, res) => {
         status: 'completed'
       }
     }) || 0;
-    
-    log('Receita mensal calculada', { monthlyRevenue });
-    
-    // Agendamentos de hoje - CORRIGIDO
+
+    // Agendamentos de hoje
     const todayAppointments = await Appointment.findAll({
       where: {
         appointmentDate: today.toISOString().split('T')[0]
@@ -156,9 +152,7 @@ router.get('/dashboard', async (req, res) => {
       ],
       order: [['appointmentTime', 'ASC']]
     });
-    
-    log('Agendamentos de hoje carregados', { count: todayAppointments.length });
-    
+
     // Estatísticas por status
     const statusStats = await Appointment.findAll({
       attributes: [
@@ -173,27 +167,143 @@ router.get('/dashboard', async (req, res) => {
       group: ['status'],
       raw: true
     });
-    
-    log('Estatísticas por status carregadas', { statusStats });
-    
-    const dashboardData = {
+
+    // === GRÁFICOS ===
+
+    // Status Chart
+    const statusChartData = {};
+    statusStats.forEach(stat => {
+      statusChartData[stat.status] = parseInt(stat.count);
+    });
+
+    // Barber Chart
+    const barberAppointments = await Appointment.findAll({
+      attributes: [
+        'barberId',
+        [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'count']
+      ],
+      include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
+      where: {
+        appointmentDate: {
+          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
+        }
+      },
+      group: ['barberId', 'barber.id'],
+      raw: true,
+      nest: true
+    });
+
+    const barberChartData = {};
+    barberAppointments.forEach(item => {
+      barberChartData[item.barber.name] = parseInt(item.count);
+    });
+
+    // Revenue Chart (por dia)
+    const appointmentsForRevenue = await Appointment.findAll({
+      attributes: ['appointmentDate', 'totalPrice'],
+      where: {
+        appointmentDate: {
+          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
+        },
+        status: 'completed'
+      },
+      raw: true
+    });
+
+    const revenueChartData = {};
+    appointmentsForRevenue.forEach(item => {
+      const date = new Date(item.appointmentDate).toISOString().slice(0, 10);
+      revenueChartData[date] = (revenueChartData[date] || 0) + parseFloat(item.totalPrice || 0);
+    });
+    // Top Barbers (exemplo simplificado)
+const topBarbersRaw = await Appointment.findAll({
+  attributes: [
+    'barberId',
+    [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: {
+      [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
+    }
+  },
+  include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
+  group: ['barberId', 'barber.id'],
+  order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
+  limit: 5,
+  raw: true,
+  nest: true
+});
+
+const topBarbers = topBarbersRaw.map(item => ({
+  name: item.barber.name,
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue
+}));
+
+// Top Services (exemplo simplificado)
+const topServicesRaw = await Appointment.findAll({
+  attributes: [
+    'serviceTypeId',
+    [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: {
+      [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
+    }
+  },
+  include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
+  group: ['serviceTypeId', 'serviceType.id'],
+  order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
+  limit: 5,
+  raw: true,
+  nest: true
+});
+
+const topServices = topServicesRaw.map(item => ({
+  name: item.serviceType.name,
+  duration: item.serviceType.duration,
+  price: item.serviceType.price,
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue,
+  percentage: 0 // Pode calcular se quiser
+}));
+
+    const todayAppointmentsCount = todayAppointments.length;
+    const recentAppointments = todayAppointments;
+    const statusStatsCount = statusStats.length;
+    // log('Renderizando dashboard com dados', {
+    //   monthlyStats,
+    //   monthlyRevenue,
+    //   todayAppointmentsCount: todayAppointments.length,
+    //   statusStatsCount: statusStats.length,
+    //   statusChartData,
+    //   barberChartData,
+    //   revenueChartData
+    // });
+    console.log({
+  todayAppointmentsCount,
+  monthlyRevenue,
+  monthlyStats,
+  statusStatsCount,
+  recentAppointmentsCount: recentAppointments.length,
+  topBarbersCount: topBarbers.length,
+  topServicesCount: topServices.length
+});
+     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
       layout: 'admin',
       user: req.session.user,
-      monthlyStats,
+      todayAppointmentsCount,
       monthlyRevenue,
-      todayAppointments,
-      statusStats
-    };
-    
-    log('Renderizando dashboard com dados', { 
-      monthlyStats, 
-      monthlyRevenue, 
-      todayAppointmentsCount: todayAppointments.length,
-      statusStatsCount: statusStats.length
+      monthlyStats,
+      statusStatsCount,
+      recentAppointments,
+      topBarbers,
+      topServices,
+      revenueChartData
     });
-    
-    res.render('admin/dashboard', dashboardData);
   } catch (error) {
     logError('Erro no dashboard', error);
     res.render('admin/dashboard', {

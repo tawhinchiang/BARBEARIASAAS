@@ -9,6 +9,9 @@ require('dotenv').config();
 
 const app = express();
 
+
+app.set('view engine', 'hbs');
+app.set('views', path.join(__dirname, 'views'));
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -32,8 +35,13 @@ const hbs = engine({
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
   extname: '.hbs',
-  helpers: require('./config/handlebars-helpers')
+  helpers: require('./config/handlebars-helpers'),
+  runtimeOptions: {
+    allowProtoPropertiesByDefault: true, // <- Adiciona isso
+    allowProtoMethodsByDefault: true     // <- E isso
+  }
 });
+
 
 app.engine('hbs', hbs);
 app.set('view engine', 'hbs');
@@ -108,6 +116,9 @@ app.use((err, req, res, next) => {
     error: 'Ocorreu um erro interno no servidor.',
     layout: req.url.startsWith('/admin') ? 'admin' : 'main'
   });
+});
+app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.status(204).end(); // Sem conteúdo
 });
 
 log('Aplicação configurada com sucesso');
