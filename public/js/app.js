@@ -19,10 +19,11 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
         id: 1,
         name: 'CORTE DEGRADÊ',
         duration: '40min',
-        price: 35.00,
+        price: 45.00,
         promo: 'Promo seg. a qua.',
         hasPromo: true
       },
+     
       {
         id: 2,
         name: 'CORTE SOCIAL',
@@ -46,6 +47,22 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
         price: 25.00,
         promo: null,
         hasPromo: false
+      },
+       {
+        id: 5,
+        name: 'CORTE NAVALHADO',
+        duration: '40min',
+        price: 50.00,
+        promo: 'Promo seg. a qua.',
+        hasPromo: true
+      },
+      {
+        id: 6,
+        name: 'CORTE TESOURA',
+        duration: '40min',
+        price: 50.00,
+        promo: null,
+        hasPromo: true
       }
     ]
     
@@ -769,26 +786,26 @@ function updateFinalConfirmation(bookingData) {
   if (elements.price) elements.price.textContent = `R$ ${appState.selectedService.price.toFixed(2)}`;
 }
 
-// Enviar confirmação via WhatsApp
-function sendWhatsAppConfirmation() {
-  log('Enviando confirmação via WhatsApp');
+// // Enviar confirmação via WhatsApp
+// function sendWhatsAppConfirmation() {
+//   log('Enviando confirmação via WhatsApp');
   
-  const message = `Olá! Gostaria de confirmar meu agendamento:
+//   const message = `Olá! Gostaria de confirmar meu agendamento:
 
-🔸 *Serviço:* ${appState.selectedService.name}
-🔸 *Barbeiro:* ${appState.selectedBarber.name}
-🔸 *Data:* ${appState.selectedDate.toLocaleDateString('pt-BR')}
-🔸 *Horário:* ${appState.selectedTime}
-🔸 *Cliente:* ${document.getElementById('clientFirstName').value} ${document.getElementById('clientLastName').value}
-🔸 *Valor:* R$ ${appState.selectedService.price.toFixed(2)}
+// 🔸 *Serviço:* ${appState.selectedService.name}
+// 🔸 *Barbeiro:* ${appState.selectedBarber.name}
+// 🔸 *Data:* ${appState.selectedDate.toLocaleDateString('pt-BR')}
+// 🔸 *Horário:* ${appState.selectedTime}
+// 🔸 *Cliente:* ${document.getElementById('clientFirstName').value} ${document.getElementById('clientLastName').value}
+// 🔸 *Valor:* R$ ${appState.selectedService.price.toFixed(2)}
 
-Aguardo confirmação. Obrigado!`;
+// Aguardo confirmação. Obrigado!`;
   
-  const encodedMessage = encodeURIComponent(message);
-  const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodedMessage}`;
+//   const encodedMessage = encodeURIComponent(message);
+//   const whatsappUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodedMessage}`;
   
-  window.open(whatsappUrl, '_blank');
-}
+//   window.open(whatsappUrl, '_blank');
+// }
 
 // Inicializar Google Login
 function initializeGoogleLogin() {

@@ -1,4 +1,5 @@
 const express = require('express');
+const { sendWhatsAppMessage } = require('../utils/whatsapp');
 const moment = require('moment');
 const { Client, Barber, ServiceType, Appointment } = require('../models');
 const router = express.Router();
@@ -124,7 +125,21 @@ router.post('/api/appointments', async (req, res) => {
       status: 'confirmed',
       notes: clientData.notes || null
     });
-    
+    const fullName = `${client.firstName} ${client.lastName}`;
+  // Corrigir aqui: declarar priceFormatted
+    const priceNum = Number(serviceType.price);
+    const priceFormatted = Number.isNaN(priceNum) ? '0.00' : priceNum.toFixed(2);
+
+    const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:* ${appointmentTime}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
+
+    const sent = await sendWhatsAppMessage(client.phone, msg);
+    if (!sent) {
+      logError('❌ Falha ao enviar mensagem pelo WhatsApp', { phone: client.phone });
+    }
+//  catch (whatsErr) {
+//   logError('Erro ao enviar mensagem de WhatsApp', whatsErr);
+// }
+
     log('Agendamento criado com sucesso', {
       id: appointment.id,
       client: `${client.firstName} ${client.lastName}`,
@@ -144,7 +159,7 @@ res.status(201).json({
   appointment: {
     id: appointment.id,
     client: {
-      name: `${client.firstName} ${client.lastName}`,
+      name: fullName,
       phone: client.phone,
       email: client.email
     },
@@ -152,14 +167,16 @@ res.status(201).json({
     service: {
       name: serviceType.name,
       duration: serviceType.duration,
-      price: serviceType.price
+      price: priceNum
     },
     date: appointment.appointmentDate,
     time: appointment.appointmentTime,
-    totalPrice: appointment.totalPrice,
+    totalPrice: priceNum,
     status: appointment.status
-  }
+  },
+  whatsappSent: sent
 });
+
 
  
 
