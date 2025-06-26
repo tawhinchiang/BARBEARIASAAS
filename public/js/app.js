@@ -15,55 +15,25 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
     
     // Serviços da barbearia (conforme solicitado)
     SERVICES: [
-      {
-        id: 1,
-        name: 'CORTE DEGRADÊ',
-        duration: '40min',
-        price: 45.00,
-        promo: 'Promo seg. a qua.',
-        hasPromo: true
-      },
-     
-      {
-        id: 2,
-        name: 'CORTE SOCIAL',
-        duration: '40min',
-        price: 30.00,
-        promo: 'Promo seg. a qua.',
-        hasPromo: true
-      },
-      {
-        id: 3,
-        name: 'CORTE + BARBA',
-        duration: '60min',
-        price: 50.00,
-        promo: 'Promo seg. a qua.',
-        hasPromo: true
-      },
-      {
-        id: 4,
-        name: 'BARBA + PEZINHO',
-        duration: 'Tempo não definido',
-        price: 25.00,
-        promo: null,
-        hasPromo: false
-      },
-       {
-        id: 5,
-        name: 'CORTE NAVALHADO',
-        duration: '40min',
-        price: 50.00,
-        promo: 'Promo seg. a qua.',
-        hasPromo: true
-      },
-      {
-        id: 6,
-        name: 'CORTE TESOURA',
-        duration: '40min',
-        price: 50.00,
-        promo: null,
-        hasPromo: true
-      }
+  { id: 1, name: "CORTE DEGRADÊ", duration: "40min", price: 35.00, promo: "Promo seg. a qua.", hasPromo: true },
+    { id: 2, name: "CORTE SOCIAL", duration: "40min", price: 30.00, promo: "Promo seg. a qua.", hasPromo: true },
+    { id: 3, name: "CORTE + BARBA", duration: "60min", price: 50.00, promo: "Promo seg. a qua.", hasPromo: true },
+    { id: 4, name: "BARBA + PEZINHO", duration: "45min", price: 25.00, promo: null, hasPromo: false },
+    { id: 5, name: "CORTE + HIDRATAÇÃO", duration: "40min", price: 60.00, promo: null, hasPromo: false },
+    { id: 6, name: "CORTE + SOBRANCELHA", duration: "40min", price: 60.00, promo: null, hasPromo: false },
+    { id: 7, name: "CORTE + LIZO AMERICANO", duration: "50min", price: 70.00, promo: null, hasPromo: false },
+    { id: 8, name: "CORTE + CAVANHAQUE", duration: "60min", price: 65.00, promo: null, hasPromo: false },
+    { id: 9, name: "CORTE + COLORAÇÃO", duration: "60min", price: 70.00, promo: null, hasPromo: false },
+    { id: 10, name: "BOTOX + CORTE", duration: "120min", price: 90.00, promo: null, hasPromo: false },
+    { id: 11, name: "SELAGEM + CORTE", duration: "120min", price: 90.00, promo: null, hasPromo: false },
+    { id: 12, name: "BOTOX OU SELAGEM CABELO TODO", duration: "120min", price: 70.00, promo: null, hasPromo: false },
+    { id: 13, name: "PIGMENTAÇÃO NA BARBA", duration: "20min", price: 20.00, promo: null, hasPromo: false },
+    { id: 14, name: "COLORAÇÃO NO CABELO", duration: "20min", price: 30.00, promo: null, hasPromo: false },
+    { id: 15, name: "DEPILAÇÃO NASAL NA CERA", duration: "10min", price: 20.00, promo: null, hasPromo: false },
+    { id: 16, name: "HIDRATAÇÃO", duration: "20min", price: 20.00, promo: null, hasPromo: false },
+    { id: 17, name: "SOBRANCELHA", duration: "10min", price: 20.00, promo: null, hasPromo: false },
+    { id: 18, name: "PENTEADO COM LAVAGEM", duration: "120min", price: 70.00, promo: null, hasPromo: false },
+    { id: 19, name: "BOTOX", duration: "120min", price: 70.00, promo: null, hasPromo: false }
     ]
     
     // ========================================

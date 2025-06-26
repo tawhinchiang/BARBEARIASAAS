@@ -232,7 +232,8 @@ function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr
     log('Slots gerados com sucesso', { totalSlots: slots.length, slots });
   } catch (error) {
     logError('Erro ao gerar slots', error);
-    const defaultSlots = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
+    //aqui define os horarios padrão
+    const defaultSlots = ['09:00', '09:20', '09:40', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
     return defaultSlots.filter(time => !bookedTimes.includes(time));
   }
 
