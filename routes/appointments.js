@@ -115,16 +115,18 @@ router.post('/api/appointments', async (req, res) => {
     
     // Criar agendamento
     log('Criando agendamento');
-    const appointment = await Appointment.create({
-      clientId: client.id,
-      barberId,
-      serviceTypeId: serviceId,
-      appointmentDate,
-      appointmentTime,
-      totalPrice: serviceType.price,
-      status: 'confirmed',
-      notes: clientData.notes || null
-    });
+  const appointment = await Appointment.create({
+  clientId: client.id,
+  barberId,
+  serviceTypeId: serviceId,
+  appointmentDate,
+  appointmentTime,
+  serviceDuration: serviceType.duration,   // ← SALVA A DURAÇÃO CORRETA
+  totalPrice: serviceType.price,
+  status: 'confirmed',
+  notes: clientData.notes || null
+});
+
     const fullName = `${client.firstName} ${client.lastName}`;
   // Corrigir aqui: declarar priceFormatted
     const priceNum = Number(serviceType.price);

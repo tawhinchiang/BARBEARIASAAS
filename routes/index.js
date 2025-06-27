@@ -21,8 +21,8 @@ router.get('/', (req, res) => {
   log('Acessando página inicial do cliente');
   
   const pageData = {
-    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'Barbearia Premium'),
-    barbershopName: process.env.BARBERSHOP_NAME || 'Barbearia Premium',
+    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA'),
+    barbershopName: process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA',
     barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png',
     isClientPage: true
   };
@@ -38,7 +38,7 @@ router.get('/agendamento-confirmado', (req, res) => {
   
   res.render('success', {
     title: 'Agendamento Confirmado',
-    barbershopName: process.env.BARBERSHOP_NAME || 'Barbearia Premium'
+    barbershopName: process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA'
   });
 });
 
@@ -56,10 +56,19 @@ router.get('/api/services', async (req, res) => {
     const { ServiceType } = require('../models');
     const services = await ServiceType.findAll({
       where: { isActive: true },
+      attributes: ['id', 'name', 'price', 'duration'],    // ← inclui duration
       order: [['name', 'ASC']]
     });
     
-    log('Serviços encontrados', { count: services.length, services: services.map(s => ({ id: s.id, name: s.name, price: s.price })) });
+    log('Serviços encontrados', {
+      count: services.length,
+      services: services.map(s => ({
+        id: s.id,
+        name: s.name,
+        price: s.price,
+        duration: s.duration    // ← loga também a duração
+      }))
+    });
     
     res.json({ services });
   } catch (error) {
@@ -68,17 +77,25 @@ router.get('/api/services', async (req, res) => {
   }
 });
 
+
 // API para listar barbeiros disponíveis - CORRIGIDA
 router.get('/api/barbers', async (req, res) => {
   try {
     log('Buscando barbeiros disponíveis');
-    
+    // Dentro da rota GET /api/barbers
+  
+
     const { Barber } = require('../models');
     const barbers = await Barber.findAll({
       where: { isActive: true },
       order: [['name', 'ASC']]
     });
-    
+      log('Horários de trabalho:', {
+      barbers: barbers.map(b => ({
+        name: b.name,
+        workingHours: b.workingHours
+      }))
+    });
     log('Barbeiros encontrados', { count: barbers.length, barbers: barbers.map(b => ({ id: b.id, name: b.name })) });
     
     // Retornar no formato esperado pelo frontend
@@ -91,6 +108,7 @@ router.get('/api/barbers', async (req, res) => {
         workingHours: b.workingHours,
         isActive: b.isActive
       }))
+      
     });
   } catch (error) {
     logError('Erro ao buscar barbeiros', error);
@@ -101,140 +119,183 @@ router.get('/api/barbers', async (req, res) => {
 // API para obter horários disponíveis - CORRIGIDA
 router.get('/api/available-times', async (req, res) => {
   try {
-    const { barberId, date } = req.query;
-    
-    log('Buscando horários disponíveis', { barberId, date });
-    
-    // Validação básica
-    if (!barberId || !date) {
+    const { barberId, date, serviceTypeId } = req.query;
+
+    if (!barberId || !date || !serviceTypeId) {
       log('Parâmetros obrigatórios não fornecidos');
-      return res.status(400).json({ 
-        error: 'Parâmetros obrigatórios: barberId, date',
-        received: { barberId, date }
+      return res.status(400).json({
+        error: 'Parâmetros obrigatórios: barberId, date, serviceTypeId',
+        received: { barberId, date, serviceTypeId }
       });
     }
-    
-    // Validar formato da data
+
+    // Validar formato da data YYYY-MM-DD
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(date)) {
       log('Formato de data inválido', { date });
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Formato de data inválido. Use YYYY-MM-DD',
         received: date
       });
     }
-    
-    const { Appointment, Barber } = require('../models');
-    
+
+    const { Appointment, Barber, ServiceType } = require('../models');
+
+    // Buscar serviço para pegar duração
+    const serviceType = await ServiceType.findByPk(serviceTypeId);
+    if (!serviceType) {
+      return res.status(404).json({ error: 'Serviço não encontrado' });
+    }
+
+    // Pegando duração do serviço em minutos (garantindo número inteiro)
+    // Usa duração da query se existir, senão pega do banco
+    const durationFromQuery = parseInt(req.query.duration, 10);
+    const requiredDuration = durationFromQuery || parseInt(serviceType.duration, 10) || 20;
+
+
     // Buscar barbeiro
-    log('Buscando barbeiro no banco');
     const barber = await Barber.findByPk(barberId);
-    
     if (!barber) {
-      log('Barbeiro não encontrado', { barberId });
       return res.status(404).json({ error: 'Barbeiro não encontrado' });
     }
-    
-    log('Barbeiro encontrado', { 
-      barber: { id: barber.id, name: barber.name }
-    });
-    
-    // Verificar dia da semana
+
+    // Definir horário de trabalho para o dia da semana
     const selectedDate = new Date(date + 'T00:00:00');
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
-    
-    log('Verificando horário de trabalho', { date, dayOfWeek });
-    
-    // Horários padrão se não houver configuração específica
-    let workingHours = '09:00-18:00';
-    
-    if (barber.workingHours && typeof barber.workingHours === 'object') {
-      workingHours = barber.workingHours[dayOfWeek] || workingHours;
+    let workingHours = '09:00-19:40';
+
+    if (barber.workingHours) {
+      const parsed = typeof barber.workingHours === 'string'
+        ? JSON.parse(barber.workingHours)
+        : barber.workingHours;
+
+      workingHours = parsed[dayOfWeek] || workingHours;
     }
-    
-    log('Horário de trabalho definido', { dayOfWeek, workingHours });
-    
+
+
     if (workingHours === 'closed') {
-      log('Barbeiro não trabalha neste dia', { dayOfWeek });
       return res.json({ availableTimes: [] });
     }
-    
-    // Buscar agendamentos existentes
-    log('Buscando agendamentos existentes para a data');
-    const existingAppointments = await Appointment.findAll({
-      where: {
-        barberId,
-        appointmentDate: date
-      },
-      attributes: ['appointmentTime']
-    });
-  
 
-    // const bookedTimes = existingAppointments.map(apt => apt.appointmentTime);
-    const bookedTimes = existingAppointments.map(apt => apt.appointmentTime.slice(0, 5)); // corta os segundos
-
-    log('Agendamentos existentes encontrados', { count: existingAppointments.length, bookedTimes });
-    
-    // Gerar horários disponíveis
     const [startTime, endTime] = workingHours.split('-');
-    log('Gerando slots de tempo', { startTime, endTime });
-      const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes, date);
-      console.log('→ Gerando slots para:', { date, today: new Date().toISOString().slice(0,10), bookedTimes });
-    // const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes);
-    
-    log('Horários disponíveis gerados', { count: availableTimes.length, availableTimes });
-    
-    res.json({ 
+
+    // Buscar agendamentos existentes do barbeiro na data
+    const existingAppointments = await Appointment.findAll({
+      where: { barberId, appointmentDate: date },
+      attributes: ['appointmentTime', 'serviceDuration'] // ajuste o nome da coluna se necessário
+    });
+
+    // Obter tempos bloqueados
+    const bookedTimes = getBlockedTimesWithDuration(existingAppointments);
+
+    // Gerar slots disponíveis
+    const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes, date, requiredDuration);
+
+    return res.json({
       availableTimes,
       date,
       barberId,
       barberName: barber.name,
       workingHours
     });
+
   } catch (error) {
     logError('Erro ao buscar horários', error);
-    res.status(500).json({ 
+    return res.status(500).json({
       error: 'Erro interno do servidor',
       message: error.message
     });
   }
 });
 
-// Função auxiliar para gerar slots de tempo - SIMPLIFICADA
-function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null) {
-  log('Iniciando geração de slots', { startTime, endTime, bookedTimesCount: bookedTimes.length });
+function getBlockedTimesWithDuration(appointments) {
+  const blocked = new Set();
 
+  appointments.forEach(({ appointmentTime, serviceDuration }) => {
+    const start = timeToMinutes(appointmentTime.slice(0, 5));
+    const duration = parseInt(serviceDuration, 10) || 20;
+    const end = start + duration;
+
+    // Marca cada slot de 10 minutos dentro do intervalo como bloqueado
+   for (let t = start; t < end; t += 10) {
+  blocked.add(minutesToTime(t));
+} 
+//ou 
+// for (let t = start; t < end; t += 10) {
+//   blocked.add(minutesToTime(t));
+// }
+
+  });
+
+  return Array.from(blocked);
+}
+
+// function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null, requiredDuration = 20) {
+//   const slots = [];
+//   const start = timeToMinutes(startTime);
+//   const end = timeToMinutes(endTime);
+//   const now = new Date();
+
+//   const todayStr = now.toISOString().slice(0, 10);
+
+//   for (let time = start; time + requiredDuration <= end; time += 10) {
+//     let isBlocked = false;
+
+//     for (let i = 0; i < requiredDuration; i += 10) {
+//       const candidateTime = minutesToTime(time + i);
+//       if (bookedTimes.includes(candidateTime)) {
+//         isBlocked = true;
+//         break;
+//       }
+//     }
+
+//     if (isBlocked) continue;
+
+//     const [hours, minutes] = minutesToTime(time).split(':').map(Number);
+
+//     // Aqui criamos um Date UTC para o horário do slot, no dia selecionado
+//     const slotDate = new Date(selectedDateStr + 'T00:00:00Z');
+//     slotDate.setUTCHours(hours, minutes, 0, 0);
+
+//     // Agora comparamos o horário do slot com o horário atual UTC
+//     if (selectedDateStr === todayStr) {
+//       if (slotDate.getTime() < now.getTime() + 10 * 60000) {
+//         continue;
+//       }
+//     }
+
+//     slots.push(minutesToTime(time));
+//   }
+
+//   return slots;
+// }
+function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null, requiredDuration = 20) {
   const slots = [];
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime) + 1; // inclui exatamente até 19:40
+  const now = new Date();
 
-  try {
-    const start = timeToMinutes(startTime);
-    const end = timeToMinutes(endTime);
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  for (let t = start; t + requiredDuration <= end; t += 20) {  // ← MUDOU AQUI: de 10 para 20
+    let blocked = false;
 
-    for (let time = start; time < end; time += 30) {
-      const timeStr = minutesToTime(time);
-
-      // Já está agendado?
-      if (bookedTimes.includes(timeStr)) continue;
-
-      // Verifica se é hoje e se o horário já passou ou está a menos de 10 min do agora
-      if (selectedDateStr === todayStr) {
-        const [hour, minute] = timeStr.split(':').map(Number);
-        const slotDate = new Date(selectedDateStr + `T${timeStr}:00`);
-        const diffInMin = (slotDate.getTime() - now.getTime()) / 60000;
-        if (diffInMin < 10) continue;
+    for (let dt = 0; dt < requiredDuration; dt += 10) {
+      const candidate = minutesToTime(t + dt);
+      if (bookedTimes.includes(candidate)) {
+        blocked = true;
+        break;
       }
-
-      slots.push(timeStr);
     }
 
-    log('Slots gerados com sucesso', { totalSlots: slots.length, slots });
-  } catch (error) {
-    logError('Erro ao gerar slots', error);
-    //aqui define os horarios padrão
-    const defaultSlots = ['09:00', '09:20', '09:40', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
-    return defaultSlots.filter(time => !bookedTimes.includes(time));
+    if (blocked) continue;
+
+    const slot = minutesToTime(t);
+
+    if (selectedDateStr === now.toISOString().slice(0, 10)) {
+      const slotDate = new Date(`${selectedDateStr}T${slot}:00`);
+      if (slotDate < now) continue;
+    }
+
+    slots.push(slot);
   }
 
   return slots;
@@ -243,28 +304,17 @@ function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr
 
 
 function timeToMinutes(timeStr) {
-  try {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const result = hours * 60 + (minutes || 0);
-    log('Convertendo tempo para minutos', { timeStr, hours, minutes, result });
-    return result;
-  } catch (error) {
-    logError('Erro ao converter tempo para minutos', error);
-    return 0;
-  }
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + (minutes || 0);
 }
 
 function minutesToTime(minutes) {
-  try {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    const result = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-    return result;
-  } catch (error) {
-    logError('Erro ao converter minutos para tempo', error);
-    return '00:00';
-  }
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
+
+
 
 module.exports = router;
 

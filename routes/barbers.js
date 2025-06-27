@@ -136,7 +136,7 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       email: email ? email.trim() : null,
       cpf: cpf.trim(),
       specialties: specialties ? specialties.trim() : null,
-      workingHours: workingHours || '08:00-18:00',
+      workingHours: workingHours || '09:00-19:40',
       isActive: isActive === 'true' || isActive === true,
       photo: req.file ? `/uploads/barbers/${req.file.filename}` : null
     };
