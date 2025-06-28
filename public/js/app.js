@@ -542,38 +542,69 @@ function updateBookingSummary() {
 }
 
 
-// Configurar máscara de telefone
+
+
+// Atualiza botão conforme o usuário digita
+['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', validateClientForm);
+});
+
+// Máscara de telefone: (63) 99201-4547
+// Máscara de telefone: (63) 99201-4547
 function setupPhoneMask() {
   const phoneInput = document.getElementById('clientPhone');
   if (!phoneInput) return;
 
   phoneInput.addEventListener('input', function (e) {
-    let value = e.target.value.replace(/\D/g, ''); // remove tudo que não é número
-
-    if (value.length > 11) value = value.slice(0, 11); // limita a 11 dígitos
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
 
     if (value.length >= 2) {
       if (value.length <= 10) {
-        // telefone fixo: (99) 9999-9999
         value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
       } else {
-        // celular: (99) 99999-9999
         value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
       }
     }
 
     e.target.value = value;
+
+    // Aguarda a máscara ser aplicada antes de validar
+    setTimeout(validateClientForm, 0);
   });
 }
 
 
-// Validar formulário do cliente
+setupPhoneMask();
+
+
+function formatPhoneForWhatsApp(phone) {
+  let digits = phone.replace(/\D/g, '');
+
+  if (digits.length === 11 && digits[2] === '9') {
+    // Remove o 9 após o DDD
+    digits = digits.slice(0, 2) + digits.slice(3); // 2 primeiros + do 4º em diante
+  }
+
+  // Confirma que resultou em 10 dígitos depois da remoção
+  if (digits.length === 10) {
+    return '55' + digits;
+  }
+
+  return null;
+}
+
+
+
+// Validação do formulário do cliente
 function validateClientForm() {
   const firstName = document.getElementById('clientFirstName')?.value.trim();
   const lastName = document.getElementById('clientLastName')?.value.trim();
   const phone = document.getElementById('clientPhone')?.value.trim();
 
-  const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
+  // Aceita apenas celular com 11 dígitos no formato (99) 9XXXX-XXXX
+  const phoneRegex = /^\(\d{2}\)\s9\d{4}-\d{4}$/;
   const isValidPhone = phoneRegex.test(phone);
 
   const isValid = firstName && lastName && isValidPhone;
@@ -588,27 +619,27 @@ function validateClientForm() {
 }
 
 
+
+
 // Confirmar agendamento - CORRIGIDO
+// Confirmar agendamento
 async function confirmBooking() {
-  log('Confirmando agendamento');
-  
   if (!validateClientForm()) {
-    showNotification('Por favor, preencha todos os campos obrigatórios', 'error');
+    showNotification('Preencha todos os campos corretamente', 'error');
     return;
   }
+
   
-  // Verificar se todos os dados necessários estão disponíveis
-  if (!appState.selectedService || !appState.selectedBarber || !appState.selectedDate || !appState.selectedTime) {
-    logError('Dados de agendamento incompletos', {
-      service: appState.selectedService,
-      barber: appState.selectedBarber,
-      date: appState.selectedDate,
-      time: appState.selectedTime
-    });
-    showNotification('Dados de agendamento incompletos. Reinicie o processo.', 'error');
+  const phone = document.getElementById('clientPhone').value;
+  const formattedPhone = formatPhoneForWhatsApp(phone);
+
+// Vai gerar: 5563992014547
+
+  if (!formattedPhone) {
+    showNotification('Telefone inválido para WhatsApp', 'error');
     return;
   }
-  
+
   const bookingData = {
     serviceId: appState.selectedService.id,
     barberId: appState.selectedBarber.id,
@@ -617,79 +648,32 @@ async function confirmBooking() {
     clientData: {
       firstName: document.getElementById('clientFirstName').value.trim(),
       lastName: document.getElementById('clientLastName').value.trim(),
-      phone: document.getElementById('clientPhone').value.trim(),
+      phone: formattedPhone,
       email: document.getElementById('clientEmail')?.value.trim() || ''
     }
   };
-  
-  log('Dados do agendamento preparados', bookingData);
-  
+
+  // Cria estado de loading no botão
+  const btn = document.getElementById('confirmBooking');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirmando...';
+
   try {
-    // Mostrar loading
-    const confirmBtn = document.getElementById('confirmBooking');
-    if (confirmBtn) {
-      confirmBtn.disabled = true;
-      confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirmando...';
-    }
-    
-    log('Enviando requisição para /api/appointments');
-    
-    const response = await fetch('/api/appointments', {
+    const res = await fetch('/api/appointments', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(bookingData)
     });
-    
-    log('Resposta recebida', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      log('Agendamento confirmado com sucesso', result);
-      
-      // Atualizar dados finais
-      updateFinalConfirmation(bookingData);
-      
-      // Ir para tela de confirmação
-      goToStep(5);
-      
-      showNotification('Agendamento confirmado com sucesso!', 'success');
-    } else {
-      // Tentar ler a resposta de erro
-      let errorMessage = 'Erro ao confirmar agendamento';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.error || errorData.message || errorMessage;
-        logError('Erro na resposta da API', errorData);
-      } catch (parseError) {
-        logError('Erro ao parsear resposta de erro', parseError);
-      }
-      
-      throw new Error(errorMessage);
-    }
-    
-  } catch (error) {
-    logError('Erro ao confirmar agendamento', error);
-    
-    // Verificar se é erro de rede
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      showNotification('Erro de conexão. Verifique sua internet e tente novamente.', 'error');
-    } else {
-      showNotification(error.message || 'Erro ao confirmar agendamento. Tente novamente.', 'error');
-    }
+    if (!res.ok) throw new Error((await res.json()).message || res.statusText);
+    updateFinalConfirmation(bookingData);
+    goToStep(5);
+    showNotification('Agendamento confirmado!', 'success');
+  } catch (err) {
+    console.error(err);
+    showNotification(err.message || 'Erro ao confirmar', 'error');
   } finally {
-    // Restaurar botão
-    const confirmBtn = document.getElementById('confirmBooking');
-    if (confirmBtn) {
-      confirmBtn.disabled = false;
-      confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Agendamento';
-    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Agendamento';
   }
 }
 

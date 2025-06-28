@@ -230,45 +230,7 @@ function getBlockedTimesWithDuration(appointments) {
   return Array.from(blocked);
 }
 
-// function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null, requiredDuration = 20) {
-//   const slots = [];
-//   const start = timeToMinutes(startTime);
-//   const end = timeToMinutes(endTime);
-//   const now = new Date();
 
-//   const todayStr = now.toISOString().slice(0, 10);
-
-//   for (let time = start; time + requiredDuration <= end; time += 10) {
-//     let isBlocked = false;
-
-//     for (let i = 0; i < requiredDuration; i += 10) {
-//       const candidateTime = minutesToTime(time + i);
-//       if (bookedTimes.includes(candidateTime)) {
-//         isBlocked = true;
-//         break;
-//       }
-//     }
-
-//     if (isBlocked) continue;
-
-//     const [hours, minutes] = minutesToTime(time).split(':').map(Number);
-
-//     // Aqui criamos um Date UTC para o horário do slot, no dia selecionado
-//     const slotDate = new Date(selectedDateStr + 'T00:00:00Z');
-//     slotDate.setUTCHours(hours, minutes, 0, 0);
-
-//     // Agora comparamos o horário do slot com o horário atual UTC
-//     if (selectedDateStr === todayStr) {
-//       if (slotDate.getTime() < now.getTime() + 10 * 60000) {
-//         continue;
-//       }
-//     }
-
-//     slots.push(minutesToTime(time));
-//   }
-
-//   return slots;
-// }
 function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null, requiredDuration = 20) {
   const slots = [];
   const start = timeToMinutes(startTime);
