@@ -96,8 +96,9 @@ app.use('/', require('./routes/appointments'));
 // Rotas administrativas
 app.use('/admin', require('./routes/admin'));
 
-log('Rotas configuradas');
+app.use('/admin/api', require('./routes/adminApi'));
 
+log('Rotas configuradas');
 // Middleware de erro 404
 app.use((req, res) => {
   logError(`Rota não encontrada: ${req.method} ${req.url}`, new Error('404 Not Found'));

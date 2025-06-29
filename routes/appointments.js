@@ -398,6 +398,48 @@ router.delete('/:id', async (req, res) => {
     });
   }
 });
+// Confirmar agendamento
+router.post('/api/appointments/:id/confirm', async (req, res) => {
+  try {
+    const appointment = await Appointment.findByPk(req.params.id);
+    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
+
+    await appointment.update({ status: 'confirmed' });
+    res.json({ success: true });
+  } catch (error) {
+    logError('Erro ao confirmar agendamento', error);
+    res.status(500).json({ error: 'Erro ao confirmar agendamento' });
+  }
+});
+
+// Marcar como concluído
+router.post('/api/appointments/:id/complete', async (req, res) => {
+  try {
+    const appointment = await Appointment.findByPk(req.params.id);
+    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
+
+    await appointment.update({ status: 'completed' });
+    res.json({ success: true });
+  } catch (error) {
+    logError('Erro ao concluir agendamento', error);
+    res.status(500).json({ error: 'Erro ao concluir agendamento' });
+  }
+});
+
+// Cancelar agendamento com motivo
+router.post('/api/appointments/:id/cancel', async (req, res) => {
+  try {
+    const appointment = await Appointment.findByPk(req.params.id);
+    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
+
+    const { reason } = req.body; // Motivo opcional
+    await appointment.update({ status: 'cancelled' });
+    res.json({ success: true, reason });
+  } catch (error) {
+    logError('Erro ao cancelar agendamento', error);
+    res.status(500).json({ error: 'Erro ao cancelar agendamento' });
+  }
+});
 
 module.exports = router;
 

@@ -1,4 +1,5 @@
 // Middleware de autenticação para área administrativa - CORRIGIDO
+
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [AUTH] ${message}`);
@@ -10,10 +11,12 @@ const log = (message, data = null) => {
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [AUTH ERROR] ${message}`);
-  console.error(`[${timestamp}] [AUTH ERROR] Stack:`, error.stack);
+  if (error && error.stack) {
+    console.error(`[${timestamp}] [AUTH ERROR] Stack:`, error.stack);
+  }
 };
 
-// Middleware de autenticação
+// Middleware para rotas web (redireciona para login se não autenticado)
 const isAuthenticated = (req, res, next) => {
   log('Verificando autenticação', { 
     url: req.url,
@@ -22,7 +25,7 @@ const isAuthenticated = (req, res, next) => {
     hasUser: !!(req.session && req.session.user),
     sessionId: req.sessionID
   });
-  
+
   if (req.session && req.session.user) {
     log('Usuário autenticado', { 
       user: req.session.user,
@@ -36,6 +39,14 @@ const isAuthenticated = (req, res, next) => {
     });
     return res.redirect('/admin/login?error=Acesso negado. Faça login primeiro.');
   }
+};
+
+// Middleware para APIs (retorna JSON 401 se não autenticado)
+const isAuthenticatedApi = (req, res, next) => {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Usuário não autenticado' });
 };
 
 // Middleware para verificar role de usuário
@@ -67,7 +78,7 @@ const hasRole = (roles) => {
   };
 };
 
-// Middleware para verificar se usuário já está logado
+// Middleware para redirecionar se usuário já estiver logado
 const redirectIfAuthenticated = (req, res, next) => {
   log('Verificando se usuário já está logado', {
     hasSession: !!req.session,
@@ -100,8 +111,8 @@ const debugSession = (req, res, next) => {
 
 module.exports = {
   isAuthenticated,
+  isAuthenticatedApi,
   hasRole,
   redirectIfAuthenticated,
   debugSession
 };
-

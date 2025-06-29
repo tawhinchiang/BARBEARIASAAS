@@ -796,30 +796,35 @@ body {
 }
 
 /* Menu de ações corrigido */
+.actions-dropdown {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1100;
+  min-width: 180px;
+  padding: 0.5rem 0;
+  background-color: var(--bg-light);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  max-height: 300px;
+  overflow-y: auto;
+  transition: opacity 0.3s ease;
+}
+
+.actions-dropdown.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .actions-menu {
   position: relative;
   display: inline-block;
 }
 
-.actions-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: var(--bg-light);
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  min-width: 180px;
-  z-index: 1000;
-  transform: translateY(5px);
-  display: none;
-  max-height: 300px;
-  overflow-y: auto;
-}
 
-.actions-dropdown.show {
-  display: block;
-}
 
 .action-item {
   display: flex;
@@ -951,14 +956,14 @@ body {
     font-size: 2rem;
   }
   
-  .actions-dropdown {
+  /* .actions-dropdown {
     position: fixed;
     top: 50% !important;
     left: 50% !important;
     right: auto !important;
     transform: translate(-50%, -50%) !important;
     min-width: 250px;
-  }
+  } */
 }
 
 @media (max-width: 480px) {
@@ -986,6 +991,7 @@ body {
     font-size: 1.2rem;
   }
 }
+
 
 /* Animações */
 .fade-in-up {
@@ -1064,4 +1070,91 @@ body {
 
 .admin-card:hover {
   box-shadow: var(--shadow-hover);
+}
+.actions-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.actions-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1100;
+  min-width: 180px;
+  padding: 0.5rem 0;
+  background-color: var(--bg-light); /* Fundo escuro */
+  border: 2px solid var(--border-color); /* borda escura */
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  max-height: 300px;
+  overflow-y: auto;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.actions-dropdown.show {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.action-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-dark); /* texto claro */
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.action-item:hover {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+}
+
+.action-item.danger {
+  color: var(--danger-color);
+}
+
+.action-item.danger:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+/* Modal Bootstrap - Estilo escuro para #viewModal */
+
+#viewModal .modal-content {
+  background-color: var(--bg-light) !important; /* #19191c */
+  color: var(--text-dark) !important; /* branco */
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+#viewModal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+#viewModal .btn-close {
+  filter: invert(1); /* deixa o X branco */
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+#viewModal .btn-close:hover {
+  opacity: 1;
+}
+
+#viewModal .modal-body {
+  color: var(--text-dark);
+  font-size: 1rem;
+  line-height: 1.5;
+  max-height: 60vh;
+  overflow-y: auto;
 }
