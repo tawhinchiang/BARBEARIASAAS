@@ -109,21 +109,24 @@
                     <td>
                       <div class="d-flex align-items-center">
                         <div class="avatar-sm me-2">
-                          {{substring Client.firstName 0 1}}{{substring Client.lastName 0 1}}
+                          {{substring client.firstName 0 1}}{{substring client.lastName 0 1}}
                         </div>
                         <div>
-                          <div class="fw-semibold">{{Client.firstName}} {{Client.lastName}}</div>
-                          <small class="text-muted">{{Client.phone}}</small>
+                          <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+                          <small class="text-muted">{{client.phone}}</small>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <div class="fw-semibold">{{ServiceType.name}}</div>
-                      <small class="text-muted">{{ServiceType.duration}} - R$ {{formatCurrency ServiceType.price}}</small>
+                      
+
+                      <div class="fw-semibold">{{serviceType.name}}</div>
+                     {{!-- <small class="text-muted">{{serviceType.duration}} {{formatCurrency serviceType.price}}</small> --}}
+
                     </td>
                     <td>
-                      <div class="fw-semibold">{{Barber.name}}</div>
-                      <small class="text-muted">{{Barber.specialties}}</small>
+                      <div class="fw-semibold">{{barber.name}}</div>
+                      <small class="text-muted">{{barber.specialties}}</small>
                     </td>
                     <td>
                       <div class="fw-semibold">{{formatDate appointmentDate}}</div>
@@ -131,10 +134,12 @@
                     </td>
                     <td>
                   <span class="status-badge status-{{status}}">
-                        {{#eq status 'confirmed'}}Confirmado{{/eq}}
-                        {{#eq status 'pending'}}Pendente{{/eq}}
-                        {{#eq status 'cancelled'}}Cancelado{{/eq}}
-                        {{#eq status 'completed'}}Concluído{{/eq}}
+                    {{#if (eq status 'confirmed')}}Confirmado
+                    {{else if (eq status 'pending')}}Pendente
+                    {{else if (eq status 'cancelled')}}Cancelado
+                    {{else if (eq status 'completed')}}Concluído
+                    {{else}}Desconhecido
+                    {{/if}}
                   </span>
 
                     </td>
