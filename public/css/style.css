@@ -1,23 +1,23 @@
 /* ===== SISTEMA BARBEARIA - DESIGN CLEAN PRETO E BRANCO ===== */
 
 :root {
-  /* Cores principais - Preto e Branco */
-  --primary-color: #000000;
-  --secondary-color: #333333;
-  --accent-color: #666666;
-  --bg-light: #ffffff;
-  --bg-dark: #000000;
-  --bg-gray: #f8f9fa;
-  --text-dark: #000000;
-  --text-light: #ffffff;
-  --text-muted: #666666;
-  --border-color: #dee2e6;
+  /* Cores principais - Preto Escuro como solicitado */
+  --primary-color: #ffffff;
+  --secondary-color: #e9ecef;
+  --accent-color: #adb5bd;
+  --bg-light: #19191c;
+  --bg-dark: #ffffff;
+  --bg-gray: #2a2a2e;
+  --text-dark: #ffffff;
+  --text-light: #19191c;
+  --text-muted: #ffffff; ;
+  --border-color: #3a3a3e;
   --success-color: #28a745;
   --warning-color: #ffc107;
   --danger-color: #dc3545;
   --info-color: #17a2b8;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.15);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* Reset e Base */
@@ -199,7 +199,7 @@ body {
 
 .service-card {
   background: var(--bg-light);
-  border: 2px solid var(--border-color);
+  border: none;
   border-radius: 12px;
   padding: 2rem;
   cursor: pointer;
@@ -208,14 +208,13 @@ body {
 }
 
 .service-card:hover {
-  border-color: var(--primary-color);
   transform: translateY(-3px);
   box-shadow: var(--shadow-hover);
 }
 
 .service-card.selected {
-  border-color: var(--primary-color);
-  background: #f8f9fa;
+  background: #2a2a2e;
+  box-shadow: var(--shadow-hover);
 }
 
 .service-header {
@@ -255,7 +254,7 @@ body {
 
 .barber-card {
   background: var(--bg-light);
-  border: 2px solid var(--border-color);
+  border: none;
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
@@ -265,14 +264,13 @@ body {
 }
 
 .barber-card:hover {
-  border-color: var(--primary-color);
   transform: translateY(-3px);
   box-shadow: var(--shadow-hover);
 }
 
 .barber-card.selected {
-  border-color: var(--primary-color);
-  background: #f8f9fa;
+  background: #2a2a2e;
+  box-shadow: var(--shadow-hover);
 }
 
 .barber-avatar {
@@ -647,7 +645,7 @@ body {
 
 .admin-card {
   background: var(--bg-light);
-  border: 2px solid var(--border-color);
+  border: none;
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
@@ -655,35 +653,90 @@ body {
 }
 
 .admin-card:hover {
-  border-color: var(--primary-color);
   box-shadow: var(--shadow-hover);
 }
 
 /* Navbar administrativa */
-.navbar-dark {
-  background: var(--primary-color) !important;
+.navbar-dark,
+.admin-navbar {
+  background-color: #19191c !important;
+  border-bottom: 1px solid var(--border-color);
 }
 
+
+.navbar-dark .navbar-brand,
+.admin-navbar .navbar-brand,
+.navbar-dark .navbar-nav .nav-link,
+.admin-navbar .navbar-nav .nav-link,
+.navbar-dark .navbar-nav .nav-link.active,
+.admin-navbar .navbar-nav .nav-link.active {
+  color: var(--text-dark) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.admin-navbar .navbar-nav .nav-link:hover {
+  color: var(--primary-color) !important;
+}
+
+
+
+/* .navbar-brand .logo-icon {
+  background: #19191c;
+  color: #19191c;
+} */
 .navbar-brand .logo-icon {
-  background: var(--text-light);
-  color: var(--primary-color);
+  background: var(--primary-color);
+  color: var(--text-light);
+}
+/* Dropdown da navbar administrativa */
+.navbar-dark .dropdown-menu,
+.admin-navbar .dropdown-menu {
+  background: var(--bg-light) !important;
+  border: 1px solid var(--border-color) !important;
 }
 
-.nav-link.active {
-  color: var(--text-light) !important;
-  font-weight: 600;
+.navbar-dark .dropdown-item,
+.admin-navbar .dropdown-item {
+  color: var(--text-dark) !important;
 }
 
-.nav-link:hover {
-  color: var(--bg-gray) !important;
+.navbar-dark .dropdown-item:hover,
+.admin-navbar .dropdown-item:hover {
+  background: var(--bg-gray) !important;
+  color: var(--text-dark) !important;
 }
 
 /* Tabelas administrativas */
 .admin-table {
-  background: var(--bg-light);
+  background: #19191c;
   border-radius: 12px;
   overflow: hidden;
-  border: 2px solid var(--border-color);
+  border: none;
+  overflow-x: auto;
+}
+
+/* Responsividade para tabelas */
+@media (max-width: 768px) {
+  .admin-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .admin-table table {
+    min-width: 600px;
+  }
+  
+  .admin-table th,
+  .admin-table td {
+    white-space: nowrap;
+    padding: 0.5rem;
+  }
+  
+  .admin-table .avatar-sm {
+    width: 25px;
+    height: 25px;
+    font-size: 0.7rem;
+  }
 }
 
 .table {
@@ -713,7 +766,7 @@ body {
 /* Filtros administrativos */
 .admin-filters {
   background: var(--bg-light);
-  border: 2px solid var(--border-color);
+  border: none;
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 2rem;
@@ -835,8 +888,8 @@ body {
 .user-avatar {
   width: 32px;
   height: 32px;
-  background: var(--text-light);
-  color: var(--primary-color);
+  background: var(--primary-color);
+  color: var(--text-light);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -870,9 +923,19 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
   
+  .calendar-container {
+    padding: 1rem;
+  }
+  
+  .calendar-day-header {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+  
   .calendar-day {
-    min-height: 50px;
-    padding: 0.5rem;
+    min-height: 45px;
+    padding: 0.25rem;
+    font-size: 0.9rem;
   }
   
   .times-grid {
@@ -895,6 +958,32 @@ body {
     right: auto !important;
     transform: translate(-50%, -50%) !important;
     min-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-container {
+    padding: 0.5rem;
+  }
+  
+  .calendar-day-header {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+  
+  .calendar-day {
+    min-height: 35px;
+    padding: 0.1rem;
+    font-size: 0.8rem;
+  }
+  
+  .calendar-nav {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .calendar-title {
+    font-size: 1.2rem;
   }
 }
 
@@ -959,4 +1048,20 @@ body {
 }
 .logo-icon imagem{
 
+}
+.text-muted {
+  color: var(--text-muted) !important;
+}
+.admin-card {
+  background: var(--bg-light) !important; /* sobrescreve fundo branco padrão */
+  border: none;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  color: var(--text-dark);
+}
+
+.admin-card:hover {
+  box-shadow: var(--shadow-hover);
 }

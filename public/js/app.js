@@ -121,6 +121,8 @@ function selectService(service) {
     continueBtn.disabled = false;
     continueBtn.classList.remove('disabled');
   }
+  goToStep(2);
+
    log('Botão continuar ativado');
 }
  
@@ -240,14 +242,22 @@ async function loadBarbers() {
   
 //   return card;
 // }
+function generateAvatarUrl(name) {
+  const fileName = name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[^a-z0-9 ]/g, '') // remove caracteres especiais
+    .replace(/\s+/g, '-'); // substitui espaços por traço
+  return `/images/barbers/${fileName}.png`;
+}
+
 function createBarberCard(barber) {
   const card = document.createElement('div');
   card.className = 'barber-card';
   card.dataset.barberId = barber.id;
 
-  const avatarContent = barber.avatarUrl
-    ? `<img class="barber-avatar-img" src="${barber.avatarUrl}" alt="${barber.name}" />`
-    : `<div class="barber-avatar-text">${barber.name.split(' ').map(n => n[0]).join('').substring(0, 2)}</div>`;
+  const avatarUrl = barber.avatarUrl || generateAvatarUrl(barber.name);
+  const avatarContent = `<img class="barber-avatar-img" src="${avatarUrl}" alt="${barber.name}" onerror="this.onerror=null;this.style.display='none';" />`;
 
   card.innerHTML = `
     <div class="barber-avatar">${avatarContent}</div>
@@ -284,6 +294,7 @@ function selectBarber(barber) {
   }
   
   log('Botão continuar ativado');
+  goToStep(3);
 }
 
 // Inicializar calendário
@@ -493,6 +504,8 @@ function selectTime(time) {
   }
   
   log('Botão continuar ativado');
+  goToStep(4);
+
 }
 
 // Mudar mês
