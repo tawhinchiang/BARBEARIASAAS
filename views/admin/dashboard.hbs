@@ -33,9 +33,9 @@
       <div class="col-lg-3 col-md-6 mb-3 d-flex">
         <div class="admin-card text-center w-100">
           <div class="display-6 mb-2"><i class="fas fa-dollar-sign"></i></div>
-          <h3 class="fw-bold">R$ {{formatCurrency monthlyRevenue}}</h3>
+          <h3 class="fw-bold">{{formatCurrency monthlyRevenue}}</h3>
           <p class="text-muted mb-0">Receita do Mês</p>
-        </div>
+      </div>
       </div>
 
       {{!-- <div class="col-lg-3 col-md-6 mb-3 d-flex">
@@ -84,32 +84,34 @@
                   <td>
                     <div class="d-flex align-items-center">
                       <div class="avatar-sm me-2">
-                        {{substring Client.firstName 0 1}}{{substring Client.lastName 0 1}}
+                        {{substring client.firstName 0 1}}{{substring client.lastName 0 1}}
                       </div>
                       <div>
-                        <div class="fw-semibold">{{Client.firstName}} {{Client.lastName}}</div>
-                        <small class="text-muted">{{Client.phone}}</small>
+                        <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+                        <small class="text-muted">{{client.phone}}</small>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <div class="fw-semibold">{{ServiceType.name}}</div>
-                    <small class="text-muted">{{ServiceType.duration}}</small>
+                    <div class="fw-semibold">{{serviceType.name}}</div>
+                    <small class="text-muted">{{serviceType.duration}} min</small>
                   </td>
-                  <td>{{Barber.name}}</td>
+                  <td>{{barber.name}}</td>
                   <td>
                     <div class="fw-semibold">{{formatTime appointmentTime}}</div>
                     <small class="text-muted">{{formatDate appointmentDate}}</small>
                   </td>
                   <td>
                     <span class="status-badge status-{{status}}">
-                      {{#eq status 'confirmed'}}Confirmado{{/eq}}
-                      {{#eq status 'pending'}}Pendente{{/eq}}
-                      {{#eq status 'cancelled'}}Cancelado{{/eq}}
-                      {{#eq status 'completed'}}Concluído{{/eq}}
+                      {{#if (eq status 'confirmed')}}Confirmado
+                      {{else if (eq status 'pending')}}Pendente
+                      {{else if (eq status 'cancelled')}}Cancelado
+                      {{else if (eq status 'completed')}}Concluído
+                      {{else}}Desconhecido
+                      {{/if}}
                     </span>
                   </td>
-                  <td><strong>R$ {{formatCurrency totalPrice}}</strong></td>
+                  <td><strong>{{formatCurrency totalPrice}}</strong></td>
                 </tr>
                 {{/each}}
               </tbody>

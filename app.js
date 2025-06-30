@@ -30,17 +30,21 @@ const logError = (message, error) => {
 log('Inicializando aplicação BarberShop');
 
 // Configurar Handlebars - CORRIGIDO
+const helpers = require('./config/handlebars-helpers');
+
 const hbs = engine({
   defaultLayout: 'main',
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
   extname: '.hbs',
-  helpers: require('./config/handlebars-helpers'),
+  helpers: helpers, // ou só "helpers" mesmo, ES6 shorthand
   runtimeOptions: {
-    allowProtoPropertiesByDefault: true, // <- Adiciona isso
-    allowProtoMethodsByDefault: true     // <- E isso
+    allowProtoPropertiesByDefault: true,
+    allowProtoMethodsByDefault: true
   }
 });
+
+
 
 
 app.engine('hbs', hbs);
@@ -97,7 +101,9 @@ app.use('/', require('./routes/appointments'));
 app.use('/admin', require('./routes/admin'));
 
 app.use('/admin/api', require('./routes/adminApi'));
-
+app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.status(204).end(); // Sem conteúdo
+});
 log('Rotas configuradas');
 // Middleware de erro 404
 app.use((req, res) => {
@@ -118,9 +124,7 @@ app.use((err, req, res, next) => {
     layout: req.url.startsWith('/admin') ? 'admin' : 'main'
   });
 });
-app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
-  res.status(204).end(); // Sem conteúdo
-});
+
 
 log('Aplicação configurada com sucesso');
 

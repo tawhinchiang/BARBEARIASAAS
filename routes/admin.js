@@ -136,7 +136,7 @@ router.get('/dashboard', async (req, res) => {
         appointmentDate: {
           [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
         },
-        status: 'completed'
+        status: 'confirmed'
       }
     }) || 0;
 
@@ -452,17 +452,20 @@ router.get('/reports', async (req, res) => {
     };
     
     appointments.forEach(apt => {
-      // Por status
+      // Contagem Por status
+      console.log(`Status: ${apt.status} - Preço: ${apt.totalPrice}`);
       stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
       
-      // Por barbeiro
+      // Contagem Por barbeiro
       const barberName = apt.barber.name;
       stats.byBarber[barberName] = (stats.byBarber[barberName] || 0) + 1;
       
       // Receita total
-      if (apt.totalPrice) {
+      // Receita total - ignorar agendamentos cancelados
+      if (apt.totalPrice && apt.status !== 'cancelled') {
         stats.totalRevenue += parseFloat(apt.totalPrice);
       }
+
     });
     
     log('Estatísticas do relatório calculadas', { stats });
