@@ -23,13 +23,13 @@ module.exports = {
     return new Date(date).toLocaleString('pt-BR');
   },
 
-  formatCurrency: function(value) {
-    if (!value) return 'R$ 0,00';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  },
+formatCurrency: function(value) {
+  if (!value) return 'R$ 0,00';
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+},
 
   eq: function(a, b) {
     return a === b;
