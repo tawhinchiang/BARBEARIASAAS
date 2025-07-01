@@ -1000,6 +1000,29 @@ body {
     font-size: 1.2rem;
   }
 }
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  animation: fadeIn 0.3s ease-in;
+}
+
+.loading-spinner i {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
 
 
 /* Animações */
@@ -1166,4 +1189,125 @@ body {
   line-height: 1.5;
   max-height: 60vh;
   overflow-y: auto;
+}
+  /* Modal container - fundo escuro com opacidade */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  /* Conteúdo do modal */
+  #meuModal .modal-content {
+    background-color: var(--bg-light);
+    color: var(--text-dark);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    max-width: 600px;
+    width: 90%;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+  }
+#meuModal .modal-content {
+  background-color: #000 !important; /* Preto absoluto */
+  color: #fff !important;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+  /* Header do modal */
+  #meuModal .modal-header {
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    font-weight: 700;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Botão fechar */
+  #meuModal .btn-close {
+    background: none;
+    border: none;
+    color: var(--text-dark);
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    filter: invert(1);
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+  }
+
+  #meuModal .btn-close:hover {
+    opacity: 1;
+  }
+
+  /* Corpo do modal */
+  #meuModal .modal-body {
+    padding: 1.5rem;
+    color: var(--text-dark);
+    font-size: 1rem;
+    line-height: 1.5;
+    overflow-y: auto;
+  }
+  /* Responsividade e estilo do modal */
+
+#meuModal .modal-dialog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+#meuModal .modal-content {
+  margin: 0 auto; /* Garante centralização horizontal */
+}
+
+/* Centralizar corretamente em todas as telas */
+@media (max-width: 576px) {
+  #meuModal .modal-content {
+    margin: 10px;
+  }
+}
+
+#timeSlotsContainer {
+  display: grid;
+  /* Mude para minmax maior para crescer os slots */
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* antes era 80px */
+  gap: 8px;
+}
+
+#timeSlotsContainer .time-slot {
+  padding: 12px 0; /* aumenta o padding vertical para maior altura */
+  font-size: 1rem; /* aumenta o tamanho da fonte */
+  text-align: center;
+  border-radius: 8px; /* deixa mais arredondado */
+  background-color: #444;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  user-select: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 48px; /* define uma altura fixa para consistência */
+}
+#timeSlotsContainer .time-slot.selected:hover {
+  background-color: #555; /* ou outra cor que combine */
+  border-color: var(--primary-color);
+  color: var(--text-light);
+}
+
+#timeSlotsContainer .time-slot:hover {
+  background-color: #666;
 }

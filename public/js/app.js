@@ -129,27 +129,50 @@ function selectService(service) {
 
 
 // Ir para etapa
-function goToStep(stepNumber) {
-  log(`Avançando para etapa ${stepNumber}`);
+// function goToStep(stepNumber) {
+//   log(`Avançando para etapa ${stepNumber}`);
 
-  if (stepNumber === 2) {
-    loadBarbers();
+//   if (stepNumber === 2) {
+//     loadBarbers();
+//   }
+//   if (stepNumber === 3) {
+//     // limpa o UI e o estado antes de pedir novos horários
+//     appState.availableTimes = [];
+//     const cont = document.getElementById('timeSlotsContainer');
+//     if (cont) cont.innerHTML = '';
+//     document.getElementById('timesContainer').style.display = 'none';
+//     generateCalendar();
+//   }
+//   if (stepNumber === 4) {
+//     updateBookingSummary();
+//   }
+
+//   showStep(stepNumber);
+//   updateStepIndicators(stepNumber);
+//   appState.currentStep = stepNumber;
+// }
+function goToStep(step) {
+  log(`Avançando para etapa ${step}`);
+
+  document.querySelectorAll('.step').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+
+  const targetStep = document.getElementById(`step${step}`);
+  if (targetStep) {
+    targetStep.classList.add('active');
+    targetStep.style.display = 'block';
+  } else {
+    console.error(`Elemento step${step} não encontrado no DOM.`);
   }
-  if (stepNumber === 3) {
-    // limpa o UI e o estado antes de pedir novos horários
-    appState.availableTimes = [];
-    const cont = document.getElementById('timeSlotsContainer');
-    if (cont) cont.innerHTML = '';
-    document.getElementById('timesContainer').style.display = 'none';
-    generateCalendar();
-  }
-  if (stepNumber === 4) {
+
+  // ⚠️ Adicione essa parte aqui
+  if (step === 4) {
     updateBookingSummary();
   }
 
-  showStep(stepNumber);
-  updateStepIndicators(stepNumber);
-  appState.currentStep = stepNumber;
+  appState.currentStep = step;
 }
 
 
@@ -382,8 +405,10 @@ function selectDate(date) {
   
   appState.selectedDate = date;
   
+    
   // Carregar horários disponíveis
   loadAvailableTimes(date);
+  abrirModal();
 }
 
 // Carregar horários disponíveis - CORRIGIDO
@@ -504,6 +529,7 @@ function selectTime(time) {
   }
   
   log('Botão continuar ativado');
+  fecharModal();
   goToStep(4);
 
 }
@@ -793,6 +819,43 @@ function filterServices() {
       card.style.display = 'none';
     }
   });
+}
+// Seleciona o modal uma vez
+const modal = document.getElementById('meuModal');
+
+function abrirModal() {
+  if (!modal) return; // garante que existe o modal
+  modal.classList.add('show');
+  modal.style.display = 'block';
+  document.body.classList.add('modal-open');
+   carregarHorarios(); // se estiver usando Bootstrap para evitar scroll
+}
+
+function fecharModal() {
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.style.display = 'none';
+  document.body.classList.remove('modal-open');
+}
+
+// Fecha modal se clicar fora do conteúdo (fora do .modal-content)
+modal.addEventListener('click', function(event) {
+  if (event.target === modal) {
+    fecharModal();
+  }
+});
+
+function carregarHorarios() {
+  const loading = document.getElementById('loading-horarios');
+  const horarios = document.getElementById('timesContainer');
+
+  loading.style.display = 'flex';
+  horarios.style.display = 'none';
+
+  setTimeout(() => {
+    loading.style.display = 'none';
+    horarios.style.display = 'block';
+  }, 2000);
 }
 
 // // Considerando que você já tem a lista `availableTimes` da API
