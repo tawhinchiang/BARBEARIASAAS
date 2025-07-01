@@ -965,6 +965,15 @@ body {
     min-width: 250px;
   } */
 }
+.top-back-button {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.top-back-button .btn {
+  border-radius: 30px;
+  font-weight: 500;
+}
 
 @media (max-width: 480px) {
   .calendar-container {

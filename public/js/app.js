@@ -781,6 +781,20 @@ function showNotification(message, type = 'info') {
     }, 300);
   }, 3000);
 }
+function filterServices() {
+  const input = document.getElementById('searchInput').value.toLowerCase();
+  const cards = document.querySelectorAll('#servicesContainer .service-card');
+
+  cards.forEach(card => {
+    const serviceName = card.querySelector('.service-name').textContent.toLowerCase();
+    if (serviceName.includes(input)) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
 // // Considerando que você já tem a lista `availableTimes` da API
 // // const allPossibleSlots = generateAllSlotsForDay(start, end); 
 //  function generateAllSlotsForDay(start, end) {
