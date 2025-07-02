@@ -1,4 +1,4 @@
-// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN
+// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN - VERSÃO CORRIGIDA
 
 // Verificar se CONFIG já existe para evitar redeclaração
 if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
@@ -9,7 +9,7 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
 }
 
 // Usar referência global para evitar conflitos
-// const CONFIG = window.BARBERSHOP_CONFIG;
+const CONFIG = window.BARBERSHOP_CONFIG;
 
 // Estado global da aplicação
 let appState = {
@@ -42,10 +42,12 @@ function setupEventListeners() {
   // Navegação de meses no calendário
   document.getElementById('prevMonth')?.addEventListener('click', () => changeMonth(-1));
   document.getElementById('nextMonth')?.addEventListener('click', () => changeMonth(1));
+  
   // Validação de formulário
   ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', validateClientForm);
   });
+  
   // Google login
   document.getElementById('googleLogin')?.addEventListener('click', handleGoogleLogin);
 }
@@ -60,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeCalendar();
     setupPhoneMask();
     
-      // só chama se o CLIENT_ID estiver configurado
+    // só chama se o CLIENT_ID estiver configurado
     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
       initializeGoogleLogin();
     }
@@ -70,45 +72,68 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Carregar serviços disponíveis da API
+// ===== CARREGAR SERVIÇOS - CORRIGIDO =====
 async function loadServices() {
   log('Buscando serviços disponíveis');
 
-  const spinner   = document.getElementById('servicesSpinner');
+  const spinner = document.getElementById('servicesSpinner');
   const container = document.getElementById('servicesContainer');
 
-  // 1) mostra spinner, esconde container
-  spinner.style.display   = 'flex';
-  container.style.display = 'none';
+  // Verificar se os elementos existem
+  if (!spinner || !container) {
+    logError('Elementos de serviços não encontrados no DOM');
+    return;
+  }
 
   try {
+    // 1) Mostrar spinner e esconder container
+    spinner.style.display = 'flex';
+    spinner.classList.add('show');
+    container.style.display = 'none';
+    container.classList.remove('show');
+
     const res = await fetch('/api/services');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const { services } = await res.json();
     appState.services = services;
+    
+    // Renderizar serviços
     renderServices(services);
 
-    // 2) após renderizar, esconde spinner e mostra container com fade-in
-    spinner.style.display   = 'none';
+    // 2) Esconder spinner e mostrar container com animação
+    spinner.style.display = 'none';
+    spinner.classList.remove('show');
+    
+    // Garantir que o container seja visível
     container.style.display = 'grid';
+    container.classList.add('show');
     container.classList.add('fade-in-soft');
-    log(`${services.length} serviços carregados`);
+    
+    log(`${services.length} serviços carregados e exibidos`);
+    
   } catch (err) {
     logError('Erro ao carregar serviços', err);
     showNotification('Erro ao carregar serviços. Tente recarregar.', 'error');
-  } finally {
-    // 3) garante que o spinner sempre suma
-    spinner.style.display = 'none';
+    
+    // Em caso de erro, esconder spinner
+    if (spinner) {
+      spinner.style.display = 'none';
+      spinner.classList.remove('show');
+    }
   }
 }
-
-
 
 // Renderizar cards de serviços dinamicamente
 function renderServices(services) {
   const container = document.getElementById('servicesContainer');
+  if (!container) {
+    logError('Container de serviços não encontrado');
+    return;
+  }
+  
   container.innerHTML = '';
+  
   services.forEach(svc => {
     const priceNum = Number(svc.price);
     const card = document.createElement('div');
@@ -126,88 +151,78 @@ function renderServices(services) {
     card.addEventListener('click', () => selectService(svc));
     container.appendChild(card);
   });
+  
+  log('Cards de serviços renderizados');
 }
 
 // Selecionar serviço
 function selectService(service) {
   log('Serviço selecionado', service);
+  
   document.querySelectorAll('.service-card').forEach(card => card.classList.remove('selected'));
   const selectedCard = document.querySelector(`[data-service-id="${service.id}"]`);
   if (selectedCard) selectedCard.classList.add('selected');
+  
   appState.selectedService = service;
+  
   const continueBtn = document.getElementById('continueToBarber');
   if (continueBtn) {
     continueBtn.disabled = false;
     continueBtn.classList.remove('disabled');
   }
+  
   goToStep(2);
-
-   log('Botão continuar ativado');
+  log('Botão continuar ativado');
 }
- 
 
-
-// Ir para etapa
-// function goToStep(stepNumber) {
-//   log(`Avançando para etapa ${stepNumber}`);
-
-//   if (stepNumber === 2) {
-//     loadBarbers();
-//   }
-//   if (stepNumber === 3) {
-//     // limpa o UI e o estado antes de pedir novos horários
-//     appState.availableTimes = [];
-//     const cont = document.getElementById('timeSlotsContainer');
-//     if (cont) cont.innerHTML = '';
-//     document.getElementById('timesContainer').style.display = 'none';
-//     generateCalendar();
-//   }
-//   if (stepNumber === 4) {
-//     updateBookingSummary();
-//   }
-
-//   showStep(stepNumber);
-//   updateStepIndicators(stepNumber);
-//   appState.currentStep = stepNumber;
-// }
+// Ir para etapa - CORRIGIDO
 function goToStep(step) {
   log(`Avançando para etapa ${step}`);
 
+  // Esconder todas as etapas
   document.querySelectorAll('.step').forEach(s => {
     s.classList.remove('active');
     s.style.display = 'none';
   });
 
+  // Mostrar etapa atual
   const targetStep = document.getElementById(`step${step}`);
   if (targetStep) {
     targetStep.classList.add('active');
     targetStep.style.display = 'block';
+    targetStep.classList.add('fade-in-up');
   } else {
-    console.error(`Elemento step${step} não encontrado no DOM.`);
+    logError(`Elemento step${step} não encontrado no DOM.`);
+    return;
   }
 
-  // ⚠️ Adicione essa parte aqui
+  // Ações específicas por etapa
+  if (step === 2) {
+    loadBarbers();
+  }
+  if (step === 3) {
+    // Limpar estado de horários
+    appState.availableTimes = [];
+    const timesContainer = document.getElementById('timesContainer');
+    const slotsContainer = document.getElementById('timeSlotsContainer');
+    
+    if (timesContainer) {
+      timesContainer.style.display = 'none';
+      timesContainer.classList.remove('show');
+    }
+    if (slotsContainer) {
+      slotsContainer.innerHTML = '';
+    }
+    
+    generateCalendar();
+  }
   if (step === 4) {
     updateBookingSummary();
   }
 
+  // Atualizar indicadores
+  updateStepIndicators(step);
   appState.currentStep = step;
-}
-
-
-// Mostrar etapa
-function showStep(stepNumber) {
-  // Esconder todas as etapas
-  document.querySelectorAll('.step').forEach(step => {
-    step.classList.remove('active');
-  });
-  
-  // Mostrar etapa atual
-  const currentStep = document.getElementById(`step${stepNumber}`);
-  if (currentStep) {
-    currentStep.classList.add('active');
-    currentStep.classList.add('fade-in-up');
-  }
 }
 
 // Atualizar indicadores de etapa
@@ -237,7 +252,7 @@ async function loadBarbers() {
     }
     
     const data = await response.json();
-    const barbers = data.barbers || data; // Suportar diferentes formatos de resposta
+    const barbers = data.barbers || data;
     
     const container = document.getElementById('barbersContainer');
     if (!container) {
@@ -266,33 +281,17 @@ async function loadBarbers() {
   }
 }
 
-// Criar card de barbeiro
-// function createBarberCard(barber) {
-//   const card = document.createElement('div');
-//   card.className = 'barber-card';
-//   card.dataset.barberId = barber.id;
-  
-//   const initials = barber.name.split(' ').map(n => n[0]).join('').substring(0, 2);
-  
-//   card.innerHTML = `
-//     <div class="barber-avatar">${initials}</div>
-//     <div class="barber-name">${barber.name}</div>
-//     <div class="barber-specialty">${barber.specialties || 'Especialista'}</div>
-//   `;
-  
-//   card.addEventListener('click', () => selectBarber(barber));
-  
-//   return card;
-// }
+// Gerar URL do avatar
 function generateAvatarUrl(name) {
   const fileName = name
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
-    .replace(/[^a-z0-9 ]/g, '') // remove caracteres especiais
-    .replace(/\s+/g, '-'); // substitui espaços por traço
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, '-');
   return `/images/barbers/${fileName}.png`;
 }
 
+// Criar card de barbeiro
 function createBarberCard(barber) {
   const card = document.createElement('div');
   card.className = 'barber-card';
@@ -315,12 +314,10 @@ function createBarberCard(barber) {
 function selectBarber(barber) {
   log('Barbeiro selecionado', barber);
   
-  // Remover seleção anterior
   document.querySelectorAll('.barber-card').forEach(card => {
     card.classList.remove('selected');
   });
   
-  // Selecionar novo barbeiro
   const selectedCard = document.querySelector(`[data-barber-id="${barber.id}"]`);
   if (selectedCard) {
     selectedCard.classList.add('selected');
@@ -328,7 +325,6 @@ function selectBarber(barber) {
   
   appState.selectedBarber = barber;
   
-  // Ativar botão continuar
   const continueBtn = document.getElementById('continueToDate');
   if (continueBtn) {
     continueBtn.disabled = false;
@@ -424,24 +420,34 @@ function selectDate(date) {
   
   appState.selectedDate = date;
   
-    
   // Carregar horários disponíveis
   loadAvailableTimes(date);
   abrirModal();
 }
 
-// Carregar horários disponíveis - CORRIGIDO
+// ===== CARREGAR HORÁRIOS - CORRIGIDO =====
 async function loadAvailableTimes(date) {
   log('Carregando horários disponíveis para', date);
 
   const spinner = document.getElementById('loadingSpinner');
   const timesContainer = document.getElementById('timesContainer');
-  const container = document.getElementById('timeSlotsContainer');
+  const slotsContainer = document.getElementById('timeSlotsContainer');
+
+  // Verificar se os elementos existem
+  if (!timesContainer || !slotsContainer) {
+    logError('Elementos de horários não encontrados no DOM');
+    return;
+  }
 
   try {
     // Mostrar spinner e esconder horários
-    if (spinner) spinner.style.display = 'block';
-    if (timesContainer) timesContainer.style.display = 'none';
+    if (spinner) {
+      spinner.style.display = 'flex';
+      spinner.classList.add('show');
+    }
+    
+    timesContainer.style.display = 'none';
+    timesContainer.classList.remove('show');
 
     const dateStr = date.toISOString().split('T')[0];
     const service = appState.selectedService;
@@ -471,67 +477,62 @@ async function loadAvailableTimes(date) {
 
     appState.availableTimes = times;
 
-    if (!container) return;
-    container.innerHTML = '';
+    // Limpar container
+    slotsContainer.innerHTML = '';
 
     if (times.length === 0) {
       const emptyMsg = document.createElement('p');
       emptyMsg.className = 'text-muted text-center fade-in-soft';
       emptyMsg.textContent = 'Nenhum horário disponível para esta data';
-      container.appendChild(emptyMsg);
+      slotsContainer.appendChild(emptyMsg);
     } else {
       times.forEach(time => {
-        container.appendChild(createTimeSlot(time));
+        slotsContainer.appendChild(createTimeSlot(time));
       });
     }
 
-    // Mostrar horários e esconder spinner
-    if (spinner) spinner.style.display = 'none';
-    if (timesContainer) {
-      timesContainer.style.display = 'block';
-      timesContainer.classList.add('fade-in-soft');
+    // Esconder spinner e mostrar horários
+    if (spinner) {
+      spinner.style.display = 'none';
+      spinner.classList.remove('show');
     }
+    
+    // Garantir que o container seja visível
+    timesContainer.style.display = 'block';
+    timesContainer.classList.add('show');
+    timesContainer.classList.add('fade-in-soft');
+
+    log(`${times.length} horários carregados e exibidos`);
 
   } catch (error) {
     logError('Erro ao carregar horários', error);
     showNotification('Erro ao buscar horários disponíveis. Tente novamente.', 'error');
 
     // Esconder spinner e horários em caso de erro
-    if (spinner) spinner.style.display = 'none';
-    if (timesContainer) timesContainer.style.display = 'none';
+    if (spinner) {
+      spinner.style.display = 'none';
+      spinner.classList.remove('show');
+    }
+    timesContainer.style.display = 'none';
+    timesContainer.classList.remove('show');
   }
 }
 
-
-
-
-
-// Função auxiliar para gerar slots de 20 minutos (de startTime até endTime)
-function generateAllSlots(startTime, endTime) {
-  const slots = [];
-  const start = timeToMinutes(startTime);
-  const end = timeToMinutes(endTime);
-  
-  for (let time = start; time < end; time += 20) {
-    slots.push(minutesToTime(time));
-  }
-  return slots;
-}
-
-// Atualize sua createTimeSlot para receber isAvailable e aplicar a classe e evento
+// Criar slot de horário - CORRIGIDO
 function createTimeSlot(time) {
   const slot = document.createElement('div');
   slot.className = 'time-slot';
   slot.textContent = time;
   slot.dataset.time = time;
 
-  // Apenas desabilita se o horário NÃO está disponível
+  // Verificar se o horário está disponível
   if (!appState.availableTimes.includes(time)) {
     slot.classList.add('disabled');
     slot.title = 'Horário indisponível';
     return slot;
   }
 
+  // Adicionar evento de clique apenas para horários disponíveis
   slot.addEventListener('click', () => selectTime(time));
   return slot;
 }
@@ -563,7 +564,6 @@ function selectTime(time) {
   log('Botão continuar ativado');
   fecharModal();
   goToStep(4);
-
 }
 
 // Mudar mês
@@ -606,23 +606,12 @@ function updateBookingSummary() {
     elements.duration.textContent = appState.selectedService?.duration + 'min' || '-';
 
   if (elements.price) {
-    // converte string ou número em Number e formata
     const priceNum = Number(appState.selectedService?.price) || 0;
     elements.price.textContent = `R$ ${priceNum.toFixed(2)}`;
   }
 }
 
-
-
-
-// Atualiza botão conforme o usuário digita
-['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener('input', validateClientForm);
-});
-
-// Máscara de telefone: (63) 99201-4547
-// Máscara de telefone: (63) 99201-4547
+// Máscara de telefone
 function setupPhoneMask() {
   const phoneInput = document.getElementById('clientPhone');
   if (!phoneInput) return;
@@ -640,25 +629,18 @@ function setupPhoneMask() {
     }
 
     e.target.value = value;
-
-    // Aguarda a máscara ser aplicada antes de validar
     setTimeout(validateClientForm, 0);
   });
 }
 
-
-setupPhoneMask();
-
-
+// Formatar telefone para WhatsApp
 function formatPhoneForWhatsApp(phone) {
   let digits = phone.replace(/\D/g, '');
 
   if (digits.length === 11 && digits[2] === '9') {
-    // Remove o 9 após o DDD
-    digits = digits.slice(0, 2) + digits.slice(3); // 2 primeiros + do 4º em diante
+    digits = digits.slice(0, 2) + digits.slice(3);
   }
 
-  // Confirma que resultou em 10 dígitos depois da remoção
   if (digits.length === 10) {
     return '55' + digits;
   }
@@ -666,15 +648,12 @@ function formatPhoneForWhatsApp(phone) {
   return null;
 }
 
-
-
 // Validação do formulário do cliente
 function validateClientForm() {
   const firstName = document.getElementById('clientFirstName')?.value.trim();
   const lastName = document.getElementById('clientLastName')?.value.trim();
   const phone = document.getElementById('clientPhone')?.value.trim();
 
-  // Aceita apenas celular com 11 dígitos no formato (99) 9XXXX-XXXX
   const phoneRegex = /^\(\d{2}\)\s9\d{4}-\d{4}$/;
   const isValidPhone = phoneRegex.test(phone);
 
@@ -689,10 +668,6 @@ function validateClientForm() {
   return isValid;
 }
 
-
-
-
-// Confirmar agendamento - CORRIGIDO
 // Confirmar agendamento
 async function confirmBooking() {
   if (!validateClientForm()) {
@@ -700,11 +675,8 @@ async function confirmBooking() {
     return;
   }
 
-  
   const phone = document.getElementById('clientPhone').value;
   const formattedPhone = formatPhoneForWhatsApp(phone);
-
-// Vai gerar: 5563992014547
 
   if (!formattedPhone) {
     showNotification('Telefone inválido para WhatsApp', 'error');
@@ -724,7 +696,6 @@ async function confirmBooking() {
     }
   };
 
-  // Cria estado de loading no botão
   const btn = document.getElementById('confirmBooking');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirmando...';
@@ -748,7 +719,7 @@ async function confirmBooking() {
   }
 }
 
-// Atualizar confirmação updateBookingSummary
+// Atualizar confirmação final
 function updateFinalConfirmation(bookingData) {
   const elements = {
     service: document.getElementById('finalService'),
@@ -765,13 +736,10 @@ function updateFinalConfirmation(bookingData) {
   if (elements.time) elements.time.textContent = appState.selectedTime;
   if (elements.client) elements.client.textContent = `${bookingData.clientData.firstName} ${bookingData.clientData.lastName}`;
   if (elements.price) {
-  const priceNum = Number(appState.selectedService.price) || 0;
-  elements.price.textContent = `R$ ${priceNum.toFixed(2)}`;
+    const priceNum = Number(appState.selectedService.price) || 0;
+    elements.price.textContent = `R$ ${priceNum.toFixed(2)}`;
+  }
 }
-
-}
-
-
 
 // Inicializar Google Login
 function initializeGoogleLogin() {
@@ -803,13 +771,11 @@ function handleGoogleResponse(response) {
   try {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     
-    // Preencher formulário com dados do Google
     document.getElementById('clientFirstName').value = payload.given_name || '';
     document.getElementById('clientLastName').value = payload.family_name || '';
     document.getElementById('clientEmail').value = payload.email || '';
     
     validateClientForm();
-    
     showNotification('Dados preenchidos com sucesso!', 'success');
     
   } catch (error) {
@@ -839,6 +805,8 @@ function showNotification(message, type = 'info') {
     }, 300);
   }, 3000);
 }
+
+// Filtrar serviços
 function filterServices() {
   const input = document.getElementById('searchInput').value.toLowerCase();
   const cards = document.querySelectorAll('#servicesContainer .service-card');
@@ -852,79 +820,65 @@ function filterServices() {
     }
   });
 }
-// Seleciona o modal uma vez
+
+// ===== MODAL - CORRIGIDO =====
 const modal = document.getElementById('meuModal');
 
 function abrirModal() {
-  if (!modal) return; // garante que existe o modal
- modal.style.display = 'block';
-setTimeout(() => {
-  modal.classList.add('show', 'fade-in-modal');
-}, 10); // delay para garantir renderização
-document.body.classList.add('modal-open');
-
-   // se estiver usando Bootstrap para evitar scroll
-
+  if (!modal) {
+    logError('Modal não encontrado no DOM');
+    return;
+  }
+  
+  modal.style.display = 'flex';
+  modal.classList.add('show');
+  
+  setTimeout(() => {
+    modal.classList.add('fade-in-modal');
+  }, 10);
+  
+  document.body.classList.add('modal-open');
+  log('Modal aberto');
 }
 
 function fecharModal() {
   if (!modal) return;
-  modal.classList.remove('show');
+  
+  modal.classList.remove('show', 'fade-in-modal');
   modal.style.display = 'none';
   document.body.classList.remove('modal-open');
+  log('Modal fechado');
 }
 
-// Fecha modal se clicar fora do conteúdo (fora do .modal-content)
-modal.addEventListener('click', function(event) {
-  if (event.target === modal) {
-    fecharModal();
-  }
+// Fechar modal ao clicar fora
+if (modal) {
+  modal.addEventListener('click', function(event) {
+    if (event.target === modal) {
+      fecharModal();
+    }
+  });
+}
+
+// Configurar validação de formulário
+document.addEventListener('DOMContentLoaded', () => {
+  ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', validateClientForm);
+    }
+  });
 });
 
-// function carregarHorarios() {
-//   const loading = document.getElementById('loading-horarios');
-//   const horarios = document.getElementById('timesContainer');
-
-//   loading.style.display = 'flex';
-//   horarios.style.display = 'none';
-
-//   setTimeout(() => {
-//     loading.style.display = 'none';
-//     horarios.style.display = 'block';
-//   }, 2000);
-// }
-
-// // Considerando que você já tem a lista `availableTimes` da API
-// // const allPossibleSlots = generateAllSlotsForDay(start, end); 
-//  function generateAllSlotsForDay(start, end) {
-//   return generateAllSlots(start, end); // Usa a função que você já tem
-// }
-// // Ex: ['09:00', '09:30', ...]
-// const bookedTimes = allPossibleSlots.filter(slot => !availableTimes.includes(slot));
-
-// allPossibleSlots.forEach(slot => {
-//   const slotDiv = document.createElement('div');
-//   slotDiv.classList.add('time-slot');
-//   slotDiv.textContent = slot;
-
-//   if (bookedTimes.includes(slot)) {
-//     slotDiv.classList.add('disabled');
-//   } else {
-//     slotDiv.addEventListener('click', () => {
-//       // lógica para selecionar horário
-//     });
-//   }l
-
-//   container.appendChild(slotDiv);
-// });
-
-// Exportar para uso global
-// window.BookingApp = {
-//   state: appState,
-//   config: CONFIG,
-//   log,
-//   logError,
-//   showNotification
-// };
-
+// Exportar funções globais necessárias
+window.loadServices = loadServices;
+window.selectService = selectService;
+window.selectBarber = selectBarber;
+window.selectDate = selectDate;
+window.selectTime = selectTime;
+window.confirmBooking = confirmBooking;
+window.goToStep = goToStep;
+window.changeMonth = changeMonth;
+window.filterServices = filterServices;
+window.abrirModal = abrirModal;
+window.fecharModal = fecharModal;
 
