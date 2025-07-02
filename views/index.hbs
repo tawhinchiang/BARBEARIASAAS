@@ -1,5 +1,33 @@
 <!-- NOVA PÁGINA PRINCIPAL - DESIGN CLEAN PRETO E BRANCO -->
 <div class="main-container">
+  <!-- Modal de Horários Disponíveis -->
+   <div id="meuModal" class="modal fade" tabindex="-1" role="dialog">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content bg-dark text-white border-light">
+            
+              <div class="modal-header">
+                <h6 class="mb-3">Horários Disponíveis</h6>
+                <button type="button" class="btn-close btn-close-white" aria-label="Fechar" onclick="fecharModal()"></button>
+              </div>
+              <div class="modal-body">
+                <div id="timesContainerModal">
+                  <div id="timesContainer" class="times-container" style="display: none;">
+                    <div class="times-grid" id="timeSlotsContainer">                      <!-- Horários serão carregados dinamicamente -->
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-light" onclick="fecharModal()">Cancelar</button>
+              </div>
+
+          </div> <!-- modal-content -->
+      </div> <!-- modal-dialog -->
+  </div> <!-- meuModal -->
+
   <!-- Header Moderno -->
   <header class="modern-header">
     <div class="header-content">
@@ -44,206 +72,16 @@
   <!-- Etapa 1: Seleção de Serviços -->
   <div id="step1" class="step active fade-in-up">
     <div class="container">
-      <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold mb-3">Escolha seu Serviço</h1>
-        <p class="lead">Selecione o serviço desejado para continuar</p>
-      </div>
-      
-     <!-- Etapa 1: Seleção de Serviços -->
-    {{!-- <div class="services-grid" id="servicesContainer">
-      <div class="service-card" data-service-id="1" onclick="selectService({id: 1, name: 'CORTE DEGRADÊ', duration: '40min', price: 35.00, promo: 'Promo seg. a qua.', hasPromo: true})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE DEGRADÊ</div>
-            <div class="service-duration">40min</div>
-          </div>
-          <div class="service-price">R$ 45,00</div>
-        </div>
-        <div class="service-promo">SEG A QUAR VALOR PROMOCIONAL</div>
-    </div>
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3">Escolha seu Serviço</h1>
+            <p class="lead">Selecione o serviço desejado para continuar</p>
+            <div class="mb-4 text-center">
+              <input type="text" id="searchInput" class="form-control w-50 mx-auto" placeholder="Buscar serviço..." onkeyup="filterServices()">
+            </div>
 
-      <div class="service-card" data-service-id="2" onclick="selectService({id: 2, name: 'CORTE SOCIAL', duration: '40min', price: 30.00, promo: 'Promo seg. a qua.', hasPromo: true})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE SOCIAL</div>
-            <div class="service-duration">40min</div>
-          </div>
-          <div class="service-price">R$ 45,00</div>
         </div>
-        <div class="service-promo">SEG A QUAR VALOR PROMOCIONAL</div>
-      </div>
+        
 
-      <div class="service-card" data-service-id="3" onclick="selectService({id: 3, name: 'CORTE + BARBA', duration: '60min', price: 50.00, promo: 'Promo seg. a qua.', hasPromo: true})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE + BARBA</div>
-            <div class="service-duration">60min</div>
-          </div>
-          <div class="service-price">R$ 70,00</div>
-        </div>
-        <div class="service-promo">Promo seg. a qua.</div>
-      </div>
-
-      <div class="service-card" data-service-id="4" onclick="selectService({id: 4, name: 'BARBA + PEZINHO', duration: '45min', price: 25.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">BARBA + PEZINHO</div>
-            <div class="service-duration">45min</div>
-          </div>
-          <div class="service-price">R$ 45,00</div>
-        </div>
-      </div>
-            <div class="service-card" data-service-id="5" onclick="selectService({id: 5, name: 'CORTE + HIDRATAÇÃO', duration: '40min', price: 60.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE + HIDRATAÇÃO</div>
-            <div class="service-duration">40min</div>
-          </div>
-          <div class="service-price">R$ 60,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="6" onclick="selectService({id: 6, name: 'CORTE + SOBRANCELHA', duration: '40min', price: 60.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE + SOBRANCELHA</div>
-            <div class="service-duration">40min</div>
-          </div>
-          <div class="service-price">R$ 60,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="7" onclick="selectService({id: 7, name: 'CORTE + LIZO AMERICANO', duration: '50min', price: 70.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE + LIZO AMERICANO</div>
-            <div class="service-duration">50min</div>
-          </div>
-          <div class="service-price">R$ 70,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="8" onclick="selectService({id: 8, name: 'CORTE + CAVANHAQUE', duration: '60min', price: 65.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE + CAVANHAQUE</div>
-            <div class="service-duration">60min</div>
-          </div>
-          <div class="service-price">R$ 65,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="9" onclick="selectService({id: 9, name: 'CORTE + COLORAÇÃO', duration: '60min', price: 70.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">CORTE + COLORAÇÃO</div>
-            <div class="service-duration">60min</div>
-          </div>
-          <div class="service-price">R$ 70,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="10" onclick="selectService({id: 10, name: 'BOTOX + CORTE', duration: '120min', price: 90.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">BOTOX + CORTE</div>
-            <div class="service-duration">120min</div>
-          </div>
-          <div class="service-price">R$ 90,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="11" onclick="selectService({id: 11, name: 'SELAGEM + CORTE', duration: '120min', price: 90.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">SELAGEM + CORTE</div>
-            <div class="service-duration">120min</div>
-          </div>
-          <div class="service-price">R$ 90,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="12" onclick="selectService({id: 12, name: 'BOTOX OU SELAGEM CABELO TODO', duration: '120min', price: 70.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">BOTOX OU SELAGEM CABELO TODO</div>
-            <div class="service-duration">120min</div>
-          </div>
-          <div class="service-price">R$ 70,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="13" onclick="selectService({id: 13, name: 'PIGMENTAÇÃO NA BARBA', duration: '20min', price: 20.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">PIGMENTAÇÃO NA BARBA</div>
-            <div class="service-duration">20min</div>
-          </div>
-          <div class="service-price">R$ 20,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="14" onclick="selectService({id: 14, name: 'COLORAÇÃO NO CABELO', duration: '20min', price: 30.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">COLORAÇÃO NO CABELO</div>
-            <div class="service-duration">20min</div>
-          </div>
-          <div class="service-price">R$ 30,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="15" onclick="selectService({id: 15, name: 'DEPILAÇÃO NASAL NA CERA', duration: '10min', price: 20.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">DEPILAÇÃO NASAL NA CERA</div>
-            <div class="service-duration">10min</div>
-          </div>
-          <div class="service-price">R$ 20,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="16" onclick="selectService({id: 16, name: 'HIDRATAÇÃO', duration: '20min', price: 20.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">HIDRATAÇÃO</div>
-            <div class="service-duration">20min</div>
-          </div>
-          <div class="service-price">R$ 20,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="17" onclick="selectService({id: 17, name: 'SOBRANCELHA', duration: '10min', price: 20.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">SOBRANCELHA</div>
-            <div class="service-duration">10min</div>
-          </div>
-          <div class="service-price">R$ 20,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="18" onclick="selectService({id: 18, name: 'PENTEADO COM LAVAGEM', duration: '120min', price: 70.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">PENTEADO COM LAVAGEM</div>
-            <div class="service-duration">120min</div>
-          </div>
-          <div class="service-price">R$ 70,00</div>
-        </div>
-      </div>
-
-      <div class="service-card" data-service-id="19" onclick="selectService({id: 19, name: 'BOTOX', duration: '120min', price: 70.00, promo: null, hasPromo: false})">
-        <div class="service-header">
-          <div>
-            <div class="service-name">BOTOX</div>
-            <div class="service-duration">120min</div>
-          </div>
-          <div class="service-price">R$ 70,00</div>
-        </div>
-      </div>
-
-  </div> --}}
   <div class="services-grid" id="servicesContainer">
   <!-- Serviços serão carregados dinamicamente via app.js -->
 </div>
@@ -265,6 +103,12 @@
 
   <!-- Etapa 2: Seleção de Barbeiro -->
   <div id="step2" class="step">
+        <div class="top-back-button mb-4">
+          <button class="btn btn-outline-secondary" onclick="goToStep(1)">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </button>
+        </div>
+
     <div class="container">
       <div class="text-center mb-5">
         <h1 class="display-4 fw-bold mb-3">Escolha seu Barbeiro</h1>
@@ -318,12 +162,7 @@
       </div>
       
       <!-- Horários Disponíveis -->
-      <div id="timesContainer" class="times-container" style="display: none;">
-        <h4 class="mb-3">Horários Disponíveis</h4>
-        <div class="times-grid" id="timeSlotsContainer">
-          <!-- Horários serão carregados dinamicamente -->
-        </div>
-      </div>
+
       
       <div class="step-navigation">
         <button id="backToBarber" class="btn btn-secondary" onclick="goToStep(2)">
