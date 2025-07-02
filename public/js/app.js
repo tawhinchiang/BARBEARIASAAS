@@ -73,18 +73,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Carregar serviços disponíveis da API
 async function loadServices() {
   log('Buscando serviços disponíveis');
+
+  const spinner   = document.getElementById('servicesSpinner');
+  const container = document.getElementById('servicesContainer');
+
+  // 1) mostra spinner, esconde container
+  spinner.style.display   = 'flex';
+  container.style.display = 'none';
+
   try {
     const res = await fetch('/api/services');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const { services } = await res.json();
     appState.services = services;
     renderServices(services);
+
+    // 2) após renderizar, esconde spinner e mostra container com fade-in
+    spinner.style.display   = 'none';
+    container.style.display = 'grid';
+    container.classList.add('fade-in-soft');
     log(`${services.length} serviços carregados`);
   } catch (err) {
     logError('Erro ao carregar serviços', err);
     showNotification('Erro ao carregar serviços. Tente recarregar.', 'error');
+  } finally {
+    // 3) garante que o spinner sempre suma
+    spinner.style.display = 'none';
   }
 }
+
+
 
 // Renderizar cards de serviços dinamicamente
 function renderServices(services) {
@@ -415,12 +434,19 @@ function selectDate(date) {
 async function loadAvailableTimes(date) {
   log('Carregando horários disponíveis para', date);
 
+  const spinner = document.getElementById('loadingSpinner');
+  const timesContainer = document.getElementById('timesContainer');
+  const container = document.getElementById('timeSlotsContainer');
+
   try {
+    // Mostrar spinner e esconder horários
+    if (spinner) spinner.style.display = 'block';
+    if (timesContainer) timesContainer.style.display = 'none';
+
     const dateStr = date.toISOString().split('T')[0];
     const service = appState.selectedService;
     if (!service) throw new Error('Serviço não selecionado');
 
-    // 1) Extrai a duração em minutos como inteiro
     let durationMinutes;
     if (typeof service.duration === 'string' && service.duration.endsWith('min')) {
       durationMinutes = parseInt(service.duration, 10);
@@ -429,8 +455,6 @@ async function loadAvailableTimes(date) {
     } else {
       throw new Error(`Formato de duração inválido: ${service.duration}`);
     }
-
-    log('Duração do serviço (minutos):', durationMinutes);
 
     const response = await fetch(
       `/api/available-times?` +
@@ -445,31 +469,39 @@ async function loadAvailableTimes(date) {
     const data = await response.json();
     const times = Array.isArray(data.availableTimes) ? data.availableTimes : [];
 
-    // 2) Log de depuração rápido
-    console.log('→ availableTimes (API):', times);
+    appState.availableTimes = times;
 
-    // Renderiza
-    const container = document.getElementById('timeSlotsContainer');
-    const timesContainer = document.getElementById('timesContainer');
-    if (!container || !timesContainer) return;
-
+    if (!container) return;
     container.innerHTML = '';
+
     if (times.length === 0) {
-      container.innerHTML = '<p class="text-muted text-center">Nenhum horário disponível para esta data</p>';
+      const emptyMsg = document.createElement('p');
+      emptyMsg.className = 'text-muted text-center fade-in-soft';
+      emptyMsg.textContent = 'Nenhum horário disponível para esta data';
+      container.appendChild(emptyMsg);
     } else {
-      appState.availableTimes = times;
       times.forEach(time => {
         container.appendChild(createTimeSlot(time));
       });
     }
 
-    timesContainer.style.display = 'block';
+    // Mostrar horários e esconder spinner
+    if (spinner) spinner.style.display = 'none';
+    if (timesContainer) {
+      timesContainer.style.display = 'block';
+      timesContainer.classList.add('fade-in-soft');
+    }
 
   } catch (error) {
     logError('Erro ao carregar horários', error);
     showNotification('Erro ao buscar horários disponíveis. Tente novamente.', 'error');
+
+    // Esconder spinner e horários em caso de erro
+    if (spinner) spinner.style.display = 'none';
+    if (timesContainer) timesContainer.style.display = 'none';
   }
 }
+
 
 
 
@@ -825,10 +857,14 @@ const modal = document.getElementById('meuModal');
 
 function abrirModal() {
   if (!modal) return; // garante que existe o modal
-  modal.classList.add('show');
-  modal.style.display = 'block';
-  document.body.classList.add('modal-open');
-   carregarHorarios(); // se estiver usando Bootstrap para evitar scroll
+ modal.style.display = 'block';
+setTimeout(() => {
+  modal.classList.add('show', 'fade-in-modal');
+}, 10); // delay para garantir renderização
+document.body.classList.add('modal-open');
+
+   // se estiver usando Bootstrap para evitar scroll
+
 }
 
 function fecharModal() {
@@ -845,18 +881,18 @@ modal.addEventListener('click', function(event) {
   }
 });
 
-function carregarHorarios() {
-  const loading = document.getElementById('loading-horarios');
-  const horarios = document.getElementById('timesContainer');
+// function carregarHorarios() {
+//   const loading = document.getElementById('loading-horarios');
+//   const horarios = document.getElementById('timesContainer');
 
-  loading.style.display = 'flex';
-  horarios.style.display = 'none';
+//   loading.style.display = 'flex';
+//   horarios.style.display = 'none';
 
-  setTimeout(() => {
-    loading.style.display = 'none';
-    horarios.style.display = 'block';
-  }, 2000);
-}
+//   setTimeout(() => {
+//     loading.style.display = 'none';
+//     horarios.style.display = 'block';
+//   }, 2000);
+// }
 
 // // Considerando que você já tem a lista `availableTimes` da API
 // // const allPossibleSlots = generateAllSlotsForDay(start, end); 
@@ -877,7 +913,7 @@ function carregarHorarios() {
 //     slotDiv.addEventListener('click', () => {
 //       // lógica para selecionar horário
 //     });
-//   }
+//   }l
 
 //   container.appendChild(slotDiv);
 // });
