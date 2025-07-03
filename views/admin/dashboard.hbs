@@ -33,7 +33,7 @@
       <div class="col-lg-3 col-md-6 mb-3 d-flex">
         <div class="admin-card text-center w-100">
           <div class="display-6 mb-2"><i class="fas fa-dollar-sign"></i></div>
-          <h3 class="fw-bold">{{formatCurrency monthlyRevenue}}</h3>
+          <h3 class="fw-bold">{{formatCurrency monthlyRevenue}} </h3>
           <p class="text-muted mb-0">Receita do Mês</p>
       </div>
       </div>
@@ -99,7 +99,8 @@
                   <td>{{barber.name}}</td>
                   <td>
                     <div class="fw-semibold">{{formatTime appointmentTime}}</div>
-                    <small class="text-muted">{{formatDate appointmentDate}}</small>
+                    <small class="text-muted">{{appointmentDateFormatted}}</small>
+
                   </td>
                   <td>
                     <span class="status-badge status-{{status}}">

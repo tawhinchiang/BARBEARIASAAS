@@ -97,6 +97,8 @@ router.post('/login', async (req, res) => {
   }
 });
 
+
+
 // Logout administrativo
 router.get('/logout', (req, res) => {
   log('Realizando logout', { user: req.session.user });
@@ -109,6 +111,9 @@ router.get('/logout', (req, res) => {
     res.redirect('/admin/login');
   });
 });
+
+
+
 
 // Dashboard administrativo
 router.get('/dashboard', async (req, res) => {
@@ -273,6 +278,9 @@ const topServices = topServicesRaw.map(item => ({
     const todayAppointmentsCount = todayAppointments.length;
     const recentAppointments = todayAppointments;
     const statusStatsCount = statusStats.length;
+
+
+    
     // log('Renderizando dashboard com dados', {
     //   monthlyStats,
     //   monthlyRevenue,
@@ -282,15 +290,37 @@ const topServices = topServicesRaw.map(item => ({
     //   barberChartData,
     //   revenueChartData
     // });
-    console.log({
-  todayAppointmentsCount,
-  monthlyRevenue,
-  monthlyStats,
-  statusStatsCount,
-  recentAppointmentsCount: recentAppointments.length,
-  topBarbersCount: topBarbers.length,
-  topServicesCount: topServices.length
+
+   const formattedRecentAppointments = recentAppointments.map(app => {
+  // extrai partes da data ISO
+  const [year, month, day] = app.appointmentDate.split('-');
+
+  // cria data local (mes - 1 porque Date meses são 0-based)
+  const localDate = new Date(year, month - 1, day);
+
+  return {
+    ...app.toJSON(),
+    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+    appointmentTimeFormatted: app.appointmentTime.slice(0, 5)
+  };
 });
+
+
+//     console.log({
+//   todayAppointmentsCount,
+//   monthlyRevenue,
+//   monthlyStats,
+//   statusStatsCount,
+//   recentAppointmentsCount: recentAppointments.length,
+//   topBarbersCount: topBarbers.length,
+//   topServicesCount: topServices.length,
+// });
+
+console.log({
+  message: 'teste tesdte',
+  recentAppointments: formattedRecentAppointments,
+});
+
      res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
       layout: 'admin',
@@ -299,7 +329,7 @@ const topServices = topServicesRaw.map(item => ({
       monthlyRevenue,
       monthlyStats,
       statusStatsCount,
-      recentAppointments,
+      recentAppointments: formattedRecentAppointments,
       topBarbers,
       topServices,
       revenueChartData

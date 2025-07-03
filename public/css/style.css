@@ -35,6 +35,28 @@ body {
 }
 
 /* ===== PÁGINA PRINCIPAL DO CLIENTE ===== */
+.modal {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+  display: none !important;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal.show {
+display: flex !important;
+  opacity: 1;
+}
+
+.modal-backdrop {
+  opacity: 0.5 !important;
+  z-index: 1040 !important;
+}
 
 /* Container principal */
 .main-container {
@@ -428,11 +450,11 @@ body {
 }
 
 /* Container de horários - CORRIGIDO */
-#timesContainer {
+/* #timesContainer {
   display: none;
   opacity: 0;
   transition: opacity 0.4s ease;
-}
+} */
 
 #timesContainer.show {
   display: block !important;
@@ -452,14 +474,14 @@ body {
   display: flex !important;
 }
 
-.times-grid {
+/* .times-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
-}
+} */
 
-#timeSlotsContainer {
+/* #timeSlotsContainer {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 8px;
@@ -510,7 +532,7 @@ body {
   cursor: not-allowed;
   opacity: 0.5;
   pointer-events: none;
-}
+} */
 
 /* Formulário */
 .client-form {
@@ -704,8 +726,8 @@ body {
   transform: translateY(-2px);
 }
 
-/* ===== MODAL - CORRIGIDO ===== */
-.modal {
+/* ===== MODAL - CORRIGIDO =====
+#meuModal.modal {
   display: none;
   position: fixed;
   z-index: 1050;
@@ -718,7 +740,7 @@ body {
   align-items: center;
 }
 
-.modal.show {
+#meuModal.modal.show {
   display: flex !important;
 }
 
@@ -767,8 +789,144 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   overflow-y: auto;
+} */
+/* MODAL DE HORÁRIOS - VERSÃO RESPONSIVA */
+/* MODAL DE HORÁRIOS - VERSÃO SEM SCROLL */
+/* MODAL DE HORÁRIOS - SCROLL VERTICAL */
+#meuModal.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
 }
 
+#meuModal.modal.show {
+  display: flex !important;
+}
+
+#meuModal .modal-dialog {
+  width: 100%;
+  max-width: 800px; /* Mesma largura do calendário */
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+#meuModal .modal-content {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-radius: 12px;
+  border: 1px solid #333;
+  width: 100%;
+  max-height: 80vh; /* Altura máxima menor para garantir margem */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Esconde scroll do conteúdo principal */
+}
+
+#meuModal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+  font-weight: 700;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#meuModal .modal-body {
+  padding: 0.5rem 1rem;
+  color: var(--text-dark);
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-y: auto; /* Scroll vertical quando necessário */
+  overflow-x: hidden; /* Nunca scroll horizontal */
+  width: 100%;
+  flex-grow: 1;
+}
+
+/* CONTAINER DE HORÁRIOS - LAYOUT FIXO */
+.times-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.times-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 colunas fixas */
+  gap: 10px;
+  width: 100%;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.time-slot {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-dark);
+  font-weight: 500;
+  font-size: 0.9rem;
+  min-width: 0;
+  word-break: break-word;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 45px;
+  box-sizing: border-box;
+}
+
+/* MEDIA QUERIES PARA RESPONSIVIDADE */
+@media (max-width: 700px) {
+  .times-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 colunas em telas médias */
+  }
+}
+
+@media (max-width: 500px) {
+  .times-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 colunas em telas pequenas */
+  }
+  
+  .time-slot {
+    height: 40px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 350px) {
+  .times-grid {
+    grid-template-columns: 1fr; /* 1 coluna em telas muito pequenas */
+  }
+  
+  .time-slot {
+    height: 38px;
+  }
+}
+/* AJUSTE PARA MUITOS HORÁRIOS */
+.compact-mode .times-grid {
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)) !important;
+  gap: 5px !important;
+}
+
+.compact-mode .time-slot {
+  height: 32px !important;
+  font-size: 0.8rem !important;
+  padding: 5px 1px !important;
+}
 /* ===== ESTILOS ADMINISTRATIVOS ===== */
 .admin-body {
   background: var(--bg-light);
@@ -1244,3 +1402,38 @@ body {
   }
 }
 
+
+@media (max-width: 576px) {
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .admin-card, .admin-filters, .admin-table {
+    padding: 1rem;
+  }
+
+  .actions-dropdown {
+    width: 100%;
+    position: static;
+  }
+
+  .actions-menu {
+    width: 100%;
+  }
+
+  .action-item {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .status-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .btn, .form-control {
+    font-size: 0.9rem;
+  }
+}

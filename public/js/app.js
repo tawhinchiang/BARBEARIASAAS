@@ -858,7 +858,20 @@ if (modal) {
     }
   });
 }
+function adjustTimeSlots() {
+  const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+  const timeSlots = timeSlotsContainer.querySelectorAll('.time-slot');
+  
+  // Ativa modo compacto se mais de 12 horários
+  if(timeSlots.length > 12) {
+    timeSlotsContainer.classList.add('compact-mode');
+  } else {
+    timeSlotsContainer.classList.remove('compact-mode');
+  }
+}
 
+// Chame esta função após carregar os horários
+adjustTimeSlots();
 // Configurar validação de formulário
 document.addEventListener('DOMContentLoaded', () => {
   ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
