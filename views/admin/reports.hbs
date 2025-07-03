@@ -145,22 +145,16 @@
                         <td>{{serviceType.name}}</td>
                         <td>R$ {{totalPrice}}</td>
                         <td>
-                            {{#eq status 'scheduled'}}
-                            <span class="badge bg-warning">Agendado</span>
-                            {{/eq}}
-                            {{#eq status 'confirmed'}}
-                            <span class="badge bg-success">Confirmado</span>
-                            {{/eq}}
-                            {{#eq status 'completed'}}
-                            <span class="badge bg-primary">Concluído</span>
-                            {{/eq}}
-                            {{#eq status 'cancelled'}}
-                            <span class="badge bg-danger">Cancelado</span>
-                            {{/eq}}
-                            {{#eq status 'no_show'}}
-                            <span class="badge bg-secondary">Não compareceu</span>
-                            {{/eq}}
-                        </td>
+                  <span class="status-badge status-{{status}}">
+                    {{#if (eq status 'confirmed')}}Confirmado
+                    {{else if (eq status 'pending')}}Pendente
+                    {{else if (eq status 'cancelled')}}Cancelado
+                    {{else if (eq status 'completed')}}Concluído
+                    {{else}}Desconhecido
+                    {{/if}}
+                  </span>
+
+                    </td>
                     </tr>
                     {{/each}}
                 </tbody>
