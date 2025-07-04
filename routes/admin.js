@@ -601,7 +601,13 @@ router.post('/reports/export', async (req, res) => {
       filePath = reportGenerator.generateCSV(appointments, filename);
       contentType = 'text/csv';
     }
+    // ===== ROTAS DE BARBEIROS =====
+    router.use('/barbers', require('./barbers'));
+
     
+    // ===== ROTAS DE SERVIÇOS =====
+    router.use('/services', require('./services'));
+
     log('Arquivo de relatório gerado', { filename, filePath, contentType });
     
     // Enviar arquivo

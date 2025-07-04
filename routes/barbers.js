@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { Barber, Appointment, ServiceType } = require('../models');
-const { requireAuth } = require('../middleware/auth');
+const { isAuthenticated } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
 const router = express.Router();
@@ -55,7 +55,7 @@ const upload = multer({
 });
 
 // Middleware de autenticação para todas as rotas
-router.use(requireAuth);
+router.use(isAuthenticated);
 
 // ===== PÁGINA PRINCIPAL - LISTAR BARBEIROS =====
 router.get('/', async (req, res) => {
