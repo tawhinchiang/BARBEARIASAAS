@@ -1437,3 +1437,55 @@ display: flex !important;
     font-size: 0.9rem;
   }
 }
+/* ===== MODAIS ADMIN - BARBEIROS E SERVIÇOS ===== */
+#barberModal .modal-content,
+#serviceModal .modal-content {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+#barberModal .modal-header,
+#serviceModal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+#barberModal .modal-footer,
+#serviceModal .modal-footer {
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-light);
+}
+
+#barberModal .form-control,
+#serviceModal .form-control {
+  background: var(--bg-light);
+  color: var(--text-dark);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+}
+
+#barberModal .form-control::placeholder,
+#serviceModal .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+#barberModal .form-check-label,
+#serviceModal .form-check-label {
+  color: var(--text-dark);
+}
+
+#barberModal .btn-close,
+#serviceModal .btn-close {
+  filter: invert(1);
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+#barberModal .btn-close:hover,
+#serviceModal .btn-close:hover {
+  opacity: 1;
+}

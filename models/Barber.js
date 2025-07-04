@@ -22,6 +22,11 @@ const Barber = sequelize.define('Barber', {
       isEmail: true
     }
   },
+  cpf: {
+  type: DataTypes.STRING,
+  allowNull: false,
+  unique: true
+  },
   specialties: {
     type: DataTypes.JSON,
     allowNull: true,

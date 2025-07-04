@@ -122,13 +122,24 @@ router.post('/create', upload.single('photo'), async (req, res) => {
     }
     
     // Verificar se CPF já existe
-    const existingBarber = await Barber.findOne({ where: { cpf } });
+    let existingBarber = null;
+    try {
+      existingBarber = await Barber.findOne({ where: { cpf } });
+    } catch (error) {
+      logError('Erro ao verificar CPF duplicado', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao verificar CPF duplicado'
+      });
+    }
+
     if (existingBarber) {
       return res.status(400).json({
         success: false,
         error: 'CPF já cadastrado'
       });
     }
+
     
     const barberData = {
       name: name.trim(),
@@ -137,7 +148,7 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       cpf: cpf.trim(),
       specialties: specialties ? specialties.trim() : null,
       workingHours: workingHours || '09:00-19:40',
-      isActive: isActive === 'true' || isActive === true,
+     isActive: isActive === 'true' || isActive === true || isActive === 'on',
       photo: req.file ? `/uploads/barbers/${req.file.filename}` : null
     };
     

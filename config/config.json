@@ -1,22 +1,23 @@
+
+
 {
   "development": {
     "username": "postgres",
     "password": "admin",
-    "database": "Barber_Server",
-    "host": "127.0.0.1",
+    "database": "barbershop_db", 
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
     "password": "admin",
-    "database": "Barber_Server",
+    "database": "barbershop_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "production": {
     "username": "postgres",
     "password": "admin",
-    "database": "Barber_Server",
+    "database": "barbershop_db",
     "host": "127.0.0.1",
     "dialect": "mysql"
   }
