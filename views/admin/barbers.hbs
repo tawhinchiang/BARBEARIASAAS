@@ -603,6 +603,7 @@ function showReport(report) {
     modal.show();
 }
 
+
 function printReport() {
     window.print();
 }
@@ -642,5 +643,24 @@ document.getElementById('barberModal').addEventListener('hidden.bs.modal', funct
     document.getElementById('barberModalTitle').textContent = 'Novo Barbeiro';
     document.getElementById('photoPreview').classList.add('d-none');
 });
+document.addEventListener('DOMContentLoaded', () => {
+    // Supondo que a variável barbers está disponível no JS (ex: via script JSON)
+    // Caso contrário, você pode passar por outro mecanismo.
+
+    // Exemplo para simular:
+    const barbers = Array.from(document.querySelectorAll('#barbersTable tbody tr')).map(row => {
+        return {
+            isActive: row.querySelector('td:nth-child(7) .badge').textContent.toLowerCase() === 'ativo',
+            appointmentsThisMonth: Number(row.querySelector('td:nth-child(8) .badge').textContent) || 0
+        };
+    });
+
+    const totalActive = barbers.filter(b => b.isActive).length;
+    const totalAppointmentsThisMonth = barbers.reduce((acc, b) => acc + b.appointmentsThisMonth, 0);
+
+    document.getElementById('activeBarbers').textContent = totalActive;
+    document.getElementById('monthAppointments').textContent = totalAppointmentsThisMonth;
+});
+
 </script>
 
