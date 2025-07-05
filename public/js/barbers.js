@@ -4,16 +4,19 @@ document.addEventListener('DOMContentLoaded', () => {
   maskInputs();
   previewPhoto();
   setupFilters();
-  updateStats();
 
-  document.getElementById('barberForm').addEventListener('submit', submitForm);
+  const form = document.getElementById('barberForm');
+  if (form) form.addEventListener('submit', submitForm);
 
-  document.getElementById('barberModal').addEventListener('hidden.bs.modal', () => {
-    document.getElementById('barberForm').reset();
-    document.getElementById('barberId').value = '';
-    document.getElementById('barberModalTitle').textContent = 'Novo Barbeiro';
-    document.getElementById('photoPreview').classList.add('d-none');
-  });
+  const modal = document.getElementById('barberModal');
+  if (modal) {
+    modal.addEventListener('hidden.bs.modal', () => {
+      form.reset();
+      document.getElementById('barberId').value = '';
+      document.getElementById('barberModalTitle').textContent = 'Novo Barbeiro';
+      document.getElementById('photoPreview').classList.add('d-none');
+    });
+  }
 });
 
 function maskInputs() {
@@ -67,46 +70,29 @@ function setupFilters() {
 }
 
 function applyFilters() {
-  const status = document.getElementById('filterStatus').value.toLowerCase();
-  const search = document.getElementById('filterSearch').value.toLowerCase();
-  const specialty = document.getElementById('filterSpecialty').value.toLowerCase();
+  const status = document.getElementById('filterStatus')?.value.toLowerCase();
+  const search = document.getElementById('filterSearch')?.value.toLowerCase();
+  const specialty = document.getElementById('filterSpecialty')?.value.toLowerCase();
 
-  const rows = document.querySelectorAll('#barbersTable tbody tr');
-  rows.forEach(row => {
-    const name = row.cells[1].innerText.toLowerCase();
-    const contact = row.cells[2].innerText.toLowerCase();
-    const cpf = row.cells[3].innerText.toLowerCase();
-    const spec = row.cells[4].innerText.toLowerCase();
-    const rowStatus = row.querySelector('td:nth-child(7) .badge').innerText.toLowerCase();
+  const cards = document.querySelectorAll('.barber-card');
 
-    const matchStatus = !status || (status === 'active' && rowStatus.includes('ativo')) || (status === 'inactive' && rowStatus.includes('inativo'));
-    const matchSearch = !search || name.includes(search) || contact.includes(search) || cpf.includes(search);
+  cards.forEach(card => {
+    const name = card.dataset.name.toLowerCase();
+    const phone = card.dataset.phone.toLowerCase();
+    const cpf = card.dataset.cpf.toLowerCase();
+    const spec = card.dataset.specialties.toLowerCase();
+    const cardStatus = card.dataset.status.toLowerCase();
+
+    const matchStatus = !status || cardStatus === status;
+    const matchSearch = !search || name.includes(search) || phone.includes(search) || cpf.includes(search);
     const matchSpecialty = !specialty || spec.includes(specialty);
 
-    row.style.display = (matchStatus && matchSearch && matchSpecialty) ? '' : 'none';
+    card.style.display = (matchStatus && matchSearch && matchSpecialty) ? '' : 'none';
   });
 }
 
 function updateStats() {
-  const rows = document.querySelectorAll('#barbersTable tbody tr');
-  let active = 0;
-  let total = rows.length;
-  let thisMonth = 0;
-
-  rows.forEach(row => {
-    const status = row.querySelector('td:nth-child(7) .badge')?.innerText.toLowerCase();
-    const appointments = parseInt(row.querySelector('td:nth-child(8) .badge')?.innerText) || 0;
-    if (status?.includes('ativo')) active++;
-    thisMonth += appointments;
-  });
-
-  const activeEl = document.getElementById('activeBarbers');
-  const totalEl = document.getElementById('totalBarbers');
-  const monthEl = document.getElementById('monthAppointments');
-
-  if (activeEl) activeEl.textContent = active;
-  if (totalEl) totalEl.textContent = total;
-  if (monthEl) monthEl.textContent = thisMonth;
+  // desativado pois não é utilizado com os cards
 }
 
 function submitForm(e) {

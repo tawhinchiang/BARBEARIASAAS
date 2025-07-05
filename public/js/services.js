@@ -1,8 +1,12 @@
-document.addEventListener('DOMContentLoaded', function () {
+// public/js/admin/services.js
+
+document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('serviceForm');
-  const modal = new bootstrap.Modal(document.getElementById('serviceModal'));
+  const modalElement = document.getElementById('serviceModal');
+  const modal = new bootstrap.Modal(modalElement);
   const modalTitle = document.getElementById('serviceModalTitle');
 
+  // ================= NOTIFICAÇÃO ================= //
   function showNotification(message, type = 'success') {
     const div = document.createElement('div');
     div.className = `notification ${type}`;
@@ -17,9 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 50);
   }
 
-  form.addEventListener('submit', async function (e) {
+  // ================= ENVIO DO FORMULÁRIO ================= //
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const formData = new FormData(form);
     const id = formData.get('serviceId');
     const url = id ? `/admin/services/${id}` : '/admin/services/create';
@@ -40,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function () {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       const data = await res.json();
 
       if (data.success) {
@@ -55,22 +58,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  window.editService = async function (id) {
+  // ================= FUNÇÕES GLOBAIS ================= //
+  window.editService = async (id) => {
     try {
       const res = await fetch(`/admin/services/${id}`);
       const data = await res.json();
-
       if (!data.success) throw new Error(data.error || 'Erro ao carregar serviço');
 
       const s = data.service;
-
-      document.getElementById('serviceId').value = s.id;
-      document.getElementById('serviceName').value = s.name;
-      document.getElementById('serviceDescription').value = s.description || '';
-      document.getElementById('servicePrice').value = s.price;
-      document.getElementById('serviceDuration').value = s.duration;
-      document.getElementById('serviceActive').checked = s.isActive;
-      document.getElementById('servicePromo').checked = s.isPromo;
+      form.serviceId.value = s.id;
+      form.name.value = s.name;
+      form.description.value = s.description || '';
+      form.price.value = s.price;
+      form.duration.value = s.duration;
+      form.isActive.checked = s.isActive;
+      form.isPromo.checked = s.isPromo;
 
       modalTitle.textContent = 'Editar Serviço';
       modal.show();
@@ -79,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 
-  window.deleteService = async function (id) {
+  window.deleteService = async (id) => {
     if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
 
     try {
@@ -97,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 
-  window.toggleService = async function (id) {
+  window.toggleService = async (id) => {
     try {
       const res = await fetch(`/admin/services/${id}/toggle`, { method: 'PATCH' });
       const data = await res.json();
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 
-  window.togglePromo = async function (id) {
+  window.togglePromo = async (id) => {
     try {
       const res = await fetch(`/admin/services/${id}/toggle-promo`, { method: 'PATCH' });
       const data = await res.json();
@@ -127,10 +129,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 
-  // Resetar modal ao fechar
-  document.getElementById('serviceModal').addEventListener('hidden.bs.modal', () => {
+  // ================= RESET MODAL ================= //
+  modalElement.addEventListener('hidden.bs.modal', () => {
     form.reset();
     form.serviceId.value = '';
     modalTitle.textContent = 'Novo Serviço';
   });
 });
+
+
+  // ==============================
+  // EXPORTAÇÃO GLOBAL PARA HTML
+  // ==============================
+  window.editService = editService;
+  window.deleteService = deleteService;
+  window.toggleService = toggleService;
+  window.togglePromo = togglePromo;
+;
