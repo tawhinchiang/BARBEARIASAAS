@@ -1489,3 +1489,25 @@ display: flex !important;
 #serviceModal .btn-close:hover {
   opacity: 1;
 }
+#servicesCardContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+#servicesCardContainer .service-card {
+  flex: 1 1 calc(33.333% - 1rem);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 992px) {
+  #servicesCardContainer .service-card {
+    flex: 1 1 calc(50% - 1rem);
+  }
+}
+
+@media (max-width: 576px) {
+  #servicesCardContainer .service-card {
+    flex: 1 1 100%;
+  }
+}

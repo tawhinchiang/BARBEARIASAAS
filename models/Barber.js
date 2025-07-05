@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const sequelize = require('../config/database'); // ✅ Certifique-se que essa linha exista
 
 const Barber = sequelize.define('Barber', {
   id: {
@@ -23,9 +23,9 @@ const Barber = sequelize.define('Barber', {
     }
   },
   cpf: {
-  type: DataTypes.STRING,
-  allowNull: false,
-  unique: true
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
   },
   specialties: {
     type: DataTypes.JSON,
@@ -48,6 +48,10 @@ const Barber = sequelize.define('Barber', {
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  photo: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'barbers',
@@ -55,4 +59,3 @@ const Barber = sequelize.define('Barber', {
 });
 
 module.exports = Barber;
-

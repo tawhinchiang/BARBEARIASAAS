@@ -130,10 +130,48 @@
               <label for="barberSpecialties" class="form-label">Especialidades</label>
               <input type="text" class="form-control" id="barberSpecialties" name="specialties" placeholder="Cortes, barba, pintura...">
             </div>
-            <div class="col-md-6 mb-3">
-              <label for="barberWorkingHours" class="form-label">Horário de Trabalho</label>
-              <input type="text" class="form-control" id="barberWorkingHours" name="workingHours" placeholder="Ex: 09:00 - 18:00">
-            </div>
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Horários de Trabalho</label>
+              <div class="row mb-2">
+                <div class="col-md-6">
+                  <input type="text" id="defaultWorkingHour" class="form-control" placeholder="Ex: 09:00-19:40">
+                </div>
+                <div class="col-md-6 text-end">
+                  <button type="button" class="btn btn-outline-secondary" onclick="applyDefaultWorkingHour()">
+                    <i class="fas fa-clock me-1"></i> Aplicar horário padrão
+                  </button>
+                </div>
+              </div>
+
+
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label for="workingHoursMonday" class="form-label">Segunda-feira</label>
+                    <input type="text" class="form-control" id="workingHoursMonday" name="workingHours[monday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursTuesday" class="form-label">Terça-feira</label>
+                    <input type="text" class="form-control" id="workingHoursTuesday" name="workingHours[tuesday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursWednesday" class="form-label">Quarta-feira</label>
+                    <input type="text" class="form-control" id="workingHoursWednesday" name="workingHours[wednesday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursThursday" class="form-label">Quinta-feira</label>
+                    <input type="text" class="form-control" id="workingHoursThursday" name="workingHours[thursday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursFriday" class="form-label">Sexta-feira</label>
+                    <input type="text" class="form-control" id="workingHoursFriday" name="workingHours[friday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursSaturday" class="form-label">Sábado</label>
+                    <input type="text" class="form-control" id="workingHoursSaturday" name="workingHours[saturday]" placeholder="Ex: 09:00-13:00">
+                  </div>
+                </div>
+              </div>
+
           </div>
 
           <div class="row">
@@ -163,6 +201,24 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+<!-- Modal de Relatório do Barbeiro -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportModalLabel">Relatório do Barbeiro</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="reportContent">
+        <!-- Conteúdo dinâmico injetado via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button class="btn btn-primary" onclick="printReport()">Imprimir</button>
+      </div>
     </div>
   </div>
 </div>

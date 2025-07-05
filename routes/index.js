@@ -79,42 +79,53 @@ router.get('/api/services', async (req, res) => {
 
 
 // API para listar barbeiros disponíveis - CORRIGIDA
-router.get('/api/barbers', async (req, res) => {
-  try {
-    log('Buscando barbeiros disponíveis');
-    // Dentro da rota GET /api/barbers
+// router.get('/api/barbers', async (req, res) => {
+//   try {
+//     log('Buscando barbeiros disponíveis');
+//     // Dentro da rota GET /api/barbers
   
 
-    const { Barber } = require('../models');
-    const barbers = await Barber.findAll({
-      where: { isActive: true },
-      order: [['name', 'ASC']]
-    });
-      log('Horários de trabalho:', {
-      barbers: barbers.map(b => ({
-        name: b.name,
-        workingHours: b.workingHours
-      }))
-    });
-    log('Barbeiros encontrados', { count: barbers.length, barbers: barbers.map(b => ({ id: b.id, name: b.name })) });
+//     const { Barber } = require('../models');
+//     const barbers = await Barber.findAll({
+//       where: { isActive: true },
+//       order: [['name', 'ASC']]
+//     });
+//       log('Horários de trabalho:', {
+//       barbers: barbers.map(b => ({
+//         name: b.name,
+//         workingHours: b.workingHours
+//       }))
+//     });
+//     log('Barbeiros encontrados', { count: barbers.length, barbers: barbers.map(b => ({ id: b.id, name: b.name })) });
     
-    // Retornar no formato esperado pelo frontend
-    res.json({ 
-      count: barbers.length,
-      barbers: barbers.map(b => ({
-        id: b.id,
-        name: b.name,
-        specialties: b.specialties || 'Especialista',
-        workingHours: b.workingHours,
-        isActive: b.isActive
-      }))
-      
-    });
-  } catch (error) {
-    logError('Erro ao buscar barbeiros', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
+//     // Retornar no formato esperado pelo frontend
+//       res.json({ 
+//       count: barbers.length,
+//       barbers: barbers.map(b => ({
+//         id: b.id,
+//         name: b.name,
+//         photo: b.photo || null, // ESSENCIAL PARA EXIBIÇÃO
+//         specialties: b.specialties || 'Especialista',
+//         workingHours: b.workingHours,
+//         isActive: b.isActive
+//       }))
+//     });
+
+//     log('Barbeiros encontrados', {
+//       count: barbers.length,
+//       barbers: barbers.map(b => ({
+//         id: b.id,
+//         name: b.name,
+//         photo: b.photo
+//       }))
+//     });
+
+
+//   } catch (error) {
+//     logError('Erro ao buscar barbeiros', error);
+//     res.status(500).json({ error: 'Erro interno do servidor' });
+//   }
+// });
 
 // API para obter horários disponíveis - CORRIGIDA
 router.get('/api/available-times', async (req, res) => {
@@ -165,11 +176,20 @@ router.get('/api/available-times', async (req, res) => {
     let workingHours = '09:00-19:40';
 
     if (barber.workingHours) {
-      const parsed = typeof barber.workingHours === 'string'
-        ? JSON.parse(barber.workingHours)
-        : barber.workingHours;
+      let parsed = {};
+      try {
+        parsed = typeof barber.workingHours === 'string'
+          ? JSON.parse(barber.workingHours)
+          : barber.workingHours || {};
+      } catch (err) {
+        logError('Erro ao fazer parse de workingHours', err);
+        parsed = {};
+      }
+      log('workingHours recebido do banco', { raw: barber.workingHours });
 
-      workingHours = parsed[dayOfWeek] || workingHours;
+      if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
+  workingHours = parsed[dayOfWeek];
+}
     }
 
 

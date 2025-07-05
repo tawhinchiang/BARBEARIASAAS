@@ -137,6 +137,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('serviceSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', filterServices);
+  }
+});
+
+function filterServices() {
+  const searchValue = document.getElementById('serviceSearch').value.toLowerCase().trim();
+  const cards = document.querySelectorAll('#servicesContainer .service-card');
+
+  cards.forEach(card => {
+    const name = card.dataset.name?.toLowerCase() || '';
+    const description = card.dataset.description?.toLowerCase() || '';
+    const match = name.includes(searchValue) || description.includes(searchValue);
+    card.style.display = match ? '' : 'none';
+  });
+}
+
 
   // ==============================
   // EXPORTAÇÃO GLOBAL PARA HTML

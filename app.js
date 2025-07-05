@@ -60,6 +60,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
 log('Middlewares básicos configurados');
 
 // Configurar sessões
@@ -94,6 +95,9 @@ log('Configurando rotas');
 // Rotas principais (inclui APIs)
 app.use('/', require('./routes/index'));
 
+// Rotas de barbeiros
+app.use('/api', require('./routes/publicApi'));
+// app.use('/admin', require('./routes/barbers')); // ✅ aqui rota protegida admin
 // Rotas de agendamentos (inclui /api/appointments)
 app.use('/', require('./routes/appointments'));
 

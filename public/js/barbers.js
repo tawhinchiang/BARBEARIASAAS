@@ -116,6 +116,8 @@ function submitForm(e) {
       console.error('Erro:', err);
       alert('Erro interno ao salvar');
     });
+    console.log('[DEBUG] req.file:', req.file);
+
 }
 
 // CRUD helpers
@@ -131,7 +133,11 @@ window.editBarber = function (id) {
         document.getElementById('barberEmail').value = b.email || '';
         document.getElementById('barberCpf').value = b.cpf;
         document.getElementById('barberSpecialties').value = b.specialties || '';
-        document.getElementById('barberWorkingHours').value = b.workingHours || '';
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        days.forEach(day => {
+          const input = document.querySelector(`[name="workingHours[${day}]"]`);
+          if (input) input.value = b.workingHours?.[day] || '';
+        });
         document.getElementById('barberIsActive').checked = b.isActive;
         document.getElementById('barberModalTitle').textContent = 'Editar Barbeiro';
         new bootstrap.Modal(document.getElementById('barberModal')).show();
@@ -195,6 +201,20 @@ window.barberReport = function (id) {
       new bootstrap.Modal(document.getElementById('reportModal')).show();
     });
 };
+function applyDefaultWorkingHour() {
+  const defaultHour = document.getElementById('defaultWorkingHour')?.value.trim();
+
+  if (!defaultHour) {
+    alert('Informe um horário padrão válido.');
+    return;
+  }
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  days.forEach(day => {
+    const input = document.getElementById(`workingHours${day}`);
+    if (input) input.value = defaultHour;
+  });
+}
 
 window.printReport = function () {
   window.print();
