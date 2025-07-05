@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { Barber, Appointment, ServiceType } = require('../models');
-const { requireAuth } = require('../middleware/auth');
+const { isAuthenticated } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
 const router = express.Router();
@@ -55,7 +55,12 @@ const upload = multer({
 });
 
 // Middleware de autenticação para todas as rotas
-router.use(requireAuth);
+router.use((req, res, next) => {
+  if (req.path.startsWith('/api/barbers')) {
+    return next(); // Rota pública - não exige autenticação
+  }
+  return isAuthenticated(req, res, next); // Resto precisa de login
+});
 
 // ===== PÁGINA PRINCIPAL - LISTAR BARBEIROS =====
 router.get('/', async (req, res) => {
@@ -89,8 +94,10 @@ router.get('/', async (req, res) => {
     });
     
     log(`${barbers.length} barbeiros carregados`);
-    
+    const weekdays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+
     res.render('admin/barbers', {
+      
       title: 'Gerenciar Barbeiros',
       barbers: barbersWithStats,
       layout: 'admin'
@@ -122,13 +129,24 @@ router.post('/create', upload.single('photo'), async (req, res) => {
     }
     
     // Verificar se CPF já existe
-    const existingBarber = await Barber.findOne({ where: { cpf } });
+    let existingBarber = null;
+    try {
+      existingBarber = await Barber.findOne({ where: { cpf } });
+    } catch (error) {
+      logError('Erro ao verificar CPF duplicado', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro ao verificar CPF duplicado'
+      });
+    }
+
     if (existingBarber) {
       return res.status(400).json({
         success: false,
         error: 'CPF já cadastrado'
       });
     }
+
     
     const barberData = {
       name: name.trim(),
@@ -136,20 +154,33 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       email: email ? email.trim() : null,
       cpf: cpf.trim(),
       specialties: specialties ? specialties.trim() : null,
-      workingHours: workingHours || '09:00-19:40',
-      isActive: isActive === 'true' || isActive === true,
+      workingHours: (() => {
+  if (!workingHours || typeof workingHours !== 'object') return null;
+
+  return {
+    monday: workingHours.monday || 'closed',
+    tuesday: workingHours.tuesday || 'closed',
+    wednesday: workingHours.wednesday || 'closed',
+    thursday: workingHours.thursday || 'closed',
+    friday: workingHours.friday || 'closed',
+    saturday: workingHours.saturday || 'closed',
+    sunday: 'closed'
+  };
+})(),
+     isActive: isActive === 'true' || isActive === true || isActive === 'on',
       photo: req.file ? `/uploads/barbers/${req.file.filename}` : null
     };
     
     const barber = await Barber.create(barberData);
-    
-    log('Barbeiro criado com sucesso', { id: barber.id, name: barber.name });
-    
+   
+    log('Barbeiro criado com sucesso', { id: barber.id, name: barber.name, photo:barber.photo});
+    console.log('Barbeiro criado:', barber.toJSON()); // <-- Adicione isso
     res.json({
       success: true,
       message: 'Barbeiro criado com sucesso',
       barber: barber
     });
+     
   } catch (error) {
     logError('Erro ao criar barbeiro', error);
     res.status(500).json({
@@ -239,7 +270,19 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       email: email ? email.trim() : barber.email,
       cpf: cpf ? cpf.trim() : barber.cpf,
       specialties: specialties ? specialties.trim() : barber.specialties,
-      workingHours: workingHours || barber.workingHours,
+      workingHours: (() => {
+      if (!workingHours || typeof workingHours !== 'object') return null;
+
+      return {
+        monday: workingHours.monday || 'closed',
+        tuesday: workingHours.tuesday || 'closed',
+        wednesday: workingHours.wednesday || 'closed',
+        thursday: workingHours.thursday || 'closed',
+        friday: workingHours.friday || 'closed',
+        saturday: workingHours.saturday || 'closed',
+        sunday: 'closed'
+      };
+    })(),
       isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : barber.isActive
     };
     

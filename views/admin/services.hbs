@@ -1,0 +1,117 @@
+{{!-- admin/services.hbs --}}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0">
+    <i class="fas fa-cut me-2"></i> Gerenciar Serviços
+  </h2>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal">
+    <i class="fas fa-plus me-2"></i> Novo Serviço
+  </button>
+</div>
+
+<div id="notificationContainer"></div>
+
+{{#if error}}
+<div class="alert alert-danger">{{error}}</div>
+{{/if}}
+
+<div class="row mb-3">
+  <div class="col-md-6">
+    <input type="text" class="form-control" id="serviceSearch" placeholder="Buscar por nome ou descrição...">
+  </div>
+</div>
+
+<div class="row mb-4">
+  {{#each services}}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 shadow-sm admin-card">
+      <div class="card-body">
+        <h5 class="card-title">{{name}}</h5>
+        <p class="text-muted small">{{description}}</p>
+        <p><strong>Preço:</strong> R$ {{price}}</p>
+        <p><strong>Duração:</strong> {{duration}} min</p>
+        <p><strong>Status:</strong>
+          {{#if isActive}}
+            <span class="badge status-badge status-confirmed">Ativo</span>
+          {{else}}
+            <span class="badge status-badge status-cancelled">Inativo</span>
+          {{/if}}
+        </p>
+        <p><strong>Promoção:</strong>
+          {{#if isPromo}}
+            <span class="badge status-badge status-pending">Sim</span>
+          {{else}}
+            <span class="badge status-badge bg-light text-dark">Não</span>
+          {{/if}}
+        </p>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <small class="text-muted">{{appointmentsThisMonth}} agend. este mês</small>
+          <strong class="text-success">R$ {{revenueThisMonth}}</strong>
+        </div>
+      </div>
+      <div class="card-footer bg-light d-flex justify-content-between">
+        <button class="btn btn-sm btn-outline-primary" onclick="editService({{id}})"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-sm btn-outline-info" onclick="toggleService({{id}})"><i class="fas fa-toggle-on"></i></button>
+        <button class="btn btn-sm btn-outline-warning" onclick="togglePromo({{id}})"><i class="fas fa-tags"></i></button>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteService({{id}})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+  {{/each}}
+</div>
+
+<!-- Modal de Criar/Editar Serviço -->
+<div class="modal fade" id="serviceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="serviceForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="serviceModalTitle">Novo Serviço</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="serviceId" id="serviceId">
+
+          <div class="mb-3">
+            <label for="serviceName" class="form-label">Nome *</label>
+            <input type="text" class="form-control" id="serviceName" name="name" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="serviceDescription" class="form-label">Descrição</label>
+            <textarea class="form-control" id="serviceDescription" name="description" rows="2"></textarea>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="servicePrice" class="form-label">Preço (R$) *</label>
+                <input type="number" class="form-control" id="servicePrice" name="price" min="1" step="0.01" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="serviceDuration" class="form-label">Duração (min) *</label>
+                <input type="number" class="form-control" id="serviceDuration" name="duration" min="1" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="serviceActive" name="isActive" checked>
+            <label class="form-check-label" for="serviceActive">Ativo</label>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="servicePromo" name="isPromo">
+            <label class="form-check-label" for="servicePromo">Promoção ativa</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/js/services.js"></script>

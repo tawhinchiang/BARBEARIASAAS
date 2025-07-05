@@ -601,7 +601,8 @@ router.post('/reports/export', async (req, res) => {
       filePath = reportGenerator.generateCSV(appointments, filename);
       contentType = 'text/csv';
     }
-    
+   
+
     log('Arquivo de relatório gerado', { filename, filePath, contentType });
     
     // Enviar arquivo
@@ -629,6 +630,11 @@ router.post('/reports/export', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+ // ===== ROTAS DE BARBEIROS =====
+    router.use('/barbers', require('./barbers'));
 
+    
+    // ===== ROTAS DE SERVIÇOS =====
+    router.use('/services', require('./services'));
 module.exports = router;
 

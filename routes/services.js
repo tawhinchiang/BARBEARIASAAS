@@ -1,6 +1,6 @@
 const express = require('express');
 const { ServiceType, Appointment } = require('../models');
-const { requireAuth } = require('../middleware/auth');
+const { isAuthenticated } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
 const router = express.Router();
@@ -21,7 +21,7 @@ const logError = (message, error) => {
 };
 
 // Middleware de autenticação para todas as rotas
-router.use(requireAuth);
+router.use(isAuthenticated);
 
 // ===== PÁGINA PRINCIPAL - LISTAR SERVIÇOS =====
 router.get('/', async (req, res) => {

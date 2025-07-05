@@ -1,646 +1,228 @@
-<!-- PÁGINA DE GERENCIAMENTO DE BARBEIROS -->
+{{!-- admin/barbers.hbs --}}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">
-        <i class="fas fa-user-tie me-2"></i>
-        Gerenciar Barbeiros
-    </h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#barberModal">
-        <i class="fas fa-plus me-2"></i>
-        Novo Barbeiro
-    </button>
+  <h2 class="mb-0">
+    <i class="fas fa-user-tie me-2"></i> Gerenciar Barbeiros
+  </h2>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#barberModal">
+    <i class="fas fa-plus me-2"></i> Novo Barbeiro
+  </button>
 </div>
 
-<!-- Estatísticas -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total de Barbeiros</h6>
-                        <h3 class="mb-0" id="totalBarbers">{{barbers.length}}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-users fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Ativos</h6>
-                        <h3 class="mb-0" id="activeBarbers">
-                            {{#each barbers}}{{#if isActive}}1{{/if}}{{/each}}
-                        </h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Agendamentos Hoje</h6>
-                        <h3 class="mb-0" id="todayAppointments">0</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-calendar-day fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Este Mês</h6>
-                        <h3 class="mb-0" id="monthAppointments">
-                            {{#each barbers}}{{appointmentsThisMonth}}{{/each}}
-                        </h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-chart-line fa-2x opacity-75"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Filtros Rápidos -->
+<div class="row mb-4 align-items-end">
+  <div class="col-md-4">
+    <input type="text" class="form-control" id="filterSearch" placeholder="Buscar por nome, telefone ou CPF">
+  </div>
+  <div class="col-md-3">
+    <select class="form-select" id="filterStatus">
+      <option value="">Status</option>
+      <option value="ativo">Ativo</option>
+      <option value="inativo">Inativo</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <input type="text" class="form-control" id="filterSpecialty" placeholder="Especialidade">
+  </div>
 </div>
 
-<!-- Filtros -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-4">
-                <label for="filterStatus" class="form-label">Status:</label>
-                <select class="form-select" id="filterStatus">
-                    <option value="">Todos</option>
-                    <option value="active">Ativos</option>
-                    <option value="inactive">Inativos</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="filterSearch" class="form-label">Buscar:</label>
-                <input type="text" class="form-control" id="filterSearch" placeholder="Nome, telefone ou CPF...">
-            </div>
-            <div class="col-md-4">
-                <label for="filterSpecialty" class="form-label">Especialidade:</label>
-                <input type="text" class="form-control" id="filterSpecialty" placeholder="Especialidade...">
-            </div>
+{{#if error}}
+<div class="alert alert-danger">
+  <i class="fas fa-exclamation-triangle me-2"></i>
+  {{error}}
+</div>
+{{/if}}
+
+<div class="row mb-4" id="barbersContainer">
+  {{#each barbers}}
+  <div class="col-md-6 col-lg-4 barber-card" data-id="{{id}}" data-name="{{name}}" data-phone="{{phone}}" data-cpf="{{cpf}}" data-specialties="{{specialties}}" data-status="{{#if isActive}}ativo{{else}}inativo{{/if}}">
+    <div class="card admin-card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          {{#if photo}}
+          <img src="{{photo}}" alt="{{name}}" class="rounded-circle me-3" width="50" height="50">
+          {{else}}
+          <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+            <i class="fas fa-user text-white"></i>
+          </div>
+          {{/if}}
+          <div>
+            <h5 class="card-title mb-0">{{name}}</h5>
+            <small class="text-muted">{{phone}}</small>
+          </div>
         </div>
+
+        <p class="mb-1"><strong>CPF:</strong> <code>{{cpf}}</code></p>
+        <p class="mb-1"><strong>Email:</strong> {{email}}</p>
+        <p class="mb-1"><strong>Especialidades:</strong> {{specialties}}</p>
+        <p class="mb-1"><strong>Horário:</strong> {{workingHours}}</p>
+
+        <p class="mb-1"><strong>Status:</strong>
+          {{#if isActive}}
+            <span class="badge bg-success">Ativo</span>
+          {{else}}
+            <span class="badge bg-secondary">Inativo</span>
+          {{/if}}
+        </p>
+
+        <p class="mb-3"><strong>Agendamentos:</strong>
+          <span class="badge bg-primary">{{appointmentsThisMonth}}</span>
+          <small class="text-muted">este mês</small>
+        </p>
+
+        <div class="d-flex justify-content-between">
+          <button class="btn btn-sm btn-outline-primary" onclick="editBarber({{id}})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-info" onclick="barberReport({{id}})">
+            <i class="fas fa-chart-bar"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-{{#if isActive}}secondary{{else}}success{{/if}}" onclick="toggleBarber({{id}})">
+            <i class="fas fa-{{#if isActive}}pause{{else}}play{{/if}}"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteBarber({{id}})">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
+  {{/each}}
 </div>
 
-<!-- Lista de Barbeiros -->
-<div class="card">
-    <div class="card-body">
-        {{#if error}}
-        <div class="alert alert-danger">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            {{error}}
-        </div>
-        {{/if}}
 
-        {{#if barbers.length}}
-        <div class="table-responsive">
-            <table class="table table-hover" id="barbersTable">
-                <thead>
-                    <tr>
-                        <th>Foto</th>
-                        <th>Nome</th>
-                        <th>Contato</th>
-                        <th>CPF</th>
-                        <th>Especialidades</th>
-                        <th>Horário</th>
-                        <th>Status</th>
-                        <th>Agendamentos</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{#each barbers}}
-                    <tr data-barber-id="{{id}}">
-                        <td>
-                            {{#if photo}}
-                            <img src="{{photo}}" alt="{{name}}" class="rounded-circle" width="40" height="40">
-                            {{else}}
-                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="fas fa-user text-dark"></i>
-                            </div>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <strong>{{name}}</strong>
-                        </td>
-                        <td>
-                            <div>
-                                <i class="fas fa-phone me-1"></i>
-                                {{phone}}
-                            </div>
-                            {{#if email}}
-                            <div class="text-muted small">
-                                <i class="fas fa-envelope me-1"></i>
-                                {{email}}
-                            </div>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <code>{{cpf}}</code>
-                        </td>
-                        <td>
-                            {{#if specialties}}
-                            <span class="badge bg-info">{{specialties}}</span>
-                            {{else}}
-                            <span class="text-muted">-</span>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <small>{{workingHours}}</small>
-                        </td>
-                        <td>
-                            {{#if isActive}}
-                            <span class="badge bg-success">Ativo</span>
-                            {{else}}
-                            <span class="badge bg-secondary">Inativo</span>
-                            {{/if}}
-                        </td>
-                        <td>
-                            <span class="badge bg-primary">{{appointmentsThisMonth}}</span>
-                            <small class="text-muted d-block">este mês</small>
-                        </td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-outline-primary" onclick="viewBarber({{id}})" title="Ver Detalhes">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" onclick="editBarber({{id}})" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="barberReport({{id}})" title="Relatório">
-                                    <i class="fas fa-chart-bar"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-{{#if isActive}}secondary{{else}}success{{/if}}" onclick="toggleBarber({{id}})" title="{{#if isActive}}Desativar{{else}}Ativar{{/if}}">
-                                    <i class="fas fa-{{#if isActive}}pause{{else}}play{{/if}}"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteBarber({{id}})" title="Excluir">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {{/each}}
-                </tbody>
-            </table>
-        </div>
-        {{else}}
-        <div class="text-center py-5">
-            <i class="fas fa-user-tie fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">Nenhum barbeiro cadastrado</h5>
-            <p class="text-muted">Clique em "Novo Barbeiro" para começar</p>
-        </div>
-        {{/if}}
-    </div>
-</div>
 
-<!-- Modal de Barbeiro -->
+<!-- Modal de Criar/Editar Barbeiro -->
 <div class="modal fade" id="barberModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="barberModalTitle">Novo Barbeiro</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="barberForm" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <input type="hidden" id="barberId" name="barberId">
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberName" class="form-label">Nome *</label>
-                                <input type="text" class="form-control" id="barberName" name="name" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberPhone" class="form-label">Telefone *</label>
-                                <input type="tel" class="form-control" id="barberPhone" name="phone" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberEmail" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="barberEmail" name="email">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberCpf" class="form-label">CPF *</label>
-                                <input type="text" class="form-control" id="barberCpf" name="cpf" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberSpecialties" class="form-label">Especialidades</label>
-                                <input type="text" class="form-control" id="barberSpecialties" name="specialties" placeholder="Ex: Corte masculino, Barba">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberWorkingHours" class="form-label">Horário de Trabalho</label>
-                                <input type="text" class="form-control" id="barberWorkingHours" name="workingHours" placeholder="Ex: 08:00-18:00">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="barberPhoto" class="form-label">Foto</label>
-                                <input type="file" class="form-control" id="barberPhoto" name="photo" accept="image/*">
-                                <div class="form-text">Formatos aceitos: JPG, PNG, GIF (máx. 5MB)</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Status</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="barberIsActive" name="isActive" checked>
-                                    <label class="form-check-label" for="barberIsActive">
-                                        Barbeiro ativo
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Preview da foto -->
-                    <div id="photoPreview" class="mb-3 d-none">
-                        <label class="form-label">Preview:</label>
-                        <div>
-                            <img id="photoPreviewImg" src="" alt="Preview" class="rounded" style="max-width: 200px; max-height: 200px;">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="saveBarberBtn">
-                        <i class="fas fa-save me-2"></i>
-                        Salvar
-                    </button>
-                </div>
-            </form>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="barberForm" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" id="barberModalTitle">Novo Barbeiro</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          <input type="hidden" id="barberId" name="barberId">
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="barberName" class="form-label">Nome *</label>
+              <input type="text" class="form-control" id="barberName" name="name" placeholder="Nome completo" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="barberPhone" class="form-label">Telefone *</label>
+              <input type="tel" class="form-control" id="barberPhone" name="phone" placeholder="(00) 00000-0000" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="barberEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="barberEmail" name="email" placeholder="email@exemplo.com">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="barberCpf" class="form-label">CPF *</label>
+              <input type="text" class="form-control" id="barberCpf" name="cpf" placeholder="000.000.000-00" required>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="barberSpecialties" class="form-label">Especialidades</label>
+              <input type="text" class="form-control" id="barberSpecialties" name="specialties" placeholder="Cortes, barba, pintura...">
+            </div>
+              <div class="col-md-12 mb-3">
+                <label class="form-label">Horários de Trabalho</label>
+              <div class="row mb-2">
+                <div class="col-md-6">
+                  <input type="text" id="defaultWorkingHour" class="form-control" placeholder="Ex: 09:00-19:40">
+                </div>
+                <div class="col-md-6 text-end">
+                  <button type="button" class="btn btn-outline-secondary" onclick="applyDefaultWorkingHour()">
+                    <i class="fas fa-clock me-1"></i> Aplicar horário padrão
+                  </button>
+                </div>
+              </div>
+
+
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label for="workingHoursMonday" class="form-label">Segunda-feira</label>
+                    <input type="text" class="form-control" id="workingHoursMonday" name="workingHours[monday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursTuesday" class="form-label">Terça-feira</label>
+                    <input type="text" class="form-control" id="workingHoursTuesday" name="workingHours[tuesday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursWednesday" class="form-label">Quarta-feira</label>
+                    <input type="text" class="form-control" id="workingHoursWednesday" name="workingHours[wednesday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursThursday" class="form-label">Quinta-feira</label>
+                    <input type="text" class="form-control" id="workingHoursThursday" name="workingHours[thursday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursFriday" class="form-label">Sexta-feira</label>
+                    <input type="text" class="form-control" id="workingHoursFriday" name="workingHours[friday]" placeholder="Ex: 09:00-18:00">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="workingHoursSaturday" class="form-label">Sábado</label>
+                    <input type="text" class="form-control" id="workingHoursSaturday" name="workingHours[saturday]" placeholder="Ex: 09:00-13:00">
+                  </div>
+                </div>
+              </div>
+
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="barberPhoto" class="form-label">Foto</label>
+              <input type="file" class="form-control" id="barberPhoto" name="photo" accept="image/*">
+            </div>
+            <div class="col-md-6 d-flex align-items-center">
+              <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" id="barberIsActive" name="isActive" checked>
+                <label class="form-check-label" for="barberIsActive">Ativo</label>
+              </div>
+            </div>
+          </div>
+
+          <div id="photoPreview" class="mb-3 d-none">
+            <label class="form-label">Preview:</label>
+            <div>
+              <img id="photoPreviewImg" src="" alt="Preview" class="rounded" style="max-width: 200px; max-height: 200px;">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i> Salvar
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
+<!-- Modal de Relatório do Barbeiro -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-white">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportModalLabel">Relatório do Barbeiro</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="reportContent">
+        <!-- Conteúdo dinâmico injetado via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button class="btn btn-primary" onclick="printReport()">Imprimir</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Modal de Relatório -->
-<div class="modal fade" id="reportModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Relatório do Barbeiro</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="reportContent">
-                <!-- Conteúdo do relatório será carregado aqui -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" class="btn btn-primary" onclick="printReport()">
-                    <i class="fas fa-print me-2"></i>
-                    Imprimir
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-// JavaScript para gerenciamento de barbeiros
-document.addEventListener('DOMContentLoaded', function() {
-    // Máscara para telefone
-    const phoneInput = document.getElementById('barberPhone');
-    if (phoneInput) {
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            value = value.replace(/(\d{2})(\d)/, '($1) $2');
-            value = value.replace(/(\d{5})(\d)/, '$1-$2');
-            e.target.value = value;
-        });
-    }
-    
-    // Máscara para CPF
-    const cpfInput = document.getElementById('barberCpf');
-    if (cpfInput) {
-        cpfInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            value = value.replace(/(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-            e.target.value = value;
-        });
-    }
-    
-    // Preview da foto
-    const photoInput = document.getElementById('barberPhoto');
-    if (photoInput) {
-        photoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('photoPreviewImg').src = e.target.result;
-                    document.getElementById('photoPreview').classList.remove('d-none');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                document.getElementById('photoPreview').classList.add('d-none');
-            }
-        });
-    }
-    
-    // Filtros
-    setupFilters();
-});
-
-// Configurar filtros
-function setupFilters() {
-    const filterStatus = document.getElementById('filterStatus');
-    const filterSearch = document.getElementById('filterSearch');
-    const filterSpecialty = document.getElementById('filterSpecialty');
-    
-    [filterStatus, filterSearch, filterSpecialty].forEach(filter => {
-        if (filter) {
-            filter.addEventListener('input', applyFilters);
-            filter.addEventListener('change', applyFilters);
-        }
-    });
-}
-
-// Aplicar filtros
-function applyFilters() {
-    const statusFilter = document.getElementById('filterStatus').value;
-    const searchFilter = document.getElementById('filterSearch').value.toLowerCase();
-    const specialtyFilter = document.getElementById('filterSpecialty').value.toLowerCase();
-    
-    const rows = document.querySelectorAll('#barbersTable tbody tr');
-    
-    rows.forEach(row => {
-        const status = row.querySelector('.badge').textContent.toLowerCase();
-        const name = row.cells[1].textContent.toLowerCase();
-        const contact = row.cells[2].textContent.toLowerCase();
-        const cpf = row.cells[3].textContent.toLowerCase();
-        const specialty = row.cells[4].textContent.toLowerCase();
-        
-        let showRow = true;
-        
-        // Filtro de status
-        if (statusFilter) {
-            if (statusFilter === 'active' && !status.includes('ativo')) showRow = false;
-            if (statusFilter === 'inactive' && !status.includes('inativo')) showRow = false;
-        }
-        
-        // Filtro de busca
-        if (searchFilter) {
-            if (!name.includes(searchFilter) && !contact.includes(searchFilter) && !cpf.includes(searchFilter)) {
-                showRow = false;
-            }
-        }
-        
-        // Filtro de especialidade
-        if (specialtyFilter && !specialty.includes(specialtyFilter)) {
-            showRow = false;
-        }
-        
-        row.style.display = showRow ? '' : 'none';
-    });
-}
-
-// Funções CRUD
-function editBarber(id) {
-    fetch(`/admin/barbers/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const barber = data.barber;
-                
-                document.getElementById('barberId').value = barber.id;
-                document.getElementById('barberName').value = barber.name;
-                document.getElementById('barberPhone').value = barber.phone;
-                document.getElementById('barberEmail').value = barber.email || '';
-                document.getElementById('barberCpf').value = barber.cpf;
-                document.getElementById('barberSpecialties').value = barber.specialties || '';
-                document.getElementById('barberWorkingHours').value = barber.workingHours;
-                document.getElementById('barberIsActive').checked = barber.isActive;
-                
-                document.getElementById('barberModalTitle').textContent = 'Editar Barbeiro';
-                
-                const modal = new bootstrap.Modal(document.getElementById('barberModal'));
-                modal.show();
-            } else {
-                alert('Erro ao carregar dados do barbeiro');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao carregar dados do barbeiro');
-        });
-}
-
-function viewBarber(id) {
-    // Implementar visualização detalhada
-    editBarber(id);
-}
-
-function toggleBarber(id) {
-    if (confirm('Deseja alterar o status deste barbeiro?')) {
-        fetch(`/admin/barbers/${id}/toggle`, {
-            method: 'PATCH'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.error || 'Erro ao alterar status');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao alterar status');
-        });
-    }
-}
-
-function deleteBarber(id) {
-    if (confirm('Tem certeza que deseja excluir este barbeiro? Esta ação não pode ser desfeita.')) {
-        fetch(`/admin/barbers/${id}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.error || 'Erro ao excluir barbeiro');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao excluir barbeiro');
-        });
-    }
-}
-
-function barberReport(id) {
-    fetch(`/admin/barbers/${id}/report`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showReport(data.report);
-            } else {
-                alert(data.error || 'Erro ao gerar relatório');
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao gerar relatório');
-        });
-}
-
-function showReport(report) {
-    const content = `
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <h4>${report.barber.name}</h4>
-                <p class="text-muted">Período: ${report.period.start} a ${report.period.end}</p>
-            </div>
-        </div>
-        
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h3>${report.summary.totalAppointments}</h3>
-                        <p class="mb-0">Total de Agendamentos</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h3>${report.summary.completedAppointments}</h3>
-                        <p class="mb-0">Concluídos</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body text-center">
-                        <h3>R$ ${report.summary.totalRevenue.toFixed(2)}</h3>
-                        <p class="mb-0">Receita Total</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h3>${report.summary.averagePerDay.toFixed(1)}</h3>
-                        <p class="mb-0">Média por Dia</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Horário</th>
-                        <th>Serviço</th>
-                        <th>Cliente</th>
-                        <th>Status</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${report.appointments.map(apt => `
-                        <tr>
-                            <td>${new Date(apt.date).toLocaleDateString('pt-BR')}</td>
-                            <td>${apt.time}</td>
-                            <td>${apt.service}</td>
-                            <td>${apt.client}</td>
-                            <td><span class="badge bg-${apt.status === 'completed' ? 'success' : apt.status === 'cancelled' ? 'danger' : 'warning'}">${apt.status}</span></td>
-                            <td>R$ ${parseFloat(apt.price || 0).toFixed(2)}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    document.getElementById('reportContent').innerHTML = content;
-    const modal = new bootstrap.Modal(document.getElementById('reportModal'));
-    modal.show();
-}
-
-function printReport() {
-    window.print();
-}
-
-// Submissão do formulário
-document.getElementById('barberForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const barberId = document.getElementById('barberId').value;
-    
-    const url = barberId ? `/admin/barbers/${barberId}` : '/admin/barbers/create';
-    const method = barberId ? 'PUT' : 'POST';
-    
-    fetch(url, {
-        method: method,
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || 'Erro ao salvar barbeiro');
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao salvar barbeiro');
-    });
-});
-
-// Limpar formulário ao abrir modal para novo barbeiro
-document.getElementById('barberModal').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('barberForm').reset();
-    document.getElementById('barberId').value = '';
-    document.getElementById('barberModalTitle').textContent = 'Novo Barbeiro';
-    document.getElementById('photoPreview').classList.add('d-none');
-});
-</script>
-
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="/css/style.css" rel="stylesheet">
+<script src="/js/barbers.js"></script>

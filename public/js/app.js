@@ -297,18 +297,40 @@ function createBarberCard(barber) {
   card.className = 'barber-card';
   card.dataset.barberId = barber.id;
 
-  const avatarUrl = barber.avatarUrl || generateAvatarUrl(barber.name);
-  const avatarContent = `<img class="barber-avatar-img" src="${avatarUrl}" alt="${barber.name}" onerror="this.onerror=null;this.style.display='none';" />`;
+  const avatarContent = barber.photo
+  ? `<img class="barber-avatar-img" src="${barber.photo}" alt="${barber.name}" />`
+  : `<div class="barber-avatar-text">${barber.name.split(' ').map(n => n[0]).join('').substring(0, 2)}</div>`;
 
   card.innerHTML = `
     <div class="barber-avatar">${avatarContent}</div>
     <div class="barber-name">${barber.name}</div>
-    <div class="barber-specialty">${barber.specialties || 'Especialista'}</div>
+    <div class="barber-specialty">${barber.specialties || 'Especialidades não informadas'}</div>
   `;
 
-  card.addEventListener('click', () => selectBarber(barber));
+  card.addEventListener('click', () => {
+    selectBarber(barber);
+  });
+
   return card;
 }
+
+// function createBarberCard(barber) {
+//   const card = document.createElement('div');
+//   card.className = 'barber-card';
+//   card.dataset.barberId = barber.id;
+
+//   const avatarUrl = barber.avatarUrl || generateAvatarUrl(barber.name);
+//   const avatarContent = `<img class="barber-avatar-img" src="${avatarUrl}" alt="${barber.name}" onerror="this.onerror=null;this.style.display='none';" />`;
+
+//   card.innerHTML = `
+//     <div class="barber-avatar">${avatarContent}</div>
+//     <div class="barber-name">${barber.name}</div>
+//     <div class="barber-specialty">${barber.specialties || 'Especialista'}</div>
+//   `;
+
+//   card.addEventListener('click', () => selectBarber(barber));
+//   return card;
+// }
 
 // Selecionar barbeiro
 function selectBarber(barber) {
