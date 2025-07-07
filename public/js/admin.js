@@ -2,23 +2,35 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Filtros de agendamentos
     const filterForm = document.getElementById('filterForm');
+
     if (filterForm) {
-        filterForm.addEventListener('submit', function(e) {
+        // Restaurar filtros do localStorage
+        const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
+        for (const [key, value] of Object.entries(savedFilters)) {
+            const el = filterForm.elements[key];
+            if (el) el.value = value;
+        }
+
+        // Submeter formulário com filtros e salvar no localStorage
+        filterForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const formData = new FormData(filterForm);
             const params = new URLSearchParams();
-            
+            const filtersToSave = {};
+
             for (let [key, value] of formData.entries()) {
                 if (value) {
                     params.append(key, value);
+                    filtersToSave[key] = value;
                 }
             }
-            
+
+            localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
             window.location.href = `${window.location.pathname}?${params.toString()}`;
         });
     }
-    
+
     // Atualizar status do agendamento
     document.querySelectorAll('.status-select').forEach(select => {
         select.addEventListener('change', async function() {

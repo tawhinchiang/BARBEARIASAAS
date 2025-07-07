@@ -213,31 +213,55 @@
 <!-- Chart.js + Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const revenueChartData = {{{json revenueChartData}}};
-
+   document.addEventListener('DOMContentLoaded', function () {
+    console.log('Labels:', {{{json revenueChartLabels}}});
+    console.log('Data:', {{{json revenueChartData}}});
     const ctx = document.getElementById('appointmentsChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Object.keys(revenueChartData),
-        datasets: [{
-          label: 'Receita (R$)',
-          data: Object.values(revenueChartData),
-          backgroundColor: 'rgba(0, 123, 255, 0.1)',
-          borderColor: '#007bff',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3
-        }]
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{{json revenueChartLabels}}},
+ datasets: [{
+      label: 'Receita (R$)',
+      data: {{{json revenueChartData}}},
+      backgroundColor: 'rgba(0, 123, 255, 0.2)',  // aumente a opacidade
+      borderColor: '#007bff',                   // azul padrão
+      pointBackgroundColor: '#007bff',
+      pointRadius: 5,                             // AUMENTA O PONTO
+      pointHoverRadius: 7,
+      borderWidth: 2,
+      fill: true,
+      tension: 0.3
+      }]
+  },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+      display: true,
+      text: 'Receita Confirmada por Dia da Semana'
+       },
+        legend: {
+          labels: { font: { size: 14 } }
+        },
+        tooltip: {
+          bodyFont: { size: 14 },
+          titleFont: { size: 16 }
+        }
       },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { font: { size: 13 } }
+        },
+        x: {
+          ticks: { font: { size: 13 } }
         }
       }
-    });
+    }
+
+});
+
   });
 </script>
 
@@ -265,4 +289,5 @@
   align-items: center;
   justify-content: center;
 }
+
 </style>

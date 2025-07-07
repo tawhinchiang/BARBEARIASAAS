@@ -2,83 +2,94 @@
 <div class="admin-dashboard">
   <div class="container-fluid">
     <!-- Header -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="admin-card">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 class="fw-bold mb-1">Gerenciar Agendamentos</h2>
-              <p class="text-muted mb-0">Visualize e gerencie todos os agendamentos</p>
-            </div>
-            <div>
-              <button class="btn btn-primary" onclick="exportAppointments()">
-                <i class="fas fa-download"></i> Exportar
-              </button>
+  <div class="row mb-4">
+        <div class="col-12">
+          <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h2 class="fw-bold mb-1">Gerenciar Agendamentos</h2>
+                <p class="text-muted mb-0">Visualize e gerencie todos os agendamentos</p>
+              </div>
+              <div>
+                <button class="btn btn-primary" onclick="exportAppointments()">
+                  <i class="fas fa-download"></i> Exportar
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Filtros Corrigidos -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="admin-filters">
-          <div class="row">
-            <div class="col-md-3">
-              <div class="filter-group">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" id="startDate" class="form-control" value="{{filters.startDate}}">
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="filter-group">
-                <label class="form-label">Data Final</label>
-                <input type="date" id="endDate" class="form-control" value="{{filters.endDate}}">
-              </div>
-            </div>
-            <div class="col-md-3">
-              <div class="filter-group">
-                <label class="form-label">Barbeiro</label>
-                <div class="dropdown">
-                  <button class="btn btn-secondary dropdown-toggle w-100" type="button" id="barberFilter" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span id="selectedBarber">Todos os barbeiros</span>
-                  </button>
-                  <ul class="dropdown-menu w-100" aria-labelledby="barberFilter">
-                    <li><a class="dropdown-item" href="#" data-barber-id="" onclick="selectBarber('', 'Todos os barbeiros')">Todos os barbeiros</a></li>
-                    {{#each barbers}}
-                    <li><a class="dropdown-item" href="#" data-barber-id="{{id}}" onclick="selectBarber('{{id}}', '{{name}}')">{{name}}</a></li>
-                    {{/each}}
-                  </ul>
+      <!-- Filtros Corrigidos -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="admin-filters">
+            <form id="filterForm">
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="filter-group">
+                    <label class="form-label">Data Inicial</label>
+                    <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="filter-group">
+                    <label class="form-label">Data Final</label>
+                    <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.endDate}}">
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="filter-group">
+                    <label class="form-label">Barbeiro</label>
+                    <select class="form-control" name="barberId" id="barberId">
+                      <option value="">Todos os barbeiros</option>
+                      {{#each barbers}}
+                      <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
+                      {{/each}}
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="filter-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" id="statusFilter" class="form-control">
+                      <option value="">Todos os status</option>
+                      <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option>
+                      <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
+                      <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
+                      <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="col-md-3">
-              <div class="filter-group">
-                <label class="form-label">Status</label>
-                <select id="statusFilter" class="form-control">
-                  <option value="">Todos os status</option>
-                  <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option>
-                  <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-                  <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
-                  <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
-                </select>
+              <div class="row mt-3">
+                <div class="col-md-3">
+                  <div class="filter-group">
+                    <label class="form-label">Ordenar por</label>
+                    <select class="form-control" name="sort" id="sort">
+                      <option value="">Ordenar por</option>
+                      <option value="date_desc" {{#eq filters.sort 'date_desc'}}selected{{/eq}}>Data/Hora (Mais recente)</option>
+                      <option value="date_asc" {{#eq filters.sort 'date_asc'}}selected{{/eq}}>Data/Hora (Mais antigo)</option>
+                      <option value="value_desc" {{#eq filters.sort 'value_desc'}}selected{{/eq}}>Valor (Maior primeiro)</option>
+                      <option value="value_asc" {{#eq filters.sort 'value_asc'}}selected{{/eq}}>Valor (Menor primeiro)</option>
+                      <option value="barber_asc" {{#eq filters.sort 'barber_asc'}}selected{{/eq}}>Barbeiro (A-Z)</option>
+                      <option value="barber_desc" {{#eq filters.sort 'barber_desc'}}selected{{/eq}}>Barbeiro (Z-A)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-9 d-flex align-items-end">
+                  <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter"></i> Aplicar Filtros
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Limpar
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-          <div class="row mt-3">
-            <div class="col-12">
-              <button class="btn btn-primary" onclick="applyFilters()">
-                <i class="fas fa-filter"></i> Aplicar Filtros
-              </button>
-              <button class="btn btn-secondary ms-2" onclick="clearFilters()">
-                <i class="fas fa-times"></i> Limpar
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
-    </div>
 
     <!-- Tabela de Agendamentos -->
     <div class="row">
@@ -280,28 +291,28 @@ let openMenuId = null;
 // No topo do seu <script>, junto com as outras variáveis
 let viewAppointmentModal = null;
 // Inicialização
-document.addEventListener('DOMContentLoaded', function() {
+/*document.addEventListener('DOMContentLoaded', function() {
   console.log('[ADMIN] Página de agendamentos carregada');
 
-  // INICIALIZA O MODAL
-  const modalElement = document.getElementById('viewModal');
- if (modalElement) {
-  viewAppointmentModal = new bootstrap.Modal(modalElement, {
-    backdrop: true,
-    keyboard: true
+    // INICIALIZA O MODAL
+    const modalElement = document.getElementById('viewModal');
+    if (modalElement) {
+    viewAppointmentModal = new bootstrap.Modal(modalElement, {
+      backdrop: true,
+      keyboard: true
+    });
+    const closeBtn = modalElement.querySelector('.btn-close');
+
+  closeBtn.addEventListener('click', function () {
+    viewAppointmentModal.hide(); // fecha corretamente usando o Bootstrap
   });
-  const closeBtn = modalElement.querySelector('.btn-close');
 
-closeBtn.addEventListener('click', function () {
-  viewAppointmentModal.hide(); // fecha corretamente usando o Bootstrap
-});
-
-// Fecha ao clicar fora do modal
-modalElement.addEventListener('click', function (e) {
-  if (e.target === modalElement) {
-    viewAppointmentModal.hide();
-  }
-});
+  // Fecha ao clicar fora do modal
+  modalElement.addEventListener('click', function (e) {
+    if (e.target === modalElement) {
+      viewAppointmentModal.hide();
+    }
+  });
 
 }
 
@@ -338,7 +349,94 @@ modalElement.addEventListener('click', function (e) {
 
   // Configurar filtros de data padrão
   setDefaultDates();
+}); */
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[ADMIN] Página de agendamentos carregada');
+
+  // INICIALIZA O MODAL
+  const modalElement = document.getElementById('viewModal');
+  if (modalElement) {
+    viewAppointmentModal = new bootstrap.Modal(modalElement, {
+      backdrop: true,
+      keyboard: true
+    });
+    const closeBtn = modalElement.querySelector('.btn-close');
+
+    closeBtn.addEventListener('click', function () {
+      viewAppointmentModal.hide();
+    });
+
+    modalElement.addEventListener('click', function (e) {
+      if (e.target === modalElement) {
+        viewAppointmentModal.hide();
+      }
+    });
+  }
+
+  // Event listener da tabela
+  const tableBody = document.querySelector('.admin-table tbody');
+  if (tableBody) {
+    tableBody.addEventListener('click', function(event) {
+      const button = event.target.closest('button');
+      if (!button) return;
+
+      const appointmentId = button.dataset.id;
+      if (!appointmentId) return;
+
+      if (button.classList.contains('js-toggle-actions'))     { toggleActionsMenu(appointmentId); }
+      else if (button.classList.contains('js-view-appointment'))   { viewAppointment(appointmentId); }
+      else if (button.classList.contains('js-edit-appointment'))   { editAppointment(appointmentId); }
+      else if (button.classList.contains('js-send-whatsapp'))      { sendWhatsApp(appointmentId); }
+      else if (button.classList.contains('js-confirm-appointment')) { confirmAppointment(appointmentId); }
+      else if (button.classList.contains('js-complete-appointment')){ completeAppointment(appointmentId); }
+      else if (button.classList.contains('js-cancel-appointment')) { cancelAppointment(appointmentId); }
+      else if (button.classList.contains('js-delete-appointment')) { deleteAppointment(appointmentId); }
+    });
+  }
+
+  // Fechar menus flutuantes
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.actions-menu')) {
+      closeAllMenus();
+    }
+  });
+
+  // Filtros - restaurar e aplicar
+  const filterForm = document.getElementById('filterForm');
+  if (filterForm) {
+    const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
+    for (const [key, value] of Object.entries(savedFilters)) {
+      const el = filterForm.elements[key];
+      if (el) el.value = value;
+    }
+
+    filterForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(filterForm);
+      const params = new URLSearchParams();
+      const filtersToSave = {};
+
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          params.append(key, value);
+          filtersToSave[key] = value;
+        }
+      }
+
+      localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
+      window.location.href = `/admin/appointments?${params.toString()}`;
+    });
+  }
+
+  // Filtros de data padrão
+  setDefaultDates();
 });
+ window.clearFilters = function () {
+    localStorage.removeItem('adminFilters');
+    window.location.href = window.location.pathname;
+  };
 // Configurar datas padrão
 function setDefaultDates() {
   const today = new Date();
@@ -363,28 +461,41 @@ function selectBarber(barberId, barberName) {
   document.getElementById('selectedBarber').textContent = barberName;
 }
 
-// Aplicar filtros
-function applyFilters() {
-  console.log('[ADMIN] Aplicando filtros');
-  
-  const startDate = document.getElementById('startDate').value;
-  const endDate = document.getElementById('endDate').value;
-  const status = document.getElementById('statusFilter').value;
-  
-  const params = new URLSearchParams();
-  if (startDate) params.append('startDate', startDate);
-  if (endDate) params.append('endDate', endDate);
-  if (selectedBarberId) params.append('barberId', selectedBarberId);
-  if (status) params.append('status', status);
-  
-  window.location.href = `/admin/appointments?${params.toString()}`;
-}
 
-// Limpar filtros
-function clearFilters() {
-  console.log('[ADMIN] Limpando filtros');
-  window.location.href = '/admin/appointments';
-}
+/*document.addEventListener('DOMContentLoaded', function () {
+  const filterForm = document.getElementById('filterForm');
+
+  if (filterForm) {
+    // Restaurar filtros salvos
+    const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
+    for (const [key, value] of Object.entries(savedFilters)) {
+      const el = filterForm.elements[key];
+      if (el) el.value = value;
+    }
+
+    // Salvar e aplicar filtros
+    filterForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(filterForm);
+      const params = new URLSearchParams();
+      const filtersToSave = {};
+
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          params.append(key, value);
+          filtersToSave[key] = value;
+        }
+      }
+
+      localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
+      window.location.href = `/admin/appointments?${params.toString()}`;
+    });
+  }
+
+  // Limpar filtros
+ 
+})*/
 
 // Toggle menu de ações
 function toggleActionsMenu(appointmentId) {
@@ -614,20 +725,22 @@ async function sendWhatsApp(appointmentId) {
 
 function exportAppointments() {
   console.log('[ADMIN] Exportando agendamentos');
-  
-  const startDate = document.getElementById('startDate').value;
-  const endDate = document.getElementById('endDate').value;
-  const status = document.getElementById('statusFilter').value;
-  
+
+  const startDate = document.getElementById('startDate')?.value;
+  const endDate = document.getElementById('endDate')?.value;
+  const status = document.getElementById('statusFilter')?.value;
+  const barberId = document.getElementById('barberId')?.value;
+
   const params = new URLSearchParams();
   if (startDate) params.append('startDate', startDate);
   if (endDate) params.append('endDate', endDate);
-  if (selectedBarberId) params.append('barberId', selectedBarberId);
+  if (barberId) params.append('barberId', barberId);
   if (status) params.append('status', status);
   params.append('export', 'csv');
-  
+
   window.open(`/admin/appointments?${params.toString()}`, '_blank');
 }
+
 
 // Utilitários
 function getStatusText(status) {

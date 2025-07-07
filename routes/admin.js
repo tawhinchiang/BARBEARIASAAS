@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
+const { Op } = require('sequelize');
 
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
@@ -27,12 +28,12 @@ router.use('/reports', isAuthenticated);
 // Página de login administrativo
 router.get('/login', (req, res) => {
   log('Acessando página de login administrativo');
-  
+
   if (req.session.user) {
     log('Usuário já logado, redirecionando para dashboard', { user: req.session.user });
     return res.redirect('/admin/dashboard');
   }
-  
+
   log('Renderizando página de login');
   res.render('admin/login', {
     title: 'Login Administrativo',
@@ -46,50 +47,42 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     log('Tentativa de login', { username, passwordLength: password ? password.length : 0 });
-    
+
     if (!username || !password) {
       log('Login falhou: campos obrigatórios não preenchidos');
       return res.redirect('/admin/login?error=Usuário e senha são obrigatórios');
     }
-    
+
     log('Buscando usuário no banco de dados', { username });
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       where: { username, isActive: true },
       attributes: ['id', 'username', 'password', 'role', 'isActive']
     });
-    
+
     if (!user) {
       log('Login falhou: usuário não encontrado ou inativo', { username });
       return res.redirect('/admin/login?error=Credenciais inválidas');
     }
-    
-    log('Usuário encontrado, verificando senha', { 
-      userId: user.id, 
-      username: user.username,
-      role: user.role,
-      isActive: user.isActive
-    });
-    
+
     const passwordMatch = await bcrypt.compare(password, user.password);
     log('Resultado da verificação de senha', { passwordMatch });
-    
+
     if (!passwordMatch) {
       log('Login falhou: senha incorreta', { username });
       return res.redirect('/admin/login?error=Credenciais inválidas');
     }
-    
-    // Criar sessão
+
     req.session.user = {
       id: user.id,
       username: user.username,
       role: user.role
     };
-    
-    log('Login realizado com sucesso', { 
+
+    log('Login realizado com sucesso', {
       sessionUser: req.session.user,
       sessionId: req.sessionID
     });
-    
+
     res.redirect('/admin/dashboard');
   } catch (error) {
     logError('Erro no processo de login', error);
@@ -97,9 +90,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
-
-// Logout administrativo
 router.get('/logout', (req, res) => {
   log('Realizando logout', { user: req.session.user });
   req.session.destroy((err) => {
@@ -112,44 +102,37 @@ router.get('/logout', (req, res) => {
   });
 });
 
-
-
-
 // Dashboard administrativo
+
 router.get('/dashboard', async (req, res) => {
   try {
     log('Acessando dashboard', { user: req.session.user });
 
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-    log('Calculando estatísticas do mês', { startOfMonth, endOfMonth });
+    const formatDateYYYYMMDD = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
-    // Estatísticas do mês
     const monthlyStats = await Appointment.count({
-      where: {
-        appointmentDate: {
-          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-        }
-      }
+      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } }
     });
 
-    // Receita do mês
     const monthlyRevenue = await Appointment.sum('totalPrice', {
       where: {
-        appointmentDate: {
-          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-        },
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
         status: 'confirmed'
       }
     }) || 0;
 
-    // Agendamentos de hoje
     const todayAppointments = await Appointment.findAll({
-      where: {
-        appointmentDate: today.toISOString().split('T')[0]
-      },
+      where: { appointmentDate: formatDateYYYYMMDD(today) },
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber' },
@@ -158,180 +141,115 @@ router.get('/dashboard', async (req, res) => {
       order: [['appointmentTime', 'ASC']]
     });
 
-    // Estatísticas por status
     const statusStats = await Appointment.findAll({
-      attributes: [
-        'status',
-        [require('sequelize').fn('COUNT', require('sequelize').col('status')), 'count']
-      ],
-      where: {
-        appointmentDate: {
-          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-        }
-      },
+      attributes: ['status', [require('sequelize').fn('COUNT', require('sequelize').col('status')), 'count']],
+      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
       group: ['status'],
       raw: true
     });
 
-    // === GRÁFICOS ===
+    // Receita dos últimos 7 dias
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 6);
 
-    // Status Chart
-    const statusChartData = {};
-    statusStats.forEach(stat => {
-      statusChartData[stat.status] = parseInt(stat.count);
-    });
+    const datesToTrack = [];
+    for (let i = 0; i < 7; i++) {
+      const temp = new Date(sevenDaysAgo);
+      temp.setDate(sevenDaysAgo.getDate() + i);
+      datesToTrack.push(formatDateYYYYMMDD(temp));
+    }
 
-    // Barber Chart
-    const barberAppointments = await Appointment.findAll({
-      attributes: [
-        'barberId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'count']
-      ],
-      include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
-      where: {
-        appointmentDate: {
-          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-        }
-      },
-      group: ['barberId', 'barber.id'],
-      raw: true,
-      nest: true
-    });
-
-    const barberChartData = {};
-    barberAppointments.forEach(item => {
-      barberChartData[item.barber.name] = parseInt(item.count);
-    });
-
-    // Revenue Chart (por dia)
     const appointmentsForRevenue = await Appointment.findAll({
       attributes: ['appointmentDate', 'totalPrice'],
       where: {
-        appointmentDate: {
-          [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-        },
-        status: 'completed'
+        appointmentDate: { [Op.in]: datesToTrack },
+        status: { [Op.in]: ['confirmed', 'completed'] }
       },
       raw: true
     });
 
-    const revenueChartData = {};
-    appointmentsForRevenue.forEach(item => {
-      const date = new Date(item.appointmentDate).toISOString().slice(0, 10);
-      revenueChartData[date] = (revenueChartData[date] || 0) + parseFloat(item.totalPrice || 0);
+    const revenueChartLabels = [];
+    const revenueChartData = [];
+    datesToTrack.forEach(dateStr => {
+      const dayName = diasSemana[new Date(dateStr).getDay()];
+      revenueChartLabels.push(dayName);
+      revenueChartData.push(0);
     });
-    // Top Barbers (exemplo simplificado)
-const topBarbersRaw = await Appointment.findAll({
-  attributes: [
-    'barberId',
-    [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
-    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-  ],
-  where: {
-    appointmentDate: {
-      [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-    }
-  },
-  include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
-  group: ['barberId', 'barber.id'],
-  order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
-  limit: 5,
-  raw: true,
-  nest: true
-});
 
-const topBarbers = topBarbersRaw.map(item => ({
-  name: item.barber.name,
-  appointmentCount: item.appointmentCount,
-  totalRevenue: item.totalRevenue
-}));
+    appointmentsForRevenue.forEach(item => {
+      const index = datesToTrack.indexOf(formatDateYYYYMMDD(new Date(item.appointmentDate)));
+      if (index !== -1) {
+        revenueChartData[index] += parseFloat(item.totalPrice || 0);
+      }
+    });
 
-// Top Services (exemplo simplificado)
-const topServicesRaw = await Appointment.findAll({
-  attributes: [
-    'serviceTypeId',
-    [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
-    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-  ],
-  where: {
-    appointmentDate: {
-      [require('sequelize').Op.between]: [startOfMonth, endOfMonth]
-    }
-  },
-  include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
-  group: ['serviceTypeId', 'serviceType.id'],
-  order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
-  limit: 5,
-  raw: true,
-  nest: true
-});
+    const topBarbersRaw = await Appointment.findAll({
+      attributes: [
+        'barberId',
+        [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
+        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+      ],
+      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
+      include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
+      group: ['barberId', 'barber.id'],
+      order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
+      limit: 5,
+      raw: true,
+      nest: true
+    });
 
-const topServices = topServicesRaw.map(item => ({
-  name: item.serviceType.name,
-  duration: item.serviceType.duration,
-  price: item.serviceType.price,
-  appointmentCount: item.appointmentCount,
-  totalRevenue: item.totalRevenue,
-  percentage: 0 // Pode calcular se quiser
-}));
+    const topBarbers = topBarbersRaw.map(item => ({
+      name: item.barber.name,
+      appointmentCount: item.appointmentCount,
+      totalRevenue: item.totalRevenue
+    }));
 
-    const todayAppointmentsCount = todayAppointments.length;
-    const recentAppointments = todayAppointments;
-    const statusStatsCount = statusStats.length;
+    const topServicesRaw = await Appointment.findAll({
+      attributes: [
+        'serviceTypeId',
+        [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
+        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+      ],
+      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
+      include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
+      group: ['serviceTypeId', 'serviceType.id'],
+      order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
+      limit: 5,
+      raw: true,
+      nest: true
+    });
 
+    const topServices = topServicesRaw.map(item => ({
+      name: item.serviceType.name,
+      duration: item.serviceType.duration,
+      price: item.serviceType.price,
+      appointmentCount: item.appointmentCount,
+      totalRevenue: item.totalRevenue,
+      percentage: 0
+    }));
 
-    
-    // log('Renderizando dashboard com dados', {
-    //   monthlyStats,
-    //   monthlyRevenue,
-    //   todayAppointmentsCount: todayAppointments.length,
-    //   statusStatsCount: statusStats.length,
-    //   statusChartData,
-    //   barberChartData,
-    //   revenueChartData
-    // });
+    const formattedRecentAppointments = todayAppointments.map(app => {
+      const [year, month, day] = app.appointmentDate.split('-');
+      const localDate = new Date(year, month - 1, day);
+      return {
+        ...app.toJSON(),
+        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: app.appointmentTime.slice(0, 5)
+      };
+    });
 
-   const formattedRecentAppointments = recentAppointments.map(app => {
-  // extrai partes da data ISO
-  const [year, month, day] = app.appointmentDate.split('-');
-
-  // cria data local (mes - 1 porque Date meses são 0-based)
-  const localDate = new Date(year, month - 1, day);
-
-  return {
-    ...app.toJSON(),
-    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-    appointmentTimeFormatted: app.appointmentTime.slice(0, 5)
-  };
-});
-
-
-//     console.log({
-//   todayAppointmentsCount,
-//   monthlyRevenue,
-//   monthlyStats,
-//   statusStatsCount,
-//   recentAppointmentsCount: recentAppointments.length,
-//   topBarbersCount: topBarbers.length,
-//   topServicesCount: topServices.length,
-// });
-
-console.log({
-  message: 'teste tesdte',
-  recentAppointments: formattedRecentAppointments,
-});
-
-     res.render('admin/dashboard', {
+    res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
       layout: 'admin',
       user: req.session.user,
-      todayAppointmentsCount,
+      todayAppointmentsCount: todayAppointments.length,
       monthlyRevenue,
       monthlyStats,
-      statusStatsCount,
+      statusStatsCount: statusStats.length,
       recentAppointments: formattedRecentAppointments,
       topBarbers,
       topServices,
+      revenueChartLabels,
       revenueChartData
     });
   } catch (error) {
@@ -345,33 +263,72 @@ console.log({
   }
 });
 
+
 // Listagem e gerenciamento de agendamentos - CORRIGIDA
+// Listagem e gerenciamento de agendamentos - COM ORDENAÇÃO E FILTROS COMPLETOS
 router.get('/appointments', async (req, res) => {
   try {
-    log('Acessando listagem de agendamentos', { 
+    log('Acessando listagem de agendamentos', {
       user: req.session.user,
       query: req.query
     });
-    
-    const { date, barberId, status } = req.query;
+
+    const { startDate, endDate, barberId, status, sort } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = 20;
     const offset = (page - 1) * limit;
-    
+
     let whereClause = {};
-    
-    if (date) {
-      whereClause.appointmentDate = date;
+
+    if (startDate && endDate) {
+      whereClause.appointmentDate = {
+        [require('sequelize').Op.between]: [startDate, endDate]
+      };
+    } else if (startDate) {
+      whereClause.appointmentDate = {
+        [require('sequelize').Op.gte]: startDate
+      };
+    } else if (endDate) {
+      whereClause.appointmentDate = {
+        [require('sequelize').Op.lte]: endDate
+      };
     }
+
     if (barberId) {
       whereClause.barberId = barberId;
     }
+
     if (status) {
       whereClause.status = status;
     }
-    
-    log('Filtros aplicados', { whereClause, page, limit, offset });
-    
+
+    // Define ordenação dinâmica
+    let order = [];
+    switch (sort) {
+      case 'date_asc':
+        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']];
+        break;
+      case 'date_desc':
+        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']];
+        break;
+      case 'value_asc':
+        order = [['totalPrice', 'ASC']];
+        break;
+      case 'value_desc':
+        order = [['totalPrice', 'DESC']];
+        break;
+      case 'barber_asc':
+        order = [[require('sequelize').literal('"barber"."name"'), 'ASC']];
+        break;
+      case 'barber_desc':
+        order = [[require('sequelize').literal('"barber"."name"'), 'DESC']];
+        break;
+      default:
+        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']];
+    }
+
+    log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
+
     const { count, rows: appointments } = await Appointment.findAndCountAll({
       where: whereClause,
       include: [
@@ -379,25 +336,21 @@ router.get('/appointments', async (req, res) => {
         { model: Barber, as: 'barber' },
         { model: ServiceType, as: 'serviceType' }
       ],
-      order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']],
+      order,
       limit,
       offset
     });
-    
-    log('Agendamentos carregados', { count, appointmentsLoaded: appointments.length });
-    
+
     const barbers = await Barber.findAll({ where: { isActive: true } });
-    log('Barbeiros carregados', { barbersCount: barbers.length });
-    
     const totalPages = Math.ceil(count / limit);
-    
+
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       layout: 'admin',
       user: req.session.user,
       appointments,
       barbers,
-      filters: { date, barberId, status },
+      filters: { startDate, endDate, barberId, status, sort },
       pagination: {
         currentPage: page,
         totalPages,
@@ -406,6 +359,7 @@ router.get('/appointments', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('[DEBUG ERRO]', error);
     logError('Erro ao listar agendamentos', error);
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
@@ -415,6 +369,7 @@ router.get('/appointments', async (req, res) => {
     });
   }
 });
+
 
 // Atualizar status do agendamento
 router.post('/appointments/:id/status', async (req, res) => {
