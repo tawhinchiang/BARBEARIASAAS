@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   maskInputs();
   previewPhoto();
   setupFilters();
-
+  maskTimeRangeInputs();
   const form = document.getElementById('barberForm');
   if (form) form.addEventListener('submit', submitForm);
 
@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+function isValidTimeRange(value) {
+  const regex = /^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/;
+  return regex.test(value);
+}
 
 function maskInputs() {
   const phoneInput = document.getElementById('barberPhone');
@@ -42,6 +46,50 @@ function maskInputs() {
     });
   }
 }
+function maskTimeRangeInputs() {
+  const inputs = [
+    'defaultWorkingHour',
+    'workingHoursMonday',
+    'workingHoursTuesday',
+    'workingHoursWednesday',
+    'workingHoursThursday',
+    'workingHoursFriday',
+    'workingHoursSaturday'
+  ];
+
+  inputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+      let value = input.value.replace(/\D/g, '');
+
+      if (value.length > 8) value = value.slice(0, 8);
+
+      if (value.length >= 7) {
+        value = `${value.slice(0, 2)}:${value.slice(2, 4)}-${value.slice(4, 6)}:${value.slice(6, 8)}`;
+      } else if (value.length >= 5) {
+        value = `${value.slice(0, 2)}:${value.slice(2, 4)}-${value.slice(4)}`;
+      } else if (value.length >= 3) {
+        value = `${value.slice(0, 2)}:${value.slice(2)}`;
+      }
+
+      input.value = value;
+    });
+
+    input.addEventListener('keydown', e => {
+      // Permitir Backspace, Delete, Setas etc
+      const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+      if (allowedKeys.includes(e.key)) return;
+
+      // Bloqueia letras e espaços
+      if (!/[0-9]/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+  });
+}
+
 
 function previewPhoto() {
   const photoInput = document.getElementById('barberPhoto');
@@ -99,6 +147,27 @@ function submitForm(e) {
   e.preventDefault();
   const form = e.target;
   const formData = new FormData(form);
+
+  // Validação dos horários
+  const hourFields = [
+    'defaultWorkingHour',
+    'workingHoursMonday',
+    'workingHoursTuesday',
+    'workingHoursWednesday',
+    'workingHoursThursday',
+    'workingHoursFriday',
+    'workingHoursSaturday'
+  ];
+
+  for (const id of hourFields) {
+    const input = document.getElementById(id);
+    if (input && input.value.trim() !== '' && !isValidTimeRange(input.value.trim())) {
+      alert(`Horário inválido em "${input.previousElementSibling?.innerText || id}". Use o formato HH:MM-HH:MM (ex: 09:00-18:00)`);
+      input.focus();
+      return;
+    }
+  }
+
   const id = document.getElementById('barberId').value;
   const method = id ? 'PUT' : 'POST';
   const url = id ? `/admin/barbers/${id}` : '/admin/barbers/create';
@@ -116,9 +185,8 @@ function submitForm(e) {
       console.error('Erro:', err);
       alert('Erro interno ao salvar');
     });
-    console.log('[DEBUG] req.file:', req.file);
-
 }
+
 
 // CRUD helpers
 window.editBarber = function (id) {

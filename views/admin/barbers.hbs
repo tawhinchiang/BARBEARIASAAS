@@ -93,7 +93,8 @@
 
 <!-- Modal de Criar/Editar Barbeiro -->
 <div class="modal fade" id="barberModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
+
     <div class="modal-content">
       <form id="barberForm" enctype="multipart/form-data">
         <div class="modal-header">
@@ -104,29 +105,34 @@
           <input type="hidden" id="barberId" name="barberId">
 
           <div class="row">
-            <div class="col-md-6 mb-3">
+           <div class="col-12 col-md-6 mb-3">
+
               <label for="barberName" class="form-label">Nome *</label>
               <input type="text" class="form-control" id="barberName" name="name" placeholder="Nome completo" required>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
+
               <label for="barberPhone" class="form-label">Telefone *</label>
               <input type="tel" class="form-control" id="barberPhone" name="phone" placeholder="(00) 00000-0000" required>
             </div>
           </div>
 
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
+
               <label for="barberEmail" class="form-label">Email</label>
               <input type="email" class="form-control" id="barberEmail" name="email" placeholder="email@exemplo.com">
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
+
               <label for="barberCpf" class="form-label">CPF *</label>
               <input type="text" class="form-control" id="barberCpf" name="cpf" placeholder="000.000.000-00" required>
             </div>
           </div>
 
           <div class="row">
-            <div class="col-md-6 mb-3">
+           <div class="col-12 col-md-6 mb-3">
+
               <label for="barberSpecialties" class="form-label">Especialidades</label>
               <input type="text" class="form-control" id="barberSpecialties" name="specialties" placeholder="Cortes, barba, pintura...">
             </div>
@@ -175,7 +181,8 @@
           </div>
 
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
+
               <label for="barberPhoto" class="form-label">Foto</label>
               <input type="file" class="form-control" id="barberPhoto" name="photo" accept="image/*">
             </div>

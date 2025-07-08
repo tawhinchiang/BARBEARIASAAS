@@ -253,13 +253,31 @@ router.get('/', async (req, res) => {
     
     log('Agendamentos encontrados', { count: appointments.count, returned: appointments.rows.length });
     
-    res.json({
-      success: true,
-      appointments: appointments.rows,
-      total: appointments.count,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+   const formattedAppointments = appointments.rows.map(app => {
+  const [year, month, day] = app.appointmentDate.split('-');
+  const localDate = new Date(year, month - 1, day);
+      return {
+        ...app.toJSON(),
+        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: app.appointmentTime?.slice(0, 5)
+      };
     });
+
+    res.render('admin/appointments', {
+      title: 'Gerenciar Agendamentos',
+      layout: 'admin',
+      appointments: formattedAppointments,
+      user: req.session.user,
+      barbers: await Barber.findAll({ where: { isActive: true } }),
+      filters: req.query,
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false
+      }
+    });
+
     
   } catch (error) {
     logError('Erro ao listar agendamentos', error);
@@ -267,6 +285,30 @@ router.get('/', async (req, res) => {
       success: false, 
       error: 'Erro interno do servidor' 
     });
+  }
+});
+const formattedAppointments = appointments.map(app => {
+  const [year, month, day] = app.appointmentDate.split('-');
+  const localDate = new Date(year, month - 1, day); // Corrige fuso
+
+  return {
+    ...app.toJSON(),
+    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+    appointmentTimeFormatted: app.appointmentTime?.slice(0, 5)
+  };
+});
+res.render('admin/appointments', {
+  title: 'Gerenciar Agendamentos',
+  layout: 'admin',
+  user: req.session.user,
+  appointments: formattedAppointments,
+  barbers,
+  filters: { startDate, endDate, barberId, status, sort },
+  pagination: {
+    currentPage: page,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1
   }
 });
 
