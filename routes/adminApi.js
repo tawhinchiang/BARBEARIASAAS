@@ -6,7 +6,7 @@ const { isAuthenticatedApi } = require('../middleware/auth');
 
 router.use(isAuthenticatedApi);
 
-// GET /admin/api/appointments/:id
+// GET /admin/appointments/:id
 router.get('/appointments/:id', async (req, res) => {
   try {
     const appointment = await Appointment.findByPk(req.params.id, {
@@ -24,7 +24,7 @@ router.get('/appointments/:id', async (req, res) => {
   }
 });
 
-// POST /admin/api/appointments/:id/whatsapp
+// POST /admin/appointments/:id/whatsapp
 router.post('/appointments/:id/whatsapp', async (req, res) => {
   try {
     // Lógica para enviar WhatsApp
@@ -35,7 +35,7 @@ router.post('/appointments/:id/whatsapp', async (req, res) => {
   }
 });
 
-// POST /admin/api/appointments/:id/cancel
+// POST /admin/appointments/:id/cancel
 router.post('/appointments/:id/cancel', async (req, res) => {
   try {
     const appointment = await Appointment.findByPk(req.params.id);
@@ -49,7 +49,7 @@ router.post('/appointments/:id/cancel', async (req, res) => {
   }
 });
 
-// DELETE /admin/api/appointments/:id
+// DELETE /admin/appointments/:id
 router.delete('/appointments/:id', async (req, res) => {
   try {
     const deletedCount = await Appointment.destroy({ where: { id: req.params.id } });
@@ -60,5 +60,6 @@ router.delete('/appointments/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+
 
 module.exports = router;

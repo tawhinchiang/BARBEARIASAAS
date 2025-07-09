@@ -137,8 +137,8 @@
                 <tbody>
                     {{#each appointments}}
                     <tr>
-                        <td>{{formatDate appointmentDate}}</td>
-                        <td>{{formatTime appointmentTime}}</td>
+                        <td>{{appointmentDateFormatted}}</td>
+                        <td>{{appointmentTimeFormatted}}</td>
                         <td>{{client.firstName}} {{client.lastName}}</td>
                         <td>{{client.phone}}</td>
                         <td>{{barber.name}}</td>

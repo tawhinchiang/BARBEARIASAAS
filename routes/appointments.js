@@ -219,269 +219,117 @@ router.post('/', async (req, res) => {
 });
 
 // Listar agendamentos (para admin) - CORRIGIDA
-router.get('/', async (req, res) => {
-  try {
-    log('Listando agendamentos');
+// router.get('/', async (req, res) => {
+//   try {
+//     log('Listando agendamentos');
     
-    const { date, barberId, status, limit = 50, offset = 0 } = req.query;
+//     const { date, barberId, status, limit = 50, offset = 0 } = req.query;
     
-    const whereClause = {};
+//     const whereClause = {};
     
-    if (date) {
-      whereClause.appointmentDate = date;
-    }
+//     if (date) {
+//       whereClause.appointmentDate = date;
+//     }
     
-    if (barberId) {
-      whereClause.barberId = barberId;
-    }
+//     if (barberId) {
+//       whereClause.barberId = barberId;
+//     }
     
-    if (status) {
-      whereClause.status = status;
-    }
+//     if (status) {
+//       whereClause.status = status;
+//     }
     
-    const appointments = await Appointment.findAndCountAll({
-      where: whereClause,
-      include: [
-        { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
-        { model: Barber, as: 'barber', attributes: ['name'] },
-        { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }
-      ],
-      order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
-    });
+//     const appointments = await Appointment.findAndCountAll({
+//       where: whereClause,
+//       include: [
+//         { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
+//         { model: Barber, as: 'barber', attributes: ['name'] },
+//         { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }
+//       ],
+//       order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']],
+//       limit: parseInt(limit),
+//       offset: parseInt(offset)
+//     });
     
-    log('Agendamentos encontrados', { count: appointments.count, returned: appointments.rows.length });
+//     log('Agendamentos encontrados', { count: appointments.count, returned: appointments.rows.length });
     
-   const formattedAppointments = appointments.rows.map(app => {
-  const [year, month, day] = app.appointmentDate.split('-');
-  const localDate = new Date(year, month - 1, day);
-      return {
-        ...app.toJSON(),
-        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-        appointmentTimeFormatted: app.appointmentTime?.slice(0, 5)
-      };
-    });
+//     const formattedAppointments = appointments.rows.map(app => {
+//       const plain = app.toJSON();
+//       let dateFormatted = '';
+//       try {
+//         const rawDate = plain.appointmentDate;
+//         const safeDate = typeof rawDate === 'string'
+//           ? new Date(rawDate + 'T03:00:00')
+//           : new Date(rawDate);
+//         if (!isNaN(safeDate)) {
+//           dateFormatted = safeDate.toLocaleDateString('pt-BR');
+//         }
+//       } catch (err) {
+//         console.error('Erro ao formatar appointmentDate:', err);
+//       }
 
-    res.render('admin/appointments', {
-      title: 'Gerenciar Agendamentos',
-      layout: 'admin',
-      appointments: formattedAppointments,
-      user: req.session.user,
-      barbers: await Barber.findAll({ where: { isActive: true } }),
-      filters: req.query,
-      pagination: {
-        currentPage: 1,
-        totalPages: 1,
-        hasNext: false,
-        hasPrev: false
-      }
-    });
+//       return {
+//         ...plain,
+//         appointmentDateFormatted: dateFormatted,
+//         appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
+//       };
+//     });
+
+
+
+
+//     res.render('admin/appointments', {
+//       title: 'Gerenciar Agendamentos',
+//       layout: 'admin',
+//       appointments: formattedAppointments,
+//       user: req.session.user,
+//       barbers: await Barber.findAll({ where: { isActive: true } }),
+//       filters: req.query,
+//       pagination: {
+//         currentPage: 1,
+//         totalPages: 1,
+//         hasNext: false,
+//         hasPrev: false
+//       }
+//     });
 
     
-  } catch (error) {
-    logError('Erro ao listar agendamentos', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
-    });
-  }
-});
-const formattedAppointments = appointments.map(app => {
-  const [year, month, day] = app.appointmentDate.split('-');
-  const localDate = new Date(year, month - 1, day); // Corrige fuso
+//   } catch (error) {
+//     logError('Erro ao listar agendamentos', error);
+//     res.status(500).json({ 
+//       success: false, 
+//       error: 'Erro interno do servidor' 
+//     });
+//   }
+// });
 
-  return {
-    ...app.toJSON(),
-    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-    appointmentTimeFormatted: app.appointmentTime?.slice(0, 5)
-  };
-});
-res.render('admin/appointments', {
-  title: 'Gerenciar Agendamentos',
-  layout: 'admin',
-  user: req.session.user,
-  appointments: formattedAppointments,
-  barbers,
-  filters: { startDate, endDate, barberId, status, sort },
-  pagination: {
-    currentPage: page,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1
-  }
-});
+
 
 // Buscar agendamento por ID - CORRIGIDA
 
     
  
     
-    
+// router.get('/logout', (req, res) => {
+//   log('Realizando logout', { user: req.session.user });
+//   req.session.destroy((err) => {
+//     if (err) {
+//       logError('Erro ao destruir sessão', err);
+//     } else {
+//       log('Sessão destruída com sucesso');
+//     }
+//     res.redirect('/admin/login');
+//   });
+// });    
      
-router.get('/:id', async (req, res) => {
-    // const { id } = req.params;
-
-  try {
-    const id = parseInt(req.params.id, 10);
-    
-    if (isNaN(id)) {
-      log('ID inválido fornecido', { id: req.params.id });
-      return res.status(400).json({ success: false, error: 'ID inválido' });
-    }
-
-    log('Buscando agendamento por ID', { id });
-    
-    const appointment = await Appointment.findByPk(id, {
-      include: [
-        { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
-        { model: Barber, as: 'barber', attributes: ['name'] },
-        { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }
-      ]
-    });
-
-    if (!appointment) {
-      log('Agendamento não encontrado', { id });
-      return res.status(404).json({ success: false, error: 'Agendamento não encontrado' });
-    }
-
-    log('Agendamento encontrado', { id, client: `${appointment.client.firstName} ${appointment.client.lastName}` });
-    
-    res.json({ success: true, appointment });
-
-  } catch (error) {
-    logError('Erro ao buscar agendamento', error);
-    res.status(500).json({ success: false, error: 'Erro interno do servidor' });
-  }
-});
 
 
 // Atualizar status do agendamento
-router.patch('/:id/status', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    
-    log('Atualizando status do agendamento', { id, status });
-    
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
-    
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Status inválido',
-        validStatuses
-      });
-    }
-    
-    const appointment = await Appointment.findByPk(id);
-    
-    if (!appointment) {
-      log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
-      });
-    }
-    
-    await appointment.update({ status });
-    
-    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: status });
-    
-    res.json({
-      success: true,
-      message: 'Status atualizado com sucesso',
-      appointment: {
-        id: appointment.id,
-        status: appointment.status
-      }
-    });
-    
-  } catch (error) {
-    logError('Erro ao atualizar status', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
-    });
-  }
-});
+
 
 // Cancelar agendamento
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    log('Cancelando agendamento', { id });
-    
-    const appointment = await Appointment.findByPk(id);
-    
-    if (!appointment) {
-      log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
-      });
-    }
-    
-    await appointment.update({ status: 'cancelled' });
-    
-    log('Agendamento cancelado com sucesso', { id });
-    
-    res.json({
-      success: true,
-      message: 'Agendamento cancelado com sucesso'
-    });
-    
-  } catch (error) {
-    logError('Erro ao cancelar agendamento', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
-    });
-  }
-});
-// Confirmar agendamento
-router.post('/api/appointments/:id/confirm', async (req, res) => {
-  try {
-    const appointment = await Appointment.findByPk(req.params.id);
-    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
 
-    await appointment.update({ status: 'confirmed' });
-    res.json({ success: true });
-  } catch (error) {
-    logError('Erro ao confirmar agendamento', error);
-    res.status(500).json({ error: 'Erro ao confirmar agendamento' });
-  }
-});
 
-// Marcar como concluído
-router.post('/api/appointments/:id/complete', async (req, res) => {
-  try {
-    const appointment = await Appointment.findByPk(req.params.id);
-    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
-
-    await appointment.update({ status: 'completed' });
-    res.json({ success: true });
-  } catch (error) {
-    logError('Erro ao concluir agendamento', error);
-    res.status(500).json({ error: 'Erro ao concluir agendamento' });
-  }
-});
-
-// Cancelar agendamento com motivo
-router.post('/api/appointments/:id/cancel', async (req, res) => {
-  try {
-    const appointment = await Appointment.findByPk(req.params.id);
-    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
-
-    const { reason } = req.body; // Motivo opcional
-    await appointment.update({ status: 'cancelled' });
-    res.json({ success: true, reason });
-  } catch (error) {
-    logError('Erro ao cancelar agendamento', error);
-    res.status(500).json({ error: 'Erro ao cancelar agendamento' });
-  }
-});
 
 module.exports = router;
 

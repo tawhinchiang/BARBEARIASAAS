@@ -31,9 +31,15 @@ formatCurrency: function(value) {
   }).format(value);
 },
 
-  eq: function(a, b) {
-    return a === b;
-  },
+eq: function(a, b, options) {
+  if (options && typeof options.fn === 'function') {
+    // Modo bloco: {{#eq a b}}...{{else}}...{{/eq}}
+    return a == b ? options.fn(this) : options.inverse(this);
+  } else {
+    // Modo inline: {{eq a b}}
+    return a == b;
+  }
+},
 
   inc: function(value) {
     return parseInt(value) + 1;

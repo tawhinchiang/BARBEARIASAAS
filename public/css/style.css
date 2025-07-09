@@ -1593,3 +1593,134 @@ display: flex !important;
   max-width: 100%;
   height: auto;
 }
+/* Estilização do Modal de Edição - ID: #editModal */
+#editModal .modal-content {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+#editModal .modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+#editModal .modal-title {
+  font-weight: bold;
+  color: var(--text-dark);
+}
+
+#editModal .btn-close {
+  filter: invert(1);
+}
+
+#editModal .form-control {
+  background-color: var(--bg-gray);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+}
+
+#editModal .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+#editModal .form-control:disabled {
+  background-color: var(--bg-gray);
+  color: var(--text-muted);
+  opacity: 1;
+}
+.global-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(25, 25, 28, 0.8); /* fundo escuro com opacidade */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+#editModal select.form-control {
+  max-height: 300px;
+  overflow-y: auto;
+}
+#editModal .modal-dialog {
+  max-width: 900px;
+  margin: 1.75rem auto;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#editModal .modal-body {
+  overflow: visible !important;
+  position: relative;
+  z-index: 10;
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  max-height: calc(90vh - 130px); /* menos cabeçalho + footer */
+}
+/* Corrige o visual da caixa do Select2 */
+.select2-container--bootstrap-5 .select2-selection {
+  background-color: var(--bg-gray);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  height: auto;
+  min-height: 46px;
+}
+
+/* Alinha o texto da seleção */
+.select2-container--bootstrap-5 .select2-selection__rendered {
+  line-height: 1.5;
+  color: var(--text-dark);
+}
+
+/* Remove seta azul default e aplica sua paleta */
+.select2-container--bootstrap-5 .select2-selection__arrow b {
+  border-color: var(--text-dark) transparent transparent transparent;
+}
+
+/* Dropdown em modo escuro */
+.select2-container--bootstrap-5 .select2-dropdown {
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 0 0 0.5rem 0.5rem;
+  z-index: 9999;
+}
+
+/* Itens da lista */
+.select2-container--bootstrap-5 .select2-results__option {
+  color: var(--text-dark);
+  background-color: var(--bg-light);
+  padding: 0.6rem 1rem;
+}
+
+/* Item hover */
+.select2-container--bootstrap-5 .select2-results__option--highlighted {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+}
+/* LIMITAR ALTURA DO DROPDOWN DENTRO DO MODAL */
+.select2-container--bootstrap-5 .select2-dropdown {
+  max-height: 250px !important; /* limita altura visível */
+  overflow-y: auto !important;  /* ativa scroll interno */
+  z-index: 9999 !important;     /* fica acima do conteúdo */
+}
+
+/* Para prevenir cortes e forçar comportamento consistente */
+#editModal .modal-body {
+  overflow-y: auto !important;
+  position: relative;
+  z-index: 1;
+}

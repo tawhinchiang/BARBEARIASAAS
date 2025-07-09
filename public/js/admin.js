@@ -438,7 +438,7 @@ function updateCounters() {
 async function confirmAppointment(appointmentId) {
   if (confirm('Confirmar este agendamento?')) {
     try {
-      const response = await fetch(`/admin/api/appointments/${appointmentId}/confirm`, {
+      const response = await fetch(`/admin/appointments/${appointmentId}/confirm`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -458,7 +458,7 @@ async function confirmAppointment(appointmentId) {
 async function completeAppointment(appointmentId) {
   if (confirm('Marcar este agendamento como concluído?')) {
     try {
-      const response = await fetch(`/admin/api/appointments/${appointmentId}/complete`, {
+      const response = await fetch(`/admin/appointments/${appointmentId}/complete`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -479,7 +479,7 @@ async function cancelAppointment(appointmentId) {
   const reason = prompt('Motivo do cancelamento (opcional):');
   if (reason !== null) {
     try {
-      const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
+      const response = await fetch(`/admin/appointments/${appointmentId}/cancel`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -501,7 +501,7 @@ async function cancelAppointment(appointmentId) {
 async function deleteAppointment(appointmentId) {
   if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
     try {
-      const response = await fetch(`/admin/api/appointments/${appointmentId}`, {
+      const response = await fetch(`/admin/appointments/${appointmentId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -520,7 +520,7 @@ async function deleteAppointment(appointmentId) {
 
 async function sendWhatsApp(appointmentId) {
   try {
-    const response = await fetch(`/admin/api/appointments/${appointmentId}/whatsapp`, {
+    const response = await fetch(`/admin/appointments/${appointmentId}/whatsapp`, {
       method: 'POST',
       credentials: 'include'
     });
