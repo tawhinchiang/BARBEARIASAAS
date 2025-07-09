@@ -103,6 +103,7 @@ app.use('/', require('./routes/appointments'));
 
 // Rotas administrativas
 app.use('/admin', require('./routes/admin'));
+app.use('/admin/services', require('./routes/services'));
 
 app.use('/admin/api', require('./routes/adminApi'));
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {

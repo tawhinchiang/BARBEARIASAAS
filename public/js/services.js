@@ -1,12 +1,24 @@
 // public/js/admin/services.js
 
+function debounce(func, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), delay);
+  };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('serviceForm');
   const modalElement = document.getElementById('serviceModal');
-  const modal = new bootstrap.Modal(modalElement);
   const modalTitle = document.getElementById('serviceModalTitle');
+  const servicesContainer = document.getElementById('servicesContainer');
+  const searchInput = document.getElementById('serviceSearch');
 
-  // ================= NOTIFICAÇÃO ================= //
+  if (!form || !modalElement || !modalTitle || !servicesContainer) return;
+
+  const modal = new bootstrap.Modal(modalElement);
+
   function showNotification(message, type = 'success') {
     const div = document.createElement('div');
     div.className = `notification ${type}`;
@@ -21,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 50);
   }
 
-  // ================= ENVIO DO FORMULÁRIO ================= //
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
@@ -58,8 +69,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ================= FUNÇÕES GLOBAIS ================= //
-  window.editService = async (id) => {
+  servicesContainer.addEventListener('click', (e) => {
+    const target = e.target.closest('button[data-action]');
+    if (!target) return;
+
+    const id = target.dataset.id;
+    const action = target.dataset.action;
+
+    if (!id || !action) return;
+
+    if (action === 'edit') return editService(id);
+    if (action === 'delete') return deleteService(id);
+    if (action === 'toggle') return toggleService(id);
+    if (action === 'promo') return togglePromo(id);
+  });
+
+  async function editService(id) {
     try {
       const res = await fetch(`/admin/services/${id}`);
       const data = await res.json();
@@ -79,9 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showNotification(err.message, 'error');
     }
-  };
+  }
 
-  window.deleteService = async (id) => {
+  async function deleteService(id) {
     if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
 
     try {
@@ -97,9 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       showNotification('Erro ao excluir serviço', 'error');
     }
-  };
+  }
 
-  window.toggleService = async (id) => {
+  async function toggleService(id) {
     try {
       const res = await fetch(`/admin/services/${id}/toggle`, { method: 'PATCH' });
       const data = await res.json();
@@ -112,9 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showNotification('Erro ao alternar status', 'error');
     }
-  };
+  }
 
-  window.togglePromo = async (id) => {
+  async function togglePromo(id) {
     try {
       const res = await fetch(`/admin/services/${id}/toggle-promo`, { method: 'PATCH' });
       const data = await res.json();
@@ -127,41 +152,29 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showNotification('Erro ao alternar promoção', 'error');
     }
-  };
+  }
 
-  // ================= RESET MODAL ================= //
   modalElement.addEventListener('hidden.bs.modal', () => {
     form.reset();
     form.serviceId.value = '';
     modalTitle.textContent = 'Novo Serviço';
   });
-});
 
-document.addEventListener('DOMContentLoaded', () => {
-  const searchInput = document.getElementById('serviceSearch');
   if (searchInput) {
-    searchInput.addEventListener('input', filterServices);
+    const handleSearch = debounce(() => {
+      const searchValue = searchInput.value.toLowerCase().trim();
+      const cards = document.querySelectorAll('#servicesContainer .service-card');
+
+      requestAnimationFrame(() => {
+        cards.forEach(card => {
+          const name = card.querySelector('.service-name')?.textContent.toLowerCase() || '';
+          const description = card.querySelector('.service-description')?.textContent.toLowerCase() || '';
+          const match = name.includes(searchValue) || description.includes(searchValue);
+          card.classList.toggle('hidden', !match);
+        });
+      });
+    }, 150);
+
+    searchInput.addEventListener('input', handleSearch);
   }
 });
-
-function filterServices() {
-  const searchValue = document.getElementById('serviceSearch').value.toLowerCase().trim();
-  const cards = document.querySelectorAll('#servicesContainer .service-card');
-
-  cards.forEach(card => {
-    const name = card.dataset.name?.toLowerCase() || '';
-    const description = card.dataset.description?.toLowerCase() || '';
-    const match = name.includes(searchValue) || description.includes(searchValue);
-    card.style.display = match ? '' : 'none';
-  });
-}
-
-
-  // ==============================
-  // EXPORTAÇÃO GLOBAL PARA HTML
-  // ==============================
-  window.editService = editService;
-  window.deleteService = deleteService;
-  window.toggleService = toggleService;
-  window.togglePromo = togglePromo;
-;

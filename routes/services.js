@@ -26,8 +26,9 @@ router.use(isAuthenticated);
 // ===== PÁGINA PRINCIPAL - LISTAR SERVIÇOS =====
 router.get('/', async (req, res) => {
   try {
-    log('Carregando página de serviços');
     
+    
+    log('⚠️ ROTA /admin/services ACESSADA');
     const services = await ServiceType.findAll({
       order: [['name', 'ASC']],
       include: [
@@ -46,25 +47,30 @@ router.get('/', async (req, res) => {
     });
     
     // Calcular estatísticas para cada serviço
-    const servicesWithStats = services.map(service => {
-      const appointments = service.appointments || [];
-      const appointmentsCount = appointments.length;
-      const completedAppointments = appointments.filter(apt => apt.status === 'completed');
-      const revenue = completedAppointments.reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
-      
-      return {
-        ...service.toJSON(),
-        appointmentsThisMonth: appointmentsCount,
-        revenueThisMonth: revenue,
-        completedThisMonth: completedAppointments.length
-      };
-    });
+ const servicesWithStats = Array.from(services).map(service => {
+  const appointments = service.appointments || [];
+  const completedAppointments = appointments.filter(apt => apt.status === 'completed');
+  const revenue = completedAppointments.reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
+
+  return {
+    id: service.id,
+    name: service.name,
+    description: service.description || '',
+    price: service.price,
+    duration: service.duration,
+    isActive: service.isActive,
+    isPromo: service.isPromo,
+    appointmentsThisMonth: appointments.length,
+    revenueThisMonth: revenue
+  };
+});
+
     
     log(`${services.length} serviços carregados`);
     
     res.render('admin/services', {
       title: 'Gerenciar Serviços',
-      services: servicesWithStats,
+      services: JSON.parse(JSON.stringify(servicesWithStats)), // 🔧 limpa objetos Sequelize
       layout: 'admin'
     });
   } catch (error) {
