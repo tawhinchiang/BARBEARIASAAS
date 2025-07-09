@@ -17,7 +17,7 @@
 {{/if}}
 
 <!-- Filtros -->
-<div class="card mb-4">
+<div class="card admin-card mb-4">
     <div class="card-body">
         <form method="GET" action="/admin/reports" class="row g-3">
             <div class="col-md-3">
@@ -58,40 +58,40 @@
 <!-- Estatísticas -->
 {{#if stats}}
 <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-calendar-check display-4 mb-2"></i>
-            <h3 class="fw-bold">{{stats.total}}</h3>
-            <p class="mb-0">Total de Agendamentos</p>
-        </div>
+  <div class="col-md-3 mb-3 d-flex">
+    <div class="stats-card card admin-card p-4 text-center w-100">
+      <i class="bi bi-calendar-check display-4 mb-2"></i>
+      <h3 class="fw-bold">{{stats.total}}</h3>
+      <p class="mb-0">Total de Agendamentos</p>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-currency-dollar display-4 mb-2"></i>
-            <h3 class="fw-bold">R$ {{stats.totalRevenue}}</h3>
-            <p class="mb-0">Receita Total</p>
-        </div>
+  </div>
+  <div class="col-md-3 mb-3 d-flex">
+    <div class="stats-card card admin-card p-4 text-center w-100">
+      <i class="bi bi-currency-dollar display-4 mb-2"></i>
+      <h3 class="fw-bold">R$ {{stats.totalRevenue}}</h3>
+      <p class="mb-0">Receita Total</p>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-check-circle display-4 mb-2"></i>
-            <h3 class="fw-bold">{{stats.byStatus.completed}}</h3>
-            <p class="mb-0">Concluídos</p>
-        </div>
+  </div>
+  <div class="col-md-3 mb-3 d-flex">
+    <div class="stats-card card admin-card p-4 text-center w-100">
+      <i class="bi bi-check-circle display-4 mb-2"></i>
+      <h3 class="fw-bold">{{stats.byStatus.confirmed}}</h3>
+      <p class="mb-0">Concluídos</p>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="stats-card card p-4 text-center">
-            <i class="bi bi-x-circle display-4 mb-2"></i>
-            <h3 class="fw-bold">{{stats.byStatus.cancelled}}</h3>
-            <p class="mb-0">Cancelados</p>
-        </div>
+  </div>
+  <div class="col-md-3 mb-3 d-flex">
+    <div class="stats-card card admin-card p-4 text-center w-100">
+      <i class="bi bi-x-circle display-4 mb-2"></i>
+      <h3 class="fw-bold">{{stats.byStatus.cancelled}}</h3>
+      <p class="mb-0">Cancelados</p>
     </div>
+  </div>
 </div>
 
 <!-- Gráficos -->
 <div class="row mb-4">
     <div class="col-md-6">
-        <div class="card">
+        <div class="card admin-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">Agendamentos por Status</h5>
             </div>
@@ -101,7 +101,7 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card">
+        <div class="card admin-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">Agendamentos por Barbeiro</h5>
             </div>
@@ -115,7 +115,7 @@
 
 <!-- Lista Detalhada -->
 {{#if appointments.length}}
-<div class="card">
+<div class="card admin-card">
     <div class="card-header">
         <h5 class="card-title mb-0">Detalhamento dos Agendamentos</h5>
     </div>
@@ -137,30 +137,24 @@
                 <tbody>
                     {{#each appointments}}
                     <tr>
-                        <td>{{formatDate appointmentDate}}</td>
-                        <td>{{formatTime appointmentTime}}</td>
+                        <td>{{appointmentDateFormatted}}</td>
+                        <td>{{appointmentTimeFormatted}}</td>
                         <td>{{client.firstName}} {{client.lastName}}</td>
                         <td>{{client.phone}}</td>
                         <td>{{barber.name}}</td>
                         <td>{{serviceType.name}}</td>
                         <td>R$ {{totalPrice}}</td>
                         <td>
-                            {{#eq status 'scheduled'}}
-                            <span class="badge bg-warning">Agendado</span>
-                            {{/eq}}
-                            {{#eq status 'confirmed'}}
-                            <span class="badge bg-success">Confirmado</span>
-                            {{/eq}}
-                            {{#eq status 'completed'}}
-                            <span class="badge bg-primary">Concluído</span>
-                            {{/eq}}
-                            {{#eq status 'cancelled'}}
-                            <span class="badge bg-danger">Cancelado</span>
-                            {{/eq}}
-                            {{#eq status 'no_show'}}
-                            <span class="badge bg-secondary">Não compareceu</span>
-                            {{/eq}}
-                        </td>
+                  <span class="status-badge status-{{status}}">
+                    {{#if (eq status 'confirmed')}}Confirmado
+                    {{else if (eq status 'pending')}}Pendente
+                    {{else if (eq status 'cancelled')}}Cancelado
+                    {{else if (eq status 'completed')}}Concluído
+                    {{else}}Desconhecido
+                    {{/if}}
+                  </span>
+
+                    </td>
                     </tr>
                     {{/each}}
                 </tbody>
@@ -169,7 +163,7 @@
     </div>
 </div>
 {{else}}
-<div class="card">
+<div class="card admin-card">
     <div class="card-body text-center py-5">
         <i class="bi bi-graph-down display-4 text-muted mb-3"></i>
         <h5 class="text-muted">Nenhum dado encontrado</h5>
@@ -268,7 +262,6 @@ function exportToCSV() {
         
         for (let j = 0; j < cols.length; j++) {
             let text = cols[j].innerText;
-            // Remove quebras de linha e aspas
             text = text.replace(/"/g, '""').replace(/\n/g, ' ');
             row.push('"' + text + '"');
         }
@@ -290,4 +283,3 @@ function exportToCSV() {
     }
 }
 </script>
-

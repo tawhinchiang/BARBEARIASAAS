@@ -9,18 +9,49 @@ require('dotenv').config();
 
 const app = express();
 
+
+app.set('view engine', 'hbs');
+app.set('views', path.join(__dirname, 'views'));
+// ===== LOGS DETALHADOS =====
+const log = (message, data = null) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [APP] ${message}`);
+  if (data) {
+    console.log(`[${timestamp}] [APP] Data:`, JSON.stringify(data, null, 2));
+  }
+};
+
+const logError = (message, error) => {
+  const timestamp = new Date().toISOString();
+  console.error(`[${timestamp}] [APP ERROR] ${message}`);
+  console.error(`[${timestamp}] [APP ERROR] Stack:`, error.stack);
+};
+
+log('Inicializando aplicação BarberShop');
+
 // Configurar Handlebars - CORRIGIDO
+const helpers = require('./config/handlebars-helpers');
+
 const hbs = engine({
   defaultLayout: 'main',
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
   extname: '.hbs',
-  helpers: require('./config/handlebars-helpers')
+  helpers: helpers, // ou só "helpers" mesmo, ES6 shorthand
+  runtimeOptions: {
+    allowProtoPropertiesByDefault: true,
+    allowProtoMethodsByDefault: true
+  }
 });
+
+
+
 
 app.engine('hbs', hbs);
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
+
+log('Handlebars configurado');
 
 // Middlewares
 app.use(cors());
@@ -28,6 +59,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+log('Middlewares básicos configurados');
 
 // Configurar sessões
 app.use(session({
@@ -40,27 +74,63 @@ app.use(session({
   }
 }));
 
-// Rotas
+log('Sessões configuradas');
+
+// Middleware para log de todas as requisições
+app.use((req, res, next) => {
+  log(`${req.method} ${req.url}`, {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body: req.body,
+    query: req.query,
+    params: req.params
+  });
+  next();
+});
+
+// Rotas - CORRIGIDAS
+log('Configurando rotas');
+
+// Rotas principais (inclui APIs)
 app.use('/', require('./routes/index'));
-app.use('/appointments', require('./routes/appointments'));
+
+// Rotas de barbeiros
+app.use('/api', require('./routes/publicApi'));
+// app.use('/admin', require('./routes/barbers')); // ✅ aqui rota protegida admin
+// Rotas de agendamentos (inclui /api/appointments)
+app.use('/', require('./routes/appointments'));
+
+// Rotas administrativas
 app.use('/admin', require('./routes/admin'));
 
+app.use('/admin/api', require('./routes/adminApi'));
+app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.status(204).end(); // Sem conteúdo
+});
+log('Rotas configuradas');
 // Middleware de erro 404
 app.use((req, res) => {
+  logError(`Rota não encontrada: ${req.method} ${req.url}`, new Error('404 Not Found'));
   res.status(404).render('error', {
     title: 'Página não encontrada',
-    error: 'A página que você procura não foi encontrada.'
+    error: 'A página que você procura não foi encontrada.',
+    layout: req.url.startsWith('/admin') ? 'admin' : 'main'
   });
 });
 
 // Middleware de erro geral
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logError('Erro interno do servidor', err);
   res.status(500).render('error', {
     title: 'Erro interno',
-    error: 'Ocorreu um erro interno no servidor.'
+    error: 'Ocorreu um erro interno no servidor.',
+    layout: req.url.startsWith('/admin') ? 'admin' : 'main'
   });
 });
+
+
+log('Aplicação configurada com sucesso');
 
 module.exports = app;
 

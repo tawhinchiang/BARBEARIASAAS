@@ -1,57 +1,242 @@
-<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+<!-- PÁGINA DE LOGIN ADMINISTRATIVO - DESIGN CLEAN -->
+<div class="admin-login-container">
+  <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
     <div class="row w-100 justify-content-center">
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card">
-                <div class="card-body p-5">
-                    <div class="text-center mb-4">
-                        <i class="bi bi-shield-lock display-4 text-primary mb-3"></i>
-                        <h3 class="fw-bold">Acesso Administrativo</h3>
-                        <p class="text-muted">Entre com suas credenciais</p>
-                    </div>
-                    
-                    {{#if error}}
-                    <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        {{error}}
-                    </div>
-                    {{/if}}
-                    
-                    <form method="POST" action="/admin/login">
-                        <div class="mb-3">
-                            <label for="username" class="form-label fw-semibold">Usuário</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-person"></i>
-                                </span>
-                                <input type="text" class="form-control" id="username" name="username" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="password" class="form-label fw-semibold">Senha</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="bi bi-lock"></i>
-                                </span>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>
-                            Entrar
-                        </button>
-                    </form>
-                    
-                    <div class="text-center mt-4">
-                        <a href="/" class="text-decoration-none">
-                            <i class="bi bi-arrow-left me-1"></i>
-                            Voltar ao site
-                        </a>
-                    </div>
-                </div>
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="admin-card">
+          <div class="text-center mb-4">
+            <div class="logo-icon mx-auto mb-3">A</div>
+            <h3 class="fw-bold">Acesso Administrativo</h3>
+            <p class="text-muted">Entre com suas credenciais</p>
+          </div>
+          
+          {{#if error}}
+          <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{error}}
+          </div>
+          {{/if}}
+          
+          <form method="POST" action="/admin/login" id="loginForm">
+            <div class="form-group">
+              <label for="username" class="form-label">Usuário</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-user"></i>
+                </span>
+                <input type="text" class="form-control" id="username" name="username" required autocomplete="username">
+              </div>
             </div>
+            
+            <div class="form-group">
+              <label for="password" class="form-label">Senha</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-lock"></i>
+                </span>
+                <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                  <i class="fas fa-eye" id="toggleIcon"></i>
+                </button>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-semibold" id="loginBtn">
+              <i class="fas fa-sign-in-alt me-2"></i>
+              <span id="loginText">Entrar</span>
+            </button>
+          </form>
+          
+          <div class="text-center mt-4">
+            <a href="/" class="text-decoration-none">
+              <i class="fas fa-arrow-left me-1"></i>
+              Voltar ao site
+            </a>
+          </div>
+          
+          <!-- Credenciais padrão para desenvolvimento -->
+          <div class="mt-4 p-3 rounded" style="background: var(--bg-gray);">
+            <small class="text-muted">
+              <strong>Credenciais padrão:</strong><br>
+              Usuário: <code>admin</code><br>
+              Senha: <code>admin123</code>
+            </small>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<style>
+/* Estilos específicos para login administrativo */
+.admin-login-container {
+  background: var(--bg-light);
+  min-height: 100vh;
+}
+
+.admin-login-container .admin-card {
+  background: var(--bg-light);
+  border: none;
+  border-radius: 12px;
+  padding: 3rem;
+  box-shadow: var(--shadow);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.admin-login-container .logo-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--text-light);
+}
+
+.admin-login-container .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.admin-login-container .input-group-text {
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-right: none;
+  color: var(--text-muted);
+}
+
+.admin-login-container .form-control {
+  border: 1px solid var(--border-color);
+  border-left: none;
+  padding: 1rem;
+  background: var(--bg-light);
+  color: var(--text-dark);
+}
+
+.admin-login-container .form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: none;
+}
+
+.admin-login-container .input-group-text:has(+ .form-control:focus) {
+  border-color: var(--primary-color);
+}
+
+.admin-login-container .btn-outline-secondary {
+  border: 2px solid var(--border-color);
+  border-left: none;
+  color: var(--text-muted);
+}
+
+.admin-login-container .btn-outline-secondary:hover {
+  background: var(--bg-gray);
+  border-color: var(--primary-color);
+  color: var(--text-dark);
+}
+
+.admin-login-container .alert {
+  border: none;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.admin-login-container .alert-danger {
+  background: #fee;
+  color: #c33;
+  border-left: 4px solid var(--danger-color);
+}
+
+.admin-login-container a {
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+.admin-login-container a:hover {
+  color: var(--primary-color);
+}
+
+/* Loading state */
+.admin-login-container .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.admin-login-container .spinner-border {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .admin-login-container .admin-card {
+    padding: 2rem;
+    margin: 1rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[ADMIN LOGIN] Página carregada');
+  
+  // Toggle de senha
+  const togglePassword = document.getElementById('togglePassword');
+  const passwordInput = document.getElementById('password');
+  const toggleIcon = document.getElementById('toggleIcon');
+  
+  if (togglePassword && passwordInput && toggleIcon) {
+    togglePassword.addEventListener('click', function() {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      if (type === 'password') {
+        toggleIcon.className = 'fas fa-eye';
+      } else {
+        toggleIcon.className = 'fas fa-eye-slash';
+      }
+    });
+  }
+  
+  // Formulário de login
+  const loginForm = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginText = document.getElementById('loginText');
+  
+  if (loginForm && loginBtn && loginText) {
+    loginForm.addEventListener('submit', function(e) {
+      console.log('[ADMIN LOGIN] Enviando formulário');
+      
+      // Mostrar loading
+      loginBtn.disabled = true;
+      loginText.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Entrando...';
+      
+      // Permitir envio do formulário
+      setTimeout(() => {
+        if (loginBtn.disabled) {
+          // Se ainda estiver disabled após 5 segundos, reativar
+          loginBtn.disabled = false;
+          loginText.innerHTML = 'Entrar';
+        }
+      }, 5000);
+    });
+  }
+  
+  // Auto-focus no campo usuário
+  const usernameInput = document.getElementById('username');
+  if (usernameInput) {
+    usernameInput.focus();
+  }
+  
+  // Verificar se há erro na URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const error = urlParams.get('error');
+  if (error) {
+    console.log('[ADMIN LOGIN] Erro detectado:', error);
+  }
+});
+</script>
 

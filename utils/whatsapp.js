@@ -66,44 +66,84 @@ async function initializeWhatsApp() {
 }
 
 // Enviar mensagem WhatsApp
+// Enviar mensagem WhatsApp
+function formatBrazilianPhone(raw) {
+  let cleaned = raw.replace(/\D/g, '');
+
+  if (cleaned.startsWith('55')) {
+    cleaned = cleaned.slice(2);
+  }
+
+  const ddd = cleaned.slice(0, 2);
+  let number = cleaned.slice(2);
+
+  if (number.length === 8) {
+    return `55${ddd}${number}`;
+  } else if (number.length === 9 && number.startsWith('9')) {
+    return `55${ddd}${number}`;
+  } else if (number.length === 8 && !number.startsWith('9')) {
+    return `55${ddd}9${number}`;
+  } else if (number.length === 9 && !number.startsWith('9')) {
+    // Exemplo: 92712877 → tenta corrigir
+    return `55${ddd}9${number}`;
+  } else {
+    throw new Error('Número inválido');
+  }
+}
+
 async function sendWhatsAppMessage(phone, message) {
   try {
     if (!client || !isReady) {
-      console.warn('⚠️ WhatsApp não está conectado. Mensagem não enviada.');
+      console.warn('⚠️ WhatsApp não está conectado.');
       return false;
     }
 
-    // Formatar número (remover caracteres especiais e adicionar código do país)
-    let formattedPhone = phone.replace(/\D/g, '');
-    
-    // Adicionar código do Brasil se não tiver
-    if (formattedPhone.length === 11 && formattedPhone.startsWith('11')) {
-      formattedPhone = '55' + formattedPhone;
-    } else if (formattedPhone.length === 10) {
-      formattedPhone = '5511' + formattedPhone;
-    } else if (!formattedPhone.startsWith('55')) {
-      formattedPhone = '55' + formattedPhone;
+    const trySend = async (formatted) => {
+      const chatId = formatted + '@c.us';
+      const exists = await client.isRegisteredUser(chatId);
+      if (!exists) return false;
+      await client.sendMessage(chatId, message);
+      console.log(`✅ Mensagem enviada para ${formatted}`);
+      return true;
+    };
+
+    let raw = phone.replace(/\D/g, '');
+    if (!raw.startsWith('55')) raw = '55' + raw;
+
+    let sent = await trySend(raw);
+
+    // Se tiver 13 dígitos, é um número de celular (com 9) — tentar remover
+    if (!sent && raw.length === 13) {
+      const sem9 = raw.slice(0, 4) + raw.slice(5); // remove o 9 depois do DDD
+      if (sem9.length === 12) {
+        sent = await trySend(sem9);
+      }
     }
 
-    const chatId = formattedPhone + '@c.us';
-
-    // Verificar se o número existe no WhatsApp
-    const numberExists = await client.isRegisteredUser(chatId);
-    if (!numberExists) {
-      console.warn(`⚠️ Número ${phone} não está registrado no WhatsApp`);
-      return false;
+    if (!sent) {
+      console.warn(`⚠️ Nenhuma tentativa funcionou para ${phone}`);
     }
 
-    // Enviar mensagem
-    await client.sendMessage(chatId, message);
-    console.log(`✅ Mensagem enviada para ${phone}`);
-    return true;
+    return sent;
 
-  } catch (error) {
-    console.error('❌ Erro ao enviar mensagem WhatsApp:', error);
+  } catch (err) {
+    console.error('❌ Erro ao enviar WhatsApp:', err);
     return false;
   }
 }
+
+
+
+    // Enviar mensagem
+//     await client.sendMessage(chatId, message);
+//     console.log(`✅ Mensagem enviada para ${phone}`);
+//     return true;
+
+//   } catch (error) {
+//     console.error('❌ Erro ao enviar mensagem WhatsApp:', error);
+//     return false;
+//   }
+// }
 
 // Verificar status da conexão
 function getWhatsAppStatus() {

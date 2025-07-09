@@ -39,6 +39,12 @@ const Appointment = sequelize.define('Appointment', {
     type: DataTypes.TIME,
     allowNull: false
   },
+  serviceDuration: {
+  type: DataTypes.INTEGER, // duração em minutos
+  allowNull: false,
+  defaultValue: 20
+},
+
   status: {
     type: DataTypes.ENUM('scheduled', 'confirmed', 'completed', 'cancelled', 'no_show'),
     defaultValue: 'scheduled'
@@ -67,4 +73,5 @@ const Appointment = sequelize.define('Appointment', {
 });
 
 module.exports = Appointment;
+
 

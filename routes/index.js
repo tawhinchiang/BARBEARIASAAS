@@ -21,9 +21,10 @@ router.get('/', (req, res) => {
   log('Acessando página inicial do cliente');
   
   const pageData = {
-    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'Barbearia Premium'),
-    barbershopName: process.env.BARBERSHOP_NAME || 'Barbearia Premium',
-    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png'
+    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA'),
+    barbershopName: process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA',
+    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png',
+    isClientPage: true
   };
   
   log('Renderizando página inicial', pageData);
@@ -37,7 +38,7 @@ router.get('/agendamento-confirmado', (req, res) => {
   
   res.render('success', {
     title: 'Agendamento Confirmado',
-    barbershopName: process.env.BARBERSHOP_NAME || 'Barbearia Premium'
+    barbershopName: process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA'
   });
 });
 
@@ -55,143 +56,247 @@ router.get('/api/services', async (req, res) => {
     const { ServiceType } = require('../models');
     const services = await ServiceType.findAll({
       where: { isActive: true },
+      attributes: ['id', 'name', 'price', 'duration'],    // ← inclui duration
       order: [['name', 'ASC']]
     });
     
-    log('Serviços encontrados', { count: services.length, services: services.map(s => ({ id: s.id, name: s.name, price: s.price })) });
+    log('Serviços encontrados', {
+      count: services.length,
+      services: services.map(s => ({
+        id: s.id,
+        name: s.name,
+        price: s.price,
+        duration: s.duration    // ← loga também a duração
+      }))
+    });
     
-    res.json(services);
+    res.json({ services });
   } catch (error) {
     logError('Erro ao buscar serviços', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
-// API para listar barbeiros disponíveis
-router.get('/api/barbers', async (req, res) => {
-  try {
-    log('Buscando barbeiros disponíveis');
-    
-    const { Barber } = require('../models');
-    const barbers = await Barber.findAll({
-      where: { isActive: true },
-      order: [['name', 'ASC']]
-    });
-    
-    log('Barbeiros encontrados', { count: barbers.length, barbers: barbers.map(b => ({ id: b.id, name: b.name })) });
-    
-    res.json(barbers);
-  } catch (error) {
-    logError('Erro ao buscar barbeiros', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
 
-// API para obter horários disponíveis
+// API para listar barbeiros disponíveis - CORRIGIDA
+// router.get('/api/barbers', async (req, res) => {
+//   try {
+//     log('Buscando barbeiros disponíveis');
+//     // Dentro da rota GET /api/barbers
+  
+
+//     const { Barber } = require('../models');
+//     const barbers = await Barber.findAll({
+//       where: { isActive: true },
+//       order: [['name', 'ASC']]
+//     });
+//       log('Horários de trabalho:', {
+//       barbers: barbers.map(b => ({
+//         name: b.name,
+//         workingHours: b.workingHours
+//       }))
+//     });
+//     log('Barbeiros encontrados', { count: barbers.length, barbers: barbers.map(b => ({ id: b.id, name: b.name })) });
+    
+//     // Retornar no formato esperado pelo frontend
+//       res.json({ 
+//       count: barbers.length,
+//       barbers: barbers.map(b => ({
+//         id: b.id,
+//         name: b.name,
+//         photo: b.photo || null, // ESSENCIAL PARA EXIBIÇÃO
+//         specialties: b.specialties || 'Especialista',
+//         workingHours: b.workingHours,
+//         isActive: b.isActive
+//       }))
+//     });
+
+//     log('Barbeiros encontrados', {
+//       count: barbers.length,
+//       barbers: barbers.map(b => ({
+//         id: b.id,
+//         name: b.name,
+//         photo: b.photo
+//       }))
+//     });
+
+
+//   } catch (error) {
+//     logError('Erro ao buscar barbeiros', error);
+//     res.status(500).json({ error: 'Erro interno do servidor' });
+//   }
+// });
+
+// API para obter horários disponíveis - CORRIGIDA
 router.get('/api/available-times', async (req, res) => {
   try {
-    const { barberId, date, serviceId } = req.query;
-    
-    log('Buscando horários disponíveis', { barberId, date, serviceId });
-    
-    if (!barberId || !date || !serviceId) {
+    const { barberId, date, serviceTypeId } = req.query;
+
+    if (!barberId || !date || !serviceTypeId) {
       log('Parâmetros obrigatórios não fornecidos');
-      return res.status(400).json({ error: 'Parâmetros obrigatórios: barberId, date, serviceId' });
+      return res.status(400).json({
+        error: 'Parâmetros obrigatórios: barberId, date, serviceTypeId',
+        received: { barberId, date, serviceTypeId }
+      });
     }
-    
+
+    // Validar formato da data YYYY-MM-DD
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      log('Formato de data inválido', { date });
+      return res.status(400).json({
+        error: 'Formato de data inválido. Use YYYY-MM-DD',
+        received: date
+      });
+    }
+
     const { Appointment, Barber, ServiceType } = require('../models');
-    
-    // Buscar barbeiro e serviço
-    log('Buscando barbeiro e serviço no banco');
-    const barber = await Barber.findByPk(barberId);
-    const service = await ServiceType.findByPk(serviceId);
-    
-    if (!barber || !service) {
-      log('Barbeiro ou serviço não encontrado', { barberFound: !!barber, serviceFound: !!service });
-      return res.status(404).json({ error: 'Barbeiro ou serviço não encontrado' });
+
+    // Buscar serviço para pegar duração
+    const serviceType = await ServiceType.findByPk(serviceTypeId);
+    if (!serviceType) {
+      return res.status(404).json({ error: 'Serviço não encontrado' });
     }
-    
-    log('Barbeiro e serviço encontrados', { 
-      barber: { id: barber.id, name: barber.name },
-      service: { id: service.id, name: service.name, duration: service.duration }
-    });
-    
-    // Verificar dia da semana
-    const selectedDate = new Date(date);
+
+    // Pegando duração do serviço em minutos (garantindo número inteiro)
+    // Usa duração da query se existir, senão pega do banco
+    const durationFromQuery = parseInt(req.query.duration, 10);
+    const requiredDuration = durationFromQuery || parseInt(serviceType.duration, 10) || 20;
+
+
+    // Buscar barbeiro
+    const barber = await Barber.findByPk(barberId);
+    if (!barber) {
+      return res.status(404).json({ error: 'Barbeiro não encontrado' });
+    }
+
+    // Definir horário de trabalho para o dia da semana
+    const selectedDate = new Date(date + 'T00:00:00');
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
-    
-    log('Verificando horário de trabalho', { date, dayOfWeek, workingHours: barber.workingHours });
-    
-    const workingHours = barber.workingHours[dayOfWeek];
-    if (!workingHours || workingHours === 'closed') {
-      log('Barbeiro não trabalha neste dia', { dayOfWeek, workingHours });
+    let workingHours = '09:00-19:40';
+
+    if (barber.workingHours) {
+      let parsed = {};
+      try {
+        parsed = typeof barber.workingHours === 'string'
+          ? JSON.parse(barber.workingHours)
+          : barber.workingHours || {};
+      } catch (err) {
+        logError('Erro ao fazer parse de workingHours', err);
+        parsed = {};
+      }
+      log('workingHours recebido do banco', { raw: barber.workingHours });
+
+      if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
+  workingHours = parsed[dayOfWeek];
+}
+    }
+
+
+    if (workingHours === 'closed') {
       return res.json({ availableTimes: [] });
     }
-    
-    // Buscar agendamentos existentes
-    log('Buscando agendamentos existentes para a data');
-    const existingAppointments = await Appointment.findAll({
-      where: {
-        barberId,
-        appointmentDate: date
-      },
-      attributes: ['appointmentTime']
-    });
-    
-    const bookedTimes = existingAppointments.map(apt => apt.appointmentTime);
-    log('Agendamentos existentes encontrados', { count: existingAppointments.length, bookedTimes });
-    
-    // Gerar horários disponíveis
+
     const [startTime, endTime] = workingHours.split('-');
-    log('Gerando slots de tempo', { startTime, endTime, duration: service.duration });
-    
-    const availableTimes = generateTimeSlots(startTime, endTime, service.duration, bookedTimes);
-    
-    log('Horários disponíveis gerados', { count: availableTimes.length, availableTimes });
-    
-    res.json({ availableTimes });
+
+    // Buscar agendamentos existentes do barbeiro na data
+    const existingAppointments = await Appointment.findAll({
+      where: { barberId, appointmentDate: date },
+      attributes: ['appointmentTime', 'serviceDuration'] // ajuste o nome da coluna se necessário
+    });
+
+    // Obter tempos bloqueados
+    const bookedTimes = getBlockedTimesWithDuration(existingAppointments);
+
+    // Gerar slots disponíveis
+    const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes, date, requiredDuration);
+
+    return res.json({
+      availableTimes,
+      date,
+      barberId,
+      barberName: barber.name,
+      workingHours
+    });
+
   } catch (error) {
     logError('Erro ao buscar horários', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    return res.status(500).json({
+      error: 'Erro interno do servidor',
+      message: error.message
+    });
   }
 });
 
-// Função auxiliar para gerar slots de tempo
-function generateTimeSlots(startTime, endTime, duration, bookedTimes) {
-  log('Iniciando geração de slots', { startTime, endTime, duration, bookedTimesCount: bookedTimes.length });
-  
+function getBlockedTimesWithDuration(appointments) {
+  const blocked = new Set();
+
+  appointments.forEach(({ appointmentTime, serviceDuration }) => {
+    const start = timeToMinutes(appointmentTime.slice(0, 5));
+    const duration = parseInt(serviceDuration, 10) || 20;
+    const end = start + duration;
+
+    // Marca cada slot de 10 minutos dentro do intervalo como bloqueado
+   for (let t = start; t < end; t += 10) {
+  blocked.add(minutesToTime(t));
+} 
+//ou 
+// for (let t = start; t < end; t += 10) {
+//   blocked.add(minutesToTime(t));
+// }
+
+  });
+
+  return Array.from(blocked);
+}
+
+
+function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null, requiredDuration = 20) {
   const slots = [];
   const start = timeToMinutes(startTime);
-  const end = timeToMinutes(endTime);
-  
-  log('Convertido para minutos', { start, end });
-  
-  for (let time = start; time + duration <= end; time += 30) {
-    const timeStr = minutesToTime(time);
-    if (!bookedTimes.includes(timeStr)) {
-      slots.push(timeStr);
+  const end = timeToMinutes(endTime) + 1; // inclui exatamente até 19:40
+  const now = new Date();
+
+  for (let t = start; t + requiredDuration <= end; t += 20) {  // ← MUDOU AQUI: de 10 para 20
+    let blocked = false;
+
+    for (let dt = 0; dt < requiredDuration; dt += 10) {
+      const candidate = minutesToTime(t + dt);
+      if (bookedTimes.includes(candidate)) {
+        blocked = true;
+        break;
+      }
     }
+
+    if (blocked) continue;
+
+    const slot = minutesToTime(t);
+
+    if (selectedDateStr === now.toISOString().slice(0, 10)) {
+      const slotDate = new Date(`${selectedDateStr}T${slot}:00`);
+      if (slotDate < now) continue;
+    }
+
+    slots.push(slot);
   }
-  
-  log('Slots gerados', { totalSlots: slots.length, slots });
-  
+
   return slots;
 }
 
+
+
 function timeToMinutes(timeStr) {
   const [hours, minutes] = timeStr.split(':').map(Number);
-  const result = hours * 60 + minutes;
-  log('Convertendo tempo para minutos', { timeStr, hours, minutes, result });
-  return result;
+  return hours * 60 + (minutes || 0);
 }
 
 function minutesToTime(minutes) {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  const result = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-  log('Convertendo minutos para tempo', { minutes, hours, mins, result });
-  return result;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
+
+
 
 module.exports = router;
 

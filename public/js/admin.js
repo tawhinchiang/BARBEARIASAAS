@@ -2,23 +2,35 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Filtros de agendamentos
     const filterForm = document.getElementById('filterForm');
+
     if (filterForm) {
-        filterForm.addEventListener('submit', function(e) {
+        // Restaurar filtros do localStorage
+        const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
+        for (const [key, value] of Object.entries(savedFilters)) {
+            const el = filterForm.elements[key];
+            if (el) el.value = value;
+        }
+
+        // Submeter formulário com filtros e salvar no localStorage
+        filterForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const formData = new FormData(filterForm);
             const params = new URLSearchParams();
-            
+            const filtersToSave = {};
+
             for (let [key, value] of formData.entries()) {
                 if (value) {
                     params.append(key, value);
+                    filtersToSave[key] = value;
                 }
             }
-            
+
+            localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
             window.location.href = `${window.location.pathname}?${params.toString()}`;
         });
     }
-    
+
     // Atualizar status do agendamento
     document.querySelectorAll('.status-select').forEach(select => {
         select.addEventListener('change', async function() {
@@ -28,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const response = await fetch(`/admin/appointments/${appointmentId}/status`, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -68,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const response = await fetch('/admin/reports/export', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -122,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
             location.reload();
         }, 300000); // 5 minutos
     }
+    setTimeout(updateCounters, 500);
 });
 
 // Função para mostrar alertas administrativos
@@ -420,9 +435,108 @@ function updateCounters() {
         }
     });
 }
+async function confirmAppointment(appointmentId) {
+  if (confirm('Confirmar este agendamento?')) {
+    try {
+      const response = await fetch(`/admin/appointments/${appointmentId}/confirm`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        showAlert('Agendamento confirmado com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showAlert('Erro ao confirmar agendamento', 'error');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      showAlert('Erro ao confirmar agendamento', 'error');
+    }
+  }
+}
+
+async function completeAppointment(appointmentId) {
+  if (confirm('Marcar este agendamento como concluído?')) {
+    try {
+      const response = await fetch(`/admin/appointments/${appointmentId}/complete`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        showAlert('Agendamento concluído com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showAlert('Erro ao concluir agendamento', 'error');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      showAlert('Erro ao concluir agendamento', 'error');
+    }
+  }
+}
+
+async function cancelAppointment(appointmentId) {
+  const reason = prompt('Motivo do cancelamento (opcional):');
+  if (reason !== null) {
+    try {
+      const response = await fetch(`/admin/appointments/${appointmentId}/cancel`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      if (response.ok) {
+        showAlert('Agendamento cancelado com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showAlert('Erro ao cancelar agendamento', 'error');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      showAlert('Erro ao cancelar agendamento', 'error');
+    }
+  }
+}
+
+async function deleteAppointment(appointmentId) {
+  if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
+    try {
+      const response = await fetch(`/admin/appointments/${appointmentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        showAlert('Agendamento excluído com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showAlert('Erro ao excluir agendamento', 'error');
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      showAlert('Erro ao excluir agendamento', 'error');
+    }
+  }
+}
+
+async function sendWhatsApp(appointmentId) {
+  try {
+    const response = await fetch(`/admin/appointments/${appointmentId}/whatsapp`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    if (response.ok) {
+      showAlert('Mensagem enviada pelo WhatsApp com sucesso!', 'success');
+    } else {
+      showAlert('Erro ao enviar WhatsApp', 'error');
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    showAlert('Erro ao enviar mensagem pelo WhatsApp', 'error');
+  }
+}
 
 // Inicializar contadores animados
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(updateCounters, 500);
-});
+// document.addEventListener('DOMContentLoaded', function() {
+//     setTimeout(updateCounters, 500);
+// });
 

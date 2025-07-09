@@ -21,49 +21,94 @@ async function seedDatabase() {
     // Criar barbeiros
     await Barber.bulkCreate([
       {
-        name: 'João Silva',
+        name: 'Junior Alves',
         phone: '(11) 99999-9999',
         email: 'joao@barbearia.com',
         specialties: ['Corte', 'Barba', 'Bigode'],
         workingHours: {
-          monday: '08:00-18:00',
-          tuesday: '08:00-18:00',
-          wednesday: '08:00-18:00',
-          thursday: '08:00-18:00',
-          friday: '08:00-18:00',
-          saturday: '08:00-16:00',
+          monday: '09:00-19:40',
+          tuesday: '09:00-19:40',
+          wednesday: '09:00-19:40',
+          thursday: '09:00-19:40',
+          friday: '09:00-19:40',
+          saturday: '09:00-19:40',
           sunday: 'closed'
         },
         isActive: true
       },
       {
-        name: 'Pedro Santos',
+        name: 'Daniel Barone',
         phone: '(11) 88888-8888',
-        email: 'pedro@barbearia.com',
+        email: '',
         specialties: ['Corte', 'Barba', 'Sobrancelha'],
         workingHours: {
-          monday: '09:00-19:00',
-          tuesday: '09:00-19:00',
-          wednesday: '09:00-19:00',
-          thursday: '09:00-19:00',
-          friday: '09:00-19:00',
-          saturday: '09:00-17:00',
+           monday: '09:00-19:40',
+          tuesday: '09:00-19:40',
+          wednesday: '09:00-19:40',
+          thursday: '09:00-19:40',
+          friday: '09:00-19:40',
+          saturday: '09:00-19:40',
           sunday: 'closed'
         },
         isActive: true
       },
       {
-        name: 'Carlos Oliveira',
+        name: 'Pedro Assunção',
+        phone: '(11) 77777-7777',
+        email: '',
+        specialties: ['Corte', 'Barba', 'Relaxamento'],
+        workingHours: {
+          monday: '09:00-19:40',
+          tuesday: '09:00-19:40',
+          wednesday: '09:00-19:40',
+          thursday: '09:00-19:40',
+          friday: '09:00-19:40',
+          saturday: '09:00-19:40',
+          sunday: 'closed'
+        },
+        isActive: true
+      } , {
+        name: 'Enzo Muralha',
+        phone: '(11) 77777-7777',
+        email: '',
+        specialties: ['Corte', 'Barba', 'Relaxamento'],
+        workingHours: {
+          monday: '09:00-19:40',
+          tuesday: '09:00-19:40',
+          wednesday: '09:00-19:40',
+          thursday: '09:00-19:40',
+          friday: '09:00-19:40',
+          saturday: '09:00-19:40',
+          sunday: 'closed'
+        },
+        isActive: true
+      },{
+        name: 'Adenilson',
+        phone: '(11) 77777-7777',
+        email: '',
+        specialties: ['Corte', 'Barba', 'Relaxamento'],
+        workingHours: {
+           monday: '09:00-19:40',
+          tuesday: '09:00-19:40',
+          wednesday: '09:00-19:40',
+          thursday: '09:00-19:40',
+          friday: '09:00-19:40',
+          saturday: '09:00-19:40',
+          sunday: 'closed'
+        },
+        isActive: true
+      },{
+        name: 'Hugo Gonçalves',
         phone: '(11) 77777-7777',
         email: 'carlos@barbearia.com',
         specialties: ['Corte', 'Barba', 'Relaxamento'],
         workingHours: {
-          monday: '08:00-18:00',
-          tuesday: '08:00-18:00',
-          wednesday: '08:00-18:00',
-          thursday: '08:00-18:00',
-          friday: '08:00-18:00',
-          saturday: '08:00-16:00',
+           monday: '09:00-19:40',
+          tuesday: '09:00-19:40',
+          wednesday: '09:00-19:40',
+          thursday: '09:00-19:40',
+          friday: '09:00-19:40',
+          saturday: '09:00-19:40',
           sunday: 'closed'
         },
         isActive: true
