@@ -940,6 +940,8 @@ display: flex !important;
 }
 
 .admin-card {
+  transition: all 0.2s ease;
+  min-height: 320px; 
   background: var(--bg-light) !important;
   border: none;
   border-radius: 12px;
@@ -947,6 +949,7 @@ display: flex !important;
   margin-bottom: 2rem;
   box-shadow: var(--shadow);
   color: var(--text-dark);
+  will-change: opacity, transform;
 }
 
 .admin-card:hover {
@@ -1272,7 +1275,8 @@ display: flex !important;
   box-shadow: var(--shadow);
   z-index: 9999;
   transform: translateX(400px);
-  transition: transform 0.3s ease;
+  transition: opacity 0.3s ease;
+   will-change: transform;
 }
 
 .notification.show {
@@ -1734,7 +1738,35 @@ canvas {
 .hidden {
   display: none !important;
 }
-.bottom-barber-navbar {
+.card-wrapper {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  will-change: opacity, transform;
+}
+
+.card-wrapper.hidden {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(0.95);
+}
+.card-wrapper {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  will-change: opacity, transform;
+}
+
+.card-wrapper.hidden {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(0.97);
+}
+.col-md-6 {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.card-footer button {
+  flex: 1 1 48%;
+  min-width: 120px;
+}.bottom-barber-navbar {
   position: fixed;
   bottom: 0; /* ALTERADO de 16px para 0 */
   left: 0;

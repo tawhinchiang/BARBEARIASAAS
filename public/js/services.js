@@ -1,90 +1,81 @@
-// public/js/admin/services.js
-
-function debounce(func, delay) {
-  let timeout;
-  return (...args) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), delay);
-  };
-}
+// Atualizado: public/js/services.js
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('serviceForm');
   const modalElement = document.getElementById('serviceModal');
-  const modalTitle = document.getElementById('serviceModalTitle');
-  const servicesContainer = document.getElementById('servicesContainer');
-  const searchInput = document.getElementById('serviceSearch');
-
-  if (!form || !modalElement || !modalTitle || !servicesContainer) return;
-
   const modal = new bootstrap.Modal(modalElement);
+  const modalTitle = document.getElementById('serviceModalTitle');
+  const container = document.getElementById('servicesContainer');
 
+  // ================= NOTIFICAÇÃO ================= //
   function showNotification(message, type = 'success') {
     const div = document.createElement('div');
     div.className = `notification ${type}`;
     div.textContent = message;
     document.body.appendChild(div);
+    void div.offsetWidth;
+    div.classList.add('show');
     setTimeout(() => {
-      div.classList.add('show');
-      setTimeout(() => {
-        div.classList.remove('show');
-        setTimeout(() => div.remove(), 300);
-      }, 3000);
-    }, 50);
+      div.classList.remove('show');
+      setTimeout(() => div.remove(), 300);
+    }, 3000);
   }
 
+  // ================= ENVIO DO FORMULÁRIO ================= //
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const formData = new FormData(form);
-    const id = formData.get('serviceId');
-    const url = id ? `/admin/services/${id}` : '/admin/services/create';
-    const method = id ? 'PUT' : 'POST';
+  const formData = new FormData(form);
+  const id = formData.get('serviceId');
+  const url = id ? `/admin/services/${id}` : '/admin/services/create';
+  const method = id ? 'PUT' : 'POST';
 
-    const payload = {
-      name: formData.get('name'),
-      description: formData.get('description'),
-      price: parseFloat(formData.get('price')),
-      duration: parseInt(formData.get('duration')),
-      isActive: formData.get('isActive') === 'on',
-      isPromo: formData.get('isPromo') === 'on'
-    };
+  const payload = {
+    name: formData.get('name'),
+    description: formData.get('description'),
+    price: parseFloat(formData.get('price')),
+    duration: parseInt(formData.get('duration')),
+    isActive: formData.get('isActive') === 'on',
+    isPromo: formData.get('isPromo') === 'on'
+  };
 
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-      if (data.success) {
-        showNotification(data.message || 'Serviço salvo com sucesso');
-        setTimeout(() => location.reload(), 800);
-      } else {
-        showNotification(data.error || 'Erro ao salvar serviço', 'error');
-      }
-    } catch (err) {
-      console.error(err);
-      showNotification('Erro interno', 'error');
-    }
+    if (!res.ok) throw new Error('Erro ao salvar serviço');
+
+    const result = await res.json();
+    const newId = result.service.id;
+
+    await refreshServiceCard(newId);
+
+    bootstrap.Modal.getInstance(modalElement)?.hide();
+    form.reset();
+    form.serviceId.value = '';
+    modalTitle.textContent = 'Novo Serviço';
+    showNotification('Serviço salvo com sucesso');
+
+  } catch (err) {
+    console.error(err);
+    showNotification(err.message || 'Erro interno', 'error');
+  }
   });
 
-  servicesContainer.addEventListener('click', (e) => {
-    const target = e.target.closest('button[data-action]');
-    if (!target) return;
+  const searchInput = document.getElementById('serviceSearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        filterServices();
+      }, 200);
+    });
+  }
 
-    const id = target.dataset.id;
-    const action = target.dataset.action;
-
-    if (!id || !action) return;
-
-    if (action === 'edit') return editService(id);
-    if (action === 'delete') return deleteService(id);
-    if (action === 'toggle') return toggleService(id);
-    if (action === 'promo') return togglePromo(id);
-  });
-
-  async function editService(id) {
+  // ================= FUNÇÕES GLOBAIS ================= //
+  window.editService = async (id) => {
     try {
       const res = await fetch(`/admin/services/${id}`);
       const data = await res.json();
@@ -104,17 +95,17 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showNotification(err.message, 'error');
     }
-  }
+  };
 
-  async function deleteService(id) {
+  window.deleteService = async (id) => {
     if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
 
     try {
       const res = await fetch(`/admin/services/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
-        showNotification(data.message || 'Serviço excluído com sucesso');
-        setTimeout(() => location.reload(), 800);
+        document.querySelector(`[data-service-id="${id}"]`)?.remove();
+        showNotification('Serviço removido');
       } else {
         showNotification(data.error, 'error');
       }
@@ -122,59 +113,88 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       showNotification('Erro ao excluir serviço', 'error');
     }
-  }
+  };
 
-  async function toggleService(id) {
+  window.toggleService = async (id) => {
     try {
       const res = await fetch(`/admin/services/${id}/toggle`, { method: 'PATCH' });
       const data = await res.json();
       if (data.success) {
         showNotification(data.message || 'Status atualizado');
-        setTimeout(() => location.reload(), 800);
+        await refreshServiceCard(id);
       } else {
         showNotification(data.error, 'error');
       }
     } catch (err) {
       showNotification('Erro ao alternar status', 'error');
     }
-  }
+  };
 
-  async function togglePromo(id) {
+  window.togglePromo = async (id) => {
     try {
       const res = await fetch(`/admin/services/${id}/toggle-promo`, { method: 'PATCH' });
       const data = await res.json();
       if (data.success) {
         showNotification(data.message || 'Promoção atualizada');
-        setTimeout(() => location.reload(), 800);
+        await refreshServiceCard(id);
       } else {
         showNotification(data.error, 'error');
       }
     } catch (err) {
       showNotification('Erro ao alternar promoção', 'error');
     }
-  }
+  };
 
   modalElement.addEventListener('hidden.bs.modal', () => {
     form.reset();
     form.serviceId.value = '';
     modalTitle.textContent = 'Novo Serviço';
   });
-
-  if (searchInput) {
-    const handleSearch = debounce(() => {
-      const searchValue = searchInput.value.toLowerCase().trim();
-      const cards = document.querySelectorAll('#servicesContainer .service-card');
-
-      requestAnimationFrame(() => {
-        cards.forEach(card => {
-          const name = card.querySelector('.service-name')?.textContent.toLowerCase() || '';
-          const description = card.querySelector('.service-description')?.textContent.toLowerCase() || '';
-          const match = name.includes(searchValue) || description.includes(searchValue);
-          card.classList.toggle('hidden', !match);
-        });
-      });
-    }, 150);
-
-    searchInput.addEventListener('input', handleSearch);
-  }
 });
+
+function filterServices() {
+  const searchValue = document.getElementById('serviceSearch').value.toLowerCase().trim();
+  const cards = document.querySelectorAll('.admin-card');
+
+  cards.forEach(card => {
+    const name = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
+    const description = card.querySelector('p.text-muted')?.textContent.toLowerCase() || '';
+    const match = name.includes(searchValue) || description.includes(searchValue);
+    const container = card.closest('.col-md-6');
+
+    if (!container) return;
+
+    if (match && container.style.opacity !== '1') {
+      container.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      container.style.opacity = '1';
+      container.style.transform = 'scale(1)';
+      container.style.pointerEvents = 'auto';
+      container.style.position = 'static';
+    } else if (!match && container.style.opacity !== '0') {
+      container.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      container.style.opacity = '0';
+      container.style.transform = 'scale(0.95)';
+      container.style.pointerEvents = 'none';
+      container.style.position = 'absolute';
+    }
+  });
+}
+
+async function refreshServiceCard(id) {
+  try {
+    const res = await fetch(`/admin/services/${id}/partial`);
+    const html = await res.text();
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html.trim();
+
+    const updatedCard = wrapper.querySelector(`[data-service-id="${id}"]`);
+    const currentCard = document.querySelector(`[data-service-id="${id}"]`);
+    if (currentCard && updatedCard) {
+      currentCard.replaceWith(updatedCard);
+    }
+  } catch (err) {
+    console.error('Erro ao atualizar card:', err);
+    showNotification('Erro ao atualizar card', 'error');
+  }
+}

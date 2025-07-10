@@ -5,6 +5,34 @@ const { Op } = require('sequelize');
 
 const router = express.Router();
 
+async function getAppointmentsCount(serviceId) {
+  return await Appointment.count({
+    where: {
+      serviceTypeId: serviceId,
+      appointmentDate: {
+        [Op.gte]: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      }
+    }
+  });
+}
+
+async function getServiceRevenue(serviceId) {
+  const completedAppointments = await Appointment.findAll({
+    where: {
+      serviceTypeId: serviceId,
+      status: 'confirmed',
+      appointmentDate: {
+        [Op.gte]: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      }
+    },
+    attributes: ['totalPrice']
+  });
+
+  return completedAppointments.reduce((total, a) => {
+    return total + parseFloat(a.totalPrice || 0);
+  }, 0);
+}
+
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -26,51 +54,43 @@ router.use(isAuthenticated);
 // ===== PÁGINA PRINCIPAL - LISTAR SERVIÇOS =====
 router.get('/', async (req, res) => {
   try {
+    log('Carregando página de serviços');
     
-    
-    log('⚠️ ROTA /admin/services ACESSADA');
-    const services = await ServiceType.findAll({
-      order: [['name', 'ASC']],
-      include: [
-        {
-          model: Appointment,
-          as: 'appointments',
-          attributes: ['id', 'totalPrice', 'status'],
-          where: {
-            appointmentDate: {
-              [Op.gte]: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-            }
-          },
-          required: false
-        }
-      ]
-    });
-    
-    // Calcular estatísticas para cada serviço
- const servicesWithStats = Array.from(services).map(service => {
-  const appointments = service.appointments || [];
-  const completedAppointments = appointments.filter(apt => apt.status === 'completed');
-  const revenue = completedAppointments.reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
+const services = await ServiceType.findAll({
+  order: [['name', 'ASC']]
+});
+
+const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+const servicesWithStats = await Promise.all(services.map(async (service) => {
+  const appointments = await Appointment.findAll({
+    where: {
+      serviceTypeId: service.id,
+      appointmentDate: {
+        [Op.between]: [startOfMonth, endOfMonth]
+      }
+    }
+  });
+
+  const appointmentsThisMonth = appointments.length;
+  const revenueThisMonth = appointments
+    .filter(a => a.status === 'confirmed')
+    .reduce((acc, a) => acc + parseFloat(a.totalPrice || 0), 0);
 
   return {
-    id: service.id,
-    name: service.name,
-    description: service.description || '',
-    price: service.price,
-    duration: service.duration,
-    isActive: service.isActive,
-    isPromo: service.isPromo,
-    appointmentsThisMonth: appointments.length,
-    revenueThisMonth: revenue
+    ...service.toJSON(),
+    appointmentsThisMonth,
+    revenueThisMonth: revenueThisMonth.toFixed(2)
   };
-});
+}));
 
     
     log(`${services.length} serviços carregados`);
-    
+    console.log(servicesWithStats);
     res.render('admin/services', {
       title: 'Gerenciar Serviços',
-      services: JSON.parse(JSON.stringify(servicesWithStats)), // 🔧 limpa objetos Sequelize
+      services: servicesWithStats,
       layout: 'admin'
     });
   } catch (error) {
@@ -90,7 +110,7 @@ router.post('/create', async (req, res) => {
     log('Criando novo serviço', req.body);
     
     const { name, description, price, duration, isActive, isPromo } = req.body;
-    
+
     // Validações
     if (!name || !price || !duration) {
       return res.status(400).json({
@@ -99,20 +119,16 @@ router.post('/create', async (req, res) => {
       });
     }
     
-    if (isNaN(price) || parseFloat(price) <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Preço deve ser um número válido maior que zero'
-      });
+    const priceParsed = parseFloat(price);
+    const durationParsed = parseInt(duration);
+
+    if (isNaN(priceParsed) || priceParsed <= 0) {
+      return res.status(400).json({ success: false, error: 'Preço inválido' });
     }
-    
-    if (isNaN(duration) || parseInt(duration) <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Duração deve ser um número válido maior que zero'
-      });
+
+    if (isNaN(durationParsed) || durationParsed <= 0) {
+      return res.status(400).json({ success: false, error: 'Duração inválida' });
     }
-    
     // Verificar se nome já existe
     const existingService = await ServiceType.findOne({ 
       where: { name: name.trim() } 
@@ -132,7 +148,7 @@ router.post('/create', async (req, res) => {
       isActive: isActive === 'true' || isActive === true,
       isPromo: isPromo === 'true' || isPromo === true
     };
-    
+    console.log('[DEBUG] Dados que vão para o banco:', serviceData); // 👈 Adicione isso aqui
     const service = await ServiceType.create(serviceData);
     
     log('Serviço criado com sucesso', { id: service.id, name: service.name });
@@ -143,12 +159,13 @@ router.post('/create', async (req, res) => {
       service: service
     });
   } catch (error) {
-    logError('Erro ao criar serviço', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor'
-    });
-  }
+  logError('Erro ao criar serviço', error);
+  res.status(500).json({
+    success: false,
+    error: error.message || 'Erro interno do servidor' // ← Aqui!
+  });
+}
+
 });
 
 // ===== BUSCAR SERVIÇO POR ID =====
@@ -362,10 +379,10 @@ router.get('/:id/report', async (req, res) => {
     
     // Calcular estatísticas
     const totalAppointments = appointments.length;
-    const completedAppointments = appointments.filter(apt => apt.status === 'completed').length;
+    const completedAppointments = appointments.filter(apt => apt.status === 'confirmed').length;
     const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled').length;
     const totalRevenue = appointments
-      .filter(apt => apt.status === 'completed')
+      .filter(apt => apt.status === 'confirmed')
       .reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
     
     // Agrupar por barbeiro
@@ -377,7 +394,7 @@ router.get('/:id/report', async (req, res) => {
           barberStats[barberName] = { count: 0, revenue: 0 };
         }
         barberStats[barberName].count++;
-        if (apt.status === 'completed') {
+        if (apt.status === 'confirmed') {
           barberStats[barberName].revenue += parseFloat(apt.totalPrice || 0);
         }
       }
@@ -514,6 +531,32 @@ router.patch('/:id/toggle-promo', async (req, res) => {
       success: false,
       error: 'Erro interno do servidor'
     });
+  }
+});
+router.get('/:id/partial', async (req, res) => {
+
+  try {
+    const id = req.params.id;
+    const service = await ServiceType.findByPk(id);
+    if (!service) return res.status(404).send('Serviço não encontrado');
+
+    const appointmentsThisMonth = await getAppointmentsCount(id);
+    const revenueThisMonth = await getServiceRevenue(id);
+
+    res.render('partials/service-card', {
+      layout: false,
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      price: service.price,
+      duration: service.duration,
+      isActive: service.isActive,
+      isPromo: service.isPromo,
+      appointmentsThisMonth,
+      revenueThisMonth
+    });
+  } catch (err) {
+    res.status(500).send('Erro ao renderizar serviço');
   }
 });
 

@@ -1,0 +1,43 @@
+<div class="col-md-6 col-lg-4" data-service-id="{{id}}">
+  <div class="card h-100 shadow-sm admin-card">
+    <div class="card-body">
+      <h5 class="card-title">{{name}}</h5>
+      <p class="text-muted small">{{description}}</p>
+      <p><strong>Preço:</strong> R$ {{price}}</p>
+      <p><strong>Duração:</strong> {{duration}} min</p>
+      <p><strong>Status:</strong>
+        {{#if isActive}}
+          <span class="badge status-badge status-confirmed">Ativo</span>
+        {{else}}
+          <span class="badge status-badge status-cancelled">Inativo</span>
+        {{/if}}
+      </p>
+      <p><strong>Promoção:</strong>
+        {{#if isPromo}}
+          <span class="badge status-badge status-pending">Sim</span>
+        {{else}}
+          <span class="badge status-badge bg-light text-dark">Não</span>
+        {{/if}}
+      </p>
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">{{appointmentsThisMonth}} agend. este mês</small>
+        <strong class="text-success">R$ {{revenueThisMonth}}</strong>
+      </div>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between flex-wrap gap-2 bg-transparent border-top">
+      <button class="btn btn-sm btn-outline-primary" onclick="editService({{id}})">
+        <i class="fas fa-edit me-1"></i> Editar
+      </button>
+      <button class="btn btn-sm btn-outline-info" onclick="toggleService({{id}})">
+        <i class="fas fa-toggle-on me-1"></i> Status
+      </button>
+      <button class="btn btn-sm btn-outline-warning" onclick="togglePromo({{id}})">
+        <i class="fas fa-tags me-1"></i> Promoção
+      </button>
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteService({{id}})">
+        <i class="fas fa-trash me-1"></i> Excluir
+      </button>
+    </div>
+  </div>
+</div>
