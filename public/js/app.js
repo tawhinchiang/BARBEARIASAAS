@@ -1,6 +1,5 @@
-// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN - VERSÃO CORRIGIDA
+/// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN - VERSÃO CORRIGIDA
 
-// Verificar se CONFIG já existe para evitar redeclaração
 if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
   window.BARBERSHOP_CONFIG = {
     WHATSAPP_NUMBER: '5563992014547',
@@ -8,10 +7,8 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
   };
 }
 
-// Usar referência global para evitar conflitos
 const CONFIG = window.BARBERSHOP_CONFIG;
 
-// Estado global da aplicação
 let appState = {
   services: [],
   availableBarbers: [],
@@ -26,7 +23,6 @@ let appState = {
   currentYear: new Date().getFullYear()
 };
 
-// Logs detalhados
 function log(message, data = null) {
   const timestamp = new Date().toLocaleTimeString();
   console.log(`[${timestamp}] [CLIENT] ${message}`, data || '');
@@ -37,23 +33,16 @@ function logError(message, error = null) {
   console.error(`[${timestamp}] [CLIENT ERROR] ${message}`, error || '');
 }
 
-// Configurar event listeners (calendário, mascas, validações)
-function setupEventListeners() {
-  // Navegação de meses no calendário
-  document.getElementById('prevMonth')?.addEventListener('click', () => changeMonth(-1));
-  document.getElementById('nextMonth')?.addEventListener('click', () => changeMonth(1));
-  
-  // Validação de formulário
-  ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', validateClientForm);
-  });
-  
-  // Google login
-  document.getElementById('googleLogin')?.addEventListener('click', handleGoogleLogin);
-}
+// Detectar se é a página de histórico
+const isHistoryPage = window.location.pathname.includes('/history');
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
+  if (isHistoryPage) {
+    log('Histórico detectado - Inicializando somente transição suave.');
+    setupSmoothPageTransition();
+    return;
+  }
+
   log('Inicializando sistema de agendamento moderno');
   try {
     await loadServices();
@@ -61,16 +50,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadBarbers();
     initializeCalendar();
     setupPhoneMask();
-    
-    // só chama se o CLIENT_ID estiver configurado
+
     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
       initializeGoogleLogin();
     }
+
+    ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', validateClientForm);
+    });
+
     log('Sistema inicializado com sucesso');
   } catch (error) {
     logError('Erro na inicialização', error);
   }
 });
+
+function setupSmoothPageTransition() {
+  document.querySelectorAll('a[href]').forEach(link => {
+    const href = link.getAttribute('href');
+    if (!href || !href.startsWith('/') || href === window.location.pathname) return;
+
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.body.classList.add('carousel-slide');
+      setTimeout(() => {
+        window.location.href = href;
+      }, 400);
+    });
+  });
+}
+
+
 
 // ===== CARREGAR SERVIÇOS - CORRIGIDO =====
 async function loadServices() {
@@ -893,16 +904,47 @@ function adjustTimeSlots() {
 }
 
 // Chame esta função após carregar os horários
-adjustTimeSlots();
-// Configurar validação de formulário
-document.addEventListener('DOMContentLoaded', () => {
-  ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', validateClientForm);
-    }
-  });
-});
+// document.addEventListener('DOMContentLoaded', async () => {
+//   const isHistoryPage = window.location.pathname.includes('/history');
+
+//   if (isHistoryPage) {
+//     log('Página de histórico detectada');
+//     setupSmoothPageTransition(); // para animações dos botões
+//     return; // se você vai carregar histórico via HTML mesmo
+//   }
+
+//   log('Inicializando sistema de agendamento moderno');
+//   try {
+//     await loadServices();
+//     setupEventListeners();
+//     loadBarbers();
+//     initializeCalendar();
+//     setupPhoneMask();
+
+//     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
+//       initializeGoogleLogin();
+//     }
+
+//     ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+//       const el = document.getElementById(id);
+//       if (el) {
+//         el.addEventListener('input', validateClientForm);
+//       }
+//     });
+
+//     log('Sistema inicializado com sucesso');
+//   } catch (error) {
+//     logError('Erro na inicialização', error);
+//   }
+  
+// });
+
+
+function scrollToTop() {
+  goToStep(1);
+}
+
+
 
 // Exportar funções globais necessárias
 window.loadServices = loadServices;
