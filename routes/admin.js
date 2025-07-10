@@ -426,7 +426,8 @@ router.get('/reports', async (req, res) => {
   try {
     log('Acessando relatórios', { user: req.session.user, query: req.query });
     
-    const { startDate, endDate, barberId } = req.query;
+    const { startDate, endDate, barberId, status, sort } = req.query;
+
     
     let whereClause = {};
     
@@ -435,31 +436,53 @@ router.get('/reports', async (req, res) => {
         [require('sequelize').Op.between]: [startDate, endDate]
       };
     }
-    
-    if (barberId) {
-      whereClause.barberId = barberId;
-    }
+
+    if (status) {whereClause.status = status;}
+
+    if (barberId) {whereClause.barberId = barberId;}
     
     log('Filtros de relatório aplicados', { whereClause });
-    
-    const appointments = await Appointment.findAll({
-      where: whereClause,
-      include: [
-        { model: Client, as: 'client' },
-        { model: Barber, as: 'barber' },
-        { model: ServiceType, as: 'serviceType' }
-      ],
-      order: [['appointmentDate', 'DESC']]
+    // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
+      let order = [['appointmentDate', 'DESC']]; // padrão
+  
+      switch (sort) {
+      case 'date_asc':
+        order = [['appointmentDate', 'ASC']];
+        break;
+      case 'value_desc':
+        order = [['totalPrice', 'DESC']];
+        break;
+      case 'value_asc':
+        order = [['totalPrice', 'ASC']];
+        break;
+      case 'barber_asc':
+        order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
+        break;
+      case 'barber_desc':
+        order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
+        break;
+      }
+
+      const appointments = await Appointment.findAll({
+        where: whereClause,
+        include: [
+          { model: Client, as: 'client' },
+          { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
+          { model: ServiceType, as: 'serviceType' }
+        ],
+
+        order
+      }); // padrão
+
+    const formattedAppointments = appointments.map(app => {
+      const plain = app.toJSON();
+      const date = new Date(plain.appointmentDate + 'T03:00:00');
+      return {
+        ...plain,
+        appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
+          };
     });
-const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const date = new Date(plain.appointmentDate + 'T03:00:00');
-  return {
-    ...plain,
-    appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
-  };
-});
 
 
 
@@ -481,8 +504,9 @@ const formattedAppointments = appointments.map(app => {
       stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
       
       // Contagem Por barbeiro
-      const barberName = apt.barber.name;
-      stats.byBarber[barberName] = (stats.byBarber[barberName] || 0) + 1;
+      const barberKey = `${apt.barber?.id} - ${apt.barber?.name || 'Desconhecido'}`;
+      stats.byBarber[barberKey] = (stats.byBarber[barberKey] || 0) + 1;
+
       
       // Receita total
       // Receita total - ignorar agendamentos cancelados
@@ -502,7 +526,8 @@ const formattedAppointments = appointments.map(app => {
       appointments: formattedAppointments,
       barbers,
       stats,
-      filters: { startDate, endDate, barberId }
+      filters: { startDate, endDate, barberId, status, sort }
+
     });
 
   } catch (error) {
@@ -563,21 +588,54 @@ router.post('/reports/export', async (req, res) => {
     }
     
     // Calcular estatísticas
-    const totalAppointments = appointments.length;
-    const totalRevenue = appointments.reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
-    const completedAppointments = appointments.filter(apt => apt.status === 'completed').length;
-    const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled').length;
-    
-    const reportInfo = {
-      startDate: startDate || 'Início',
-      endDate: endDate || 'Fim',
-      barber: barberId === 'all' ? 'Todos os barbeiros' : 
-              (appointments[0]?.barber?.name || 'Não especificado'),
-      totalAppointments,
-      totalRevenue,
-      completedAppointments,
-      cancelledAppointments
-    };
+    const statusMap = {
+  pending: 'Pendente',
+  confirmed: 'Confirmado',
+  completed: 'Concluído',
+  cancelled: 'Cancelado',
+  no_show: 'Não Compareceu'
+};
+
+const statusCounts = {};
+const revenueByStatus = {};
+const revenueByBarber = {};
+let revenueTotal = 0;
+
+appointments.forEach(apt => {
+  const status = apt.status;
+  const price = parseFloat(apt.totalPrice || 0);
+  const barber = apt.barber?.name || 'Desconhecido';
+
+  // contagem por status
+  statusCounts[status] = (statusCounts[status] || 0) + 1;
+
+  // receita por status
+  if (!revenueByStatus[status]) revenueByStatus[status] = 0;
+  revenueByStatus[status] += price;
+
+  // receita total (exclui cancelados, se desejar)
+  if (status !== 'cancelled') revenueTotal += price;
+
+  // receita por barbeiro
+  if (!revenueByBarber[barber]) revenueByBarber[barber] = 0;
+  revenueByBarber[barber] += price;
+});
+
+const reportInfo = {
+  periodo: startDate && endDate 
+    ? `${new Date(startDate).toLocaleDateString('pt-BR')} até ${new Date(endDate).toLocaleDateString('pt-BR')}`
+    : 'Todos os períodos',
+  dataGeracao: new Date().toLocaleString('pt-BR'),
+  barbeiroSelecionado: !barberId 
+    ? 'Todos os barbeiros' 
+    : (appointments[0]?.barber?.name || 'Não especificado'),
+  totalAgendamentos: appointments.length,
+  mediaValor: (revenueTotal / appointments.length).toFixed(2),
+  receitaTotal: revenueTotal.toFixed(2),
+  statusCounts,
+  receitaPorStatus: revenueByStatus,
+  receitaPorBarbeiro: revenueByBarber
+};
     
     log('Informações do relatório calculadas', { reportInfo });
     

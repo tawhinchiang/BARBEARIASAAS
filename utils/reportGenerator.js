@@ -25,18 +25,36 @@ async function generatePDF(appointments, reportInfo, filename) {
       // Informações do relatório
       doc.fontSize(12);
       doc.text(`Período: ${reportInfo.startDate} até ${reportInfo.endDate}`);
-      doc.text(`Barbeiro: ${reportInfo.barber}`);
+      doc.text(`Barbeiro: ${reportInfo.barbeiroSelecionado}`);
       doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`);
       doc.moveDown();
       
       // Estatísticas
-      doc.fontSize(14).text('Resumo:', { underline: true });
-      doc.fontSize(12);
-      doc.text(`Total de agendamentos: ${reportInfo.totalAppointments}`);
-      doc.text(`Agendamentos concluídos: ${reportInfo.completedAppointments}`);
-      doc.text(`Agendamentos cancelados: ${reportInfo.cancelledAppointments}`);
-      doc.text(`Receita total: R$ ${reportInfo.totalRevenue.toFixed(2)}`);
-      doc.moveDown();
+        doc.fontSize(14).text('Resumo do Relatório:', { underline: true });
+        doc.fontSize(12);
+        doc.text(`Período: ${reportInfo.periodo}`);
+        doc.text(`Barbeiro: ${reportInfo.barbeiroSelecionado}`);
+        doc.text(`Data de Geração: ${reportInfo.dataGeracao}`);
+        doc.text(`Total de Agendamentos: ${reportInfo.totalAgendamentos}`);
+        doc.text(`Receita Total: R$ ${reportInfo.receitaTotal}`);
+        doc.text(`Valor Médio por Agendamento: R$ ${reportInfo.mediaValor}`);
+        doc.moveDown();
+
+        // Estatísticas por status
+        doc.fontSize(13).text('Estatísticas por Status:', { underline: true });
+        Object.entries(reportInfo.statusCounts).forEach(([status, count]) => {
+          const receita = reportInfo.receitaPorStatus[status]?.toFixed(2) || '0.00';
+          doc.text(`${getStatusText(status)}: ${count} agendamentos - R$ ${receita}`);
+        });
+        doc.moveDown();
+
+        // Estatísticas por barbeiro
+        doc.fontSize(13).text('Receita por Barbeiro:', { underline: true });
+        Object.entries(reportInfo.receitaPorBarbeiro).forEach(([barber, total]) => {
+          doc.text(`${barber}: R$ ${total.toFixed(2)}`);
+        });
+        doc.moveDown();
+
       
       // Tabela de agendamentos
       doc.fontSize(14).text('Detalhes dos Agendamentos:', { underline: true });
@@ -89,11 +107,12 @@ async function generatePDF(appointments, reportInfo, filename) {
       
       // Rodapé
       doc.fontSize(8).text(
-        `Relatório gerado pelo Sistema de Gestão de Barbearias - ${new Date().toLocaleString('pt-BR')}`,
+        `Relatório gerado automaticamente em ${new Date().toLocaleString('pt-BR')} pelo Sistema de Gestão de Barbearias.`,
         50,
-        doc.page.height - 50,
+        doc.page.height - 40,
         { align: 'center' }
       );
+
       
       doc.end();
       
@@ -123,32 +142,36 @@ function generateCSV(appointments, filename) {
     }
     
     // Cabeçalho CSV
-    const headers = [
-      'Data',
-      'Hora',
-      'Cliente',
-      'Telefone',
-      'Barbeiro',
-      'Serviço',
-      'Status',
-      'Valor',
-      'WhatsApp Enviado',
-      'Criado em'
-    ];
-    
-    // Dados CSV
-    const csvData = appointments.map(apt => [
-      new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
-      apt.appointmentTime,
-      `"${apt.client.firstName} ${apt.client.lastName}"`,
-      apt.client.phone,
-      `"${apt.barber.name}"`,
-      `"${apt.serviceType.name}"`,
-      getStatusText(apt.status),
-      parseFloat(apt.totalPrice || 0).toFixed(2),
-      apt.whatsappSent ? 'Sim' : 'Não',
-      new Date(apt.createdAt).toLocaleString('pt-BR')
-    ]);
+   const headers = [
+  'Data',
+  'Hora',
+  'Cliente',
+  'Telefone',
+  'Barbeiro',
+  'Serviço',
+  'Status',
+  'Valor',
+  'WhatsApp Enviado',
+  'Criado em',
+  'Status Code',
+  'Barbeiro ID'
+];
+
+const csvData = appointments.map(apt => [
+  new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
+  apt.appointmentTime,
+  `"${apt.client.firstName} ${apt.client.lastName}"`,
+  apt.client.phone,
+  `"${apt.barber.name}"`,
+  `"${apt.serviceType.name}"`,
+  getStatusText(apt.status),
+  parseFloat(apt.totalPrice || 0).toFixed(2),
+  apt.whatsappSent ? 'Sim' : 'Não',
+  new Date(apt.createdAt).toLocaleString('pt-BR'),
+  apt.status,
+  apt.barber.id
+]);
+
     
     // Montar conteúdo CSV
     const csvContent = [

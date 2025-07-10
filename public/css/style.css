@@ -1724,3 +1724,13 @@ display: flex !important;
   position: relative;
   z-index: 1;
 }
+canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 300px;
+  display: block;
+  margin: 0 auto;
+}
+.hidden {
+  display: none !important;
+}
