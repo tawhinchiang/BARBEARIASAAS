@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
+           navigateWithFade(`${window.location.pathname}?${params.toString()}`);
         });
     }
 
@@ -133,12 +133,52 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-refresh do dashboard a cada 5 minutos
     if (window.location.pathname.includes('/admin/dashboard')) {
         setInterval(() => {
-            location.reload();
+        document.body.classList.add('fade-out-soft');
+        setTimeout(() => reloadWithFade(), 1500);
         }, 300000); // 5 minutos
     }
     setTimeout(updateCounters, 500);
-});
 
+    // Transição suave ao mudar de página
+  document.querySelectorAll('a[href]').forEach(link => {
+    const href = link.getAttribute('href');
+
+    // Só aplicar para links internos do admin (não externos, nem com target="_blank")
+    if (
+      href &&
+      href.startsWith('/') &&
+      !href.startsWith('http') &&
+      !link.hasAttribute('target') &&
+      !href.includes('#')
+    ) {
+   link.addEventListener('click', function (e) {
+    if (window.location.pathname === href) return; // ← evita recarregar a mesma página
+    e.preventDefault();
+    navigateWithFade(href); // ← nova função que cuida da transição
+    });
+    }
+  });
+
+  // Ao carregar, aplica fade-in
+  document.body.classList.add('fade-in-soft');
+  document.body.style.opacity = '1';
+
+  // Remove após a animação
+    document.body.addEventListener('transitionend', () => {
+    document.body.classList.remove('fade-in-soft', 'fade-out-soft');
+    });
+
+
+});
+// document.body.style.opacity = '1';
+// document.body.classList.add('fade-in-soft');
+let isNavigating = false;
+function navigateWithFade(href) {
+  if (isNavigating) return;
+  isNavigating = true;
+  document.body.classList.add('fade-out-soft');
+  setTimeout(() => window.location.href = href, 300);
+}
 // Função para mostrar alertas administrativos
 function showAlert(message, type = 'info') {
     const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
@@ -420,21 +460,26 @@ function exportTableToCSV(tableId, filename) {
 
 // Atualizar contador em tempo real
 function updateCounters() {
-    const counters = document.querySelectorAll('[data-counter]');
-    
-    counters.forEach(counter => {
-        const target = parseInt(counter.dataset.counter);
-        const current = parseInt(counter.textContent) || 0;
-        const increment = target / 100;
-        
-        if (current < target) {
-            counter.textContent = Math.ceil(current + increment);
-            setTimeout(() => updateCounters(), 20);
-        } else {
-            counter.textContent = target;
-        }
-    });
+  const counters = document.querySelectorAll('[data-counter]');
+  
+  counters.forEach(counter => {
+    const target = parseInt(counter.dataset.counter);
+    let current = parseInt(counter.textContent) || 0;
+
+    const animate = () => {
+      current += Math.ceil(target / 60); // suaviza em ~1 segundo
+      if (current >= target) {
+        counter.textContent = target;
+      } else {
+        counter.textContent = current;
+        requestAnimationFrame(animate);
+      }
+    };
+
+    animate();
+  });
 }
+
 async function confirmAppointment(appointmentId) {
   if (confirm('Confirmar este agendamento?')) {
     try {
@@ -444,7 +489,10 @@ async function confirmAppointment(appointmentId) {
       });
       if (response.ok) {
         showAlert('Agendamento confirmado com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => {
+        document.body.classList.add('fade-out-soft');
+        setTimeout(() => window.location.href = location.href, 300);
+        }, 1500);
       } else {
         showAlert('Erro ao confirmar agendamento', 'error');
       }
@@ -464,7 +512,10 @@ async function completeAppointment(appointmentId) {
       });
       if (response.ok) {
         showAlert('Agendamento concluído com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => {
+        document.body.classList.add('fade-out-soft');
+        setTimeout(() => window.location.href = location.href, 300);
+        }, 1500);
       } else {
         showAlert('Erro ao concluir agendamento', 'error');
       }
@@ -487,7 +538,10 @@ async function cancelAppointment(appointmentId) {
       });
       if (response.ok) {
         showAlert('Agendamento cancelado com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
+        setTimeout(() => {
+        document.body.classList.add('fade-out-soft');
+        setTimeout(() => window.location.href = location.href, 300);
+        }, 1500);
       } else {
         showAlert('Erro ao cancelar agendamento', 'error');
       }
@@ -507,7 +561,10 @@ async function deleteAppointment(appointmentId) {
       });
       if (response.ok) {
         showAlert('Agendamento excluído com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
+       setTimeout(() => {
+        document.body.classList.add('fade-out-soft');
+        setTimeout(() => window.location.href = location.href, 300);
+        }, 1500);
       } else {
         showAlert('Erro ao excluir agendamento', 'error');
       }
@@ -535,6 +592,12 @@ async function sendWhatsApp(appointmentId) {
   }
 }
 
+function reloadWithFade() {
+  if (isNavigating) return;
+  isNavigating = true;
+  document.body.classList.add('fade-out-soft');
+  setTimeout(() => window.location.reload(), 300);
+}
 // Inicializar contadores animados
 // document.addEventListener('DOMContentLoaded', function() {
 //     setTimeout(updateCounters, 500);

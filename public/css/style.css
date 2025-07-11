@@ -933,6 +933,38 @@ display: flex !important;
   min-height: 100vh;
 }
 
+.admin-table {
+  min-height: 250px;
+}
+
+#appointmentsChart {
+  min-height: 300px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+.fade-in-soft {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-in-out forwards;
+}
+
+.fade-out-soft {
+  opacity: 1;
+  animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+
+
 .admin-dashboard {
   background: var(--bg-light);
   min-height: 100vh;
@@ -940,7 +972,7 @@ display: flex !important;
 }
 
 .admin-card {
-  transition: all 0.2s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   min-height: 320px; 
   background: var(--bg-light) !important;
   border: none;
@@ -1252,10 +1284,10 @@ display: flex !important;
   animation: fadeInUp 0.6s ease-out;
 }
 
-.fade-in-soft {
+/* .fade-in-soft {
   opacity: 0;
   animation: fadeInSoft 0.4s ease-out forwards;
-}
+} */
 
 .fade-in-modal {
   opacity: 0;
@@ -1766,4 +1798,95 @@ canvas {
 .card-footer button {
   flex: 1 1 48%;
   min-width: 120px;
+}.bottom-barber-navbar {
+  position: fixed;
+  bottom: 0; /* ALTERADO de 16px para 0 */
+  left: 0;
+  right: 0;
+  height: 75px;
+  background-color: var(--bg-gray);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 9999;
+  padding: 0 10px;
+  backdrop-filter: blur(6px);
+}
+
+
+.bottom-barber-navbar .nav-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+}
+
+.bottom-barber-navbar .nav-button i {
+  margin-bottom: 4px;
+}
+
+.bottom-barber-navbar .nav-button:hover,
+.bottom-barber-navbar .nav-button.active {
+  color: var(--primary-color);
+  transform: scale(1.05);
+}
+.step-navigation {
+  margin-bottom: calc(90px + 1rem); /* Espaço suficiente para não ficar escondido atrás da navbar */
+}
+/* Neon Cards para Histórico */
+.card-neon-green {
+  box-shadow: 0 0 12px rgba(0, 255, 100, 0.5), 0 0 20px rgba(0, 255, 100, 0.4);
+  border: 1px solid rgba(0, 255, 100, 0.5);
+}
+
+.card-neon-red {
+  box-shadow: 0 0 12px rgba(255, 0, 0, 0.4), 0 0 20px rgba(255, 0, 0, 0.3);
+  border: 1px solid rgba(255, 0, 0, 0.4);
+}
+
+/* Animação suave */
+/* .fade-in-soft {
+  animation: fadeInSoft 0.5s ease-in;
+} */
+
+@keyframes fadeInSoft {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-neon-green {
+  box-shadow: 0 0 12px 3px rgba(0, 255, 0, 0.5);
+  border: 1px solid #28a745;
+}
+
+.card-neon-red {
+  box-shadow: 0 0 12px 3px rgba(255, 0, 0, 0.3);
+  border: 1px solid #dc3545;
+}
+
+.carousel-slide {
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }

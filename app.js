@@ -10,8 +10,7 @@ require('dotenv').config();
 const app = express();
 
 
-app.set('view engine', 'hbs');
-app.set('views', path.join(__dirname, 'views'));
+
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();

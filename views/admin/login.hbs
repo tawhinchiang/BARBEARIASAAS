@@ -169,7 +169,10 @@
   width: 1rem;
   height: 1rem;
 }
-
+.fade-out-soft {
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
 /* Responsividade */
 @media (max-width: 768px) {
   .admin-login-container .admin-card {
@@ -202,7 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Formulário de login
-  const loginForm = document.getElementById('loginForm');
+    const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', () => {
+      document.body.classList.add('fade-out-soft');
+    });
+  }
   const loginBtn = document.getElementById('loginBtn');
   const loginText = document.getElementById('loginText');
   
@@ -238,5 +246,11 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('[ADMIN LOGIN] Erro detectado:', error);
   }
 });
+document.getElementById('loginForm')?.addEventListener('submit', () => {
+  const loader = document.createElement('div');
+  loader.className = 'global-loading';
+  document.body.appendChild(loader);
+});
+
 </script>
 

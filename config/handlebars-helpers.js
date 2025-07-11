@@ -1,3 +1,5 @@
+const moment = require('moment');
+
 module.exports = {
   formatDate: function(date) {
     if (!date) return '';
@@ -23,23 +25,21 @@ module.exports = {
     return new Date(date).toLocaleString('pt-BR');
   },
 
-formatCurrency: function(value) {
-  if (!value) return 'R$ 0,00';
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-},
+  formatCurrency: function(value) {
+    if (!value) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  },
 
-eq: function(a, b, options) {
-  if (options && typeof options.fn === 'function') {
-    // Modo bloco: {{#eq a b}}...{{else}}...{{/eq}}
-    return a == b ? options.fn(this) : options.inverse(this);
-  } else {
-    // Modo inline: {{eq a b}}
-    return a == b;
-  }
-},
+  eq: function(a, b, options) {
+    if (options && typeof options.fn === 'function') {
+      return a == b ? options.fn(this) : options.inverse(this);
+    } else {
+      return a == b;
+    }
+  },
 
   inc: function(value) {
     return parseInt(value) + 1;
@@ -121,5 +121,33 @@ eq: function(a, b, options) {
 
   json: function(context) {
     return JSON.stringify(context);
+  },
+
+  // ✅ NOVO HELPER: canCancel
+  monthNameFromDate: function(date) {
+  if (!date) return '';
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const dt = new Date(date);
+  return meses[dt.getMonth()];
+},
+canCancel: function(date, time, status, options) {
+  const moment = require('moment');
+  const now = moment();
+  const appointmentDateTime = moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm');
+
+  const isFuture = appointmentDateTime.isAfter(now.add(1, 'hour'));
+  const isActive = status !== 'cancelado';
+
+  // Se for modo bloco (com {{#canCancel}}...{{else}}...{{/canCancel}})
+  if (options && typeof options.fn === 'function') {
+    return isFuture && isActive ? options.fn(this) : options.inverse(this);
   }
+
+  // Se for modo inline (com {{canCancel}})
+  return isFuture && isActive;
+}
+
 };

@@ -1,0 +1,116 @@
+<div class="container py-5 fade-in-soft">
+  <h2 class="text-center mb-4 text-light">
+    <i class="fas fa-history me-2"></i> Histórico de Agendamentos
+  </h2>
+
+  <!-- Formulário de busca -->
+  <form class="mb-4" style="max-width: 400px; margin: auto;" onsubmit="carregarHistorico(); return false;">
+    <input type="tel" name="phone" class="form-control text-center bg-dark text-white border-secondary" placeholder="Digite seu telefone" required>
+    <button type="submit" class="btn btn-primary w-100 mt-2">
+      <i class="fas fa-search me-1"></i> Buscar
+    </button>
+  </form>
+
+  <!-- Container onde os cards serão carregados -->
+  <div id="historyContainer" class="mt-4 d-none"></div>
+</div>
+
+<!-- NAVBAR FIXA -->
+<nav class="navbar fixed-bottom bg-dark border-top border-secondary d-flex justify-content-around py-2">
+  <a href="/" class="btn btn-outline-light">
+    <i class="fas fa-calendar-plus me-1"></i> Agendar
+  </a>
+  <a href="/history" class="btn btn-outline-light">
+    <i class="fas fa-history me-1"></i> Histórico
+  </a>
+</nav>
+
+<link rel="stylesheet" href="/css/style.css">
+
+<script>
+async function carregarHistorico() {
+  try {
+    const phone = document.querySelector('input[name="phone"]').value;
+    if (!phone) return alert('Digite seu telefone.');
+
+    const res = await fetch('/history/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ phone })
+    });
+
+    const data = await res.json();
+    const container = document.getElementById('historyContainer');
+    container.innerHTML = '';
+
+    if (!data.success) {
+      container.innerHTML = `<div class="alert alert-warning text-center mt-3">${data.message}</div>`;
+      container.classList.remove('d-none');
+      return;
+    }
+
+    if (data.appointments.length === 0) {
+      container.innerHTML = `<div class="alert alert-info text-center mt-3">Nenhum agendamento encontrado para esse telefone.</div>`;
+      container.classList.remove('d-none');
+      return;
+    }
+
+    const cards = data.appointments.map(app => {
+      const cardClass = app.status === 'confirmed' ? 'card-neon-green'
+                      : app.status === 'cancelled' ? 'card-neon-red' : '';
+      const cancelButton = app.canCancel
+        ? `<form method="POST" action="/appointments/cancel/${app.id}" onsubmit="return confirm('Deseja mesmo cancelar?')">
+            <button class="btn btn-outline-danger btn-sm w-100 mt-2">
+              <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
+            </button>
+          </form>`
+        : '';
+
+      return `
+        <div class="col">
+          <div class="card ${cardClass} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
+            <div class="card-body">
+              <h5 class="card-title mb-2">
+                <i class="fas fa-cut me-1"></i> ${app.service}
+              </h5>
+              <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
+              <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
+              <p class="mb-1">
+                <i class="fas fa-info-circle me-2"></i>
+                Status:
+                <span class="fw-bold text-${app.status === 'confirmed' ? 'success' : app.status === 'cancelled' ? 'danger' : 'secondary'}">${app.status}</span>
+              </p>
+              ${cancelButton}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `<div class="row row-cols-1 row-cols-md-2 g-4">${cards}</div>`;
+    container.classList.remove('d-none');
+  } catch (err) {
+    console.error('Erro ao carregar histórico:', err);
+    alert('Erro ao carregar histórico. Tente novamente.');
+  }
+}
+
+// Transição suave entre páginas
+function setupSmoothPageTransition() {
+  document.querySelectorAll('a[href]').forEach(link => {
+    const href = link.getAttribute('href');
+
+    // Permitir navegação normal para a página de histórico
+    if (!href || !href.startsWith('/') || href === '/history') return;
+
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.body.classList.add('carousel-slide');
+      setTimeout(() => {
+        window.location.href = href;
+      }, 300);
+    });
+  });
+
+document.addEventListener('DOMContentLoaded', setupSmoothPageTransition);
+</script>
