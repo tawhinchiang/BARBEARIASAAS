@@ -1,5 +1,5 @@
 <!-- DASHBOARD ADMINISTRATIVO -->
-<div class="admin-dashboard">
+<div class="admin-dashboard fade-in-soft">
   <div class="container-fluid">
 
     <!-- Header -->
@@ -213,57 +213,76 @@
 <!-- Chart.js + Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-   document.addEventListener('DOMContentLoaded', function () {
-    console.log('Labels:', {{{json revenueChartLabels}}});
-    console.log('Data:', {{{json revenueChartData}}});
-    const ctx = document.getElementById('appointmentsChart').getContext('2d');
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: {{{json revenueChartLabels}}},
- datasets: [{
-      label: 'Receita (R$)',
-      data: {{{json revenueChartData}}},
-      backgroundColor: 'rgba(0, 123, 255, 0.2)',  // aumente a opacidade
-      borderColor: '#007bff',                   // azul padrão
-      pointBackgroundColor: '#007bff',
-      pointRadius: 5,                             // AUMENTA O PONTO
-      pointHoverRadius: 7,
-      borderWidth: 2,
-      fill: true,
-      tension: 0.3
-      }]
-  },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-      display: true,
-      text: 'Receita Confirmada por Dia da Semana'
-       },
-        legend: {
-          labels: { font: { size: 14 } }
+  document.addEventListener('DOMContentLoaded', function () {
+    // === Gráfico Chart.js ===
+    const chartEl = document.getElementById('appointmentsChart');
+    if (chartEl) {
+      new Chart(chartEl, {
+        type: 'line',
+        data: {
+          labels: {{{json revenueChartLabels}}},
+          datasets: [{
+            label: 'Receita (R$)',
+            data: {{{json revenueChartData}}},
+            backgroundColor: 'rgba(0, 123, 255, 0.2)',
+            borderColor: '#007bff',
+            pointBackgroundColor: '#007bff',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3
+          }]
         },
-        tooltip: {
-          bodyFont: { size: 14 },
-          titleFont: { size: 16 }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { font: { size: 13 } }
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Receita Confirmada por Dia da Semana'
+            },
+            legend: {
+              labels: { font: { size: 14 } }
+            },
+            tooltip: {
+              bodyFont: { size: 14 },
+              titleFont: { size: 16 }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { font: { size: 13 } }
+            },
+            x: {
+              ticks: { font: { size: 13 } }
+            }
+          }
         },
-        x: {
-          ticks: { font: { size: 13 } }
-        }
-      }
+        plugins: [{
+          id: 'showCanvas',
+          afterRender(chart) {
+            const chartEl = chart.canvas;
+            chartEl.style.visibility = 'visible';
+            chartEl.style.opacity = '1';
+          }
+        }]
+      });
     }
 
-});
-
+    // === Transição Suave da Página ===
+    const dashboardEl = document.querySelector('.fade-in-soft');
+    if (dashboardEl) {
+      dashboardEl.addEventListener('animationend', () => {
+        dashboardEl.classList.remove('fade-in-soft');
+        dashboardEl.style.opacity = '1'; // Garante permanência após a animação
+      });
+    }
   });
 </script>
+
+
+
 
 <style>
 .service-stat-card {

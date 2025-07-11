@@ -933,6 +933,38 @@ display: flex !important;
   min-height: 100vh;
 }
 
+.admin-table {
+  min-height: 250px;
+}
+
+#appointmentsChart {
+  min-height: 300px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+.fade-in-soft {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-in-out forwards;
+}
+
+.fade-out-soft {
+  opacity: 1;
+  animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+
+
 .admin-dashboard {
   background: var(--bg-light);
   min-height: 100vh;
@@ -940,7 +972,7 @@ display: flex !important;
 }
 
 .admin-card {
-  transition: all 0.2s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   min-height: 320px; 
   background: var(--bg-light) !important;
   border: none;
@@ -1252,10 +1284,10 @@ display: flex !important;
   animation: fadeInUp 0.6s ease-out;
 }
 
-.fade-in-soft {
+/* .fade-in-soft {
   opacity: 0;
   animation: fadeInSoft 0.4s ease-out forwards;
-}
+} */
 
 .fade-in-modal {
   opacity: 0;
@@ -1819,9 +1851,9 @@ canvas {
 }
 
 /* Animação suave */
-.fade-in-soft {
+/* .fade-in-soft {
   animation: fadeInSoft 0.5s ease-in;
-}
+} */
 
 @keyframes fadeInSoft {
   from {
