@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   log('Inicializando sistema de agendamento moderno');
   try {
     await loadServices();
-    setupEventListeners();
+    // setupEventListeners();
     loadBarbers();
     initializeCalendar();
     setupPhoneMask();
@@ -56,9 +56,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('input', validateClientForm);
-    });
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', validateClientForm);
+      el.addEventListener('blur', validateClientForm); // 👈 importante
+    }
+  });
+
 
     log('Sistema inicializado com sucesso');
   } catch (error) {
@@ -649,6 +653,10 @@ function setupPhoneMask() {
   const phoneInput = document.getElementById('clientPhone');
   if (!phoneInput) return;
 
+  phoneInput.addEventListener('blur', () => {
+    validateClientForm(); // força validação após sair do campo
+  });
+
   phoneInput.addEventListener('input', function (e) {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 11) value = value.slice(0, 11);
@@ -664,6 +672,7 @@ function setupPhoneMask() {
     e.target.value = value;
     setTimeout(validateClientForm, 0);
   });
+
 }
 
 // Formatar telefone para WhatsApp
@@ -683,14 +692,22 @@ function formatPhoneForWhatsApp(phone) {
 
 // Validação do formulário do cliente
 function validateClientForm() {
-  const firstName = document.getElementById('clientFirstName')?.value.trim();
-  const lastName = document.getElementById('clientLastName')?.value.trim();
-  const phone = document.getElementById('clientPhone')?.value.trim();
+  const firstNameEl = document.getElementById('clientFirstName');
+  const lastNameEl = document.getElementById('clientLastName');
+  const phoneEl = document.getElementById('clientPhone');
 
-  const phoneRegex = /^\(\d{2}\)\s9\d{4}-\d{4}$/;
+  if (!firstNameEl || !lastNameEl || !phoneEl) {
+    logError('Algum campo obrigatório não foi encontrado no DOM');
+    return false;
+  }
+
+  const firstName = firstNameEl.value.trim();
+  const lastName = lastNameEl.value.trim();
+  const phone = phoneEl.value.trim();
+
+  const phoneRegex = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
   const isValidPhone = phoneRegex.test(phone);
-
-  const isValid = firstName && lastName && isValidPhone;
+  const isValid = firstName.length > 0 && lastName.length > 0 && isValidPhone;
 
   const confirmBtn = document.getElementById('confirmBooking');
   if (confirmBtn) {
@@ -698,18 +715,21 @@ function validateClientForm() {
     confirmBtn.classList.toggle('disabled', !isValid);
   }
 
+  console.log('Validação:', { firstName, lastName, phone, isValidPhone, isValid });
   return isValid;
 }
 
 // Confirmar agendamento
 async function confirmBooking() {
+  console.log('Iniciando confirmação de agendamento...');
+  
   if (!validateClientForm()) {
     showNotification('Preencha todos os campos corretamente', 'error');
     return;
   }
 
-  const phone = document.getElementById('clientPhone').value;
-  const formattedPhone = formatPhoneForWhatsApp(phone);
+  const phoneInput = document.getElementById('clientPhone');
+  const formattedPhone = formatPhoneForWhatsApp(phoneInput.value);
 
   if (!formattedPhone) {
     showNotification('Telefone inválido para WhatsApp', 'error');
@@ -736,15 +756,18 @@ async function confirmBooking() {
   try {
     const res = await fetch('/api/appointments', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData)
     });
+
     if (!res.ok) throw new Error((await res.json()).message || res.statusText);
+
     updateFinalConfirmation(bookingData);
     goToStep(5);
     showNotification('Agendamento confirmado!', 'success');
+
   } catch (err) {
-    console.error(err);
+    logError('Erro ao confirmar agendamento', err);
     showNotification(err.message || 'Erro ao confirmar', 'error');
   } finally {
     btn.disabled = false;

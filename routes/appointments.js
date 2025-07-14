@@ -1,5 +1,6 @@
 const express = require('express');
 const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const normalizePhone = require('../utils/normalizePhone');
 const moment = require('moment');
 const { Client, Barber, ServiceType, Appointment } = require('../models');
 const router = express.Router();
@@ -19,7 +20,7 @@ const logError = (message, error) => {
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] Stack:`, error.stack);
 };
 
-// API para criar novo agendamento - CORRIGIDA
+// API para criar novo agendamento
 router.post('/api/appointments', async (req, res) => {
   try {
     log('Recebendo novo agendamento', req.body);
@@ -28,8 +29,8 @@ router.post('/api/appointments', async (req, res) => {
 
     if (!serviceId || !barberId || !appointmentDate || !appointmentTime || !clientData) {
       log('Dados obrigatórios não fornecidos');
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: 'Todos os campos são obrigatórios',
         received: { serviceId, barberId, appointmentDate, appointmentTime, hasClientData: !!clientData }
       });
@@ -39,9 +40,9 @@ router.post('/api/appointments', async (req, res) => {
 
     if (!firstName || !lastName || !phone) {
       log('Dados do cliente incompletos');
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Dados do cliente são obrigatórios (nome, sobrenome, telefone)' 
+      return res.status(400).json({
+        success: false,
+        error: 'Dados do cliente são obrigatórios (nome, sobrenome, telefone)'
       });
     }
 
@@ -50,9 +51,9 @@ router.post('/api/appointments', async (req, res) => {
 
     if (!barber || !serviceType) {
       log('Barbeiro ou serviço não encontrado', { barberFound: !!barber, serviceFound: !!serviceType });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Barbeiro ou serviço não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Barbeiro ou serviço não encontrado'
       });
     }
 
@@ -66,29 +67,30 @@ router.post('/api/appointments', async (req, res) => {
 
     if (existingAppointment) {
       log('Horário já ocupado', { barberId, appointmentDate, appointmentTime });
-      return res.status(409).json({ 
-        success: false, 
-        error: 'Horário não disponível' 
+      return res.status(409).json({
+        success: false,
+        error: 'Horário não disponível'
       });
     }
 
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = normalizePhone(phone);
 
     let client = await Client.findOne({ where: { phone: cleanPhone } });
 
     if (!client) {
       client = await Client.create({
-        firstName,
-        lastName,
+      firstName: firstName.toUpperCase(),
+      lastName: lastName.toUpperCase(),
         phone: cleanPhone,
         email: clientData.email || null
       });
       log('Cliente criado', { id: client.id, name: `${client.firstName} ${client.lastName}` });
     } else {
-      if (client.firstName !== firstName || client.lastName !== lastName) {
+      if (  client.firstName !== firstName.toUpperCase() ||
+        client.lastName !== lastName.toUpperCase()) {
         await client.update({
-          firstName,
-          lastName,
+        firstName: firstName.toUpperCase(),
+        lastName: lastName.toUpperCase(),
           email: clientData.email || client.email
         });
         log('Dados do cliente atualizados');
@@ -154,129 +156,18 @@ router.post('/api/appointments', async (req, res) => {
 
   } catch (error) {
     logError('Erro ao criar agendamento', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       error: 'Erro interno do servidor',
       message: error.message
     });
   }
 });
 
-router.post('/', async (req, res) => {
-  log('Redirecionando para nova API de agendamentos');
-  const { firstName, lastName, phone, barberId, serviceTypeId, appointmentDate, appointmentTime } = req.body;
-
-  const newFormat = {
-    serviceId: serviceTypeId,
-    barberId,
-    appointmentDate,
-    appointmentTime,
-    clientData: {
-      firstName,
-      lastName,
-      phone,
-      email: req.body.email
-    }
-  };
-
-  req.body = newFormat;
-  return router.handle(req, res);
-});
-
-router.get('/history', (req, res) => {
-  res.render('history', { appointments: null,bodyClass: 'fade-in-soft'  });
-});
-router.post('/history', async (req, res) => {
-  try {
-    const rawPhone = req.body.phone || '';
-    const phone = rawPhone.replace(/\D/g, '');
-
-    const client = await Client.findOne({ where: { phone } });
-    if (!client) {
-      return res.json({ success: false, message: 'Telefone não encontrado.' });
-    }
-
-    const appointments = await Appointment.findAll({
-      where: { clientId: client.id },
-      include: [
-        { model: Barber, as: 'barber' },
-        { model: ServiceType, as: 'serviceType' }
-      ],
-      order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']]
-    });
-
-    const formatted = appointments.map(app => {
-      const date = new Date(app.appointmentDate);
-      const time = app.appointmentTime.slice(0, 5);
-      return {
-        id: app.id,
-        service: app.serviceType.name,
-        barber: app.barber.name,
-        date: date.toLocaleDateString('pt-BR'),
-        time,
-        status: app.status,
-        canCancel: (new Date(`${app.appointmentDate}T${app.appointmentTime}`) > new Date(Date.now() + 60 * 60 * 1000))
-      };
-    });
-
-    res.json({ success: true, appointments: formatted });
-
-  } catch (error) {
-    console.error('[ERRO HISTÓRICO]', error);
-    res.status(500).json({ success: false, message: 'Erro ao buscar histórico.' });
-  }
-});
-router.post('/history/search', async (req, res) => {
-  const { phone } = req.body;
-
-  if (!phone) {
-    return res.json({ success: false, message: 'Telefone não informado.' });
-  }
-
-  try {
-    const appointments = await Appointment.findAll({
-      where: { phone },
-      include: [
-        { model: ServiceType, as: 'serviceType' },
-        { model: Barber, as: 'barber' }
-      ],
-      order: [['appointmentDate', 'DESC']]
-    });
-
-    const data = appointments.map(app => {
-      const date = new Date(app.appointmentDate);
-      return {
-        id: app.id,
-        service: app.serviceType?.name || '—',
-        barber: app.barber?.name || '—',
-        date: date.toLocaleDateString('pt-BR'),
-        time: app.appointmentTime?.slice(0, 5),
-        status: app.status,
-        canCancel: app.status === 'confirmed' && new Date() < date
-      };
-    });
-
-    res.json({ success: true, appointments: data });
-  } catch (error) {
-    console.error('[ERRO HISTÓRICO]', error);
-    res.status(500).json({ success: false, message: 'Erro ao buscar agendamentos.' });
-  }
-});
-
-
-router.post('/cancel/:id', async (req, res) => {
-  const appointment = await Appointment.findByPk(req.params.id);
-  if (!appointment) return res.status(404).send('Agendamento não encontrado');
-
-  const apptTime = new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}`);
-  if (apptTime <= new Date(Date.now() + 60 * 60 * 1000)) {
-    return res.status(403).send('Não é mais possível cancelar este agendamento.');
-  }
-
-  appointment.status = 'cancelado';
-  await appointment.save();
-
-  res.redirect('/history');
+// Redirecionador (exemplo GET ou POST raiz)
+router.post('/', async (req, res, next) => {
+  req.url = '/api/appointments';
+  next();
 });
 
 module.exports = router;

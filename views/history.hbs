@@ -5,14 +5,40 @@
 
   <!-- Formulário de busca -->
   <form class="mb-4" style="max-width: 400px; margin: auto;" onsubmit="carregarHistorico(); return false;">
-    <input type="tel" name="phone" class="form-control text-center bg-dark text-white border-secondary" placeholder="Digite seu telefone" required>
-    <button type="submit" class="btn btn-primary w-100 mt-2">
-      <i class="fas fa-search me-1"></i> Buscar
-    </button>
+    <div class="input-group">
+      <input type="tel" 
+             id="phoneInput" 
+             name="phone" 
+             class="form-control text-center bg-dark text-white border-secondary" 
+             placeholder="Digite seu telefone" 
+             required
+             maxlength="15">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-search me-1"></i> Buscar
+      </button>
+    </div>
+    <small class="text-muted d-block text-center mt-1">
+      Ex: (11) 99999-9999 ou 11999999999
+    </small>
   </form>
+
+  <!-- Loading indicator -->
+  <div id="loadingIndicator" class="text-center d-none">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p class="text-light mt-2">Buscando agendamentos...</p>
+  </div>
 
   <!-- Container onde os cards serão carregados -->
   <div id="historyContainer" class="mt-4 d-none"></div>
+
+  <!-- Botão para verificar agendamentos ativos -->
+  <div class="text-center mt-4 d-none" id="activeAppointmentsSection">
+    <button class="btn btn-outline-info" onclick="verificarAgendamentosAtivos()">
+      <i class="fas fa-clock me-1"></i> Verificar Agendamentos em Andamento
+    </button>
+  </div>
 </div>
 
 <!-- NAVBAR FIXA -->
@@ -28,10 +54,38 @@
 <link rel="stylesheet" href="/css/style.css">
 
 <script>
+let currentPhone = '';
+
+// Função para formatar telefone enquanto digita
+document.getElementById('phoneInput').addEventListener('input', function(e) {
+  let value = e.target.value.replace(/\D/g, '');
+  
+  if (value.length <= 11) {
+    if (value.length <= 2) {
+      value = value.replace(/(\d{0,2})/, '($1');
+    } else if (value.length <= 7) {
+      value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    } else {
+      value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+    }
+  }
+  
+  e.target.value = value;
+});
+
 async function carregarHistorico() {
   try {
-    const phone = document.querySelector('input[name="phone"]').value;
-    if (!phone) return alert('Digite seu telefone.');
+    const phoneInput = document.getElementById('phoneInput');
+    const phone = phoneInput.value;
+    
+    if (!phone) {
+      showAlert('Digite seu telefone.', 'warning');
+      return;
+    }
+
+    currentPhone = phone;
+    showLoading(true);
+    hideContainer();
 
     const res = await fetch('/history/search', {
       method: 'POST',
@@ -40,59 +94,197 @@ async function carregarHistorico() {
     });
 
     const data = await res.json();
-    const container = document.getElementById('historyContainer');
-    container.innerHTML = '';
+    showLoading(false);
 
     if (!data.success) {
-      container.innerHTML = `<div class="alert alert-warning text-center mt-3">${data.message}</div>`;
-      container.classList.remove('d-none');
+      showAlert(data.message, 'warning');
       return;
     }
 
     if (data.appointments.length === 0) {
-      container.innerHTML = `<div class="alert alert-info text-center mt-3">Nenhum agendamento encontrado para esse telefone.</div>`;
-      container.classList.remove('d-none');
+      showAlert('Nenhum agendamento encontrado para esse telefone.', 'info');
+      showActiveAppointmentsButton();
       return;
     }
 
-    const cards = data.appointments.map(app => {
-      const cardClass = app.status === 'confirmed' ? 'card-neon-green'
-                      : app.status === 'cancelled' ? 'card-neon-red' : '';
-      const cancelButton = app.canCancel
-        ? `<form method="POST" action="/appointments/cancel/${app.id}" onsubmit="return confirm('Deseja mesmo cancelar?')">
-            <button class="btn btn-outline-danger btn-sm w-100 mt-2">
-              <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
-            </button>
-          </form>`
-        : '';
+    renderAppointments(data.appointments);
+    showActiveAppointmentsButton();
 
-      return `
-        <div class="col">
-          <div class="card ${cardClass} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
-            <div class="card-body">
-              <h5 class="card-title mb-2">
-                <i class="fas fa-cut me-1"></i> ${app.service}
-              </h5>
-              <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
-              <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
-              <p class="mb-1">
-                <i class="fas fa-info-circle me-2"></i>
-                Status:
-                <span class="fw-bold text-${app.status === 'confirmed' ? 'success' : app.status === 'cancelled' ? 'danger' : 'secondary'}">${app.status}</span>
-              </p>
-              ${cancelButton}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    container.innerHTML = `<div class="row row-cols-1 row-cols-md-2 g-4">${cards}</div>`;
-    container.classList.remove('d-none');
   } catch (err) {
     console.error('Erro ao carregar histórico:', err);
-    alert('Erro ao carregar histórico. Tente novamente.');
+    showLoading(false);
+    showAlert('Erro ao carregar histórico. Tente novamente.', 'danger');
   }
+}
+
+async function verificarAgendamentosAtivos() {
+  if (!currentPhone) {
+    showAlert('Digite seu telefone primeiro.', 'warning');
+    return;
+  }
+
+  try {
+    showLoading(true);
+
+    const res = await fetch('/history/active', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ phone: currentPhone })
+    });
+
+    const data = await res.json();
+    showLoading(false);
+
+    if (!data.success) {
+      showAlert(data.message, 'warning');
+      return;
+    }
+
+    if (!data.hasActiveAppointments) {
+      showAlert('Você não possui agendamentos em andamento ou futuros.', 'info');
+      return;
+    }
+
+    renderAppointments(data.appointments, true);
+
+  } catch (err) {
+    console.error('Erro ao verificar agendamentos ativos:', err);
+    showLoading(false);
+    showAlert('Erro ao verificar agendamentos ativos.', 'danger');
+  }
+}
+
+async function cancelarAgendamento(appointmentId) {
+  if (!confirm('Tem certeza que deseja cancelar este agendamento?')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/history/cancel/${appointmentId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showAlert('Agendamento cancelado com sucesso!', 'success');
+      // Recarregar a lista
+      setTimeout(() => {
+        carregarHistorico();
+      }, 1500);
+    } else {
+      showAlert(data.message, 'danger');
+    }
+
+  } catch (err) {
+    console.error('Erro ao cancelar agendamento:', err);
+    showAlert('Erro ao cancelar agendamento. Tente novamente.', 'danger');
+  }
+}
+
+function renderAppointments(appointments, activeOnly = false) {
+  const container = document.getElementById('historyContainer');
+  
+  const title = activeOnly ? 
+    '<h4 class="text-center text-info mb-3"><i class="fas fa-clock me-2"></i>Agendamentos em Andamento</h4>' :
+    '<h4 class="text-center text-light mb-3"><i class="fas fa-list me-2"></i>Todos os Agendamentos</h4>';
+
+  const cards = appointments.map(app => {
+    const statusClass = getStatusClass(app.status);
+    const statusText = getStatusText(app.status);
+    
+    const cancelButton = app.canCancel
+      ? `<button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="cancelarAgendamento(${app.id})">
+          <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
+        </button>`
+      : '';
+
+    const priceDisplay = app.totalPrice > 0 
+      ? `<p class="mb-1"><i class="fas fa-money-bill-wave me-2"></i> Valor: R$ ${parseFloat(app.totalPrice).toFixed(2)}</p>`
+      : '';
+
+    return `
+      <div class="col">
+        <div class="card ${statusClass} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
+          <div class="card-body">
+            <h5 class="card-title mb-2">
+              <i class="fas fa-cut me-1"></i> ${app.service}
+            </h5>
+            <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
+            <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
+            <p class="mb-1">
+              <i class="fas fa-info-circle me-2"></i>
+              Status: <span class="fw-bold ${statusClass.replace('card-', 'text-')}">${statusText}</span>
+            </p>
+            ${priceDisplay}
+            ${cancelButton}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `${title}<div class="row row-cols-1 row-cols-md-2 g-4">${cards}</div>`;
+  container.classList.remove('d-none');
+}
+
+function getStatusClass(status) {
+  switch (status) {
+    case 'confirmed':
+    case 'scheduled':
+      return 'card-neon-green';
+    case 'cancelled':
+      return 'card-neon-red';
+    case 'completed':
+      return 'card-neon-blue';
+    default:
+      return '';
+  }
+}
+
+function getStatusText(status) {
+  switch (status) {
+    case 'scheduled':
+      return 'Agendado';
+    case 'confirmed':
+      return 'Confirmado';
+    case 'cancelled':
+      return 'Cancelado';
+    case 'completed':
+      return 'Concluído';
+    case 'no_show':
+      return 'Não Compareceu';
+    default:
+      return status;
+  }
+}
+
+function showAlert(message, type) {
+  const container = document.getElementById('historyContainer');
+  const alertClass = `alert-${type}`;
+  
+  container.innerHTML = `<div class="alert ${alertClass} text-center mt-3">${message}</div>`;
+  container.classList.remove('d-none');
+}
+
+function showLoading(show) {
+  const loading = document.getElementById('loadingIndicator');
+  if (show) {
+    loading.classList.remove('d-none');
+  } else {
+    loading.classList.add('d-none');
+  }
+}
+
+function hideContainer() {
+  const container = document.getElementById('historyContainer');
+  container.classList.add('d-none');
+}
+
+function showActiveAppointmentsButton() {
+  const section = document.getElementById('activeAppointmentsSection');
+  section.classList.remove('d-none');
 }
 
 // Transição suave entre páginas
@@ -111,6 +303,8 @@ function setupSmoothPageTransition() {
       }, 300);
     });
   });
+}
 
 document.addEventListener('DOMContentLoaded', setupSmoothPageTransition);
 </script>
+

@@ -100,6 +100,8 @@ app.use('/api', require('./routes/publicApi'));
 // Rotas de agendamentos (inclui /api/appointments)
 app.use('/', require('./routes/appointments'));
 
+//Rotas historicos
+app.use('/history', require('./routes/history'));
 // Rotas administrativas
 app.use('/admin', require('./routes/admin'));
 app.use('/admin/services', require('./routes/services'));
@@ -133,4 +135,3 @@ app.use((err, req, res, next) => {
 log('Aplicação configurada com sucesso');
 
 module.exports = app;
-
