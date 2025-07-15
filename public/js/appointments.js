@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   initModals();
   initFilterForm();
   initTableListeners();
-
+  initJQueryHandlers();
   // Executa tarefas mais leves logo
   requestIdleCallback(() => {
     setDefaultDates();
@@ -30,6 +30,23 @@ function initModals() {
 
   modalElement?.addEventListener('click', (e) => {
     if (e.target === modalElement) viewAppointmentModal.hide();
+  });
+}
+function initJQueryHandlers() {
+  $('.js-toggle-actions').on('click', function (e) {
+    e.preventDefault();
+    const id = $(this).data('id');
+    const menu = $('#actions-' + id);
+    const parent = $(this).closest('.actions-menu');
+
+    $('.actions-menu').not(parent).removeClass('show');
+    parent.toggleClass('show');
+  });
+
+  $(document).on('click', function (e) {
+    if (!$(e.target).closest('.actions-menu').length) {
+      $('.actions-menu').removeClass('show');
+    }
   });
 }
 
@@ -85,7 +102,7 @@ function initTableListeners() {
     else if (button.classList.contains('js-confirm-appointment')) confirmAppointment(appointmentId);
     else if (button.classList.contains('js-complete-appointment')) completeAppointment(appointmentId);
     else if (button.classList.contains('js-cancel-appointment')) cancelAppointment(appointmentId);
-    else if (button.classList.contains('js-delete-appointment')) deleteAppointment(appointmentId);
+    // else if (button.classList.contains('js-delete-appointment')) deleteAppointment(appointmentId);
   });
 
   document.addEventListener('click', function (e) {
@@ -339,7 +356,7 @@ async function cancelAppointment(appointmentId) {
   const reason = prompt('Motivo do cancelamento (opcional):');
   if (reason !== null) {
     try {
-      const response = await fetch(`/admin/appointments/${appointmentId}/cancel`, {
+      const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -360,28 +377,28 @@ async function cancelAppointment(appointmentId) {
   }
 }
 
-async function deleteAppointment(appointmentId) {
-  console.log('[ADMIN] Excluindo agendamento:', appointmentId);
-  closeAllMenus();
+// async function deleteAppointment(appointmentId) {
+//   console.log('[ADMIN] Excluindo agendamento:', appointmentId);
+//   closeAllMenus();
   
-  if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
-    try {
-      const response = await fetch(`/admin/appointments/${appointmentId}`, {
-        method: 'DELETE'
-      });
+//   if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
+//     try {
+//       const response = await fetch(`/admin/appointments/${appointmentId}`, {
+//         method: 'DELETE'
+//       });
       
-      if (response.ok) {
-        showNotification('Agendamento excluído com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        throw new Error('Erro ao excluir agendamento');
-      }
-    } catch (error) {
-      console.error('[ADMIN ERROR] Erro ao excluir:', error);
-      showNotification('Erro ao excluir agendamento', 'error');
-    }
-  }
-}
+//       if (response.ok) {
+//         showNotification('Agendamento excluído com sucesso!', 'success');
+//         setTimeout(() => location.reload(), 1500);
+//       } else {
+//         throw new Error('Erro ao excluir agendamento');
+//       }
+//     } catch (error) {
+//       console.error('[ADMIN ERROR] Erro ao excluir:', error);
+//       showNotification('Erro ao excluir agendamento', 'error');
+//     }
+//   }
+// }
 
 async function sendWhatsApp(appointmentId) {
   console.log('[ADMIN] Enviando WhatsApp para agendamento:', appointmentId);
@@ -511,6 +528,37 @@ function exportAppointments() {
       btn.innerHTML = '<i class="fas fa-download"></i> Exportar';
     }, 2000);
   }
+}
+
+const editForm = document.getElementById('editAppointmentForm');
+if (editForm) {
+  editForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const id = document.getElementById('edit-id').value;
+    const payload = {
+      appointmentDate: document.getElementById('edit-date').value,
+      appointmentTime: document.getElementById('edit-time').value,
+      barberId: document.getElementById('edit-barber').value,
+      serviceTypeId: document.getElementById('edit-service').value
+    };
+
+    try {
+      const response = await fetch(`/admin/appointments/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Erro ao atualizar');
+
+      showNotification('Agendamento atualizado com sucesso', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } catch (err) {
+      console.error('[ADMIN ERROR] Falha ao atualizar agendamento:', err);
+      showNotification('Erro ao atualizar agendamento', 'error');
+    }
+  });
 }
 
 

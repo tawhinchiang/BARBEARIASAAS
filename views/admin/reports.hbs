@@ -1,14 +1,24 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">
-        <i class="bi bi-graph-up text-primary me-2"></i>
-        Relatórios
-    </h2>
-    <a href="/admin/dashboard" class="btn btn-outline-primary">
-        <i class="bi bi-arrow-left me-1"></i>
-        Voltar ao Dashboard
-    </a>
-</div>
-
+<!-- Header - Igual ao de appointments -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="admin-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="fw-bold mb-1">Relatórios</h2>
+          <p class="text-muted mb-0">Visualize os dados dos agendamentos com base nos filtros</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="/admin/dashboard" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left me-1"></i>
+            Voltar
+          </a>
+          <button type="button" class="btn btn-primary" onclick="submitExport('pdf')">
+            <i class="fas fa-download me-1"></i> Exportar PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div
 {{#if error}}
 <div class="alert alert-danger" role="alert">
     <i class="bi bi-exclamation-triangle me-2"></i>

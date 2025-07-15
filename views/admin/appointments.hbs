@@ -11,9 +11,9 @@
                 <p class="text-muted mb-0">Visualize e gerencie todos os agendamentos</p>
               </div>
               <div>
-                <button class="btn btn-primary" onclick="exportAppointments()">
+                {{!-- <button class="btn btn-primary" onclick="exportAppointments()">
                   <i class="fas fa-download"></i> Exportar
-                </button>
+                </button> --}}
               </div>
             </div>
           </div>
@@ -54,9 +54,9 @@
                     <label class="form-label">Status</label>
                     <select name="status" id="statusFilter" class="form-control">
                       <option value="">Todos os status</option>
-                      <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option>
+                      {{!-- <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option> --}}
                       <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-                      <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
+                      {{!-- <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option> --}}
                       <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
                     </select>
                   </div>
@@ -147,16 +147,16 @@
                     <td>
                   <span class="status-badge status-{{status}}">
                     {{#if (eq status 'confirmed')}}Confirmado
-                    {{else if (eq status 'pending')}}Pendente
+                    {{!-- {{else if (eq status 'pending')}}Pendente --}}
                     {{else if (eq status 'cancelled')}}Cancelado
-                    {{else if (eq status 'completed')}}Concluído
+                    {{!-- {{else if (eq status 'completed')}}Concluído --}}
                     {{else}}Desconhecido
                     {{/if}}
                   </span>
 
                     </td>
                     <td>
-                      <div class="fw-bold">R$ {{formatCurrency totalPrice}}</div>
+                      <div class="fw-bold"> {{formatCurrency totalPrice}}</div>
                     </td>
                     {{!-- <td>
                       {{#if whatsappSent}}
@@ -192,16 +192,16 @@
                         </button>
                         {{/eq}}
                         {{#eq status 'confirmed'}}
-                        <button class="action-item js-complete-appointment" data-id="{{id}}">
+                        {{!-- <button class="action-item js-complete-appointment" data-id="{{id}}">
                           <i class="fas fa-check-circle"></i> Concluir
-                        </button>
+                        </button> --}}
                         {{/eq}}
                         <button class="action-item danger js-cancel-appointment" data-id="{{id}}">
                           <i class="fas fa-times"></i> Cancelar
                         </button>
-                        <button class="action-item danger js-delete-appointment" data-id="{{id}}">
+                        {{!-- <button class="action-item danger js-delete-appointment" data-id="{{id}}">
                           <i class="fas fa-trash"></i> Excluir
-                        </button>
+                        </button> --}}
                       </div>
                     </div>
                   </td>
@@ -461,28 +461,7 @@
 }
 </style>
 
-<script>
-// Mostrar dropdown ao clicar nos 3 pontinhos
-$(document).ready(function () {
-  $('.js-toggle-actions').on('click', function (e) {
-    e.preventDefault();
-    const id = $(this).data('id');
-    const menu = $('#actions-' + id);
-    const parent = $(this).closest('.actions-menu');
 
-    // Fecha todos antes de abrir o atual
-    $('.actions-menu').not(parent).removeClass('show');
-    parent.toggleClass('show');
-  });
-
-  // Fecha ao clicar fora
-  $(document).on('click', function (e) {
-    if (!$(e.target).closest('.actions-menu').length) {
-      $('.actions-menu').removeClass('show');
-    }
-  });
-});
-</script>
 
 <!-- Bootstrap CSS -->
 {{!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" /> --}}
