@@ -6,7 +6,7 @@ const runWhenIdle = window.requestIdleCallback || function (cb) {
 };
 
 runWhenIdle(() => {
-  if (chartStatus || chartBarber) return; // já renderizou
+  if (chartStatus || chartBarber) return;
 
   const statusData = window.statsByStatus || {};
   const barberData = window.statsByBarber || {};
@@ -16,16 +16,32 @@ runWhenIdle(() => {
     const statusCtx = statusCanvas.getContext('2d');
 
     if (Chart.getChart(statusCanvas)) {
-      Chart.getChart(statusCanvas).destroy(); // usa API Chart.js v3+ para evitar erro
+      Chart.getChart(statusCanvas).destroy();
     }
+
+    const translatedLabels = Object.keys(statusData).map(status => {
+      if (status === 'confirmed') return 'Confirmado';
+      if (status === 'cancelled') return 'Cancelado';
+      if (status === 'pending') return 'Pendente';
+      if (status === 'completed') return 'Concluído';
+      return status;
+    });
+
+    const backgroundColors = Object.keys(statusData).map(status => {
+      if (status === 'confirmed') return '#28a745'; // Verde
+      if (status === 'cancelled') return '#dc3545'; // Vermelho
+      if (status === 'pending') return '#ffc107';
+      if (status === 'completed') return '#007bff';
+      return '#6c757d';
+    });
 
     chartStatus = new Chart(statusCtx, {
       type: 'doughnut',
       data: {
-        labels: Object.keys(statusData),
+        labels: translatedLabels,
         datasets: [{
           data: Object.values(statusData),
-          backgroundColor: ['#ffc107', '#28a745', '#007bff', '#dc3545', '#6c757d']
+          backgroundColor: backgroundColors
         }]
       },
       options: {
@@ -59,6 +75,7 @@ runWhenIdle(() => {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
           y: { beginAtZero: true }
         }
@@ -67,9 +84,6 @@ runWhenIdle(() => {
   }
 });
 
-
-
-// Extras
 function clearFilters() {
   localStorage.removeItem('adminFilters');
   window.location.href = '/admin/reports';
