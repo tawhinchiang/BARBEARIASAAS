@@ -972,18 +972,29 @@ display: flex !important;
 }
 
 .admin-card {
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  min-height: 320px; 
   background: var(--bg-light) !important;
   border: none;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.2rem;
   margin-bottom: 2rem;
   box-shadow: var(--shadow);
   color: var(--text-dark);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: auto;
+  min-height: auto;
   will-change: opacity, transform;
 }
-
+@media (max-width: 768px) {
+  .dashboard-flex-group > div {
+    flex-basis: 100% !important;
+  }
+}
+.admin-card i {
+  font-size: 1.8rem;
+}
 .admin-card:hover {
   box-shadow: var(--shadow-hover);
 }
