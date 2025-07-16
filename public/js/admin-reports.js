@@ -44,12 +44,20 @@ runWhenIdle(() => {
           backgroundColor: backgroundColors
         }]
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'bottom' }
-        }
+     options: {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        color: '#ffffff' // legenda branca
       }
+    }
+  },
+  layout: {
+    padding: 10
+  }
+}
     });
   }
 
@@ -73,11 +81,30 @@ runWhenIdle(() => {
           borderWidth: 1
         }]
       },
+
       options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { beginAtZero: true }
+          x: {
+            ticks: { color: '#ffffff' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#ffffff' },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#ffffff'
+            }
+          }
+        },
+        layout: {
+          padding: 10
         }
       }
     });

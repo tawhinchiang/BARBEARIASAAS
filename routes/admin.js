@@ -139,7 +139,10 @@ router.get('/dashboard', async (req, res) => {
     }) || 0;
 
     const todayAppointments = await Appointment.findAll({
-      where: { appointmentDate: formatDateYYYYMMDD(today) },
+      where: {
+      appointmentDate: formatDateYYYYMMDD(today),
+      status: 'confirmed'
+  },
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber' },
@@ -196,7 +199,9 @@ router.get('/dashboard', async (req, res) => {
         [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
+      where: {appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+      status: { [Op.in]: ['confirmed'] }
+},
       include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
       group: ['barberId', 'barber.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
@@ -211,13 +216,16 @@ router.get('/dashboard', async (req, res) => {
       totalRevenue: item.totalRevenue
     }));
 
-    const topServicesRaw = await Appointment.findAll({
+      const topServicesRaw = await Appointment.findAll({
       attributes: [
         'serviceTypeId',
         [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
+       where: {
+      appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+      status: 'confirmed'
+     },
       include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
       group: ['serviceTypeId', 'serviceType.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],

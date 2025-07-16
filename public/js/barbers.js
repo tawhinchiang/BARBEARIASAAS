@@ -1,22 +1,29 @@
 // public/js/admin/barbers.js
-
 document.addEventListener('DOMContentLoaded', () => {
   maskInputs();
   previewPhoto();
   setupFilters();
   maskTimeRangeInputs();
-  const form = document.getElementById('barberForm');
-  if (form) form.addEventListener('submit', submitForm);
 
-  const modal = document.getElementById('barberModal');
-  if (modal) {
-    modal.addEventListener('hidden.bs.modal', () => {
-      form.reset();
-      document.getElementById('barberId').value = '';
-      document.getElementById('barberModalTitle').textContent = 'Novo Barbeiro';
-      document.getElementById('photoPreview').classList.add('d-none');
-    });
-  }
+const form = document.getElementById('barberForm');
+const modalElement = document.getElementById('barberModal');
+const modalTitle = document.getElementById('barberModalTitle');
+
+  if (form && modalElement && modalTitle) {
+  const modal = new bootstrap.Modal(modalElement);
+  form.addEventListener('submit', submitForm);
+
+  modalElement.addEventListener('hidden.bs.modal', () => {
+    form.reset();
+    form.barberId.value = '';
+    modalTitle.textContent = 'Novo Barbeiro';
+    document.getElementById('photoPreview').classList.add('d-none');
+  });
+
+  window._barberModal = modal;
+  window._barberForm = form;
+  window._barberModalTitle = modalTitle;
+}
 });
 function isValidTimeRange(value) {
   const regex = /^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/;
@@ -195,25 +202,33 @@ window.editBarber = function (id) {
     .then(data => {
       if (data.success) {
         const b = data.barber;
-        document.getElementById('barberId').value = b.id;
-        document.getElementById('barberName').value = b.name;
-        document.getElementById('barberPhone').value = b.phone;
-        document.getElementById('barberEmail').value = b.email || '';
-        document.getElementById('barberCpf').value = b.cpf;
-        document.getElementById('barberSpecialties').value = b.specialties || '';
+        const form = window._barberForm;
+        const modal = window._barberModal;
+        const modalTitle = window._barberModalTitle;
+
+        form.barberId.value = b.id;
+        form.name.value = b.name;
+        form.phone.value = b.phone;
+        form.email.value = b.email || '';
+        form.cpf.value = b.cpf;
+        form.specialties.value = b.specialties || '';
+
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         days.forEach(day => {
           const input = document.querySelector(`[name="workingHours[${day}]"]`);
           if (input) input.value = b.workingHours?.[day] || '';
         });
-        document.getElementById('barberIsActive').checked = b.isActive;
-        document.getElementById('barberModalTitle').textContent = 'Editar Barbeiro';
-        new bootstrap.Modal(document.getElementById('barberModal')).show();
+
+        form.isActive.checked = b.isActive;
+        modalTitle.textContent = 'Editar Barbeiro';
+        modal.show();
       } else {
         alert(data.error || 'Erro ao carregar barbeiro');
       }
     });
 };
+
+
 
 window.toggleBarber = function (id) {
   if (!confirm('Deseja alternar o status deste barbeiro?')) return;
