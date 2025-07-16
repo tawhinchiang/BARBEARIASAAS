@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { Barber, Appointment, ServiceType } = require('../models');
+const { Barber, Appointment, ServiceType, Client } = require('../models');
 const { isAuthenticated } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
@@ -396,14 +396,10 @@ router.get('/:id/report', async (req, res) => {
     const start = startDate ? new Date(startDate) : new Date(end.getFullYear(), end.getMonth() - 1, 1);
     
     const appointments = await Appointment.findAll({
-      where: {
-        barberId: id,
-        appointmentDate: {
-          [Op.between]: [start, end]
-        }
-      },
+      where: { barberId: id, appointmentDate: { [Op.between]: [start, end] } },
       include: [
-        { model: ServiceType, as: 'serviceType' }
+        { model: ServiceType, as: 'serviceType' },
+        { model: Client, as: 'client', attributes: ['firstName', 'lastName'] } // ← essencial
       ],
       order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']]
     });
@@ -454,10 +450,14 @@ router.get('/:id/report', async (req, res) => {
         date: apt.appointmentDate,
         time: apt.appointmentTime,
         service: apt.serviceType ? apt.serviceType.name : 'N/A',
-        client: `${apt.firstName} ${apt.lastName}`,
+        client: apt.client ? {
+          firstName: apt.client.firstName,
+          lastName: apt.client.lastName
+        } : null,
         status: apt.status,
         price: apt.totalPrice
       }))
+      
     };
     
     log('Relatório gerado com sucesso', { 
