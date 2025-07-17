@@ -119,31 +119,40 @@ async function generatePDF(appointments, reportInfo, filename) {
       const colWidth = (doc.page.width - 100) / 2;
       const leftX = 50;
       const rightX = leftX + colWidth;
+
+      const statusEntries = Object.entries(reportInfo.statusCounts);
+      const barberEntries = Object.entries(reportInfo.receitaPorBarbeiro);
+      const maxLines = Math.max(statusEntries.length, barberEntries.length);
+
       let statsY = doc.y;
+      const estimatedHeight = 18 + maxLines * 15;
+      if (statsY + estimatedHeight > doc.page.height - 60) {
+        doc.addPage();
+        statsY = 50;
+      }
 
       doc.fontSize(13).text('Estatísticas por Status', leftX, statsY, { underline: true });
       doc.fontSize(13).text('Receita por Barbeiro', rightX, statsY, { underline: true });
 
       statsY += 18;
 
-      const maxLines = Math.max(
-        Object.keys(reportInfo.statusCounts).length,
-        Object.keys(reportInfo.receitaPorBarbeiro).length
-      );
-
       for (let i = 0; i < maxLines; i++) {
-        const statusKey = Object.keys(reportInfo.statusCounts)[i];
-        const barberKey = Object.keys(reportInfo.receitaPorBarbeiro)[i];
+        const statusEntry = statusEntries[i];
+        const barberEntry = barberEntries[i];
 
-        if (statusKey) {
-          const count = reportInfo.statusCounts[statusKey];
+        if (statusEntry) {
+          const [statusKey, count] = statusEntry;
           const receita = reportInfo.receitaPorStatus[statusKey]?.toFixed(2) || '0.00';
-          doc.fontSize(10).text(`- ${getStatusText(statusKey)}: ${count} agendamento(s) - R$ ${receita}`, leftX, statsY);
+          doc.fontSize(10).text(`- ${getStatusText(statusKey)}: ${count} agendamento(s) - R$ ${receita}`, leftX, statsY, {
+            width: colWidth
+          });
         }
 
-        if (barberKey) {
-          const total = reportInfo.receitaPorBarbeiro[barberKey]?.toFixed(2) || '0.00';
-          doc.fontSize(10).text(`- ${barberKey}: R$ ${total}`, rightX, statsY);
+        if (barberEntry) {
+          const [barberKey, total] = barberEntry;
+          doc.fontSize(10).text(`- ${barberKey}: R$ ${parseFloat(total).toFixed(2)}`, rightX, statsY, {
+            width: colWidth
+          });
         }
 
         statsY += 15;
