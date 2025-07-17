@@ -8,186 +8,256 @@ async function generatePDF(appointments, reportInfo, filename) {
     try {
       const doc = new PDFDocument({ margin: 50 });
       const filePath = path.join(__dirname, '..', 'reports', filename);
-      
-      // Criar diretório se não existir
-      const reportsDir = path.dirname(filePath);
-      if (!fs.existsSync(reportsDir)) {
-        fs.mkdirSync(reportsDir, { recursive: true });
+      if (!fs.existsSync(path.dirname(filePath))) {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
       }
-      
+
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
-      
-      // Cabeçalho
-      doc.fontSize(20).text('Relatório de Agendamentos', { align: 'center' });
-      doc.moveDown();
-      
-      // Informações do relatório
-      doc.fontSize(12);
-      doc.text(`Período: ${reportInfo.startDate} até ${reportInfo.endDate}`);
-      doc.text(`Barbeiro: ${reportInfo.barbeiroSelecionado}`);
-      doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`);
-      doc.moveDown();
-      
-      // Estatísticas
-        doc.fontSize(14).text('Resumo do Relatório:', { underline: true });
-        doc.fontSize(12);
-        doc.text(`Período: ${reportInfo.periodo}`);
-        doc.text(`Barbeiro: ${reportInfo.barbeiroSelecionado}`);
-        doc.text(`Data de Geração: ${reportInfo.dataGeracao}`);
-        doc.text(`Total de Agendamentos: ${reportInfo.totalAgendamentos}`);
-        doc.text(`Receita Total: R$ ${reportInfo.receitaTotal}`);
-        doc.text(`Valor Médio por Agendamento: R$ ${reportInfo.mediaValor}`);
-        doc.moveDown();
 
-        // Estatísticas por status
-        doc.fontSize(13).text('Estatísticas por Status:', { underline: true });
-        Object.entries(reportInfo.statusCounts).forEach(([status, count]) => {
-          const receita = reportInfo.receitaPorStatus[status]?.toFixed(2) || '0.00';
-          doc.text(`${getStatusText(status)}: ${count} agendamentos - R$ ${receita}`);
+      // Título
+      doc.fontSize(22).fillColor('#333').text('Relatório de Agendamentos', { align: 'center' });
+      doc.moveDown(1.5);
+
+      // Bloco Resumo
+      doc.fontSize(10).fillColor('#000');
+      const resumoData = [
+        ['Período', reportInfo.periodo],
+        ['Barbeiro', reportInfo.barbeiroSelecionado],
+        ['Total', reportInfo.totalAgendamentos],
+        ['Receita', `R$ ${reportInfo.receitaTotal}`],
+        ['Média', `R$ ${reportInfo.mediaValor}`]
+      ];
+
+      const resumoBoxWidth = (doc.page.width - 100) / resumoData.length;
+      const resumoStartY = doc.y;
+      doc.fillColor('#f0f0f0').rect(50, resumoStartY, doc.page.width - 100, 50).fill();
+      resumoData.forEach(([label, value], i) => {
+        const x = 50 + i * resumoBoxWidth;
+        doc.fillColor('#000').fontSize(10).text(`${label}:`, x + 5, resumoStartY + 8, {
+          width: resumoBoxWidth - 10
         });
-        doc.moveDown();
-
-        // Estatísticas por barbeiro
-        doc.fontSize(13).text('Receita por Barbeiro:', { underline: true });
-        Object.entries(reportInfo.receitaPorBarbeiro).forEach(([barber, total]) => {
-          doc.text(`${barber}: R$ ${total.toFixed(2)}`);
-        });
-        doc.moveDown();
-
-      
-      // Tabela de agendamentos
-      doc.fontSize(14).text('Detalhes dos Agendamentos:', { underline: true });
-      doc.moveDown();
-      
-      // Cabeçalho da tabela
-      const tableTop = doc.y;
-      const tableLeft = 50;
-      const colWidths = [80, 60, 100, 80, 60, 80, 60];
-      const headers = ['Data', 'Hora', 'Cliente', 'Barbeiro', 'Serviço', 'Status', 'Valor'];
-      
-      doc.fontSize(10);
-      let currentX = tableLeft;
-      headers.forEach((header, i) => {
-        doc.text(header, currentX, tableTop, { width: colWidths[i], align: 'center' });
-        currentX += colWidths[i];
+        doc.font('Helvetica-Bold').text(value, x + 5, resumoStartY + 25, {
+          width: resumoBoxWidth - 10
+        }).font('Helvetica');
       });
-      
-      // Linha separadora
-      doc.moveTo(tableLeft, tableTop + 15)
-         .lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), tableTop + 15)
-         .stroke();
-      
-      // Dados da tabela
-      let currentY = tableTop + 25;
-      appointments.forEach((apt, index) => {
-        if (currentY > 700) { // Nova página se necessário
+      doc.moveDown(4);
+
+      // Tabela de Agendamentos
+      doc.font('Helvetica-Bold').fontSize(14).text('Detalhes dos Agendamentos', { underline: true });
+      doc.font('Helvetica');
+      const tableLeft = 50;
+      const colWidths = [60, 50, 100, 80, 120, 70, 60];
+      const headers = ['Data', 'Hora', 'Cliente', 'Barbeiro', 'Serviço', 'Status', 'Valor'];
+      let currentY = doc.y;
+
+      const abreviar = (texto, limite) => texto && texto.length > limite ? texto.slice(0, limite - 3) + '...' : texto || '';
+
+      const drawTableHeader = () => {
+        let x = tableLeft;
+        doc.fillColor('#e0e0e0').rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), 20).fill();
+        headers.forEach((header, i) => {
+          doc.fillColor('#000').fontSize(10).text(header, x + 5, currentY + 5, {
+            width: colWidths[i] - 10
+          });
+          x += colWidths[i];
+        });
+        currentY += 20;
+      };
+
+      const drawRow = (rowData) => {
+        let x = tableLeft;
+        rowData.forEach((data, i) => {
+          doc.rect(x, currentY, colWidths[i], 20).stroke();
+          doc.fontSize(9).fillColor('#000').text(data, x + 5, currentY + 5, {
+            width: colWidths[i] - 10,
+            align: i === colWidths.length - 1 ? 'right' : 'left',
+            lineBreak: false
+          });
+          x += colWidths[i];
+        });
+        currentY += 20;
+      };
+
+      drawTableHeader();
+
+      let totalValor = 0;
+      appointments.forEach((apt) => {
+        if (currentY + 30 > doc.page.height - 60) {
           doc.addPage();
           currentY = 50;
+          drawTableHeader();
         }
-        
-        currentX = tableLeft;
-        const rowData = [
+
+        const valor = parseFloat(apt.totalPrice || 0);
+        totalValor += valor;
+
+        drawRow([
           new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
           apt.appointmentTime,
-          `${apt.client.firstName} ${apt.client.lastName}`,
-          apt.barber.name,
-          apt.serviceType.name,
+          abreviar(`${apt.client?.firstName} ${apt.client?.lastName}`, 20),
+          abreviar(apt.barber?.name, 18),
+          abreviar(apt.serviceType?.name, 30),
           getStatusText(apt.status),
-          `R$ ${parseFloat(apt.totalPrice || 0).toFixed(2)}`
-        ];
-        
-        rowData.forEach((data, i) => {
-          doc.text(data, currentX, currentY, { width: colWidths[i], align: 'center' });
-          currentX += colWidths[i];
-        });
-        
-        currentY += 20;
+          `R$ ${valor.toFixed(2)}`
+        ]);
       });
-      
-      // Rodapé
-      doc.fontSize(8).text(
+
+      // Rodapé Total
+      doc.font('Helvetica-Bold').fontSize(10);
+      doc.text('Total Geral:', tableLeft + colWidths.slice(0, -1).reduce((a, b) => a + b, 0) + 5, currentY + 5, {
+        width: colWidths[colWidths.length - 1] - 10
+      });
+      doc.text(`R$ ${totalValor.toFixed(2)}`, tableLeft + colWidths.slice(0, -1).reduce((a, b) => a + b, 0) + 5, currentY + 20, {
+        width: colWidths[colWidths.length - 1] - 10,
+        align: 'right'
+      });
+
+      doc.moveDown(2);
+
+      // Tabelas lado a lado
+      const colWidth = (doc.page.width - 100) / 2;
+      const leftX = 50;
+      const rightX = leftX + colWidth;
+      let statsY = doc.y;
+
+      doc.fontSize(13).text('Estatísticas por Status', leftX, statsY, { underline: true });
+      doc.fontSize(13).text('Receita por Barbeiro', rightX, statsY, { underline: true });
+
+      statsY += 18;
+
+      const maxLines = Math.max(
+        Object.keys(reportInfo.statusCounts).length,
+        Object.keys(reportInfo.receitaPorBarbeiro).length
+      );
+
+      for (let i = 0; i < maxLines; i++) {
+        const statusKey = Object.keys(reportInfo.statusCounts)[i];
+        const barberKey = Object.keys(reportInfo.receitaPorBarbeiro)[i];
+
+        if (statusKey) {
+          const count = reportInfo.statusCounts[statusKey];
+          const receita = reportInfo.receitaPorStatus[statusKey]?.toFixed(2) || '0.00';
+          doc.fontSize(10).text(`- ${getStatusText(statusKey)}: ${count} agendamento(s) - R$ ${receita}`, leftX, statsY);
+        }
+
+        if (barberKey) {
+          const total = reportInfo.receitaPorBarbeiro[barberKey]?.toFixed(2) || '0.00';
+          doc.fontSize(10).text(`- ${barberKey}: R$ ${total}`, rightX, statsY);
+        }
+
+        statsY += 15;
+      }
+
+      // Rodapé com data
+      doc.fontSize(8).fillColor('gray').text(
         `Relatório gerado automaticamente em ${new Date().toLocaleString('pt-BR')} pelo Sistema de Gestão de Barbearias.`,
         50,
         doc.page.height - 40,
         { align: 'center' }
       );
 
-      
       doc.end();
-      
-      stream.on('finish', () => {
-        resolve(filePath);
-      });
-      
-      stream.on('error', (error) => {
-        reject(error);
-      });
-      
+      stream.on('finish', () => resolve(filePath));
+      stream.on('error', reject);
     } catch (error) {
       reject(error);
     }
   });
 }
 
+
+
+
+
 // Gerar relatório em CSV
 function generateCSV(appointments, filename) {
   try {
     const filePath = path.join(__dirname, '..', 'reports', filename);
-    
-    // Criar diretório se não existir
-    const reportsDir = path.dirname(filePath);
-    if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true });
+
+    if (!fs.existsSync(path.dirname(filePath))) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
     }
-    
-    // Cabeçalho CSV
-   const headers = [
-  'Data',
-  'Hora',
-  'Cliente',
-  'Telefone',
-  'Barbeiro',
-  'Serviço',
-  'Status',
-  'Valor',
-  'WhatsApp Enviado',
-  'Criado em',
-  'Status Code',
-  'Barbeiro ID'
-];
 
-const csvData = appointments.map(apt => [
-  new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
-  apt.appointmentTime,
-  `"${apt.client.firstName} ${apt.client.lastName}"`,
-  apt.client.phone,
-  `"${apt.barber.name}"`,
-  `"${apt.serviceType.name}"`,
-  getStatusText(apt.status),
-  parseFloat(apt.totalPrice || 0).toFixed(2),
-  apt.whatsappSent ? 'Sim' : 'Não',
-  new Date(apt.createdAt).toLocaleString('pt-BR'),
-  apt.status,
-  apt.barber.id
-]);
+    const headers = [
+      'Data', 'Hora', 'Cliente', 'Telefone', 'Barbeiro', 'Serviço',
+      'Status', 'Valor', 'WhatsApp Enviado', 'Criado em', 'Status Code', 'Barbeiro ID'
+    ];
 
-    
-    // Montar conteúdo CSV
+    const csvData = appointments.map(apt => [
+      new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
+      apt.appointmentTime,
+      `"${apt.client.firstName} ${apt.client.lastName}"`,
+      apt.client.phone,
+      `"${apt.barber.name}"`,
+      `"${apt.serviceType.name}"`,
+      getStatusText(apt.status),
+      parseFloat(apt.totalPrice || 0).toFixed(2),
+      apt.whatsappSent ? 'Sim' : 'Não',
+      new Date(apt.createdAt).toLocaleString('pt-BR'),
+      apt.status,
+      apt.barber.id
+    ]);
+
     const csvContent = [
       headers.join(','),
       ...csvData.map(row => row.join(','))
     ].join('\n');
-    
-    // Escrever arquivo
+
     fs.writeFileSync(filePath, csvContent, 'utf8');
-    
     return filePath;
-    
   } catch (error) {
     throw error;
   }
 }
+
+function gerarResumoDoRelatorio(appointments, startDate, endDate, barberId) {
+  const resumo = {
+    startDate,
+    endDate,
+    barbeiroSelecionado: 'Todos',
+    dataGeracao: new Date().toLocaleDateString('pt-BR'),
+    totalAgendamentos: appointments.length,
+    receitaTotal: 0,
+    mediaValor: 0,
+    statusCounts: {},
+    receitaPorStatus: {},
+    receitaPorBarbeiro: {}
+  };
+
+  appointments.forEach(apt => {
+    // Status
+    const status = apt.status;
+    resumo.statusCounts[status] = (resumo.statusCounts[status] || 0) + 1;
+
+    // Receita por status
+    const valor = parseFloat(apt.totalPrice || 0);
+    resumo.receitaPorStatus[status] = (resumo.receitaPorStatus[status] || 0) + valor;
+
+    // Receita total
+    if (apt.status !== 'cancelled') {
+      resumo.receitaTotal += valor;
+    }
+
+    // Receita por barbeiro
+    const barberName = apt.barber?.name || 'Desconhecido';
+    resumo.receitaPorBarbeiro[barberName] = (resumo.receitaPorBarbeiro[barberName] || 0) + valor;
+  });
+
+  if (appointments.length > 0) {
+    resumo.mediaValor = (resumo.receitaTotal / appointments.length).toFixed(2);
+  }
+
+  if (barberId) {
+    const selectedBarber = appointments[0]?.barber?.name || 'Selecionado';
+    resumo.barbeiroSelecionado = selectedBarber;
+  }
+
+  resumo.periodo = `${startDate || 'início'} até ${endDate || 'hoje'}`;
+
+  return resumo;
+}
+
 
 // Função auxiliar para traduzir status
 function getStatusText(status) {
@@ -203,6 +273,7 @@ function getStatusText(status) {
 
 module.exports = {
   generatePDF,
-  generateCSV
+  generateCSV,
+  gerarResumoDoRelatorio
+  
 };
-
