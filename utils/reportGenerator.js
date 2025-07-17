@@ -3,11 +3,15 @@ const fs = require('fs');
 const path = require('path');
 
 // Gerar relatório em PDF
+// Substituir toda a função generatePDF por este novo conteúdo:
+
+
 async function generatePDF(appointments, reportInfo, filename) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 50 });
+      const doc = new PDFDocument({ margin: 10 }); // margem menor
       const filePath = path.join(__dirname, '..', 'reports', filename);
+
       if (!fs.existsSync(path.dirname(filePath))) {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
       }
@@ -15,75 +19,53 @@ async function generatePDF(appointments, reportInfo, filename) {
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
-      // Título
       doc.fontSize(22).fillColor('#333').text('Relatório de Agendamentos', { align: 'center' });
       doc.moveDown(1.5);
 
-      // Bloco Resumo
-      doc.fontSize(10).fillColor('#000');
-      const resumoData = [
-        ['Período', reportInfo.periodo],
-        ['Barbeiro', reportInfo.barbeiroSelecionado],
-        ['Total', reportInfo.totalAgendamentos],
-        ['Receita', `R$ ${reportInfo.receitaTotal}`],
-        ['Média', `R$ ${reportInfo.mediaValor}`]
-      ];
-
-      const resumoBoxWidth = (doc.page.width - 100) / resumoData.length;
-      const resumoStartY = doc.y;
-      doc.fillColor('#f0f0f0').rect(50, resumoStartY, doc.page.width - 100, 50).fill();
-      resumoData.forEach(([label, value], i) => {
-        const x = 50 + i * resumoBoxWidth;
-        doc.fillColor('#000').fontSize(10).text(`${label}:`, x + 5, resumoStartY + 8, {
-          width: resumoBoxWidth - 10
-        });
-        doc.font('Helvetica-Bold').text(value, x + 5, resumoStartY + 25, {
-          width: resumoBoxWidth - 10
-        }).font('Helvetica');
-      });
-      doc.moveDown(4);
-
-      // Tabela de Agendamentos
-      doc.font('Helvetica-Bold').fontSize(14).text('Detalhes dos Agendamentos', { underline: true });
-      doc.font('Helvetica');
-      const tableLeft = 50;
-      const colWidths = [60, 50, 100, 80, 120, 70, 60];
+      // Tabela de Agendamentos - com alinhamento total
+      const colWidths = [60, 50, 110, 80, 160, 60, 50]; // Status/Valor reduzidos
       const headers = ['Data', 'Hora', 'Cliente', 'Barbeiro', 'Serviço', 'Status', 'Valor'];
+      const tableLeft = 10;
       let currentY = doc.y;
+      const rowHeight = 26;
 
-      const abreviar = (texto, limite) => texto && texto.length > limite ? texto.slice(0, limite - 3) + '...' : texto || '';
+      const abreviar = (texto, limite) =>
+        texto && texto.length > limite ? texto.slice(0, limite - 3) + '...' : texto || '';
 
       const drawTableHeader = () => {
         let x = tableLeft;
-        doc.fillColor('#e0e0e0').rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), 20).fill();
+        doc.fillColor('#e0e0e0').rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill();
         headers.forEach((header, i) => {
-          doc.fillColor('#000').fontSize(10).text(header, x + 5, currentY + 5, {
-            width: colWidths[i] - 10
+          const align = header === 'Serviço' ? 'center' : 'left';
+          doc.fillColor('#000').fontSize(10).text(header, x + 5, currentY + 7, {
+            width: colWidths[i] - 10,
+            align,
+            lineBreak: false
           });
           x += colWidths[i];
         });
-        currentY += 20;
+        currentY += rowHeight;
       };
 
       const drawRow = (rowData) => {
         let x = tableLeft;
         rowData.forEach((data, i) => {
-          doc.rect(x, currentY, colWidths[i], 20).stroke();
-          doc.fontSize(9).fillColor('#000').text(data, x + 5, currentY + 5, {
+          doc.rect(x, currentY, colWidths[i], rowHeight).stroke();
+          doc.fontSize(9).fillColor('#000').text(data, x + 5, currentY + 7, {
             width: colWidths[i] - 10,
             align: i === colWidths.length - 1 ? 'right' : 'left',
             lineBreak: false
           });
           x += colWidths[i];
         });
-        currentY += 20;
+        currentY += rowHeight;
       };
 
       drawTableHeader();
-
       let totalValor = 0;
+
       appointments.forEach((apt) => {
-        if (currentY + 30 > doc.page.height - 60) {
+        if (currentY + rowHeight + 30 > doc.page.height - 100) {
           doc.addPage();
           currentY = 50;
           drawTableHeader();
@@ -91,77 +73,113 @@ async function generatePDF(appointments, reportInfo, filename) {
 
         const valor = parseFloat(apt.totalPrice || 0);
         totalValor += valor;
+        const nome = abreviar(apt.client?.firstName || '', 18);
 
         drawRow([
           new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
           apt.appointmentTime,
-          abreviar(`${apt.client?.firstName} ${apt.client?.lastName}`, 20),
+          nome,
           abreviar(apt.barber?.name, 18),
-          abreviar(apt.serviceType?.name, 30),
+          abreviar(apt.serviceType?.name, 45),
           getStatusText(apt.status),
           `R$ ${valor.toFixed(2)}`
         ]);
       });
 
-      // Rodapé Total
+      // Total Geral abaixo da coluna "Status"
+      const statusX = tableLeft + colWidths.slice(0, 5).reduce((a, b) => a + b, 0);
+      const valorX = statusX + colWidths[5];
+
       doc.font('Helvetica-Bold').fontSize(10);
-      doc.text('Total Geral:', tableLeft + colWidths.slice(0, -1).reduce((a, b) => a + b, 0) + 5, currentY + 5, {
-        width: colWidths[colWidths.length - 1] - 10
+      doc.text('Total  Geral:', statusX + 5, currentY + 6, {
+        width: colWidths[5] - 10,
+        align: 'left',
+        continued: false
       });
-      doc.text(`R$ ${totalValor.toFixed(2)}`, tableLeft + colWidths.slice(0, -1).reduce((a, b) => a + b, 0) + 5, currentY + 20, {
-        width: colWidths[colWidths.length - 1] - 10,
+      doc.text(`R$ ${totalValor.toFixed(2)}`, valorX + 5, currentY + 6, {
+        width: colWidths[6] - 10,
         align: 'right'
       });
 
-      doc.moveDown(2);
+      currentY += 40;
 
-      // Tabelas lado a lado
-      const colWidth = (doc.page.width - 100) / 2;
-      const leftX = 50;
-      const rightX = leftX + colWidth;
+      // Bloco Resumo
+      const resumoData = [
+        ['Período', reportInfo.periodo],
+        ['Barbeiro', reportInfo.barbeiroSelecionado],
+        ['Total', reportInfo.totalAgendamentos],
+        ['Receita', `R$ ${reportInfo.receitaTotal}`],
+        ['Média', `R$ ${reportInfo.mediaValor}`]
+      ];
+      const resumoBoxWidth = (doc.page.width - 20) / resumoData.length;
+      const resumoStartY = currentY;
+      doc.fillColor('#f0f0f0').rect(10, resumoStartY, doc.page.width - 20, 50).fill();
+      resumoData.forEach(([label, value], i) => {
+        const x = 10 + i * resumoBoxWidth;
+        doc.fillColor('#000').fontSize(10).text(`${label}:`, x + 5, resumoStartY + 8, {
+          width: resumoBoxWidth - 10
+        });
+        doc.font('Helvetica-Bold').text(value, x + 5, resumoStartY + 25, {
+          width: resumoBoxWidth - 10
+        }).font('Helvetica');
+      });
 
+      currentY = resumoStartY + 70;
+
+      // Estatísticas: mesma largura
       const statusEntries = Object.entries(reportInfo.statusCounts);
       const barberEntries = Object.entries(reportInfo.receitaPorBarbeiro);
-      const maxLines = Math.max(statusEntries.length, barberEntries.length);
+      const maxRows = Math.max(statusEntries.length, barberEntries.length);
 
-      let statsY = doc.y;
-      const estimatedHeight = 18 + maxLines * 15;
-      if (statsY + estimatedHeight > doc.page.height - 60) {
+      if (currentY + maxRows * 22 > doc.page.height - 60) {
         doc.addPage();
-        statsY = 50;
+        currentY = 50;
       }
 
-      doc.fontSize(13).text('Estatísticas por Status', leftX, statsY, { underline: true });
-      doc.fontSize(13).text('Receita por Barbeiro', rightX, statsY, { underline: true });
+      const col1 = 10, col2 = 130, col3 = 210, col4 = 310, col5 = 460;
+      doc.fillColor('#ddd').rect(col1, currentY, 570, 18).fill();
+      doc.fontSize(11).fillColor('#000').font('Helvetica-Bold');
+      doc.text('Estatísticas por Status', col1 + 5, currentY + 3);
+      doc.text('Receita por Barbeiro', col4, currentY + 3);
+      currentY += 20;
 
-      statsY += 18;
+      // Cabeçalhos tabela
+      doc.fillColor('#eee').rect(col1, currentY, 570, 18).fill();
+      doc.fillColor('#000').fontSize(9).font('Helvetica-Bold');
+      doc.text('Status', col1 + 5, currentY + 4);
+      doc.text('Qtde', col2, currentY + 4);
+      doc.text('Receita', col3, currentY + 4);
+      doc.text('Barbeiro', col4, currentY + 4);
+      doc.text('Receita', col5, currentY + 4);
+      currentY += 18;
 
-      for (let i = 0; i < maxLines; i++) {
-        const statusEntry = statusEntries[i];
-        const barberEntry = barberEntries[i];
+      for (let i = 0; i < maxRows; i++) {
+        const y = currentY;
+        doc.lineWidth(0.8).strokeColor('#666').rect(col1, y, 570, 18).stroke();
 
-        if (statusEntry) {
-          const [statusKey, count] = statusEntry;
-          const receita = reportInfo.receitaPorStatus[statusKey]?.toFixed(2) || '0.00';
-          doc.fontSize(10).text(`- ${getStatusText(statusKey)}: ${count} agendamento(s) - R$ ${receita}`, leftX, statsY, {
-            width: colWidth
-          });
+        const status = statusEntries[i];
+        const barber = barberEntries[i];
+
+        doc.font('Helvetica').fontSize(9).fillColor('#000');
+        if (status) {
+          const [k, c] = status;
+          const r = reportInfo.receitaPorStatus[k]?.toFixed(2) || '0.00';
+          doc.text(getStatusText(k), col1 + 5, y + 4);
+          doc.text(c.toString(), col2, y + 4);
+          doc.text(`R$ ${r}`, col3, y + 4);
+        }
+        if (barber) {
+          const [name, total] = barber;
+          doc.text(name, col4, y + 4, { width: 140 });
+          doc.text(`R$ ${parseFloat(total).toFixed(2)}`, col5, y + 4);
         }
 
-        if (barberEntry) {
-          const [barberKey, total] = barberEntry;
-          doc.fontSize(10).text(`- ${barberKey}: R$ ${parseFloat(total).toFixed(2)}`, rightX, statsY, {
-            width: colWidth
-          });
-        }
-
-        statsY += 15;
+        currentY += 18;
       }
 
-      // Rodapé com data
       doc.fontSize(8).fillColor('gray').text(
         `Relatório gerado automaticamente em ${new Date().toLocaleString('pt-BR')} pelo Sistema de Gestão de Barbearias.`,
-        50,
+        10,
         doc.page.height - 40,
         { align: 'center' }
       );
@@ -169,11 +187,12 @@ async function generatePDF(appointments, reportInfo, filename) {
       doc.end();
       stream.on('finish', () => resolve(filePath));
       stream.on('error', reject);
-    } catch (error) {
-      reject(error);
+    } catch (err) {
+      reject(err);
     }
   });
 }
+
 
 
 
