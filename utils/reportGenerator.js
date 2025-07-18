@@ -9,7 +9,7 @@ const path = require('path');
 async function generatePDF(appointments, reportInfo, filename) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 10 }); // margem menor
+      const doc = new PDFDocument({ margin: 30 });
       const filePath = path.join(__dirname, '..', 'reports', filename);
 
       if (!fs.existsSync(path.dirname(filePath))) {
@@ -22,24 +22,30 @@ async function generatePDF(appointments, reportInfo, filename) {
       doc.fontSize(22).fillColor('#333').text('Relatório de Agendamentos', { align: 'center' });
       doc.moveDown(1.5);
 
-      // Tabela de Agendamentos - com alinhamento total
-      const colWidths = [60, 50, 110, 80, 160, 60, 50]; // Status/Valor reduzidos
+      const leftMargin = 30;
+      const tableWidth = 550;
+      const colWidths = [60, 50, 95, 80, 150, 60, 55];
       const headers = ['Data', 'Hora', 'Cliente', 'Barbeiro', 'Serviço', 'Status', 'Valor'];
-      const tableLeft = 10;
       let currentY = doc.y;
       const rowHeight = 26;
+
+      const formatarValor = (valor) => {
+        return (valor || 0).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      };
 
       const abreviar = (texto, limite) =>
         texto && texto.length > limite ? texto.slice(0, limite - 3) + '...' : texto || '';
 
       const drawTableHeader = () => {
-        let x = tableLeft;
-        doc.fillColor('#e0e0e0').rect(x, currentY, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill();
+        let x = leftMargin;
+        doc.fillColor('#e0e0e0').rect(x, currentY, tableWidth, rowHeight).fill();
         headers.forEach((header, i) => {
-          const align = header === 'Serviço' ? 'center' : 'left';
           doc.fillColor('#000').fontSize(10).text(header, x + 5, currentY + 7, {
             width: colWidths[i] - 10,
-            align,
+            align: 'center',
             lineBreak: false
           });
           x += colWidths[i];
@@ -48,7 +54,7 @@ async function generatePDF(appointments, reportInfo, filename) {
       };
 
       const drawRow = (rowData) => {
-        let x = tableLeft;
+        let x = leftMargin;
         rowData.forEach((data, i) => {
           doc.rect(x, currentY, colWidths[i], rowHeight).stroke();
           doc.fontSize(9).fillColor('#000').text(data, x + 5, currentY + 7, {
@@ -73,33 +79,35 @@ async function generatePDF(appointments, reportInfo, filename) {
 
         const valor = parseFloat(apt.totalPrice || 0);
         totalValor += valor;
-        const nome = abreviar(apt.client?.firstName || '', 18);
 
         drawRow([
           new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
           apt.appointmentTime,
-          nome,
+          abreviar(apt.client?.firstName || '', 16),
           abreviar(apt.barber?.name, 18),
-          abreviar(apt.serviceType?.name, 45),
+          abreviar(apt.serviceType?.name, 42),
           getStatusText(apt.status),
-          `R$ ${valor.toFixed(2)}`
+          formatarValor(valor)
         ]);
       });
 
-      // Total Geral abaixo da coluna "Status"
-      const statusX = tableLeft + colWidths.slice(0, 5).reduce((a, b) => a + b, 0);
-      const valorX = statusX + colWidths[5];
+        doc.font('Helvetica-Bold').fontSize(10); // aplicar antes de medir
 
-      doc.font('Helvetica-Bold').fontSize(10);
-      doc.text('Total  Geral:', statusX + 5, currentY + 6, {
-        width: colWidths[5] - 10,
-        align: 'left',
-        continued: false
-      });
-      doc.text(`R$ ${totalValor.toFixed(2)}`, valorX + 5, currentY + 6, {
-        width: colWidths[6] - 10,
-        align: 'right'
-      });
+        const totalText = `Total  Geral: ${formatarValor(totalValor)}`;
+        const totalTextWidth = doc.widthOfString(totalText);
+        const maxX = leftMargin + tableWidth - 5; // margem direita da tabela
+        let totalX = maxX - totalTextWidth;
+
+        if (totalX < leftMargin) {
+          totalX = leftMargin; // evita ultrapassar esquerda
+        }
+
+        doc.text(totalText, totalX, currentY + 6, {
+          lineBreak: false,
+          width: tableWidth - (totalX - leftMargin),
+          align: 'left'
+        });
+
 
       currentY += 40;
 
@@ -108,14 +116,14 @@ async function generatePDF(appointments, reportInfo, filename) {
         ['Período', reportInfo.periodo],
         ['Barbeiro', reportInfo.barbeiroSelecionado],
         ['Total', reportInfo.totalAgendamentos],
-        ['Receita', `R$ ${reportInfo.receitaTotal}`],
-        ['Média', `R$ ${reportInfo.mediaValor}`]
+        ['Receita', formatarValor(reportInfo.receitaTotal)],
+        ['Média', formatarValor(reportInfo.mediaValor)]
       ];
-      const resumoBoxWidth = (doc.page.width - 20) / resumoData.length;
+      const resumoBoxWidth = tableWidth / resumoData.length;
       const resumoStartY = currentY;
-      doc.fillColor('#f0f0f0').rect(10, resumoStartY, doc.page.width - 20, 50).fill();
+      doc.fillColor('#f0f0f0').rect(leftMargin, resumoStartY, tableWidth, 50).fill();
       resumoData.forEach(([label, value], i) => {
-        const x = 10 + i * resumoBoxWidth;
+        const x = leftMargin + i * resumoBoxWidth;
         doc.fillColor('#000').fontSize(10).text(`${label}:`, x + 5, resumoStartY + 8, {
           width: resumoBoxWidth - 10
         });
@@ -126,26 +134,18 @@ async function generatePDF(appointments, reportInfo, filename) {
 
       currentY = resumoStartY + 70;
 
-      // Estatísticas: mesma largura
-      const statusEntries = Object.entries(reportInfo.statusCounts);
-      const barberEntries = Object.entries(reportInfo.receitaPorBarbeiro);
-      const maxRows = Math.max(statusEntries.length, barberEntries.length);
+      // Estatísticas
+      const col1 = leftMargin, col2 = col1 + 100, col3 = col2 + 80;
+      const col4 = col3 + 80, col5 = col4 + 140;
 
-      if (currentY + maxRows * 22 > doc.page.height - 60) {
-        doc.addPage();
-        currentY = 50;
-      }
-
-      const col1 = 10, col2 = 130, col3 = 210, col4 = 310, col5 = 460;
-      doc.fillColor('#ddd').rect(col1, currentY, 570, 18).fill();
+      doc.fillColor('#ddd').rect(col1, currentY, tableWidth, 18).fill();
       doc.fontSize(11).fillColor('#000').font('Helvetica-Bold');
       doc.text('Estatísticas por Status', col1 + 5, currentY + 3);
       doc.text('Receita por Barbeiro', col4, currentY + 3);
       currentY += 20;
 
-      // Cabeçalhos tabela
-      doc.fillColor('#eee').rect(col1, currentY, 570, 18).fill();
-      doc.fillColor('#000').fontSize(9).font('Helvetica-Bold');
+      doc.fillColor('#eee').rect(col1, currentY, tableWidth, 18).fill();
+      doc.fontSize(9).fillColor('#000').font('Helvetica-Bold');
       doc.text('Status', col1 + 5, currentY + 4);
       doc.text('Qtde', col2, currentY + 4);
       doc.text('Receita', col3, currentY + 4);
@@ -153,9 +153,13 @@ async function generatePDF(appointments, reportInfo, filename) {
       doc.text('Receita', col5, currentY + 4);
       currentY += 18;
 
+      const statusEntries = Object.entries(reportInfo.statusCounts);
+      const barberEntries = Object.entries(reportInfo.receitaPorBarbeiro);
+      const maxRows = Math.max(statusEntries.length, barberEntries.length);
+
       for (let i = 0; i < maxRows; i++) {
         const y = currentY;
-        doc.lineWidth(0.8).strokeColor('#666').rect(col1, y, 570, 18).stroke();
+        doc.lineWidth(0.8).strokeColor('#666').rect(col1, y, tableWidth, 18).stroke();
 
         const status = statusEntries[i];
         const barber = barberEntries[i];
@@ -163,15 +167,15 @@ async function generatePDF(appointments, reportInfo, filename) {
         doc.font('Helvetica').fontSize(9).fillColor('#000');
         if (status) {
           const [k, c] = status;
-          const r = reportInfo.receitaPorStatus[k]?.toFixed(2) || '0.00';
+          const r = formatarValor(reportInfo.receitaPorStatus[k]);
           doc.text(getStatusText(k), col1 + 5, y + 4);
           doc.text(c.toString(), col2, y + 4);
-          doc.text(`R$ ${r}`, col3, y + 4);
+          doc.text(r, col3, y + 4);
         }
         if (barber) {
           const [name, total] = barber;
           doc.text(name, col4, y + 4, { width: 140 });
-          doc.text(`R$ ${parseFloat(total).toFixed(2)}`, col5, y + 4);
+          doc.text(formatarValor(total), col5, y + 4);
         }
 
         currentY += 18;
@@ -179,7 +183,7 @@ async function generatePDF(appointments, reportInfo, filename) {
 
       doc.fontSize(8).fillColor('gray').text(
         `Relatório gerado automaticamente em ${new Date().toLocaleString('pt-BR')} pelo Sistema de Gestão de Barbearias.`,
-        10,
+        leftMargin,
         doc.page.height - 40,
         { align: 'center' }
       );
@@ -192,6 +196,9 @@ async function generatePDF(appointments, reportInfo, filename) {
     }
   });
 }
+
+
+
 
 
 
