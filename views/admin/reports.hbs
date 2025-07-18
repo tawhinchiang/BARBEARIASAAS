@@ -1,215 +1,218 @@
-<div class="container-fluid">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="admin-card">
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-          <div>
-            <h2 class="fw-bold mb-1">Relatórios</h2>
-            <p class="text-muted mb-0">Visualize os dados dos agendamentos com base nos filtros</p>
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
-            <a href="/admin/dashboard" class="btn btn-outline-light">
-              <i class="bi bi-arrow-left me-1"></i> Voltar
-            </a>
-            <button type="button" class="btn btn-primary" onclick="submitExport('pdf')">
-              <i class="fas fa-download me-1"></i> Exportar PDF
-            </button>
+
+<div class="admin-dashboard fade-in-soft">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card ">
+          <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+              <h2 class="fw-bold mb-1">Relatórios</h2>
+              <p class="text-muted mb-0">Visualize os dados dos agendamentos com base nos filtros</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="/admin/dashboard" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+              </a>
+              <button type="button" class="btn btn-primary" onclick="submitExport('pdf')">
+                <i class="fas fa-download me-1"></i> Exportar PDF
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  {{#if error}}
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="alert alert-danger" role="alert">
-        <i class="bi bi-exclamation-triangle me-2"></i> {{error}}
+    {{#if error}}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i> {{error}}
+        </div>
       </div>
     </div>
-  </div>
-  {{/if}}
+    {{/if}}
 
-  <!-- Filtros -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="admin-card">
-        <form method="GET" action="/admin/reports" id="filterForm">
-          <div class="row">
-            <div class="col-md-3">
-              <label class="form-label">Data Inicial</label>
-              <input type="date" class="form-control" name="startDate" value="{{filters.startDate}}">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Data Final</label>
-              <input type="date" class="form-control" name="endDate" value="{{filters.endDate}}">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Barbeiro</label>
-              <select name="barberId" class="form-control">
-                <option value="">Todos os barbeiros</option>
-                {{#each barbers}}
-                <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
-                {{/each}}
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Status</label>
-              <select name="status" class="form-control">
-                <option value="">Todos os status</option>
-                
-                <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-            
-                <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row mt-3">
-            <div class="col-md-3">
-              <select name="sort" class="form-control">
-                <option value="">Ordenar por</option>
-                <option value="date_desc" {{#eq filters.sort 'date_desc'}}selected{{/eq}}>Data (Mais recente)</option>
-                <option value="date_asc" {{#eq filters.sort 'date_asc'}}selected{{/eq}}>Data (Mais antigo)</option>
-                <option value="value_desc" {{#eq filters.sort 'value_desc'}}selected{{/eq}}>Valor (Maior)</option>
-                <option value="value_asc" {{#eq filters.sort 'value_asc'}}selected{{/eq}}>Valor (Menor)</option>
-                <option value="barber_asc" {{#eq filters.sort 'barber_asc'}}selected{{/eq}}>Barbeiro (A-Z)</option>
-                <option value="barber_desc" {{#eq filters.sort 'barber_desc'}}selected{{/eq}}>Barbeiro (Z-A)</option>
-              </select>
+    <!-- Filtros -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <form method="GET" action="/admin/reports" id="filterForm">
+            <div class="row">
+              <div class="col-md-3">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control" name="startDate" value="{{filters.startDate}}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control" name="endDate" value="{{filters.endDate}}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Barbeiro</label>
+                <select name="barberId" class="form-control">
+                  <option value="">Todos os barbeiros</option>
+                  {{#each barbers}}
+                  <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
+                  <option value="">Todos os status</option>
+                  
+                  <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
+              
+                  <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                </select>
+              </div>
             </div>
 
-            <div class="col-12 col-md-9 d-flex flex-wrap align-items-end gap-2 mt-2">
-              <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar Filtros</button>
-              <button type="button" class="btn btn-secondary" onclick="clearFilters()"><i class="fas fa-times"></i> Limpar</button>
-              <button type="button" class="btn btn-danger" onclick="submitExport('pdf')"><i class="bi bi-file-pdf me-1"></i> Exportar PDF</button>
-              <button type="button" class="btn btn-success" onclick="submitExport('csv')"><i class="bi bi-file-earmark-excel me-1"></i> Exportar CSV</button>
+            <div class="row mt-3">
+              <div class="col-md-3">
+                <select name="sort" class="form-control">
+                  <option value="">Ordenar por</option>
+                  <option value="date_desc" {{#eq filters.sort 'date_desc'}}selected{{/eq}}>Data (Mais recente)</option>
+                  <option value="date_asc" {{#eq filters.sort 'date_asc'}}selected{{/eq}}>Data (Mais antigo)</option>
+                  <option value="value_desc" {{#eq filters.sort 'value_desc'}}selected{{/eq}}>Valor (Maior)</option>
+                  <option value="value_asc" {{#eq filters.sort 'value_asc'}}selected{{/eq}}>Valor (Menor)</option>
+                  <option value="barber_asc" {{#eq filters.sort 'barber_asc'}}selected{{/eq}}>Barbeiro (A-Z)</option>
+                  <option value="barber_desc" {{#eq filters.sort 'barber_desc'}}selected{{/eq}}>Barbeiro (Z-A)</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-9 d-flex flex-wrap align-items-end gap-2 mt-2">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar Filtros</button>
+                <button type="button" class="btn btn-secondary" onclick="clearFilters()"><i class="fas fa-times"></i> Limpar</button>
+                <button type="button" class="btn btn-danger" onclick="submitExport('pdf')"><i class="bi bi-file-pdf me-1"></i> Exportar PDF</button>
+                <button type="button" class="btn btn-success" onclick="submitExport('csv')"><i class="bi bi-file-earmark-excel me-1"></i> Exportar CSV</button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
-  </div>
 
-  <form method="POST" action="/admin/reports/export" target="_blank" id="exportForm">
-    <input type="hidden" name="startDate" value="{{filters.startDate}}">
-    <input type="hidden" name="endDate" value="{{filters.endDate}}">
-    <input type="hidden" name="barberId" value="{{filters.barberId}}">
-    <input type="hidden" name="status" value="{{filters.status}}">
-    <input type="hidden" name="sort" value="{{filters.sort}}">
-    <input type="hidden" name="format" id="exportFormat">
-  </form>
+    <form method="POST" action="/admin/reports/export" target="_blank" id="exportForm">
+      <input type="hidden" name="startDate" value="{{filters.startDate}}">
+      <input type="hidden" name="endDate" value="{{filters.endDate}}">
+      <input type="hidden" name="barberId" value="{{filters.barberId}}">
+      <input type="hidden" name="status" value="{{filters.status}}">
+      <input type="hidden" name="sort" value="{{filters.sort}}">
+      <input type="hidden" name="format" id="exportFormat">
+    </form>
 
-  {{#if stats}}
+    {{#if stats}}
+    <div class="row mb-4 align-items-stretch">
+      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
+        <div class="admin-card text-center w-100">
+          <div class="fs-3 mb-1"><i class="fas fa-calendar-check"></i></div>
+          <h3 class="fw-bold">{{stats.total}}</h3>
+          <p class="text-muted mb-0">Total de Agendamentos</p>
+        </div>
+      </div>
+      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
+        <div class="admin-card text-center w-100">
+          <div class="fs-3 mb-1"><i class="fas fa-dollar-sign"></i></div>
+          <h3 class="fw-bold">R$ {{stats.totalRevenue}}</h3>
+          <p class="text-muted mb-0">Receita Total</p>
+        </div>
+      </div>
+      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
+        <div class="admin-card text-center w-100">
+          <div class="fs-3 mb-1"><i class="fas fa-check-circle"></i></div>
+          <h3 class="fw-bold">{{stats.byStatus.confirmed}}</h3>
+          <p class="text-muted mb-0">Confirmados</p>
+        </div>
+      </div>
+      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
+        <div class="admin-card text-center w-100">
+          <div class="fs-3 mb-1"><i class="fas fa-times-circle"></i></div>
+          <h3 class="fw-bold">{{stats.byStatus.cancelled}}</h3>
+          <p class="text-muted mb-0">Cancelados</p>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Gráficos -->
   <div class="row mb-4 align-items-stretch">
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
-      <div class="admin-card text-center w-100">
-        <div class="fs-3 mb-1"><i class="fas fa-calendar-check"></i></div>
-        <h3 class="fw-bold">{{stats.total}}</h3>
-        <p class="text-muted mb-0">Total de Agendamentos</p>
+    <div class="col-md-6 mb-3 d-flex">
+      <div class="admin-card h-100 d-flex flex-column w-100">
+        <div class="card-header"><h5 class="mb-0">Agendamentos por Status</h5></div>
+        <div class="card-body flex-grow-1"><canvas id="statusChart" height="300"></canvas></div>
       </div>
     </div>
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
-      <div class="admin-card text-center w-100">
-        <div class="fs-3 mb-1"><i class="fas fa-dollar-sign"></i></div>
-        <h3 class="fw-bold">R$ {{stats.totalRevenue}}</h3>
-        <p class="text-muted mb-0">Receita Total</p>
-      </div>
-    </div>
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
-      <div class="admin-card text-center w-100">
-        <div class="fs-3 mb-1"><i class="fas fa-check-circle"></i></div>
-        <h3 class="fw-bold">{{stats.byStatus.confirmed}}</h3>
-        <p class="text-muted mb-0">Confirmados</p>
-      </div>
-    </div>
-    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
-      <div class="admin-card text-center w-100">
-        <div class="fs-3 mb-1"><i class="fas fa-times-circle"></i></div>
-        <h3 class="fw-bold">{{stats.byStatus.cancelled}}</h3>
-        <p class="text-muted mb-0">Cancelados</p>
+    <div class="col-md-6 mb-3 d-flex">
+      <div class="admin-card h-100 d-flex flex-column w-100">
+        <div class="card-header"><h5 class="mb-0">Agendamentos por Barbeiro</h5></div>
+        <div class="card-body flex-grow-1"><canvas id="barberChart" height="300"></canvas></div>
       </div>
     </div>
   </div>
+    {{/if}}
 
-
-
-  <!-- Gráficos -->
-<div class="row mb-4 align-items-stretch">
-  <div class="col-md-6 mb-3 d-flex">
-    <div class="admin-card h-100 d-flex flex-column w-100">
-      <div class="card-header"><h5 class="mb-0">Agendamentos por Status</h5></div>
-      <div class="card-body flex-grow-1"><canvas id="statusChart" height="300"></canvas></div>
-    </div>
-  </div>
-  <div class="col-md-6 mb-3 d-flex">
-    <div class="admin-card h-100 d-flex flex-column w-100">
-      <div class="card-header"><h5 class="mb-0">Agendamentos por Barbeiro</h5></div>
-      <div class="card-body flex-grow-1"><canvas id="barberChart" height="300"></canvas></div>
-    </div>
-  </div>
-</div>
-  {{/if}}
-
-  {{#if appointments.length}}
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="admin-card">
-        <div class="card-header"><h5 class="card-title mb-0">Detalhamento dos Agendamentos</h5></div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover" id="appointmentsTable">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Horário</th>
-                  <th>Cliente</th>
-                  <th>Telefone</th>
-                  <th>Barbeiro</th>
-                  <th>Serviço</th>
-                  <th>Valor</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {{#each appointments}}
-                <tr>
-                  <td>{{appointmentDateFormatted}}</td>
-                  <td>{{appointmentTimeFormatted}}</td>
-                  <td>{{client.firstName}} {{client.lastName}}</td>
-                  <td>{{client.phone}}</td>
-                  <td>{{barber.name}}</td>
-                  <td>{{serviceType.name}}</td>
-                  <td>R$ {{totalPrice}}</td>
-                  <td>
-                    <span class="status-badge status-{{status}}">
-                      {{#if (eq status 'confirmed')}}Confirmado
-                      {{else if (eq status 'pending')}}Pendente
-                      {{else if (eq status 'cancelled')}}Cancelado
-                      {{else if (eq status 'completed')}}Concluído
-                      {{else}}Desconhecido{{/if}}
-                    </span>
-                  </td>
-                </tr>
-                {{/each}}
-              </tbody>
-            </table>
+    {{#if appointments.length}}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="card-header"><h5 class="card-title mb-0">Detalhamento dos Agendamentos</h5></div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover" id="appointmentsTable">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Barbeiro</th>
+                    <th>Serviço</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each appointments}}
+                  <tr>
+                    <td>{{appointmentDateFormatted}}</td>
+                    <td>{{appointmentTimeFormatted}}</td>
+                    <td>{{client.firstName}} {{client.lastName}}</td>
+                    <td>{{client.phone}}</td>
+                    <td>{{barber.name}}</td>
+                    <td>{{serviceType.name}}</td>
+                    <td>R$ {{totalPrice}}</td>
+                    <td>
+                      <span class="status-badge status-{{status}}">
+                        {{#if (eq status 'confirmed')}}Confirmado
+                        {{else if (eq status 'pending')}}Pendente
+                        {{else if (eq status 'cancelled')}}Cancelado
+                        {{else if (eq status 'completed')}}Concluído
+                        {{else}}Desconhecido{{/if}}
+                      </span>
+                    </td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  {{else}}
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="admin-card text-center py-5">
-        <i class="bi bi-graph-down display-4 text-muted mb-3"></i>
-        <h5 class="text-muted">Nenhum dado encontrado</h5>
-        <p class="text-muted">Selecione um período para gerar o relatório.</p>
+    {{else}}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card text-center py-5">
+          <i class="bi bi-graph-down display-4 text-muted mb-3"></i>
+          <h5 class="text-muted">Nenhum dado encontrado</h5>
+          <p class="text-muted">Selecione um período para gerar o relatório.</p>
+        </div>
       </div>
     </div>
+    {{/if}}
   </div>
-  {{/if}}
 </div>
 
 <script>
