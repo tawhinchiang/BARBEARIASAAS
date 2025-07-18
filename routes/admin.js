@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
+const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
+
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op } = require('sequelize');
@@ -550,148 +552,76 @@ router.get('/reports', async (req, res) => {
 });
 
 // Exportar relatórios (PDF/CSV) - CORRIGIDA
-router.post('/reports/export', async (req, res) => {
+// Exemplo da rota corrigida
+router.post('/reports/export', isAuthenticated, async (req, res) => {
   try {
-    log('Iniciando exportação de relatório', { body: req.body, user: req.session.user });
-    
-    const { startDate, endDate, barberId, format } = req.body;
-    
-    // Validar formato
-    if (!['pdf', 'csv'].includes(format)) {
-      log('Formato de exportação inválido', { format });
-      return res.status(400).json({ error: 'Formato inválido' });
-    }
-    
-    // Construir filtros
-    let whereClause = {};
-    
+    const { format, startDate, endDate, barberId, status, sort } = req.body;
+
+    // Construção do filtro base
+    const where = {};
+
     if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
+      where.appointmentDate = {
+        [Op.between]: [startDate, endDate]
       };
+    } else if (startDate) {
+      where.appointmentDate = { [Op.gte]: startDate };
+    } else if (endDate) {
+      where.appointmentDate = { [Op.lte]: endDate };
     }
     
-    if (barberId && barberId !== 'all') {
-      whereClause.barberId = barberId;
+    if (typeof status === 'string' && status.trim() !== '') {
+      where.status = status;
     }
     
-    log('Filtros de exportação aplicados', { whereClause });
+    if (typeof barberId === 'string' && barberId.trim() !== '') {
+      where.barberId = barberId;
+    }
     
-    // Buscar dados
+
+    // Ordenação
+    let order = [['appointmentDate', 'DESC']];
+    if (sort === 'date_asc') order = [['appointmentDate', 'ASC']];
+    else if (sort === 'value_desc') order = [['totalPrice', 'DESC']];
+    else if (sort === 'value_asc') order = [['totalPrice', 'ASC']];
+    else if (sort === 'barber_asc') order = [[{ model: Barber }, 'name', 'ASC']];
+    else if (sort === 'barber_desc') order = [[{ model: Barber }, 'name', 'DESC']];
+
+    // Buscar dados com Sequelize
     const appointments = await Appointment.findAll({
-      where: whereClause,
+      where,
+      order,
       include: [
         { model: Client, as: 'client' },
-        { model: Barber, as: 'barber' },
+        {
+          model: Barber,
+          as: 'barber',
+          attributes: ['id', 'name'],
+          required: !!barberId  // Só força o JOIN se estiver filtrando por barbeiro
+        },
         { model: ServiceType, as: 'serviceType' }
-      ],
-      order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+      ]
     });
-    
-    log('Dados para exportação carregados', { appointmentsCount: appointments.length });
-    
-    if (appointments.length === 0) {
-      log('Nenhum agendamento encontrado para exportação');
-      return res.status(404).json({ error: 'Nenhum agendamento encontrado para os filtros selecionados' });
-    }
-    
-    // Calcular estatísticas
-    const statusMap = {
-  pending: 'Pendente',
-  confirmed: 'Confirmado',
-  completed: 'Concluído',
-  cancelled: 'Cancelado',
-  no_show: 'Não Compareceu'
-};
 
-const statusCounts = {};
-const revenueByStatus = {};
-const revenueByBarber = {};
-let revenueTotal = 0;
+    // Gerar relatório com os filtros aplicados
+    const filename = `relatorio-${Date.now()}.${format}`;
+    const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
 
-appointments.forEach(apt => {
-  const status = apt.status;
-  const price = parseFloat(apt.totalPrice || 0);
-  const barber = apt.barber?.name || 'Desconhecido';
-
-  // contagem por status
-  statusCounts[status] = (statusCounts[status] || 0) + 1;
-
-  // receita por status
-  if (!revenueByStatus[status]) revenueByStatus[status] = 0;
-  revenueByStatus[status] += price;
-
-  // receita total (exclui cancelados, se desejar)
-  if (status !== 'cancelled') revenueTotal += price;
-
-  // receita por barbeiro
-  if (!revenueByBarber[barber]) revenueByBarber[barber] = 0;
-  revenueByBarber[barber] += price;
-});
-
-const reportInfo = {
-  periodo: startDate && endDate 
-    ? `${new Date(startDate).toLocaleDateString('pt-BR')} até ${new Date(endDate).toLocaleDateString('pt-BR')}`
-    : 'Todos os períodos',
-  dataGeracao: new Date().toLocaleString('pt-BR'),
-  barbeiroSelecionado: !barberId 
-    ? 'Todos os barbeiros' 
-    : (appointments[0]?.barber?.name || 'Não especificado'),
-  totalAgendamentos: appointments.length,
-  mediaValor: (revenueTotal / appointments.length).toFixed(2),
-  receitaTotal: revenueTotal.toFixed(2),
-  statusCounts,
-  receitaPorStatus: revenueByStatus,
-  receitaPorBarbeiro: revenueByBarber
-};
-    
-    log('Informações do relatório calculadas', { reportInfo });
-    
-    const reportGenerator = require('../utils/reportGenerator');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    
-    let filePath;
-    let filename;
-    let contentType;
-    
     if (format === 'pdf') {
-      filename = `relatorio-agendamentos-${timestamp}.pdf`;
-      filePath = await reportGenerator.generatePDF(appointments, reportInfo, filename);
-      contentType = 'application/pdf';
+      const filePath = await generatePDF(appointments, reportInfo, filename);
+      return res.download(filePath);
+    } else if (format === 'csv') {
+      const filePath = await generateCSV(appointments, filename);
+      return res.download(filePath);
     } else {
-      filename = `relatorio-agendamentos-${timestamp}.csv`;
-      filePath = reportGenerator.generateCSV(appointments, filename);
-      contentType = 'text/csv';
+      return res.status(400).json({ error: 'Formato inválido.' });
     }
-   
-
-    log('Arquivo de relatório gerado', { filename, filePath, contentType });
-    
-    // Enviar arquivo
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    
-    const fs = require('fs');
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-    
-    // Limpar arquivo após envio
-    fileStream.on('end', () => {
-      setTimeout(() => {
-        try {
-          fs.unlinkSync(filePath);
-          log('Arquivo temporário removido', { filePath });
-        } catch (error) {
-          logError('Erro ao remover arquivo temporário', error);
-        }
-      }, 5000);
-    });
-    
   } catch (error) {
-    logError('Erro ao gerar relatório', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('[EXPORT ERROR]', error);
+    res.status(500).json({ error: 'Erro ao gerar relatório.' });
   }
 });
+
 
 
 router.get('/appointments/:id', async (req, res) => {
