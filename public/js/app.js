@@ -1,6 +1,5 @@
-// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN - VERSÃO CORRIGIDA
+/// JAVASCRIPT MODERNO - SISTEMA DE AGENDAMENTO CLEAN - VERSÃO CORRIGIDA
 
-// Verificar se CONFIG já existe para evitar redeclaração
 if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
   window.BARBERSHOP_CONFIG = {
     WHATSAPP_NUMBER: '5563992014547',
@@ -8,10 +7,8 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
   };
 }
 
-// Usar referência global para evitar conflitos
 const CONFIG = window.BARBERSHOP_CONFIG;
 
-// Estado global da aplicação
 let appState = {
   services: [],
   availableBarbers: [],
@@ -26,7 +23,6 @@ let appState = {
   currentYear: new Date().getFullYear()
 };
 
-// Logs detalhados
 function log(message, data = null) {
   const timestamp = new Date().toLocaleTimeString();
   console.log(`[${timestamp}] [CLIENT] ${message}`, data || '');
@@ -37,40 +33,59 @@ function logError(message, error = null) {
   console.error(`[${timestamp}] [CLIENT ERROR] ${message}`, error || '');
 }
 
-// Configurar event listeners (calendário, mascas, validações)
-function setupEventListeners() {
-  // Navegação de meses no calendário
-  document.getElementById('prevMonth')?.addEventListener('click', () => changeMonth(-1));
-  document.getElementById('nextMonth')?.addEventListener('click', () => changeMonth(1));
-  
-  // Validação de formulário
-  ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', validateClientForm);
-  });
-  
-  // Google login
-  document.getElementById('googleLogin')?.addEventListener('click', handleGoogleLogin);
-}
+// Detectar se é a página de histórico
+const isHistoryPage = window.location.pathname.includes('/history');
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
+  if (isHistoryPage) {
+    log('Histórico detectado - Inicializando somente transição suave.');
+    setupSmoothPageTransition();
+    return;
+  }
+
   log('Inicializando sistema de agendamento moderno');
   try {
     await loadServices();
-    setupEventListeners();
+    // setupEventListeners();
     loadBarbers();
     initializeCalendar();
     setupPhoneMask();
-    
-    // só chama se o CLIENT_ID estiver configurado
+
     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
       initializeGoogleLogin();
     }
+
+    ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', validateClientForm);
+      el.addEventListener('blur', validateClientForm); // 👈 importante
+    }
+  });
+
+
     log('Sistema inicializado com sucesso');
   } catch (error) {
     logError('Erro na inicialização', error);
   }
 });
+
+function setupSmoothPageTransition() {
+  document.querySelectorAll('a[href]').forEach(link => {
+    const href = link.getAttribute('href');
+    if (!href || !href.startsWith('/') || href === window.location.pathname) return;
+
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.body.classList.add('carousel-slide');
+      setTimeout(() => {
+        window.location.href = href;
+      }, 400);
+    });
+  });
+}
+
+
 
 // ===== CARREGAR SERVIÇOS - CORRIGIDO =====
 async function loadServices() {
@@ -638,6 +653,10 @@ function setupPhoneMask() {
   const phoneInput = document.getElementById('clientPhone');
   if (!phoneInput) return;
 
+  phoneInput.addEventListener('blur', () => {
+    validateClientForm(); // força validação após sair do campo
+  });
+
   phoneInput.addEventListener('input', function (e) {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 11) value = value.slice(0, 11);
@@ -653,6 +672,7 @@ function setupPhoneMask() {
     e.target.value = value;
     setTimeout(validateClientForm, 0);
   });
+
 }
 
 // Formatar telefone para WhatsApp
@@ -672,14 +692,22 @@ function formatPhoneForWhatsApp(phone) {
 
 // Validação do formulário do cliente
 function validateClientForm() {
-  const firstName = document.getElementById('clientFirstName')?.value.trim();
-  const lastName = document.getElementById('clientLastName')?.value.trim();
-  const phone = document.getElementById('clientPhone')?.value.trim();
+  const firstNameEl = document.getElementById('clientFirstName');
+  const lastNameEl = document.getElementById('clientLastName');
+  const phoneEl = document.getElementById('clientPhone');
 
-  const phoneRegex = /^\(\d{2}\)\s9\d{4}-\d{4}$/;
+  if (!firstNameEl || !lastNameEl || !phoneEl) {
+    logError('Algum campo obrigatório não foi encontrado no DOM');
+    return false;
+  }
+
+  const firstName = firstNameEl.value.trim();
+  const lastName = lastNameEl.value.trim();
+  const phone = phoneEl.value.trim();
+
+  const phoneRegex = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
   const isValidPhone = phoneRegex.test(phone);
-
-  const isValid = firstName && lastName && isValidPhone;
+  const isValid = firstName.length > 0 && lastName.length > 0 && isValidPhone;
 
   const confirmBtn = document.getElementById('confirmBooking');
   if (confirmBtn) {
@@ -687,18 +715,21 @@ function validateClientForm() {
     confirmBtn.classList.toggle('disabled', !isValid);
   }
 
+  console.log('Validação:', { firstName, lastName, phone, isValidPhone, isValid });
   return isValid;
 }
 
 // Confirmar agendamento
 async function confirmBooking() {
+  console.log('Iniciando confirmação de agendamento...');
+  
   if (!validateClientForm()) {
     showNotification('Preencha todos os campos corretamente', 'error');
     return;
   }
 
-  const phone = document.getElementById('clientPhone').value;
-  const formattedPhone = formatPhoneForWhatsApp(phone);
+  const phoneInput = document.getElementById('clientPhone');
+  const formattedPhone = formatPhoneForWhatsApp(phoneInput.value);
 
   if (!formattedPhone) {
     showNotification('Telefone inválido para WhatsApp', 'error');
@@ -725,15 +756,18 @@ async function confirmBooking() {
   try {
     const res = await fetch('/api/appointments', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData)
     });
+
     if (!res.ok) throw new Error((await res.json()).message || res.statusText);
+
     updateFinalConfirmation(bookingData);
     goToStep(5);
     showNotification('Agendamento confirmado!', 'success');
+
   } catch (err) {
-    console.error(err);
+    logError('Erro ao confirmar agendamento', err);
     showNotification(err.message || 'Erro ao confirmar', 'error');
   } finally {
     btn.disabled = false;
@@ -893,16 +927,47 @@ function adjustTimeSlots() {
 }
 
 // Chame esta função após carregar os horários
-adjustTimeSlots();
-// Configurar validação de formulário
-document.addEventListener('DOMContentLoaded', () => {
-  ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', validateClientForm);
-    }
-  });
-});
+// document.addEventListener('DOMContentLoaded', async () => {
+//   const isHistoryPage = window.location.pathname.includes('/history');
+
+//   if (isHistoryPage) {
+//     log('Página de histórico detectada');
+//     setupSmoothPageTransition(); // para animações dos botões
+//     return; // se você vai carregar histórico via HTML mesmo
+//   }
+
+//   log('Inicializando sistema de agendamento moderno');
+//   try {
+//     await loadServices();
+//     setupEventListeners();
+//     loadBarbers();
+//     initializeCalendar();
+//     setupPhoneMask();
+
+//     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
+//       initializeGoogleLogin();
+//     }
+
+//     ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
+//       const el = document.getElementById(id);
+//       if (el) {
+//         el.addEventListener('input', validateClientForm);
+//       }
+//     });
+
+//     log('Sistema inicializado com sucesso');
+//   } catch (error) {
+//     logError('Erro na inicialização', error);
+//   }
+  
+// });
+
+
+function scrollToTop() {
+  goToStep(1);
+}
+
+
 
 // Exportar funções globais necessárias
 window.loadServices = loadServices;

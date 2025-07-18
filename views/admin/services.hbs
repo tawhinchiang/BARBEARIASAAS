@@ -1,4 +1,5 @@
 {{!-- admin/services.hbs --}}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h2 class="mb-0">
     <i class="fas fa-cut me-2"></i> Gerenciar Serviços
@@ -11,7 +12,7 @@
 <div id="notificationContainer"></div>
 
 {{#if error}}
-<div class="alert alert-danger">{{error}}</div>
+  <div class="alert alert-danger">{{error}}</div>
 {{/if}}
 
 <div class="row mb-3">
@@ -20,42 +21,11 @@
   </div>
 </div>
 
-<div class="row mb-4">
+<!-- Container dos cards -->
+<p class="text-muted">Total de serviços: {{services.length}}</p>
+<div class="row g-3">  {{!-- g-3 = espaçamento entre os cards --}}
   {{#each services}}
-  <div class="col-md-6 col-lg-4">
-    <div class="card h-100 shadow-sm admin-card">
-      <div class="card-body">
-        <h5 class="card-title">{{name}}</h5>
-        <p class="text-muted small">{{description}}</p>
-        <p><strong>Preço:</strong> R$ {{price}}</p>
-        <p><strong>Duração:</strong> {{duration}} min</p>
-        <p><strong>Status:</strong>
-          {{#if isActive}}
-            <span class="badge status-badge status-confirmed">Ativo</span>
-          {{else}}
-            <span class="badge status-badge status-cancelled">Inativo</span>
-          {{/if}}
-        </p>
-        <p><strong>Promoção:</strong>
-          {{#if isPromo}}
-            <span class="badge status-badge status-pending">Sim</span>
-          {{else}}
-            <span class="badge status-badge bg-light text-dark">Não</span>
-          {{/if}}
-        </p>
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <small class="text-muted">{{appointmentsThisMonth}} agend. este mês</small>
-          <strong class="text-success">R$ {{revenueThisMonth}}</strong>
-        </div>
-      </div>
-      <div class="card-footer bg-light d-flex justify-content-between">
-        <button class="btn btn-sm btn-outline-primary" onclick="editService({{id}})"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-sm btn-outline-info" onclick="toggleService({{id}})"><i class="fas fa-toggle-on"></i></button>
-        <button class="btn btn-sm btn-outline-warning" onclick="togglePromo({{id}})"><i class="fas fa-tags"></i></button>
-        <button class="btn btn-sm btn-outline-danger" onclick="deleteService({{id}})"><i class="fas fa-trash"></i></button>
-      </div>
-    </div>
-  </div>
+    {{> service-card this}}
   {{/each}}
 </div>
 

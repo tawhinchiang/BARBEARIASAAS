@@ -1,49 +1,62 @@
 // public/js/admin/barbers.js
-
 document.addEventListener('DOMContentLoaded', () => {
   maskInputs();
   previewPhoto();
   setupFilters();
   maskTimeRangeInputs();
-  const form = document.getElementById('barberForm');
-  if (form) form.addEventListener('submit', submitForm);
 
-  const modal = document.getElementById('barberModal');
-  if (modal) {
-    modal.addEventListener('hidden.bs.modal', () => {
-      form.reset();
-      document.getElementById('barberId').value = '';
-      document.getElementById('barberModalTitle').textContent = 'Novo Barbeiro';
-      document.getElementById('photoPreview').classList.add('d-none');
-    });
-  }
+const form = document.getElementById('barberForm');
+const modalElement = document.getElementById('barberModal');
+const modalTitle = document.getElementById('barberModalTitle');
+
+  if (form && modalElement && modalTitle) {
+  const modal = new bootstrap.Modal(modalElement);
+  form.addEventListener('submit', submitForm);
+
+  modalElement.addEventListener('hidden.bs.modal', () => {
+    form.reset();
+    form.barberId.value = '';
+    modalTitle.textContent = 'Novo Barbeiro';
+    document.getElementById('photoPreview').classList.add('d-none');
+  });
+
+  window._barberModal = modal;
+  window._barberForm = form;
+  window._barberModalTitle = modalTitle;
+}
 });
 function isValidTimeRange(value) {
   const regex = /^([01]\d|2[0-3]):([0-5]\d)-([01]\d|2[0-3]):([0-5]\d)$/;
   return regex.test(value);
 }
 
+// function maskInputs() {
+//   const phoneInput = document.getElementById('barberPhone');
+//   const cpfInput = document.getElementById('barberCpf');
+
+//   if (phoneInput) {
+//     phoneInput.addEventListener('input', e => {
+//       let value = e.target.value.replace(/\D/g, '');
+//       value = value.replace(/(\d{2})(\d)/, '($1) $2');
+//       value = value.replace(/(\d{5})(\d)/, '$1-$2');
+//       e.target.value = value;
+//     });
+//   }
+
+//   if (cpfInput) {
+//     cpfInput.addEventListener('input', e => {
+//       let value = e.target.value.replace(/\D/g, '');
+//       value = value.replace(/(\d{3})(\d)/, '$1.$2');
+//       value = value.replace(/(\d{3})(\d)/, '$1.$2');
+//       value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+//       e.target.value = value;
+//     });
+//   }
+// }
 function maskInputs() {
-  const phoneInput = document.getElementById('barberPhone');
-  const cpfInput = document.getElementById('barberCpf');
-
-  if (phoneInput) {
-    phoneInput.addEventListener('input', e => {
-      let value = e.target.value.replace(/\D/g, '');
-      value = value.replace(/(\d{2})(\d)/, '($1) $2');
-      value = value.replace(/(\d{5})(\d)/, '$1-$2');
-      e.target.value = value;
-    });
-  }
-
-  if (cpfInput) {
-    cpfInput.addEventListener('input', e => {
-      let value = e.target.value.replace(/\D/g, '');
-      value = value.replace(/(\d{3})(\d)/, '$1.$2');
-      value = value.replace(/(\d{3})(\d)/, '$1.$2');
-      value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-      e.target.value = value;
-    });
+  if (window.Inputmask) {
+    Inputmask({ mask: "(99) 99999-9999" }).mask("#barberPhone");
+    Inputmask({ mask: "999.999.999-99" }).mask("#barberCpf");
   }
 }
 function maskTimeRangeInputs() {
@@ -195,25 +208,33 @@ window.editBarber = function (id) {
     .then(data => {
       if (data.success) {
         const b = data.barber;
-        document.getElementById('barberId').value = b.id;
-        document.getElementById('barberName').value = b.name;
-        document.getElementById('barberPhone').value = b.phone;
-        document.getElementById('barberEmail').value = b.email || '';
-        document.getElementById('barberCpf').value = b.cpf;
-        document.getElementById('barberSpecialties').value = b.specialties || '';
+        const form = window._barberForm;
+        const modal = window._barberModal;
+        const modalTitle = window._barberModalTitle;
+
+        form.barberId.value = b.id;
+        form.name.value = b.name;
+        form.phone.value = b.phone;
+        form.email.value = b.email || '';
+        form.cpf.value = b.cpf;
+        form.specialties.value = b.specialties || '';
+
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         days.forEach(day => {
           const input = document.querySelector(`[name="workingHours[${day}]"]`);
           if (input) input.value = b.workingHours?.[day] || '';
         });
-        document.getElementById('barberIsActive').checked = b.isActive;
-        document.getElementById('barberModalTitle').textContent = 'Editar Barbeiro';
-        new bootstrap.Modal(document.getElementById('barberModal')).show();
+
+        form.isActive.checked = b.isActive;
+        modalTitle.textContent = 'Editar Barbeiro';
+        modal.show();
       } else {
         alert(data.error || 'Erro ao carregar barbeiro');
       }
     });
 };
+
+
 
 window.toggleBarber = function (id) {
   if (!confirm('Deseja alternar o status deste barbeiro?')) return;
@@ -244,26 +265,52 @@ window.barberReport = function (id) {
           <td>${new Date(apt.date).toLocaleDateString('pt-BR')}</td>
           <td>${apt.time}</td>
           <td>${apt.service}</td>
-          <td>${apt.client}</td>
-          <td><span class="badge bg-${apt.status === 'completed' ? 'success' : apt.status === 'cancelled' ? 'danger' : 'warning'}">${apt.status}</span></td>
+          <td>${apt.client?.firstName || ''} ${apt.client?.lastName || ''}</td>
+          <td>
+  <span class="badge ${
+    apt.status === 'completed' || apt.status === 'confirmed'
+      ? 'bg-success'
+      : apt.status === 'cancelled'
+      ? 'bg-danger'
+      : 'bg-warning'
+  }">
+    ${apt.status === 'confirmed'
+      ? 'Confirmado'
+      : apt.status === 'cancelled'
+      ? 'Cancelado'
+      : apt.status === 'completed'
+      ? 'Concluído'
+      : apt.status === 'scheduled'
+      ? 'Agendado'
+      : apt.status === 'no_show'
+      ? 'Não compareceu'
+      : apt.status}
+  </span>
+</td>
           <td>R$ ${parseFloat(apt.price || 0).toFixed(2)}</td>
         </tr>`).join('');
 
-      const content = `
-        <h4>${report.barber.name}</h4>
-        <p class="text-muted">Período: ${report.period.start} a ${report.period.end}</p>
-        <div class="row text-center mb-4">
-          <div class="col"><div class="card"><div class="card-body"><h3>${report.summary.totalAppointments}</h3><p>Total</p></div></div></div>
-          <div class="col"><div class="card"><div class="card-body"><h3>${report.summary.completedAppointments}</h3><p>Concluídos</p></div></div></div>
-          <div class="col"><div class="card"><div class="card-body"><h3>R$ ${report.summary.totalRevenue.toFixed(2)}</h3><p>Receita</p></div></div></div>
-          <div class="col"><div class="card"><div class="card-body"><h3>${report.summary.averagePerDay.toFixed(1)}</h3><p>Média/Dia</p></div></div></div>
+        const content = `
+        <div class="admin-card mb-3">
+          <h4 class="fw-bold mb-0">${report.barber.name}</h4>
+          <p class="text-muted mb-2">Período: ${report.period.start} a ${report.period.end}</p>
+          <div class="row text-center">
+            <div class="col"><div class="admin-card shadow-sm"><div class="card-body"><h3>${report.summary.totalAppointments}</h3><p>Total</p></div></div></div>
+            <div class="col"><div class="admin-card shadow-sm"><div class="card-body"><h3>${report.summary.completedAppointments}</h3><p>Concluídos</p></div></div></div>
+            <div class="col"><div class="admin-card shadow-sm"><div class="card-body"><h3>R$ ${report.summary.totalRevenue.toFixed(2)}</h3><p>Receita</p></div></div></div>
+            <div class="col"><div class="admin-card shadow-sm"><div class="card-body"><h3>${report.summary.averagePerDay.toFixed(1)}</h3><p>Média/Dia</p></div></div></div>
+          </div>
         </div>
-        <div class="table-responsive">
-          <table class="table table-sm">
-            <thead><tr><th>Data</th><th>Hora</th><th>Serviço</th><th>Cliente</th><th>Status</th><th>Valor</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
+        <div class="admin-card">
+          <h5 class="fw-bold">Agendamentos</h5>
+          <div class="table-responsive">
+            <table class="table table-sm text-center align-middle">
+              <thead class="table-light"><tr><th>Data</th><th>Hora</th><th>Serviço</th><th>Cliente</th><th>Status</th><th>Valor</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
         </div>`;
+      
 
       document.getElementById('reportContent').innerHTML = content;
       new bootstrap.Modal(document.getElementById('reportModal')).show();

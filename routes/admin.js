@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
+const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
+
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op } = require('sequelize');
@@ -139,7 +141,10 @@ router.get('/dashboard', async (req, res) => {
     }) || 0;
 
     const todayAppointments = await Appointment.findAll({
-      where: { appointmentDate: formatDateYYYYMMDD(today) },
+      where: {
+      appointmentDate: formatDateYYYYMMDD(today),
+      status: 'confirmed'
+  },
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber' },
@@ -196,7 +201,9 @@ router.get('/dashboard', async (req, res) => {
         [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
+      where: {appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+      status: { [Op.in]: ['confirmed'] }
+},
       include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
       group: ['barberId', 'barber.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
@@ -211,13 +218,16 @@ router.get('/dashboard', async (req, res) => {
       totalRevenue: item.totalRevenue
     }));
 
-    const topServicesRaw = await Appointment.findAll({
+      const topServicesRaw = await Appointment.findAll({
       attributes: [
         'serviceTypeId',
         [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-      where: { appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] } },
+       where: {
+      appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+      status: 'confirmed'
+     },
       include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
       group: ['serviceTypeId', 'serviceType.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
@@ -426,7 +436,8 @@ router.get('/reports', async (req, res) => {
   try {
     log('Acessando relatórios', { user: req.session.user, query: req.query });
     
-    const { startDate, endDate, barberId } = req.query;
+    const { startDate, endDate, barberId, status, sort } = req.query;
+
     
     let whereClause = {};
     
@@ -435,31 +446,53 @@ router.get('/reports', async (req, res) => {
         [require('sequelize').Op.between]: [startDate, endDate]
       };
     }
-    
-    if (barberId) {
-      whereClause.barberId = barberId;
-    }
+
+    if (status) {whereClause.status = status;}
+
+    if (barberId) {whereClause.barberId = barberId;}
     
     log('Filtros de relatório aplicados', { whereClause });
-    
-    const appointments = await Appointment.findAll({
-      where: whereClause,
-      include: [
-        { model: Client, as: 'client' },
-        { model: Barber, as: 'barber' },
-        { model: ServiceType, as: 'serviceType' }
-      ],
-      order: [['appointmentDate', 'DESC']]
+    // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
+      let order = [['appointmentDate', 'DESC']]; // padrão
+  
+      switch (sort) {
+      case 'date_asc':
+        order = [['appointmentDate', 'ASC']];
+        break;
+      case 'value_desc':
+        order = [['totalPrice', 'DESC']];
+        break;
+      case 'value_asc':
+        order = [['totalPrice', 'ASC']];
+        break;
+      case 'barber_asc':
+        order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
+        break;
+      case 'barber_desc':
+        order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
+        break;
+      }
+
+      const appointments = await Appointment.findAll({
+        where: whereClause,
+        include: [
+          { model: Client, as: 'client' },
+          { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
+          { model: ServiceType, as: 'serviceType' }
+        ],
+
+        order
+      }); // padrão
+
+    const formattedAppointments = appointments.map(app => {
+      const plain = app.toJSON();
+      const date = new Date(plain.appointmentDate + 'T03:00:00');
+      return {
+        ...plain,
+        appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
+          };
     });
-const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const date = new Date(plain.appointmentDate + 'T03:00:00');
-  return {
-    ...plain,
-    appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
-  };
-});
 
 
 
@@ -481,8 +514,9 @@ const formattedAppointments = appointments.map(app => {
       stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
       
       // Contagem Por barbeiro
-      const barberName = apt.barber.name;
-      stats.byBarber[barberName] = (stats.byBarber[barberName] || 0) + 1;
+      const barberKey = `${apt.barber?.id} - ${apt.barber?.name || 'Desconhecido'}`;
+      stats.byBarber[barberKey] = (stats.byBarber[barberKey] || 0) + 1;
+
       
       // Receita total
       // Receita total - ignorar agendamentos cancelados
@@ -502,7 +536,8 @@ const formattedAppointments = appointments.map(app => {
       appointments: formattedAppointments,
       barbers,
       stats,
-      filters: { startDate, endDate, barberId }
+      filters: { startDate, endDate, barberId, status, sort }
+
     });
 
   } catch (error) {
@@ -517,115 +552,76 @@ const formattedAppointments = appointments.map(app => {
 });
 
 // Exportar relatórios (PDF/CSV) - CORRIGIDA
-router.post('/reports/export', async (req, res) => {
+// Exemplo da rota corrigida
+router.post('/reports/export', isAuthenticated, async (req, res) => {
   try {
-    log('Iniciando exportação de relatório', { body: req.body, user: req.session.user });
-    
-    const { startDate, endDate, barberId, format } = req.body;
-    
-    // Validar formato
-    if (!['pdf', 'csv'].includes(format)) {
-      log('Formato de exportação inválido', { format });
-      return res.status(400).json({ error: 'Formato inválido' });
-    }
-    
-    // Construir filtros
-    let whereClause = {};
-    
+    const { format, startDate, endDate, barberId, status, sort } = req.body;
+
+    // Construção do filtro base
+    const where = {};
+
     if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
+      where.appointmentDate = {
+        [Op.between]: [startDate, endDate]
       };
+    } else if (startDate) {
+      where.appointmentDate = { [Op.gte]: startDate };
+    } else if (endDate) {
+      where.appointmentDate = { [Op.lte]: endDate };
     }
     
-    if (barberId && barberId !== 'all') {
-      whereClause.barberId = barberId;
+    if (typeof status === 'string' && status.trim() !== '') {
+      where.status = status;
     }
     
-    log('Filtros de exportação aplicados', { whereClause });
+    if (typeof barberId === 'string' && barberId.trim() !== '') {
+      where.barberId = barberId;
+    }
     
-    // Buscar dados
+
+    // Ordenação
+    let order = [['appointmentDate', 'DESC']];
+    if (sort === 'date_asc') order = [['appointmentDate', 'ASC']];
+    else if (sort === 'value_desc') order = [['totalPrice', 'DESC']];
+    else if (sort === 'value_asc') order = [['totalPrice', 'ASC']];
+    else if (sort === 'barber_asc') order = [[{ model: Barber }, 'name', 'ASC']];
+    else if (sort === 'barber_desc') order = [[{ model: Barber }, 'name', 'DESC']];
+
+    // Buscar dados com Sequelize
     const appointments = await Appointment.findAll({
-      where: whereClause,
+      where,
+      order,
       include: [
         { model: Client, as: 'client' },
-        { model: Barber, as: 'barber' },
+        {
+          model: Barber,
+          as: 'barber',
+          attributes: ['id', 'name'],
+          required: !!barberId  // Só força o JOIN se estiver filtrando por barbeiro
+        },
         { model: ServiceType, as: 'serviceType' }
-      ],
-      order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+      ]
     });
-    
-    log('Dados para exportação carregados', { appointmentsCount: appointments.length });
-    
-    if (appointments.length === 0) {
-      log('Nenhum agendamento encontrado para exportação');
-      return res.status(404).json({ error: 'Nenhum agendamento encontrado para os filtros selecionados' });
-    }
-    
-    // Calcular estatísticas
-    const totalAppointments = appointments.length;
-    const totalRevenue = appointments.reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
-    const completedAppointments = appointments.filter(apt => apt.status === 'completed').length;
-    const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled').length;
-    
-    const reportInfo = {
-      startDate: startDate || 'Início',
-      endDate: endDate || 'Fim',
-      barber: barberId === 'all' ? 'Todos os barbeiros' : 
-              (appointments[0]?.barber?.name || 'Não especificado'),
-      totalAppointments,
-      totalRevenue,
-      completedAppointments,
-      cancelledAppointments
-    };
-    
-    log('Informações do relatório calculadas', { reportInfo });
-    
-    const reportGenerator = require('../utils/reportGenerator');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    
-    let filePath;
-    let filename;
-    let contentType;
-    
-    if (format === 'pdf') {
-      filename = `relatorio-agendamentos-${timestamp}.pdf`;
-      filePath = await reportGenerator.generatePDF(appointments, reportInfo, filename);
-      contentType = 'application/pdf';
-    } else {
-      filename = `relatorio-agendamentos-${timestamp}.csv`;
-      filePath = reportGenerator.generateCSV(appointments, filename);
-      contentType = 'text/csv';
-    }
-   
 
-    log('Arquivo de relatório gerado', { filename, filePath, contentType });
-    
-    // Enviar arquivo
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    
-    const fs = require('fs');
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-    
-    // Limpar arquivo após envio
-    fileStream.on('end', () => {
-      setTimeout(() => {
-        try {
-          fs.unlinkSync(filePath);
-          log('Arquivo temporário removido', { filePath });
-        } catch (error) {
-          logError('Erro ao remover arquivo temporário', error);
-        }
-      }, 5000);
-    });
-    
+    // Gerar relatório com os filtros aplicados
+    const filename = `relatorio-${Date.now()}.${format}`;
+    const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
+
+    if (format === 'pdf') {
+      const filePath = await generatePDF(appointments, reportInfo, filename);
+      return res.download(filePath);
+    } else if (format === 'csv') {
+      const filePath = await generateCSV(appointments, filename);
+      return res.download(filePath);
+    } else {
+      return res.status(400).json({ error: 'Formato inválido.' });
+    }
   } catch (error) {
-    logError('Erro ao gerar relatório', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('[EXPORT ERROR]', error);
+    res.status(500).json({ error: 'Erro ao gerar relatório.' });
   }
 });
+
 
 
 router.get('/appointments/:id', async (req, res) => {

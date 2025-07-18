@@ -23,6 +23,34 @@ router.get('/appointments/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+// PUT /admin/appointments/:id
+router.put('/appointments/:id', async (req, res) => {
+  try {
+    const { appointmentDate, appointmentTime, serviceTypeId, barberId } = req.body;
+    const appointment = await Appointment.findByPk(req.params.id);
+
+    if (!appointment) return res.status(404).json({ success: false, message: 'Agendamento não encontrado' });
+
+    appointment.appointmentDate = appointmentDate;
+    appointment.appointmentTime = appointmentTime;
+    appointment.serviceTypeId = serviceTypeId;
+    appointment.barberId = barberId;
+
+    // Atualiza também o preço e duração com base no novo serviço
+    const service = await ServiceType.findByPk(serviceTypeId);
+    if (service) {
+      appointment.totalPrice = service.price;
+      appointment.serviceDuration = service.duration;
+    }
+
+    await appointment.save();
+
+    res.json({ success: true, message: 'Agendamento atualizado com sucesso' });
+  } catch (error) {
+    console.error('[ADMIN API ERROR] Erro ao atualizar agendamento:', error);
+    res.status(500).json({ success: false, message: 'Erro interno ao atualizar agendamento' });
+  }
+});
 
 // POST /admin/appointments/:id/whatsapp
 router.post('/appointments/:id/whatsapp', async (req, res) => {

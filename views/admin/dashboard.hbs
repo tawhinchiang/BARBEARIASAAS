@@ -1,5 +1,5 @@
 <!-- DASHBOARD ADMINISTRATIVO -->
-<div class="admin-dashboard">
+<div class="admin-dashboard fade-in-soft">
   <div class="container-fluid">
 
     <!-- Header -->
@@ -22,15 +22,15 @@
 
     <!-- Cards de Estatísticas -->
     <div class="row mb-4 align-items-stretch">
-      <div class="col-lg-3 col-md-6 mb-3 d-flex">
+      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
         <div class="admin-card text-center w-100">
-          <div class="display-6 mb-2"><i class="fas fa-calendar-check"></i></div>
+          <div class="fs-3 mb-1"><i class="fas fa-calendar-check"></i></div>
           <h3 class="fw-bold">{{todayAppointmentsCount }}</h3>
           <p class="text-muted mb-0">Agendamentos Hoje</p>
         </div>
       </div>
 
-      <div class="col-lg-3 col-md-6 mb-3 d-flex">
+      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
         <div class="admin-card text-center w-100">
           <div class="display-6 mb-2"><i class="fas fa-dollar-sign"></i></div>
           <h3 class="fw-bold">{{formatCurrency monthlyRevenue}} </h3>
@@ -56,8 +56,8 @@
     </div> --}}
 
     <!-- Agendamentos Recentes -->
-    <div class="row mb-4">
-      <div class="col-12">
+    <div class="d-flex flex-wrap gap-4 mb-4 dashboard-flex-group">
+      <div class="flex-grow-1" style="flex-basis: 100%;">
         <div class="admin-card">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold mb-0">Agendamentos de Hoje</h4>
@@ -66,58 +66,62 @@
             </a>
           </div>
           {{#if recentAppointments}} 
-                <div class="admin-table">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Serviço</th>
-                  <th>Barbeiro</th>
-                  <th>Horário</th>
-                  <th>Status</th>
-                  <th>Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {{#each recentAppointments}}
-                <tr>
-                  <td>
-                    <div class="d-flex align-items-center">
-                      <div class="avatar-sm me-2">
-                        {{substring client.firstName 0 1}}{{substring client.lastName 0 1}}
-                      </div>
-                      <div>
-                        <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
-                        <small class="text-muted">{{client.phone}}</small>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fw-semibold">{{serviceType.name}}</div>
-                    <small class="text-muted">{{serviceType.duration}} min</small>
-                  </td>
-                  <td>{{barber.name}}</td>
-                  <td>
-                    <div class="fw-semibold">{{formatTime appointmentTime}}</div>
-                    <small class="text-muted">{{appointmentDateFormatted}}</small>
-
-                  </td>
-                  <td>
-                    <span class="status-badge status-{{status}}">
-                      {{#if (eq status 'confirmed')}}Confirmado
-                      {{else if (eq status 'pending')}}Pendente
-                      {{else if (eq status 'cancelled')}}Cancelado
-                      {{else if (eq status 'completed')}}Concluído
-                      {{else}}Desconhecido
-                      {{/if}}
-                    </span>
-                  </td>
-                  <td><strong>{{formatCurrency totalPrice}}</strong></td>
-                </tr>
-                {{/each}}
-              </tbody>
-            </table>
+          <div class="admin-table-wrapper">
+            <div class="scroll-x-overflow">
+              <div class="scroll-x-inner">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Serviço</th>
+                      <th>Barbeiro</th>
+                      <th>Horário</th>
+                      <th>Status</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{#each recentAppointments}}
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar-sm me-2">
+                            {{substring client.firstName 0 1}}{{substring client.lastName 0 1}}
+                          </div>
+                          <div>
+                            <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+                            <small class="text-muted">{{client.phone}}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="fw-semibold">{{serviceType.name}}</div>
+                        <small class="text-muted">{{serviceType.duration}} min</small>
+                      </td>
+                      <td>{{barber.name}}</td>
+                      <td>
+                        <div class="fw-semibold">{{formatTime appointmentTime}}</div>
+                        <small class="text-muted">{{appointmentDateFormatted}}</small>
+                      </td>
+                      <td>
+                        <span class="status-badge status-{{status}}">
+                          {{#if (eq status 'confirmed')}}Confirmado
+                          {{else if (eq status 'pending')}}Pendente
+                          {{else if (eq status 'cancelled')}}Cancelado
+                          {{else if (eq status 'completed')}}Concluído
+                          {{else}}Desconhecido
+                          {{/if}}
+                        </span>
+                      </td>
+                      <td><strong>{{formatCurrency totalPrice}}</strong></td>
+                    </tr>
+                    {{/each}}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
+
           {{else}}
           <div class="text-center py-5">
             <div class="display-1 text-muted mb-3">
@@ -125,78 +129,83 @@
             </div>
             <h5 class="text-muted">Nenhum agendamento para hoje</h5>
           </div>
-          {{/if}}
-        </div>
-      </div>
+           {{/if}}
+          </div>
+          </div>
+       </div>
     </div>
 
     <!-- Gráfico de Agendamentos -->
-    <div class="row">
-      <div class="col-lg-4 mb-4">
-        <div class="admin-card">
+  
+<div class="d-flex flex-wrap gap-4 mb-4 dashboard-flex-group">
+    <div class="flex-grow-1" style="flex-basis: 66%;">
+        <div class="admin-card h-100">
           <h4 class="fw-bold mb-3">Receita dos últimos 7 dias</h4>
-          <canvas id="appointmentsChart" height="300"></canvas>
+          <canvas id="appointmentsChart" height="400"></canvas>
         </div>
-      </div>
-
-      <div class="col-lg-8 mb-4">
-        <div class="admin-card">
-          <h4 class="fw-bold mb-4">Barbeiros Mais Solicitados</h4>
-          {{#if topBarbers.length}}
-          {{#each topBarbers}}
-          <div class="ranking-item d-flex align-items-center mb-3">
-            <div class="ranking-position me-3">
-              <span class="badge bg-primary text-dark">{{add @index 1}}</span>
-            </div>
-            <div class="avatar-sm me-3">{{substring name 0 1}}</div>
-            <div class="flex-grow-1">
-              <div class="fw-semibold">{{name}}</div>
-              <small class="text-muted">{{appointmentCount}} agendamentos</small>
-            </div>
-            <div class="text-end fw-bold">R$ {{formatCurrency totalRevenue}}</div>
-          </div>
-          {{/each}}
-          {{else}}
-          <div class="text-center py-4">
-            <i class="fas fa-user-friends display-4 text-muted mb-2"></i>
-            <p class="text-muted">Nenhum dado disponível</p>
-          </div>
-          {{/if}}
-        </div>
-      </div>
     </div>
 
+    <div class="flex-grow-1" style="flex-basis: 32%;">
+        <div class="admin-card h-100 d-flex flex-column">
+          <h4 class="fw-bold mb-3">Barbeiros Mais Solicitados</h4>
+            <div class="table-barbers flex-grow-1">
+                  {{#if topBarbers.length}}
+                  {{#each topBarbers}}
+                  <div class="barber-row d-flex align-items-center py-2 px-2 border-bottom">
+                      <div class="me-2 text-center" style="width: 30px;">
+                        <span class="badge bg-primary text-dark">{{add @index 1}}</span>
+                      </div>
+                      <div class="avatar-sm me-2">{{substring name 0 1}}</div>
+                      <div class="flex-grow-1">
+                      <div class="fw-semibold">{{name}}</div>
+                        <small class="text-muted">{{appointmentCount}} agendamentos</small>
+                      </div>
+                      <div class="fw-bold text-end">{{formatCurrency totalRevenue}}</div>
+                  </div>  
+                {{/each}}
+                {{else}}
+                <div class="text-center py-4">
+                  <i class="fas fa-user-friends display-4 text-muted mb-2"></i>
+                  <p class="text-muted">Nenhum dado disponível</p>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+
+</div>
+
     <!-- Serviços Mais Populares -->
-    <div class="row">
-      <div class="col-12">
+    <div class="d-flex flex-wrap gap-4 mb-4 dashboard-flex-group">
+      <div class="flex-grow-1" style="flex-basis: 100%;">
         <div class="admin-card">
           <h4 class="fw-bold mb-4">Serviços Mais Populares</h4>
           {{#if topServices.length}}
-          <div class="row">
-            {{#each topServices}}
-            <div class="col-lg-3 col-md-6 mb-3">
-              <div class="service-stat-card">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <div>
-                    <h6 class="fw-bold mb-1">{{name}}</h6>
-                    <small class="text-muted">{{duration}}</small>
+              <div class="services-scroll-container">
+                <div class="d-flex flex-nowrap gap-3">
+                  {{#each topServices}}
+                  <div class="service-stat-card flex-shrink-0" style="width: 240px;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div>
+                        <h6 class="fw-bold mb-1">{{name}}</h6>
+                        <small class="text-muted">{{duration}}</small>
+                      </div>
+                      <div class="text-end">
+                        <div class="fw-bold">{{appointmentCount}}</div>
+                        <small class="text-muted">agendamentos</small>
+                      </div>
+                    </div>
+                    <div class="progress mb-2" style="height: 6px;">
+                      <div class="progress-bar bg-primary" style="width: {{percentage}}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <small class="text-muted">R$ {{formatCurrency price}}</small>
+                      <small class="fw-bold">R$ {{formatCurrency totalRevenue}}</small>
+                    </div>
                   </div>
-                  <div class="text-end">
-                    <div class="fw-bold">{{appointmentCount}}</div>
-                    <small class="text-muted">agendamentos</small>
-                  </div>
-                </div>
-                <div class="progress mb-2" style="height: 6px;">
-                  <div class="progress-bar bg-primary" style="width: {{percentage}}%"></div>
-                </div>
-                <div class="d-flex justify-content-between">
-                  <small class="text-muted">R$ {{formatCurrency price}}</small>
-                  <small class="fw-bold">R$ {{formatCurrency totalRevenue}}</small>
+                  {{/each}}
                 </div>
               </div>
-            </div>
-            {{/each}}
-          </div>
           {{else}}
           <div class="text-center py-4">
             <i class="fas fa-cut display-4 text-muted mb-2"></i>
@@ -213,57 +222,76 @@
 <!-- Chart.js + Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-   document.addEventListener('DOMContentLoaded', function () {
-    console.log('Labels:', {{{json revenueChartLabels}}});
-    console.log('Data:', {{{json revenueChartData}}});
-    const ctx = document.getElementById('appointmentsChart').getContext('2d');
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: {{{json revenueChartLabels}}},
- datasets: [{
-      label: 'Receita (R$)',
-      data: {{{json revenueChartData}}},
-      backgroundColor: 'rgba(0, 123, 255, 0.2)',  // aumente a opacidade
-      borderColor: '#007bff',                   // azul padrão
-      pointBackgroundColor: '#007bff',
-      pointRadius: 5,                             // AUMENTA O PONTO
-      pointHoverRadius: 7,
-      borderWidth: 2,
-      fill: true,
-      tension: 0.3
-      }]
-  },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-      display: true,
-      text: 'Receita Confirmada por Dia da Semana'
-       },
-        legend: {
-          labels: { font: { size: 14 } }
+  document.addEventListener('DOMContentLoaded', function () {
+    // === Gráfico Chart.js ===
+    const chartEl = document.getElementById('appointmentsChart');
+    if (chartEl) {
+      new Chart(chartEl, {
+        type: 'line',
+        data: {
+          labels: {{{json revenueChartLabels}}},
+          datasets: [{
+            label: 'Receita (R$)',
+            data: {{{json revenueChartData}}},
+            backgroundColor: 'rgba(0, 123, 255, 0.2)',
+            borderColor: '#007bff',
+            pointBackgroundColor: '#007bff',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3
+          }]
         },
-        tooltip: {
-          bodyFont: { size: 14 },
-          titleFont: { size: 16 }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { font: { size: 13 } }
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Receita Confirmada por Dia da Semana'
+            },
+            legend: {
+              labels: { font: { size: 14 } }
+            },
+            tooltip: {
+              bodyFont: { size: 14 },
+              titleFont: { size: 16 }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { font: { size: 13 } }
+            },
+            x: {
+              ticks: { font: { size: 13 } }
+            }
+          }
         },
-        x: {
-          ticks: { font: { size: 13 } }
-        }
-      }
+        plugins: [{
+          id: 'showCanvas',
+          afterRender(chart) {
+            const chartEl = chart.canvas;
+            chartEl.style.visibility = 'visible';
+            chartEl.style.opacity = '1';
+          }
+        }]
+      });
     }
 
-});
-
+    // === Transição Suave da Página ===
+    const dashboardEl = document.querySelector('.fade-in-soft');
+    if (dashboardEl) {
+      dashboardEl.addEventListener('animationend', () => {
+        dashboardEl.classList.remove('fade-in-soft');
+        dashboardEl.style.opacity = '1'; // Garante permanência após a animação
+      });
+    }
   });
 </script>
+
+
+
 
 <style>
 .service-stat-card {
@@ -289,5 +317,121 @@ new Chart(ctx, {
   align-items: center;
   justify-content: center;
 }
+#appointmentsChart {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 300px;
+}
+/*.table-barbers {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-light);
+}*/
 
+.barber-row {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.barber-row:last-child {
+  border-bottom: none;
+}
+.admin-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-table table {
+  min-width: 700px;
+}
+
+/* Scroll horizontal para serviços populares */
+.services-scroll-container {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.services-scroll-container .service-stat-card {
+  min-width: 220px;
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .dashboard-flex-group > div {
+    flex-basis: 100% !important;
+  }
+
+  .admin-card {
+    min-width: 320px;
+  }
+}
+.double-scroll {
+  overflow-x: auto;
+  position: relative;
+}
+.double-scroll::before {
+  content: "";
+  display: block;
+  height: 16px;
+  overflow-x: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.dashboard-flex-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.dashboard-flex-group > div {
+  flex-basis: 100%;
+  min-width: 320px;
+}
+.admin-table-wrapper {
+  overflow-x: auto;
+  position: relative;
+  padding-top: 16px; /* espaço para o scroll de cima */
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-table-scroll table {
+  min-width: 700px;
+  width: 100%;
+}
+
+.scroll-top-helper {
+  height: 1px;
+  margin-bottom: -1px;
+  overflow-x: auto;
+}
+.admin-table-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;A
+  right: 0;
+  height: 100%;
+  width: 16px;
+  background: linear-gradient(to left, var(--bg-light), transparent);
+  pointer-events: none;
+}
+.scroll-x-overflow {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  position: relative;
+}
+.scroll-x-inner {
+  min-width: 700px;
+}
 </style>

@@ -36,4 +36,3 @@ const Client = sequelize.define('Client', {
 });
 
 module.exports = Client;
-

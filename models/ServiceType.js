@@ -27,11 +27,17 @@ const ServiceType = sequelize.define('ServiceType', {
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  isPromo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'service_types',
   timestamps: true
 });
+
 
 module.exports = ServiceType;
 

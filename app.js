@@ -10,8 +10,7 @@ require('dotenv').config();
 const app = express();
 
 
-app.set('view engine', 'hbs');
-app.set('views', path.join(__dirname, 'views'));
+
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -101,8 +100,11 @@ app.use('/api', require('./routes/publicApi'));
 // Rotas de agendamentos (inclui /api/appointments)
 app.use('/', require('./routes/appointments'));
 
+//Rotas historicos
+app.use('/history', require('./routes/history'));
 // Rotas administrativas
 app.use('/admin', require('./routes/admin'));
+app.use('/admin/services', require('./routes/services'));
 
 app.use('/admin/api', require('./routes/adminApi'));
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
@@ -133,4 +135,3 @@ app.use((err, req, res, next) => {
 log('Aplicação configurada com sucesso');
 
 module.exports = app;
-
