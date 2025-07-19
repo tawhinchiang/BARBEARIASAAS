@@ -34,10 +34,12 @@ cron.schedule('*/5 * * * *', async () => {
 
     // === ENVIO DE LEMBRETE ===
     if (!apt.whatsappSent && diffInHours <= reminderHours && diffInHours > reminderHours - 1) {
-      const msg = `Olá, ${apt.client.firstName}! Lembrete: seu agendamento é hoje às ${apt.appointmentTime} com ${apt.barber.name}.
-📍 Endereço: ${BARBERSHOP_NAME} - ${BARBERSHOP_ADDRESS}
-🗺️ Localização: ${BARBERSHOP_MAPS_LINK}`;
-      
+      const msg = `Olá, ${apt.client.firstName}! 👋
+      Seu agendamento é hoje às ${apt.appointmentTime?.slice(0, 5)} com ${apt.barber.name}. ✂️
+
+      📍 ${BARBERSHOP_NAME}
+      🗺 ${BARBERSHOP_MAPS_LINK}`;
+      console.log(`📱 Enviando lembrete para ${apt.client.firstName} (${apt.client.phone})`);    
       const sent = await sendWhatsAppMessage(apt.client.phone, msg);
 
       if (sent) {
@@ -61,6 +63,9 @@ cron.schedule('*/5 * * * *', async () => {
       }
     }
   }
+  // Também buscar agendamentos cancelados nas últimas 24h
+
+
 
   console.log(`✅ [CRON] Ciclo concluído com ${appointments.length} agendamentos verificados.`);
 });
