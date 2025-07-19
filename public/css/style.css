@@ -33,7 +33,11 @@ body {
   color: var(--text-dark);
   line-height: 1.6;
 }
-
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 
 
@@ -50,7 +54,12 @@ body {
   border-bottom: 2px solid var(--primary-color);
   box-shadow: var(--shadow);
 }
-
+.main-container,
+.container {
+  max-width: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
 .header-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -201,8 +210,8 @@ body {
 /* Grid de serviços */
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
   margin-top: 3rem;
 }
 
@@ -230,27 +239,36 @@ body {
 
 .service-header {
   display: flex;
+  align-items: flex-start; /* Alinha os itens no topo para melhor visualização */
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+  gap: 1rem; /* Espaçamento entre o bloco de nome/duração e o preço */
+  width: 100%; /* Garante que o header ocupe toda a largura do card */
 }
-
+.service-header > div:first-child {
+  flex: 1; /* Permite que este container (nome + duração) cresça e ocupe o espaço disponível */
+  min-width: 0; /* Essencial para permitir que o flex item encolha e quebre linha se necessário */
+}
 .service-name {
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-dark);
-  margin-bottom: 0.5rem;
+  margin: 0;
+  word-break: break-word; /* Quebra palavras longas para evitar overflow */
+  white-space: normal; /* Permite que o texto quebre em múltiplas linhas */
 }
-
 .service-duration {
   color: var(--text-muted);
   font-size: 0.9rem;
+  margin-top: 4px; /* Adiciona um pequeno espaço abaixo do nome */
 }
-
 .service-price {
+  flex-shrink: 0; /* Impede que o preço encolha */
+  white-space: nowrap; /* Garante que o preço não quebre em duas linhas */
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--primary-color);
+  margin-left: 1rem; /* Adiciona um espaçamento à esquerda para segurança */
+  text-align: right; /* Alinha o preço à direita para um visual mais limpo */
 }
 
 .service-promo {
@@ -1320,6 +1338,10 @@ body {
 
 /* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
+   .service-name {
+    white-space: normal;
+    word-break: break-word;
+  }
   .logo-icon {
     width: 40px;
     height: 40px;
@@ -1337,7 +1359,8 @@ body {
   }
   
   .container {
-    padding: 0 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
   
   .services-grid {
@@ -1893,4 +1916,29 @@ canvas {
 
 .barber-card img {
   object-fit: cover;
+}
+@media (max-width: 480px) {
+  .services-grid {
+    grid-template-columns: 1fr !important;
+    padding: 0;
+    gap: 1rem;
+  }
+
+  .service-card {
+    width: 100% !important;
+  }
+}
+#barbershopCarousel {
+  max-height: 360px;
+  overflow: hidden;
+  border-radius: 20px;
+  margin: 30px auto;
+  width: 95%;
+  box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+
+#barbershopCarousel img,
+#barbershopCarousel video {
+  object-fit: cover;
+  height: 360px;
 }
