@@ -3,7 +3,7 @@ const qrcode = require('qrcode-terminal');
 
 let client = null;
 let isReady = false;
-
+let latestQrCode = null;
 // Inicializar cliente WhatsApp
 async function initializeWhatsApp() {
   try {
@@ -27,12 +27,17 @@ async function initializeWhatsApp() {
     });
 
     // Evento QR Code
+    // client.on('qr', (qr) => {
+    //   console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
+    //   qrcode.generate(qr, { small: true });
+    //   console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
+    // });
     client.on('qr', (qr) => {
-      console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
-      qrcode.generate(qr, { small: true });
-      console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
-    });
-
+    latestQrCode = qr;
+    console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
+    qrcode.generate(qr, { small: true });
+    console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
+  });
     // Evento de autenticação
     client.on('authenticated', () => {
       console.log('✅ WhatsApp autenticado com sucesso!');
@@ -149,10 +154,9 @@ async function sendWhatsAppMessage(phone, message) {
 function getWhatsAppStatus() {
   return {
     isConnected: isReady,
-    client: client ? 'Inicializado' : 'Não inicializado'
+    qrCode: isReady ? null : latestQrCode
   };
 }
-
 // Desconectar WhatsApp
 async function disconnectWhatsApp() {
   try {
@@ -166,11 +170,15 @@ async function disconnectWhatsApp() {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
   }
 }
+function getLastQRCode() {
+  return latestQrCode;
+}
 
 module.exports = {
   initializeWhatsApp,
   sendWhatsAppMessage,
   getWhatsAppStatus,
+  getLastQRCode,
   disconnectWhatsApp
 };
 

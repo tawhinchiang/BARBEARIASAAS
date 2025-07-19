@@ -28,6 +28,11 @@
     <link rel="icon" type="image/png" href="/images/logo.png">
 </head>
 <body class="admin-body" style="opacity: 0; transition: opacity 0.3s ease;" >
+    <div id="whatsapp-status-toast" class="admin-notification fade-in d-none">
+  <i class="fab fa-whatsapp me-2"></i>
+  <span id="whatsapp-status-text" class="text-white"></span>
+
+</div>
     <!-- Navbar Administrativa -->
     {{#unless hideNavbar}}
    
@@ -180,6 +185,7 @@
         
         // Marcar link ativo na navegação
         document.addEventListener('DOMContentLoaded', function() {
+            checkWhatsAppStatus();
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
             
@@ -189,6 +195,36 @@
                 }
             });
         });
+         async function checkWhatsAppStatus() {
+    try {
+    const res = await fetch('/admin/whatsapp/status');
+    const data = await res.json();
+
+    const toast = document.getElementById('whatsapp-status-toast');
+    const text = document.getElementById('whatsapp-status-text');
+
+    if (!toast || !text) return;
+
+    if (data.isConnected) {
+        toast.classList.remove('error', 'd-none');
+        toast.classList.add('success', 'show');
+        text.innerText = 'WhatsApp está conectado ✅';
+    } 
+    else {
+        toast.classList.remove('success', 'd-none');
+        toast.classList.add('error', 'show');
+        text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
+    }
+
+    // Esconde depois de 7 segundos
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 7000);
+
+    } catch (err) {
+    console.error('[WHATSAPP STATUS ERROR]', err);
+    }
+  }
     </script>
 </body>
 </html>
@@ -524,13 +560,14 @@
 /* Notificações */
 .admin-notification {
     position: fixed;
-    top: 20px;
+    top: 80px; /* ou até 100px se quiser mais respiro */
     right: 20px;
+    max-width: 320px;
     background: var(--bg-light);
     border: 2px solid var(--border-color);
     border-radius: 8px;
     padding: 1rem 1.5rem;
-    color: var(--text-dark);
+    color: var(--text-light); /* importante para tema escuro */
     box-shadow: var(--shadow);
     z-index: 9999;
     transform: translateX(400px);
@@ -543,12 +580,14 @@
 
 .admin-notification.success {
     border-color: var(--success-color);
-    background: #f0f9ff;
+    background-color: rgba(0, 255, 0, 0.1); /* leve verde translúcido */
+    color: var(--success-color);
 }
 
 .admin-notification.error {
     border-color: var(--danger-color);
-    background: #fef2f2;
+    background-color: rgba(255, 0, 0, 0.1); /* leve vermelho translúcido */
+    color: var(--danger-color);
 }
 
 .admin-notification.warning {

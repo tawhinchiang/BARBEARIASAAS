@@ -168,8 +168,76 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.remove('fade-in-soft', 'fade-out-soft');
     });
 
+checkWhatsAppStatus();
 
 });
+
+async function checkWhatsAppStatus() {
+  try {
+    const res = await fetch('/admin/whatsapp/status');
+    const data = await res.json();
+    const el = document.getElementById('whatsappStatus');
+
+    if (data.isConnected) {
+      el.classList.remove('bg-secondary', 'bg-danger');
+      el.classList.add('bg-success');
+      el.textContent = 'WhatsApp: Conectado';
+    } else {
+      el.classList.remove('bg-secondary', 'bg-success');
+      el.classList.add('bg-danger');
+      el.textContent = 'WhatsApp: Desconectado';
+    }
+  } catch (err) {
+    console.error('Erro ao verificar status do WhatsApp', err);
+    const el = document.getElementById('whatsappStatus');
+    if (el) {
+      el.classList.remove('bg-success');
+      el.classList.add('bg-danger');
+      el.textContent = 'WhatsApp: Erro';
+    }
+  }
+}
+if (window.location.pathname.includes('/admin/config')) {
+  checkWhatsAppStatusConfig();
+  loadQRCodeIfDisconnected();
+}
+
+async function checkWhatsAppStatusConfig() {
+  const statusRes = await fetch('/admin/whatsapp/status');
+  const { isConnected } = await statusRes.json();
+  const statusSpan = document.getElementById('whatsappStatusConfig');
+
+  if (isConnected) {
+    statusSpan.textContent = 'Conectado';
+    statusSpan.classList.replace('bg-secondary', 'bg-success');
+  } else {
+    statusSpan.textContent = 'Desconectado';
+    statusSpan.classList.replace('bg-secondary', 'bg-danger');
+  }
+}
+
+async function loadQRCodeIfDisconnected() {
+  try {
+    const qrRes = await fetch('/admin/whatsapp/qr');
+    if (!qrRes.ok) return;
+
+    const { qr } = await qrRes.json();
+    const qrDiv = document.getElementById('qrCode');
+    qrDiv.innerHTML = '';
+
+    new QRCode(qrDiv, {
+      text: qr,
+      width: 220,
+      height: 220,
+    });
+
+    document.getElementById('qrCodeSection').style.display = 'block';
+  } catch (e) {
+    console.warn('QR Code não disponível.');
+  }
+}
+
+
 // document.body.style.opacity = '1';
 // document.body.classList.add('fade-in-soft');
 let isNavigating = false;
