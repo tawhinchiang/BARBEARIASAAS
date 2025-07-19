@@ -168,181 +168,221 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.remove('fade-in-soft', 'fade-out-soft');
     });
 
+    if (window.location.pathname.includes('/admin/config')) {
+  // Atualiza a cada 10s só se o estado mudar
+  setInterval(loadQRCodeIfDisconnected, 10000);
+}
+
 checkWhatsAppStatus();
 
 });
 
-async function checkWhatsAppStatus() {
-  try {
-    const res = await fetch('/admin/whatsapp/status');
-    const data = await res.json();
-    const el = document.getElementById('whatsappStatus');
+    async function checkWhatsAppStatus() {
+    try {
+        const res = await fetch('/admin/whatsapp/status');
+        const data = await res.json();
+        const el = document.getElementById('whatsappStatus');
 
-    if (data.isConnected) {
-      el.classList.remove('bg-secondary', 'bg-danger');
-      el.classList.add('bg-success');
-      el.textContent = 'WhatsApp: Conectado';
+        if (data.isConnected) {
+        el.classList.remove('bg-secondary', 'bg-danger');
+        el.classList.add('bg-success');
+        el.textContent = 'WhatsApp: Conectado';
+        } else {
+        el.classList.remove('bg-secondary', 'bg-success');
+        el.classList.add('bg-danger');
+        el.textContent = 'WhatsApp: Desconectado';
+        }
+    } catch (err) {
+        console.error('Erro ao verificar status do WhatsApp', err);
+        const el = document.getElementById('whatsappStatus');
+        if (el) {
+        el.classList.remove('bg-success');
+        el.classList.add('bg-danger');
+        el.textContent = 'WhatsApp: Erro';
+        }
+    }
+    }
+    if (window.location.pathname.includes('/admin/config')) {
+    checkWhatsAppStatusConfig();
+    loadQRCodeIfDisconnected();
+    }
+
+    async function checkWhatsAppStatusConfig() {
+    const statusRes = await fetch('/admin/whatsapp/status');
+    const { isConnected } = await statusRes.json();
+    const statusSpan = document.getElementById('whatsappStatusConfig');
+
+    if (isConnected) {
+        statusSpan.textContent = 'Conectado';
+        statusSpan.classList.replace('bg-secondary', 'bg-success');
     } else {
-      el.classList.remove('bg-secondary', 'bg-success');
-      el.classList.add('bg-danger');
-      el.textContent = 'WhatsApp: Desconectado';
+        statusSpan.textContent = 'Desconectado';
+        statusSpan.classList.replace('bg-secondary', 'bg-danger');
     }
-  } catch (err) {
-    console.error('Erro ao verificar status do WhatsApp', err);
-    const el = document.getElementById('whatsappStatus');
-    if (el) {
-      el.classList.remove('bg-success');
-      el.classList.add('bg-danger');
-      el.textContent = 'WhatsApp: Erro';
     }
-  }
-}
-if (window.location.pathname.includes('/admin/config')) {
-  checkWhatsAppStatusConfig();
-  loadQRCodeIfDisconnected();
-}
 
-async function checkWhatsAppStatusConfig() {
-  const statusRes = await fetch('/admin/whatsapp/status');
-  const { isConnected } = await statusRes.json();
-  const statusSpan = document.getElementById('whatsappStatusConfig');
-
-  if (isConnected) {
-    statusSpan.textContent = 'Conectado';
-    statusSpan.classList.replace('bg-secondary', 'bg-success');
-  } else {
-    statusSpan.textContent = 'Desconectado';
-    statusSpan.classList.replace('bg-secondary', 'bg-danger');
-  }
-}
+    let wasWhatsAppConnected = null;
 
 async function loadQRCodeIfDisconnected() {
   try {
-    const qrRes = await fetch('/admin/whatsapp/qr');
-    if (!qrRes.ok) return;
+    const statusRes = await fetch('/admin/whatsapp/status');
+    const { isConnected } = await statusRes.json();
 
-    const { qr } = await qrRes.json();
+    const qrSection = document.getElementById('qrCodeSection');
     const qrDiv = document.getElementById('qrCode');
-    qrDiv.innerHTML = '';
+    const statusSpan = document.getElementById('whatsappStatusConfig');
+    const toast = document.getElementById('whatsapp-status-toast');
+    const toastText = document.getElementById('whatsapp-status-text');
 
-    new QRCode(qrDiv, {
-      text: qr,
-      width: 220,
-      height: 220,
-    });
+    // Apenas se mudou o estado
+    if (wasWhatsAppConnected !== isConnected) {
+      wasWhatsAppConnected = isConnected;
 
-    document.getElementById('qrCodeSection').style.display = 'block';
+      // Atualiza status visual
+      if (statusSpan) {
+        statusSpan.textContent = isConnected ? 'Conectado' : 'Desconectado';
+        statusSpan.classList.remove('bg-secondary', 'bg-danger', 'bg-success');
+        statusSpan.classList.add(isConnected ? 'bg-success' : 'bg-danger');
+      }
+
+      if (toast && toastText) {
+        toast.classList.remove('success', 'error', 'd-none', 'show');
+
+        if (isConnected) {
+          toast.classList.add('success', 'show');
+          toastText.innerText = 'WhatsApp está conectado ✅';
+          setTimeout(() => toast.classList.remove('show'), 5000);
+        } else {
+          toast.classList.add('error', 'show');
+          toastText.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
+        }
+      }
+
+      // Exibe/oculta QR code
+      if (!isConnected && qrSection && qrDiv) {
+        const qrRes = await fetch('/admin/whatsapp/qr');
+        if (!qrRes.ok) return;
+        const { qr } = await qrRes.json();
+        qrDiv.innerHTML = '';
+        new QRCode(qrDiv, { text: qr, width: 220, height: 220 });
+        qrSection.style.display = 'block';
+        qrSection.classList.add('fade-in-soft');
+      } else if (isConnected && qrSection) {
+        qrSection.style.display = 'none';
+      }
+    }
+
   } catch (e) {
-    console.warn('QR Code não disponível.');
+    console.warn('❌ Erro ao verificar QR Code:', e);
   }
 }
 
 
-// document.body.style.opacity = '1';
-// document.body.classList.add('fade-in-soft');
-let isNavigating = false;
-function navigateWithFade(href) {
-  if (isNavigating) return;
-  isNavigating = true;
-  document.body.classList.add('fade-out-soft');
-  setTimeout(() => window.location.href = href, 300);
-}
-// Função para mostrar alertas administrativos
-function showAlert(message, type = 'info') {
-    const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        <i class="bi bi-${getAlertIcon(type)}"></i>
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    alertContainer.appendChild(alertDiv);
-    
-    // Auto-remover após 5 segundos
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.remove();
-        }
-    }, 5000);
-}
-
-// Obter ícone do alerta
-function getAlertIcon(type) {
-    const icons = {
-        'success': 'check-circle',
-        'error': 'exclamation-triangle',
-        'danger': 'exclamation-triangle',
-        'warning': 'exclamation-triangle',
-        'info': 'info-circle'
-    };
-    return icons[type] || 'info-circle';
-}
-
-// Criar container de alertas se não existir
-function createAlertContainer() {
-    const container = document.createElement('div');
-    container.id = 'alertContainer';
-    container.style.position = 'fixed';
-    container.style.top = '20px';
-    container.style.right = '20px';
-    container.style.zIndex = '9999';
-    container.style.maxWidth = '400px';
-    document.body.appendChild(container);
-    return container;
-}
-
-// Inicializar gráficos do dashboard
-function initializeCharts() {
-    // Gráfico de agendamentos por status
-    const statusChartCanvas = document.getElementById('statusChart');
-    if (statusChartCanvas) {
-        const statusData = JSON.parse(statusChartCanvas.dataset.chartData || '{}');
+    // document.body.style.opacity = '1';
+    // document.body.classList.add('fade-in-soft');
+    let isNavigating = false;
+    function navigateWithFade(href) {
+    if (isNavigating) return;
+    isNavigating = true;
+    document.body.classList.add('fade-out-soft');
+    setTimeout(() => window.location.href = href, 300);
+    }
+    // Função para mostrar alertas administrativos
+    function showAlert(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
         
-        new Chart(statusChartCanvas, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(statusData).map(status => getStatusText(status)),
-                datasets: [{
-                    data: Object.values(statusData),
-                    backgroundColor: [
-                        '#28a745', // Concluído
-                        '#ffc107', // Agendado
-                        '#17a2b8', // Confirmado
-                        '#dc3545', // Cancelado
-                        '#6c757d'  // Não compareceu
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return `${context.label}: ${context.parsed} (${percentage}%)`;
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            <i class="bi bi-${getAlertIcon(type)}"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        alertContainer.appendChild(alertDiv);
+        
+        // Auto-remover após 5 segundos
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+        // Obter ícone do alerta
+        function getAlertIcon(type) {
+            const icons = {
+                'success': 'check-circle',
+                'error': 'exclamation-triangle',
+                'danger': 'exclamation-triangle',
+                'warning': 'exclamation-triangle',
+                'info': 'info-circle'
+            };
+            return icons[type] || 'info-circle';
+        }
+
+        // Criar container de alertas se não existir
+        function createAlertContainer() {
+            const container = document.createElement('div');
+            container.id = 'alertContainer';
+            container.style.position = 'fixed';
+            container.style.top = '20px';
+            container.style.right = '20px';
+            container.style.zIndex = '9999';
+            container.style.maxWidth = '400px';
+            document.body.appendChild(container);
+            return container;
+        }
+
+    // Inicializar gráficos do dashboard
+    function initializeCharts() {
+        // Gráfico de agendamentos por status
+        const statusChartCanvas = document.getElementById('statusChart');
+        if (statusChartCanvas) {
+            const statusData = JSON.parse(statusChartCanvas.dataset.chartData || '{}');
+            
+            new Chart(statusChartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusData).map(status => getStatusText(status)),
+                    datasets: [{
+                        data: Object.values(statusData),
+                        backgroundColor: [
+                            '#28a745', // Concluído
+                            '#ffc107', // Agendado
+                            '#17a2b8', // Confirmado
+                            '#dc3545', // Cancelado
+                            '#6c757d'  // Não compareceu
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
-    }
-    
+            });
+        }
+        // Gráfico de agendamentos por dia    
     // Gráfico de agendamentos por barbeiro
     const barberChartCanvas = document.getElementById('barberChart');
     if (barberChartCanvas) {

@@ -1,6 +1,6 @@
 const whatsapp = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-
+const SafeLocalAuth = require('../utils/CustomLocalAuth');
 let client = null;
 let isReady = false;
 let latestQrCode = null;
@@ -8,7 +8,7 @@ let latestQrCode = null;
 async function initializeWhatsApp() {
   try {
     client = new whatsapp.Client({
-      authStrategy: new whatsapp.LocalAuth({
+      authStrategy: new SafeLocalAuth({
         clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
       }),
       puppeteer: {
@@ -158,18 +158,31 @@ function getWhatsAppStatus() {
   };
 }
 // Desconectar WhatsApp
+
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function disconnectWhatsApp() {
   try {
     if (client) {
-      await client.destroy();
+      console.log('🔌 Desconectando WhatsApp...');
+      await client.destroy(); // encerra Puppeteer
+      
+      // Tenta várias vezes liberar os arquivos, se necessário
+      await delay(3000); // primeiro delay para segurança
+
       client = null;
       isReady = false;
-      console.log('📱 WhatsApp desconectado');
+      console.log('📱 WhatsApp desconectado com segurança');
     }
   } catch (error) {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
   }
 }
+
+
+
+
+
 function getLastQRCode() {
   return latestQrCode;
 }
