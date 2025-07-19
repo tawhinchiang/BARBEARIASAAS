@@ -1,0 +1,22 @@
+
+
+{{#if success}}
+  <div class="alert alert-success text-center">
+    ✅ Configurações salvas com sucesso!
+  </div>
+{{/if}}
+
+<div class="admin-card">
+  <h2 class="fw-bold mb-3">⏰ Configurações de Mensagens Automáticas</h2>
+  <form method="POST" action="/admin/config">
+    <div class="mb-3">
+      <label>Horas antes do serviço para enviar lembrete:</label>
+      <input type="number" class="form-control" name="reminderHoursBefore" value="{{config.reminderHoursBefore}}" min="1" required>
+    </div>
+    <div class="mb-3">
+      <label>Horas após o serviço para enviar mensagem de acompanhamento:</label>
+      <input type="number" class="form-control" name="followUpHoursAfter" value="{{config.followUpHoursAfter}}" min="1" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+  </form>
+</div>

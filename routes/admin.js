@@ -891,5 +891,9 @@ router.put('/appointments/:id', async (req, res) => {
     
     // ===== ROTAS DE SERVIÇOS =====
     router.use('/services', require('./services'));
+
+// ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
+router.use('/config', require('./admin-config'));
+
 module.exports = router;
 

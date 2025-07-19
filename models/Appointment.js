@@ -56,6 +56,10 @@ const Appointment = sequelize.define('Appointment', {
   whatsappSent: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  }, 
+  followUpSent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   totalPrice: {
     type: DataTypes.DECIMAL(10, 2),
