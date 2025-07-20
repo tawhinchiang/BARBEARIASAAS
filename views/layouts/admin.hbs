@@ -186,17 +186,26 @@
         updateTime(); // Atualizar imediatamente
         
         // Marcar link ativo na navegação
-        document.addEventListener('DOMContentLoaded', function() {
-            checkWhatsAppStatus();
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-            
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-        });
+      document.addEventListener('DOMContentLoaded', function() {
+  checkWhatsAppStatus();
+  const currentPath = window.location.pathname;
+  const links = document.querySelectorAll('.navbar-nav .nav-link, .dropdown-menu .dropdown-item');
+
+  links.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && currentPath.startsWith(href)) {
+      link.classList.add('active');
+
+      // Ativa dropdown do menu "Gerenciar" se filho estiver ativo
+      const parentDropdown = link.closest('.dropdown');
+      if (parentDropdown) {
+        const toggle = parentDropdown.querySelector('.nav-link.dropdown-toggle');
+        if (toggle) toggle.classList.add('active');
+      }
+    }
+  });
+});
+
         async function checkWhatsAppStatus() {
             try {
             const res = await fetch('/admin/whatsapp/status');
@@ -225,6 +234,20 @@
             console.error('[WHATSAPP STATUS ERROR]', err);
             }
         }
+        document.addEventListener('click', function (e) {
+  const dropdownToggle = document.getElementById('managementDropdown');
+  const dropdownMenu = dropdownToggle?.nextElementSibling;
+
+  if (dropdownToggle && dropdownMenu && dropdownMenu.classList.contains('show')) {
+    return;
+  }
+
+  if (e.target.closest('#managementDropdown')) {
+    e.preventDefault();
+    const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
+    bsDropdown.toggle();
+  }
+});
 
 </script>
 </body>
