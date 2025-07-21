@@ -295,13 +295,13 @@ function setupSmoothPageTransition() {
     // Permitir navegação normal para a página de histórico
     if (!href || !href.startsWith('/') || href === '/history') return;
 
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      document.body.classList.add('carousel-slide');
-      setTimeout(() => {
-        window.location.href = href;
-      }, 300);
-    });
+link.addEventListener('click', function(e) {
+  e.preventDefault();
+  document.body.classList.add('page-fade-out'); // Adiciona classe CSS
+  setTimeout(() => {
+    window.location.href = href;
+  }, 100);
+});
   });
 }
 

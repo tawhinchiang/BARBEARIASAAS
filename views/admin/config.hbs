@@ -1,0 +1,103 @@
+{{#if success}}
+  <div class="alert alert-success text-center">
+    ✅ Configurações salvas com sucesso!
+  </div>
+{{/if}}
+
+<div class="admin-dashboard fade-in-soft">
+  <div class="container py-4">
+    <div class="row">
+      <!-- Coluna Esquerda - Formulário de mensagens automáticas -->
+      <div class="col-lg-8">
+        <div class="admin-card mb-4">
+          <h2 class="fw-bold mb-3">⏰ Mensagens Automáticas</h2>
+          <form method="POST" action="/admin/config">
+            <div class="mb-3">
+              <label>Horas antes do serviço para enviar lembrete:</label>
+              <input type="number" class="form-control" name="reminderHoursBefore" value="{{config.reminderHoursBefore}}" min="1" required>
+            </div>
+            <div class="mb-3">
+              <label>Horas após o serviço para enviar mensagem de acompanhamento:</label>
+              <input type="number" class="form-control" name="followUpHoursAfter" value="{{config.followUpHoursAfter}}" min="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Coluna Direita - Status WhatsApp -->
+      <div class="col-lg-4">
+        <div class="admin-card position-relative" style="min-height: 100%;">
+          <h5 class="fw-bold mb-2">📲 WhatsApp</h5>
+          <p class="mb-2">Status: <span id="whatsappStatusConfig" class="badge bg-secondary">Carregando...</span></p>
+          <div id="qrCodeSection" class="fade-soft rounded bg-dark text-center p-3 mt-3" style="display: none;">
+            <p class="text-white mb-2">Escaneie o QR Code:</p>
+            <div id="qrCode" class="border rounded p-2 bg-white d-inline-block"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    await checkWhatsAppStatusConfig();
+    await loadQRCodeIfDisconnected();
+  });
+
+  async function checkWhatsAppStatusConfig() {
+    const statusSpan = document.getElementById('whatsappStatusConfig');
+    try {
+      const statusRes = await fetch('/admin/whatsapp/status');
+      const { isConnected } = await statusRes.json();
+      if (isConnected) {
+        statusSpan.textContent = 'Conectado';
+        statusSpan.classList.replace('bg-secondary', 'bg-success');
+      } else {
+        statusSpan.textContent = 'Desconectado';
+        statusSpan.classList.replace('bg-secondary', 'bg-danger');
+      }
+    } catch (e) {
+      statusSpan.textContent = 'Erro';
+      statusSpan.classList.replace('bg-secondary', 'bg-danger');
+    }
+  }
+
+  async function loadQRCodeIfDisconnected() {
+    try {
+      const qrRes = await fetch('/admin/whatsapp/qr');
+      if (!qrRes.ok) return;
+
+      const { qr } = await qrRes.json();
+      const qrDiv = document.getElementById('qrCode');
+      qrDiv.innerHTML = '';
+
+      new QRCode(qrDiv, {
+        text: qr,
+        width: 200,
+        height: 200
+      });
+
+      const qrSection = document.getElementById('qrCodeSection');
+      qrSection.style.display = 'block';
+      qrSection.classList.add('fade-in-soft');
+    } catch (e) {
+      console.warn('QR Code não disponível.');
+    }
+  }
+</script>
+
+<style>
+  .fade-in-soft {
+    opacity: 0;
+    animation: fadeIn 0.6s ease-in forwards;
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+</style>

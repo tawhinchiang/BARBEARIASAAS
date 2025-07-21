@@ -2,7 +2,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-
+const { getWhatsAppStatus } = require('../utils/whatsapp');
+const { getLastQRCode } = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op } = require('sequelize');
@@ -246,14 +247,20 @@ router.get('/dashboard', async (req, res) => {
     }));
 
     const formattedRecentAppointments = todayAppointments.map(app => {
-      const [year, month, day] = app.appointmentDate.split('-');
-      const localDate = new Date(year, month - 1, day);
-      return {
-        ...app.toJSON(),
-        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-        appointmentTimeFormatted: app.appointmentTime.slice(0, 5)
-      };
-    });
+  const [year, month, day] = app.appointmentDate.split('-');
+  const localDate = new Date(year, month - 1, day);
+  const serviceType = app.serviceType || {};
+
+  return {
+    ...app.toJSON(),
+    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+    appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
+    serviceType: {
+      name: serviceType.name || 'Não informado',
+      duration: serviceType.duration || 'n/d'
+    }
+  };
+});
 
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
@@ -361,26 +368,33 @@ router.get('/appointments', async (req, res) => {
     const barbers = await Barber.findAll({ where: { isActive: true } });
     const totalPages = Math.ceil(count / limit);
     const formattedAppointments = appointments.map(app => {
-    const plain = app.toJSON();
-    let dateFormatted = '';
-    try {
-      const rawDate = plain.appointmentDate;
-      const safeDate = typeof rawDate === 'string'
-        ? new Date(rawDate + 'T03:00:00')
-        : new Date(rawDate);
-      if (!isNaN(safeDate)) {
-        dateFormatted = safeDate.toLocaleDateString('pt-BR');
-      }
-    } catch (err) {
-      console.error('Erro ao formatar appointmentDate:', err);
-    }
+  const plain = app.toJSON();
+  const serviceType = plain.serviceType || {};
 
-    return {
-      ...plain,
-      appointmentDateFormatted: dateFormatted,
-      appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
-    };
-  });
+  let dateFormatted = '';
+  try {
+    const rawDate = plain.appointmentDate;
+    const safeDate = typeof rawDate === 'string'
+      ? new Date(rawDate + 'T03:00:00')
+      : new Date(rawDate);
+    if (!isNaN(safeDate)) {
+      dateFormatted = safeDate.toLocaleDateString('pt-BR');
+    }
+  } catch (err) {
+    console.error('Erro ao formatar appointmentDate:', err);
+  }
+
+  return {
+    ...plain,
+    appointmentDateFormatted: dateFormatted,
+    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+    serviceType: {
+      name: serviceType.name || 'Não informado',
+      duration: serviceType.duration || 'n/d'
+    }
+  };
+});
+
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
@@ -485,14 +499,20 @@ router.get('/reports', async (req, res) => {
       }); // padrão
 
     const formattedAppointments = appointments.map(app => {
-      const plain = app.toJSON();
-      const date = new Date(plain.appointmentDate + 'T03:00:00');
-      return {
-        ...plain,
-        appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5)
-          };
-    });
+  const plain = app.toJSON();
+  const date = new Date(plain.appointmentDate + 'T03:00:00');
+  const serviceType = plain.serviceType || {};
+
+  return {
+    ...plain,
+    appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
+    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+    serviceType: {
+      name: serviceType.name || 'Não informado',
+      duration: serviceType.duration || 'n/d'
+    }
+  };
+});
 
 
 
@@ -872,5 +892,21 @@ router.put('/appointments/:id', async (req, res) => {
     
     // ===== ROTAS DE SERVIÇOS =====
     router.use('/services', require('./services'));
+
+// ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
+    router.use('/config', require('./admin-config'));
+
+router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+  const status = getWhatsAppStatus();
+  res.json(status);
+});
+
+router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
+  const qr = getLastQRCode();
+  if (!qr) {
+    return res.status(404).json({ error: 'Nenhum QR disponível no momento.' });
+  }
+  res.json({ qr });
+});
 module.exports = router;
 

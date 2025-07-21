@@ -15,7 +15,7 @@ async function startServer() {
 
     // Inicializar WhatsApp
     await initializeWhatsApp();
-
+    require('./worker/cronScheduler');
     // Iniciar servidor
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor rodando na porta ${PORT}`);
