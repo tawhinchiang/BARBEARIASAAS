@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const searchInput = document.getElementById('serviceSearch');
+  const statusSelect = document.getElementById('serviceStatus');
+  let debounceTimer;
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       clearTimeout(debounceTimer);
@@ -72,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
         filterServices();
       }, 200);
     });
+  }
+  if (statusSelect) {
+    statusSelect.addEventListener('change', filterServices);
   }
 
   // ================= FUNÇÕES GLOBAIS ================= //
@@ -154,28 +159,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function filterServices() {
   const searchValue = document.getElementById('serviceSearch').value.toLowerCase().trim();
-  const cards = document.querySelectorAll('.admin-card');
+  const statusValue = document.getElementById('serviceStatus').value;
+  const cards = document.querySelectorAll('#servicesContainer > .col');
 
   cards.forEach(card => {
-    const name = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
-    const description = card.querySelector('p.text-muted')?.textContent.toLowerCase() || '';
-    const match = name.includes(searchValue) || description.includes(searchValue);
-    const container = card.closest('.col-md-6');
-
-    if (!container) return;
-
-    if (match && container.style.opacity !== '1') {
-      container.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      container.style.opacity = '1';
-      container.style.transform = 'scale(1)';
-      container.style.pointerEvents = 'auto';
-      container.style.position = 'static';
-    } else if (!match && container.style.opacity !== '0') {
-      container.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      container.style.opacity = '0';
-      container.style.transform = 'scale(0.95)';
-      container.style.pointerEvents = 'none';
-      container.style.position = 'absolute';
+    const cardEl = card.querySelector('.admin-card');
+    if (!cardEl) return;
+    const name = cardEl.querySelector('.card-title')?.textContent.toLowerCase() || '';
+    const description = cardEl.querySelector('p.text-muted')?.textContent.toLowerCase() || '';
+    const statusBadge = cardEl.querySelector('.status-badge');
+    let isActive = '';
+    if (statusBadge) {
+      isActive = statusBadge.classList.contains('status-confirmed') ? 'ativo' : 'inativo';
+    }
+    const matchText = name.includes(searchValue) || description.includes(searchValue);
+    const matchStatus = !statusValue || isActive === statusValue;
+    if (matchText && matchStatus) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
     }
   });
 }

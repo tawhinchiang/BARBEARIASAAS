@@ -1,34 +1,5 @@
 {{!-- admin/services.hbs --}}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h2 class="mb-0">
-    <i class="fas fa-cut me-2"></i> Gerenciar Serviços
-  </h2>
-  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal">
-    <i class="fas fa-plus me-2"></i> Novo Serviço
-  </button>
-</div>
-
-<div id="notificationContainer"></div>
-
-{{#if error}}
-  <div class="alert alert-danger">{{error}}</div>
-{{/if}}
-
-<div class="row mb-3">
-  <div class="col-md-6">
-    <input type="text" class="form-control" id="serviceSearch" placeholder="Buscar por nome ou descrição...">
-  </div>
-</div>
-
-<!-- Container dos cards -->
-<p class="text-muted">Total de serviços: {{services.length}}</p>
-<div class="row g-3">  {{!-- g-3 = espaçamento entre os cards --}}
-  {{#each services}}
-    {{> service-card this}}
-  {{/each}}
-</div>
-
 <!-- Modal de Criar/Editar Serviço -->
 <div class="modal fade" id="serviceModal" tabindex="-1">
   <div class="modal-dialog">
@@ -84,4 +55,73 @@
   </div>
 </div>
 
+<div class="admin-dashboard fade-in-soft">
+  <div class="container-fluid">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="fw-bold mb-1">
+                <i class="fas fa-cut me-2"></i> Gerenciar Serviços
+              </h2>
+              <p class="text-muted mb-0">Visualize e gerencie os serviços cadastrados</p>
+            </div>
+            <div>
+              <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#serviceModal">
+                <i class="fas fa-plus me-2"></i> Novo Serviço
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros Rápidos -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-filters">
+          <form id="filterForm">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="filter-group">
+                  <label class="form-label">Buscar</label>
+                  <input type="text" class="form-control" id="serviceSearch" placeholder="Nome ou descrição do serviço">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="filter-group">
+                  <label class="form-label">Status</label>
+                  <select class="form-control" id="serviceStatus">
+                    <option value="">Todos</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {{#if error}}
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{error}}
+      </div>
+    {{/if}}
+
+    <p class="text-muted">Total de serviços: {{services.length}}</p>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="servicesContainer">
+      {{#each services}}
+        {{> service-card this}}
+      {{/each}}
+    </div>
+  </div>
+</div>
+
+<!-- jQuery e plugins -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/services.js"></script>
