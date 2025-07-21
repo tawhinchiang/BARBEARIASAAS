@@ -94,6 +94,7 @@ async function loadServices() {
   const spinner = document.getElementById('servicesSpinner');
   const container = document.getElementById('servicesContainer');
 
+
   // Verificar se os elementos existem
   if (!spinner || !container) {
     logError('Elementos de serviços não encontrados no DOM');
@@ -137,6 +138,8 @@ async function loadServices() {
       spinner.classList.remove('show');
     }
   }
+  
+
 }
 
 // Renderizar cards de serviços dinamicamente
@@ -926,41 +929,6 @@ function adjustTimeSlots() {
   }
 }
 
-// Chame esta função após carregar os horários
-// document.addEventListener('DOMContentLoaded', async () => {
-//   const isHistoryPage = window.location.pathname.includes('/history');
-
-//   if (isHistoryPage) {
-//     log('Página de histórico detectada');
-//     setupSmoothPageTransition(); // para animações dos botões
-//     return; // se você vai carregar histórico via HTML mesmo
-//   }
-
-//   log('Inicializando sistema de agendamento moderno');
-//   try {
-//     await loadServices();
-//     setupEventListeners();
-//     loadBarbers();
-//     initializeCalendar();
-//     setupPhoneMask();
-
-//     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
-//       initializeGoogleLogin();
-//     }
-
-//     ['clientFirstName', 'clientLastName', 'clientPhone'].forEach(id => {
-//       const el = document.getElementById(id);
-//       if (el) {
-//         el.addEventListener('input', validateClientForm);
-//       }
-//     });
-
-//     log('Sistema inicializado com sucesso');
-//   } catch (error) {
-//     logError('Erro na inicialização', error);
-//   }
-  
-// });
 
 
 function scrollToTop() {

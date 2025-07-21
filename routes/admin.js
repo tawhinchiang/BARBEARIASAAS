@@ -2,7 +2,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-
+const { getWhatsAppStatus } = require('../utils/whatsapp');
+const { getLastQRCode } = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op } = require('sequelize');
@@ -891,5 +892,21 @@ router.put('/appointments/:id', async (req, res) => {
     
     // ===== ROTAS DE SERVIÇOS =====
     router.use('/services', require('./services'));
+
+// ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
+    router.use('/config', require('./admin-config'));
+
+router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+  const status = getWhatsAppStatus();
+  res.json(status);
+});
+
+router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
+  const qr = getLastQRCode();
+  if (!qr) {
+    return res.status(404).json({ error: 'Nenhum QR disponível no momento.' });
+  }
+  res.json({ qr });
+});
 module.exports = router;
 

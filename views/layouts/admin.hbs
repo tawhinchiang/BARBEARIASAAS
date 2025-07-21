@@ -28,6 +28,7 @@
     <link rel="icon" type="image/png" href="/images/logo.png">
 </head>
 <body class="admin-body" style="opacity: 0; transition: opacity 0.3s ease;" >
+
     <!-- Navbar Administrativa -->
     {{#unless hideNavbar}}
    
@@ -80,15 +81,22 @@
                                 <i class="fas fa-users me-2"></i> Clientes
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/admin/settings">
+                            <li><a class="dropdown-item" href="/admin/config">
                                 <i class="fas fa-cog me-2"></i> Configurações
                             </a></li>
+
                         </ul>
                     </li>
                 </ul>
                 
                 <!-- Menu do usuário -->
                 <ul class="navbar-nav">
+                     <li class="nav-item d-none d-lg-block me-2" id="whatsapp-status-container">
+                    <div id="whatsapp-status-toast" class="d-none">
+                    <i class="fab fa-whatsapp me-2"></i>
+                    <span id="whatsapp-status-text">...</span>
+                    </div>
+                </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/" target="_blank">
                             <i class="fas fa-external-link-alt me-1"></i> Ver Site
@@ -160,6 +168,10 @@
     
     <!-- Script para atualizar horário -->
     <script>
+        setTimeout(() => {
+    const alert = document.querySelector('.alert-success');
+    if (alert) alert.remove();
+  }, 4000);
         function updateTime() {
             const now = new Date();
             const timeString = now.toLocaleTimeString('pt-BR');
@@ -174,27 +186,92 @@
         updateTime(); // Atualizar imediatamente
         
         // Marcar link ativo na navegação
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-            
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-        });
-    </script>
+      document.addEventListener('DOMContentLoaded', function() {
+  checkWhatsAppStatus();
+  const currentPath = window.location.pathname;
+  const links = document.querySelectorAll('.navbar-nav .nav-link, .dropdown-menu .dropdown-item');
+
+  links.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && currentPath.startsWith(href)) {
+      link.classList.add('active');
+
+      // Ativa dropdown do menu "Gerenciar" se filho estiver ativo
+      const parentDropdown = link.closest('.dropdown');
+      if (parentDropdown) {
+        const toggle = parentDropdown.querySelector('.nav-link.dropdown-toggle');
+        if (toggle) toggle.classList.add('active');
+      }
+    }
+  });
+});
+
+        async function checkWhatsAppStatus() {
+            try {
+            const res = await fetch('/admin/whatsapp/status');
+            const data = await res.json();
+
+            const toast = document.getElementById('whatsapp-status-toast');
+            const text = document.getElementById('whatsapp-status-text');
+
+            if (!toast || !text) return;
+
+            toast.classList.remove('success', 'error', 'd-none', 'show');
+
+            if (data.isConnected) {
+            toast.classList.add('success', 'show');
+            text.innerText = 'WhatsApp está conectado ✅';
+
+            // Esconde depois de 7 segundos
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 7000);
+            } else {
+            toast.classList.add('error', 'show');
+            text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
+            }
+            } catch (err) {
+            console.error('[WHATSAPP STATUS ERROR]', err);
+            }
+        }
+        document.addEventListener('click', function (e) {
+  const dropdownToggle = document.getElementById('managementDropdown');
+  const dropdownMenu = dropdownToggle?.nextElementSibling;
+
+  if (dropdownToggle && dropdownMenu && dropdownMenu.classList.contains('show')) {
+    return;
+  }
+
+  if (e.target.closest('#managementDropdown')) {
+    e.preventDefault();
+    const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
+    bsDropdown.toggle();
+  }
+});
+
+</script>
 </body>
 </html>
 
 <style>
 /* ===== ESTILOS ADMINISTRATIVOS PADRONIZADOS ===== */
 
- 
+ /* Wrapper que segura o toast fixo no topo */
+.whatsapp-status-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    padding: 10px 16px;
+    pointer-events: none; /* permite clicar no navbar abaixo */
+}
 
 /* Layout administrativo */
 .admin-body {
+   
     background: var(--bg-light);
     min-height: 100vh;
     display: flex;
@@ -468,9 +545,59 @@
     border-color: var(--primary-color);
     background: var(--bg-gray);
 }
+/* Responsivo: centralizar em mobile */
+#whatsapp-status-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
 
+#whatsapp-status-toast {
+  height: 48px;
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: #ffffff !important;
+  color: #212529;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  transform: translateY(-100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  max-width: 420px;
+  width: auto;
+}
+
+#whatsapp-status-toast.success {
+  border-color: #28a745;
+}
+#whatsapp-status-toast.error {
+  border-color: #dc3545;
+}
+#whatsapp-status-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
 /* Responsividade */
 @media (max-width: 768px) {
+     #whatsapp-status-container {
+    display: block !important;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  #whatsapp-status-toast {
+    display: inline-block;
+    max-width: 90%;
+    white-space: normal;
+  }
     .admin-navbar .navbar-brand span {
         display: none;
     }
@@ -518,37 +645,48 @@
 
 /* Notificações */
 .admin-notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: var(--bg-light);
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem 1.5rem;
-    color: var(--text-dark);
-    box-shadow: var(--shadow);
-    z-index: 9999;
-    transform: translateX(400px);
-    transition: transform 0.3s ease;
+    background: #fff;
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    font-size: 1rem;
+    min-height: 64px;
+    color: #212529;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    pointer-events: auto;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    transform: translateY(-100%);
 }
 
+/* Visível */
 .admin-notification.show {
-    transform: translateX(0);
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .admin-notification.success {
-    border-color: var(--success-color);
-    background: #f0f9ff;
+     border-color: #28a745;
+    background: #ffffff;
+    border: 2px solid #28a745; /* verde */
+    color: #212529;
 }
 
+
 .admin-notification.error {
-    border-color: var(--danger-color);
-    background: #fef2f2;
+    background: #ffffff;
+    border: 2px solid #dc3545; /* vermelho */
+    color: #212529;
+    border-color: #dc3545;
 }
 
 .admin-notification.warning {
     border-color: var(--warning-color);
-    background: #fffbeb;
+    background: #fff3cd;
+    color: #664d03;
 }
 </style>
 

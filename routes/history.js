@@ -102,9 +102,20 @@ router.post('/cancel/:id', async (req, res) => {
     await appointment.update({ status: 'cancelled' });
 
     try {
-      const msg = `Olá, ${appointment.client.firstName}! 👋\n\nSeu agendamento foi cancelado:\n🗓️ *Data:* ${appointment.appointmentDate}\n⏰ *Horário:* ${appointment.appointmentTime}\n✂️ *Serviço:* ${appointment.serviceType.name}\n💈 *Barbeiro:* ${appointment.barber.name}`;
+      const msg = `Olá, ${appointment.client.firstName}! 👋
+
+      Seu agendamento foi cancelado com sucesso:
+      🗓️ *Data:* ${appointment.appointmentDate}
+      ⏰ *Horário:* ${appointment.appointmentTime}
+      ✂️ *Serviço:* ${appointment.serviceType.name}
+      💈 *Barbeiro:* ${appointment.barber.name}
+
+      Se precisar remarcar ou se tiver algum motivo para o cancelamento, ficaremos felizes em ouvir. 😊
+
+      Estamos à disposição para te atender quando quiser! 💈✨`;
+
       await sendWhatsAppMessage(appointment.client.phone, msg);
-    } catch (err) {
+          } catch (err) {
       logError('Erro ao enviar mensagem de cancelamento', err);
     }
 
