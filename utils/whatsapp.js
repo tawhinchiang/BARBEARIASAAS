@@ -43,7 +43,7 @@ async function initializeWhatsApp() {
       latestQrCode = qr;
       console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
       qrcode.generate(qr, { small: true });
-      console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
+      // console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
     });
 
     client.on('authenticated', () => {
@@ -152,6 +152,7 @@ function getWhatsAppStatus() {
 
 // Desconectar WhatsApp
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const deleteSession = require('../utils/deleteSession');
 
 async function disconnectWhatsApp() {
   try {
@@ -161,12 +162,16 @@ async function disconnectWhatsApp() {
       await delay(3000);
       client = null;
       isReady = false;
-      console.log('📱 WhatsApp desconectado com segurança');
+      latestQrCode = null; // ✅ ESSENCIAL: limpa QR antigo
+      const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+      await deleteSession(sessionId);
+      console.log('📱 WhatsApp desconectado e sessão removida com segurança');
     }
   } catch (error) {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
   }
 }
+
 
 function getLastQRCode() {
   return latestQrCode;
