@@ -4,23 +4,38 @@
   </h2>
 
   <!-- Formulário de busca -->
-  <form class="mb-4" style="max-width: 400px; margin: auto;" onsubmit="carregarHistorico(); return false;">
-    <div class="input-group">
-      <input type="tel" 
-             id="phoneInput" 
-             name="phone" 
-             class="form-control text-center bg-dark text-white border-secondary" 
-             placeholder="Digite seu telefone" 
-             required
-             maxlength="15">
-      <button type="submit" class="btn btn-primary">
-        <i class="fas fa-search me-1"></i> Buscar
-      </button>
-    </div>
-    <small class="text-muted d-block text-center mt-1">
-      Ex: (11) 99999-9999 ou 11999999999
-    </small>
-  </form>
+ <form class="mb-4" style="max-width: 400px; margin: auto;" onsubmit="enviarCodigo(); return false;">
+  <div class="input-group">
+    <input type="tel" 
+           id="phoneInput" 
+           name="phone" 
+           class="form-control text-center bg-dark text-white border-secondary" 
+           placeholder="Digite seu telefone" 
+           required
+           maxlength="15">
+    <button id="sendCodeBtn" type="submit" class="btn btn-primary">
+      <i class="fas fa-paper-plane me-1"></i> Enviar Código
+    </button>
+  </div>
+  <small class="text-muted d-block text-center mt-1">
+    Ex: (63) 99201-4547 ou 63992014547
+  </small>
+</form>
+
+<!-- Campo de verificação de código (inicialmente escondido) -->
+<div id="verificationSection" class="text-center d-none mt-3">
+  <label for="codeInput" class="text-light mb-2 d-block">Digite o código de 4 dígitos recebido via WhatsApp</label>
+<div id="codeInputGroup" class="d-flex justify-content-center gap-2 mb-3">
+  <input type="text" class="code-digit form-control text-center bg-dark text-white border-light" maxlength="1" inputmode="numeric" />
+  <input type="text" class="code-digit form-control text-center bg-dark text-white border-light" maxlength="1" inputmode="numeric" />
+  <input type="text" class="code-digit form-control text-center bg-dark text-white border-light" maxlength="1" inputmode="numeric" />
+  <input type="text" class="code-digit form-control text-center bg-dark text-white border-light" maxlength="1" inputmode="numeric" />
+</div>
+  <button class="btn btn-success" onclick="verificarCodigo()">Verificar</button>
+  <p id="expirationTimer" class="text-muted small mt-2">O código expira em 2 minutos.</p>
+
+</div>
+
 
   <!-- Loading indicator -->
   <div id="loadingIndicator" class="text-center d-none">
@@ -72,6 +87,119 @@ document.getElementById('phoneInput').addEventListener('input', function(e) {
   
   e.target.value = value;
 });
+
+let resendCooldown = 50; // segundos
+let codeExpireSeconds = 120;
+let resendTimerInterval = null;
+let expireTimerInterval = null;
+
+async function enviarCodigo() {
+  const phoneInput = document.getElementById('phoneInput');
+  const phone = phoneInput.value.trim();
+  const sendBtn = document.getElementById('sendCodeBtn');
+
+  if (!phone) {
+    showAlert('Digite seu telefone.', 'warning');
+    return;
+  }
+
+  showLoading(true);
+  hideContainer();
+  currentPhone = phone;
+
+  try {
+    const response = await fetch('/history/send-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+
+    const result = await response.json();
+    showLoading(false);
+
+    if (!result.success) {
+      showAlert('Falha ao enviar código. Tente novamente.', 'danger');
+      return;
+    }
+
+    showAlert('Código enviado via WhatsApp!', 'success');
+    document.getElementById('verificationSection').classList.remove('d-none');
+
+    // === Desativa botão por 50s ===
+    sendBtn.disabled = true;
+    let cooldown = resendCooldown;
+    sendBtn.innerHTML = `<i class="fas fa-hourglass-half me-1"></i> Reenviar em ${cooldown}s`;
+
+    if (resendTimerInterval) clearInterval(resendTimerInterval);
+    resendTimerInterval = setInterval(() => {
+      cooldown--;
+      if (cooldown <= 0) {
+        clearInterval(resendTimerInterval);
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = `<i class="fas fa-paper-plane me-1"></i> Enviar Código`;
+      } else {
+        sendBtn.innerHTML = `<i class="fas fa-hourglass-half me-1"></i> Reenviar em ${cooldown}s`;
+      }
+    }, 1000);
+
+    // === Timer de expiração do código ===
+    const expirationLabel = document.getElementById('expirationTimer');
+    let timeLeft = codeExpireSeconds;
+    if (expireTimerInterval) clearInterval(expireTimerInterval);
+    expireTimerInterval = setInterval(() => {
+      timeLeft--;
+      const min = String(Math.floor(timeLeft / 60)).padStart(1, '0');
+      const sec = String(timeLeft % 60).padStart(2, '0');
+      expirationLabel.textContent = `O código expira em ${min}:${sec}`;
+      if (timeLeft <= 0) {
+        clearInterval(expireTimerInterval);
+        expirationLabel.textContent = 'Código expirado. Solicite um novo.';
+      }
+    }, 1000);
+
+  } catch (err) {
+    console.error('Erro ao enviar código:', err);
+    showAlert('Erro interno ao enviar código.', 'danger');
+    showLoading(false);
+  }
+}
+
+
+async function verificarCodigo(codeArg = null) {
+  const code = codeArg || Array.from(document.querySelectorAll('.code-digit')).map(el => el.value).join('');
+
+  if (code.length !== 4) {
+    showAlert('Código inválido. Digite os 4 dígitos.', 'warning');
+    return;
+  }
+
+  try {
+    showLoading(true);
+    const response = await fetch('/history/verify-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: currentPhone, code })
+    });
+
+    const result = await response.json();
+    showLoading(false);
+
+    if (!result.success) {
+      showAlert('Código incorreto ou expirado.', 'danger');
+      return;
+    }
+
+    document.getElementById('verificationSection').classList.add('d-none');
+    document.querySelector('form').classList.add('d-none');
+    carregarHistorico();
+
+  } catch (err) {
+    console.error('Erro ao verificar código:', err);
+    showAlert('Erro interno ao verificar código.', 'danger');
+    showLoading(false);
+  }
+}
+
 
 async function carregarHistorico() {
   try {
@@ -306,5 +434,38 @@ link.addEventListener('click', function(e) {
 }
 
 document.addEventListener('DOMContentLoaded', setupSmoothPageTransition);
+document.querySelectorAll('.code-digit').forEach((input, idx, all) => {
+  input.addEventListener('input', (e) => {
+    const val = e.target.value.replace(/\D/g, '');
+    e.target.value = val.slice(0, 1);
+
+    if (val.length === 1 && idx < all.length - 1) {
+      all[idx + 1].focus();
+    }
+
+    // Verificar automaticamente quando todos preenchidos
+    const code = Array.from(all).map(el => el.value).join('');
+    if (code.length === 4) {
+      verificarCodigo(code);
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+      all[idx - 1].focus();
+    }
+  });
+
+  // Suporte a colar os 4 dígitos de uma vez
+  input.addEventListener('paste', (e) => {
+    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+    if (paste.length === 4) {
+      e.preventDefault();
+      all.forEach((el, i) => el.value = paste[i] || '');
+      verificarCodigo(paste);
+    }
+  });
+});
+
 </script>
 
