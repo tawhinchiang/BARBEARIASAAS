@@ -1,12 +1,15 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
+const { disconnectWhatsApp, initializeWhatsApp } = require('../utils/whatsapp');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
 const { getWhatsAppStatus } = require('../utils/whatsapp');
 const { getLastQRCode } = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op } = require('sequelize');
+
+
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
 router.use((req, res, next) => {
   const publicRoutes = ['/login', '/logout'];
@@ -896,17 +899,36 @@ router.put('/appointments/:id', async (req, res) => {
 // ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
     router.use('/config', require('./admin-config'));
 
-router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+   router.get('/whatsapp/status', isAuthenticated, (req, res) => {
   const status = getWhatsAppStatus();
   res.json(status);
-});
+    });
 
 router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
-  const qr = getLastQRCode();
-  if (!qr) {
-    return res.status(404).json({ error: 'Nenhum QR disponível no momento.' });
+  try {
+    const qr = getLastQRCode();
+    if (!qr) return res.status(204).json({ message: 'QR ainda não gerado' });
+    res.json({ qr });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao buscar QR' });
   }
-  res.json({ qr });
 });
+
+
+router.post('/whatsapp/disconnect', async (req, res) => {
+  try {
+    await disconnectWhatsApp();
+
+    // Força uma nova sessão após desconexão
+    await initializeWhatsApp(); 
+
+    req.session.message = 'WhatsApp desconectado e reinicializado';
+    res.redirect('/admin/config');
+  } catch (error) {
+    console.error('[WHATSAPP DISCONNECT ERROR]', error);
+    res.redirect('/admin/config?error=Erro ao desconectar WhatsApp');
+  }
+});
+
 module.exports = router;
 

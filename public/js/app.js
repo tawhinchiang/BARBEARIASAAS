@@ -50,7 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadBarbers();
     initializeCalendar();
     setupPhoneMask();
-
+    document.getElementById('prevMonth')?.addEventListener('click', () => changeMonth(-1));
+    document.getElementById('nextMonth')?.addEventListener('click', () => changeMonth(1));
+    
     if (CONFIG.GOOGLE_CLIENT_ID !== 'SEU_GOOGLE_CLIENT_ID_AQUI') {
       initializeGoogleLogin();
     }
@@ -430,16 +432,17 @@ function generateCalendar() {
     dayElement.className = 'calendar-day';
     dayElement.textContent = day;
     
-    const currentDate = new Date(appState.currentYear, appState.currentMonth, day);
-    
-    // Verificar se é dia passado
-    if (currentDate < today.setHours(0, 0, 0, 0)) {
-      dayElement.classList.add('disabled');
-    } else {
-      dayElement.classList.add('available');
-      dayElement.addEventListener('click', () => selectDate(currentDate));
-    }
-    
+  const currentDate = new Date(appState.currentYear, appState.currentMonth, day);
+  const todayOnlyDate = new Date();
+  todayOnlyDate.setHours(0, 0, 0, 0); // zera a hora para comparar só a data
+
+  if (currentDate < todayOnlyDate) {
+    dayElement.classList.add('disabled');
+    dayElement.title = 'Dia indisponível';
+  } else {
+    dayElement.classList.add('available');
+    dayElement.addEventListener('click', () => selectDate(currentDate));
+  }
     calendarGrid.appendChild(dayElement);
   }
   
@@ -608,18 +611,44 @@ function selectTime(time) {
 
 // Mudar mês
 function changeMonth(direction) {
-  appState.currentMonth += direction;
-  
-  if (appState.currentMonth < 0) {
-    appState.currentMonth = 11;
-    appState.currentYear--;
-  } else if (appState.currentMonth > 11) {
-    appState.currentMonth = 0;
-    appState.currentYear++;
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+
+  let newMonth = appState.currentMonth + direction;
+  let newYear = appState.currentYear;
+
+  if (newMonth < 0) {
+    newMonth = 11;
+    newYear--;
+  } else if (newMonth > 11) {
+    newMonth = 0;
+    newYear++;
   }
-  
+
+  // Permitir somente o mês atual e o próximo mês
+  const maxMonth = (currentMonth + 1) % 12;
+  const maxYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+
+  const isBeforeCurrent =
+    newYear < currentYear || (newYear === currentYear && newMonth < currentMonth);
+  const isAfterNext =
+    newYear > maxYear || (newYear === maxYear && newMonth > maxMonth);
+
+  if (isBeforeCurrent || isAfterNext) {
+    log('Mês fora do intervalo permitido');
+    return;
+  }
+
+  appState.currentMonth = newMonth;
+  appState.currentYear = newYear;
   generateCalendar();
 }
+
+
+
+
+
 
 // Atualizar resumo do agendamento
 function updateBookingSummary() {

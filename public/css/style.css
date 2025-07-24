@@ -200,14 +200,8 @@ body.page-fade-out {
 
 /* Container de serviços - CORRIGIDO */
 #servicesContainer {
-  display: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-#servicesContainer.show {
-  display: grid !important;
-  opacity: 1 !important;
+  
+  opacity: 1;
 }
 
 /* Grid de serviços */
@@ -435,10 +429,13 @@ body.page-fade-out {
 }
 
 .calendar-day.disabled {
-  color: var(--text-muted);
+  background-color: var(--bg-gray);   /* tom cinza escuro padrão do tema */
+  color: #666;                        /* cinza mais claro para contraste */
+  opacity: 0.8;                       /* levemente apagado */
+  pointer-events: none;              /* impede clique */
   cursor: not-allowed;
+  border: 1px solid var(--border-color); /* borda leve para manter estrutura */
 }
-
 .calendar-day.other-month {
   color: var(--text-muted);
   opacity: 0.5;

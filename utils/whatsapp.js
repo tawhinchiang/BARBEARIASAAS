@@ -1,12 +1,23 @@
 const whatsapp = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const SafeLocalAuth = require('../utils/CustomLocalAuth');
+
 let client = null;
 let isReady = false;
 let latestQrCode = null;
+
+// Função de timeout para evitar travamentos
+function timeout(ms) {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('⏱ Timeout ao inicializar WhatsApp')), ms);
+  });
+}
+
 // Inicializar cliente WhatsApp
 async function initializeWhatsApp() {
   try {
+    console.log('[WHATSAPP] Criando instância do cliente...');
+
     client = new whatsapp.Client({
       authStrategy: new SafeLocalAuth({
         clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
@@ -26,51 +37,47 @@ async function initializeWhatsApp() {
       }
     });
 
-    // Evento QR Code
-    // client.on('qr', (qr) => {
-    //   console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
-    //   qrcode.generate(qr, { small: true });
-    //   console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
-    // });
+    console.log('[WHATSAPP] Registrando eventos...');
+
     client.on('qr', (qr) => {
-    latestQrCode = qr;
-    console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
-    qrcode.generate(qr, { small: true });
-    console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
-  });
-    // Evento de autenticação
+      latestQrCode = qr;
+      console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
+      qrcode.generate(qr, { small: true });
+      // console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
+    });
+
     client.on('authenticated', () => {
       console.log('✅ WhatsApp autenticado com sucesso!');
     });
 
-    // Evento de conexão
     client.on('ready', () => {
       console.log('🚀 WhatsApp conectado e pronto para uso!');
       isReady = true;
     });
 
-    // Evento de desconexão
     client.on('disconnected', (reason) => {
       console.log('❌ WhatsApp desconectado:', reason);
       isReady = false;
     });
 
-    // Evento de erro
     client.on('auth_failure', (msg) => {
       console.error('❌ Falha na autenticação WhatsApp:', msg);
     });
 
-    // Inicializar cliente
-    await client.initialize();
-    
     console.log('🔄 Inicializando WhatsApp...');
-    
+
+    // await Promise.race([
+      client.initialize(),
+    //   timeout(15000)
+    // ]);
+
+    console.log('✅ Inicialização do WhatsApp finalizada .');
+
   } catch (error) {
     console.error('❌ Erro ao inicializar WhatsApp:', error);
   }
 }
 
-// Enviar mensagem WhatsApp
 // Enviar mensagem WhatsApp
 function formatBrazilianPhone(raw) {
   let cleaned = raw.replace(/\D/g, '');
@@ -89,7 +96,6 @@ function formatBrazilianPhone(raw) {
   } else if (number.length === 8 && !number.startsWith('9')) {
     return `55${ddd}9${number}`;
   } else if (number.length === 9 && !number.startsWith('9')) {
-    // Exemplo: 92712877 → tenta corrigir
     return `55${ddd}9${number}`;
   } else {
     throw new Error('Número inválido');
@@ -117,9 +123,8 @@ async function sendWhatsAppMessage(phone, message) {
 
     let sent = await trySend(raw);
 
-    // Se tiver 13 dígitos, é um número de celular (com 9) — tentar remover
     if (!sent && raw.length === 13) {
-      const sem9 = raw.slice(0, 4) + raw.slice(5); // remove o 9 depois do DDD
+      const sem9 = raw.slice(0, 4) + raw.slice(5);
       if (sem9.length === 12) {
         sent = await trySend(sem9);
       }
@@ -137,19 +142,6 @@ async function sendWhatsAppMessage(phone, message) {
   }
 }
 
-
-
-    // Enviar mensagem
-//     await client.sendMessage(chatId, message);
-//     console.log(`✅ Mensagem enviada para ${phone}`);
-//     return true;
-
-//   } catch (error) {
-//     console.error('❌ Erro ao enviar mensagem WhatsApp:', error);
-//     return false;
-//   }
-// }
-
 // Verificar status da conexão
 function getWhatsAppStatus() {
   return {
@@ -157,30 +149,28 @@ function getWhatsAppStatus() {
     qrCode: isReady ? null : latestQrCode
   };
 }
-// Desconectar WhatsApp
 
+// Desconectar WhatsApp
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const deleteSession = require('../utils/deleteSession');
 
 async function disconnectWhatsApp() {
   try {
     if (client) {
       console.log('🔌 Desconectando WhatsApp...');
-      await client.destroy(); // encerra Puppeteer
-      
-      // Tenta várias vezes liberar os arquivos, se necessário
-      await delay(3000); // primeiro delay para segurança
-
+      await client.destroy();
+      await delay(3000);
       client = null;
       isReady = false;
-      console.log('📱 WhatsApp desconectado com segurança');
+      latestQrCode = null; // ✅ ESSENCIAL: limpa QR antigo
+      const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+      await deleteSession(sessionId);
+      console.log('📱 WhatsApp desconectado e sessão removida com segurança');
     }
   } catch (error) {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
   }
 }
-
-
-
 
 
 function getLastQRCode() {
@@ -194,4 +184,3 @@ module.exports = {
   getLastQRCode,
   disconnectWhatsApp
 };
-

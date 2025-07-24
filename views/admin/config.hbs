@@ -34,6 +34,13 @@
             <p class="text-white mb-2">Escaneie o QR Code:</p>
             <div id="qrCode" class="border rounded p-2 bg-white d-inline-block"></div>
           </div>
+          
+          <form id="disconnectForm" method="POST" action="/admin/whatsapp/disconnect">
+            <button type="submit" class="btn btn-outline-danger w-100 mt-2">
+              🔌 Desconectar WhatsApp
+            </button>
+          </form>
+
         </div>
       </div>
     </div>
@@ -41,7 +48,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script>
+{{!-- <script>
   document.addEventListener('DOMContentLoaded', async () => {
     await checkWhatsAppStatusConfig();
     await loadQRCodeIfDisconnected();
@@ -87,7 +94,7 @@
       console.warn('QR Code não disponível.');
     }
   }
-</script>
+</script>  --}}
 
 <style>
   .fade-in-soft {
