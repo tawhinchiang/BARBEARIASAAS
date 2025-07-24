@@ -1293,10 +1293,6 @@ body.page-fade-out {
   animation: fadeInUp 0.6s ease-out;
 }
 
-/* .fade-in-soft {
-  opacity: 0;
-  animation: fadeInSoft 0.4s ease-out forwards;
-} */
 
 .fade-in-modal {
   opacity: 0;
@@ -1868,10 +1864,7 @@ canvas {
   border: 1px solid rgba(255, 0, 0, 0.4);
 }
 
-/* Animação suave */
-/* .fade-in-soft {
-  animation: fadeInSoft 0.5s ease-in;
-} */
+
 
 @keyframes fadeInSoft {
   from {
@@ -1941,4 +1934,89 @@ canvas {
 #barbershopCarousel video {
   object-fit: cover;
   height: 360px;
+}
+.code-digit {
+  border: 2px solid #444;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.code-digit:focus {
+  border-color: #00ffcc;
+  box-shadow: 0 0 8px #00ffcc;
+  background-color: #222;
+}
+#phoneInput:focus {
+  border-color: #00bfff;
+  box-shadow: 0 0 10px #00bfff;
+}
+#sendCodeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #444;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 255, 204, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+}
+
+#sendCodeBtn {
+  animation: pulse 2s infinite;
+}
+#codeInputGroup input {
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+  border-radius: 10px;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+#expirationTimer.warning {
+  color: #ffc107;
+  animation: blink 1s step-start infinite;
+}
+.card-neon-green {
+  border-left: 4px solid #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.card-neon-red {
+  border-left: 4px solid #ff3b3b;
+  box-shadow: 0 0 10px rgba(255, 59, 59, 0.3);
+}
+
+.card-neon-blue {
+  border-left: 4px solid #00bfff;
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+}
+.btn-outline-danger:hover {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+
+
+.card-neon-green:hover,
+.card-neon-red:hover,
+.card-neon-blue:hover {
+  transform: scale(1.01);
+  transition: transform 0.2s ease;
+}
+.avatar-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-sm img.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }

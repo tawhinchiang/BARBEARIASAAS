@@ -2,6 +2,8 @@ const cron = require('node-cron');
 require('dotenv').config();
 const moment = require('moment');
 const { Appointment, Client, Barber, ServiceType, SystemConfig } = require('../models');
+const cleanupExpiredCodes = require('../utils/cleanUpCodes');
+
 const { sendWhatsAppMessage } = require('../utils/whatsapp');
 
 // Variáveis da barbearia via .env
@@ -65,6 +67,7 @@ cron.schedule('*/5 * * * *', async () => {
   }
   // Também buscar agendamentos cancelados nas últimas 24h
 
+  await cleanupExpiredCodes(); // 🧹 remove códigos expirados
 
 
   console.log(`✅ [CRON] Ciclo concluído com ${appointments.length} agendamentos verificados.`);

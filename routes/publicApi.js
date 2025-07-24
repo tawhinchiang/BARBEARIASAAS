@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Barber } = require('../models');
+const VerificationCode = require('../models/VerificationCode');
 
 // === Rota pública: listar barbeiros ativos ===
 router.get('/barbers', async (req, res) => {
@@ -26,5 +27,11 @@ router.get('/barbers', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao buscar barbeiros' });
   }
 });
+
+
+
+
+
+
 
 module.exports = router;
