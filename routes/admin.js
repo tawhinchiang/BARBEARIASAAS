@@ -924,20 +924,20 @@ router.put('/appointments/:id', async (req, res) => {
   }
 });
 
- // ===== ROTAS DE BARBEIROS =====
-    router.use('/barbers', require('./barbers'));
-  
-    
-    // ===== ROTAS DE SERVIÇOS =====
-    router.use('/services', require('./services'));
+// ===== ROTAS DE BARBEIROS =====
+router.use('/barbers', require('./barbers'));
+
+
+// ===== ROTAS DE SERVIÇOS =====
+router.use('/services', require('./services'));
 
 // ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
-    router.use('/config', require('./admin-config'));
+router.use('/config', require('./admin-config'));
 
-   router.get('/whatsapp/status', isAuthenticated, (req, res) => {
-  const status = getWhatsAppStatus();
-  res.json(status);
-    });
+router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+const status = getWhatsAppStatus();
+res.json(status);
+});
 
 router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
   try {

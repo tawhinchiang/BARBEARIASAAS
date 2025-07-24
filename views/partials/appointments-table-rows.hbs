@@ -1,36 +1,45 @@
 {{#each appointments}}
 
 <tr>
-  <td>
+  <td class="d-none">
     <span class="fw-bold">#{{id}}</span>
   </td>
+  
   <td>
-    <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center">
       <div class="avatar-sm me-2">
-        {{substring client.firstName 0 1}}{{substring client.lastName 0 1}}
+         <img src="{{barber.photo}}" alt="Foto de {{barber.name}}" class="avatar-img">
+
       </div>
-      <div>
-        <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
-        <small class="text-muted">{{client.phone}}</small>
+      <div class="fw-semibold">{{barber.name}}</div>
+      
       </div>
-    </div>
   </td>
-  <td>
 
-
-    <div class="fw-semibold">{{serviceType.name}}</div>
-    {{!-- <small class="text-muted">{{serviceType.duration}} {{formatCurrency serviceType.price}}</small> --}}
-
-  </td>
-  <td>
-    <div class="fw-semibold">{{barber.name}}</div>
-    <small class="text-muted">{{barber.specialties}}</small>
-  </td>
-  <td>
+  <td class="text-center">
     <div class="fw-semibold">{{appointmentDateFormatted}}</div>
     <small class="text-muted">{{appointmentTimeFormatted}}</small>
   </td>
-  <td>
+
+
+    <td class="text-left">
+    
+      <div>
+        <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+        {{!-- <small class="text-muted">{{client.phone}}</small> --}}
+      </div>
+    
+    </td>
+
+ <td>
+ <div class="fw-semibold">{{serviceType.name}}</div>
+ <small class="text-muted">{{serviceType.duration}} min </small>
+
+  </td>
+<td class="text-center">
+    <div class="fw-bold"> {{formatCurrency totalPrice}}</div>
+  </td>
+  <td class="text-center">
     <span class="status-badge status-{{status}}">
       {{#if (eq status 'confirmed')}}Confirmado
       {{!-- {{else if (eq status 'pending')}}Pendente --}}
@@ -41,9 +50,7 @@
     </span>
 
   </td>
-  <td>
-    <div class="fw-bold"> {{formatCurrency totalPrice}}</div>
-  </td>
+  
   {{!-- <td>
     {{#if whatsappSent}}
     <span class="badge bg-success">
@@ -55,7 +62,7 @@
     </span>
     {{/if}}
   </td> --}}
-  <td>
+  <td class="text-center">
     <div class="actions-menu">
       <button class="btn btn-sm btn-secondary action-item js-toggle-actions" data-id="{{id}}">
         <i class="fas fa-ellipsis-v"></i>
