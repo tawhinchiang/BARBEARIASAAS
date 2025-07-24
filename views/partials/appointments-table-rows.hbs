@@ -41,12 +41,12 @@
   </td>
   <td class="text-center">
     <span class="status-badge status-{{status}}">
-      {{#if (eq status 'confirmed')}}Confirmado
-      {{!-- {{else if (eq status 'pending')}}Pendente --}}
-      {{else if (eq status 'cancelled')}}Cancelado
-      {{!-- {{else if (eq status 'completed')}}Concluído --}}
-      {{else}}Desconhecido
-      {{/if}}
+    {{#if (eq status 'pending')}}<i class="fas fa-clock text-secondary"></i> Pendente
+    {{else if (eq status 'in_progress')}}<i class="fas fa-spinner fa-spin text-info"></i> Em atendimento
+    {{else if (eq status 'completed')}}<i class="fas fa-check-circle text-success"></i> Concluído
+    {{else if (eq status 'cancelled')}}<i class="fas fa-times-circle text-muted"></i> Cancelado
+    {{/if}}
+
     </span>
 
   </td>
