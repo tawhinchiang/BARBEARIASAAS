@@ -11,12 +11,36 @@ document.addEventListener('DOMContentLoaded', function () {
   initModals();
   initFilterForm();
   initTableListeners();
-  initJQueryHandlers();
+  // initJQueryHandlers();
   // Executa tarefas mais leves logo
   requestIdleCallback(() => {
     setDefaultDates();
     restoreFilters();
   });
+
+  // Socket.IO - Atualização em tempo real
+
+
+
+if (typeof io !== 'undefined') {
+  const socket = io();
+
+  socket.on('new_appointment', async (data) => {
+    
+    showToast(`✅ Novo agendamento de <strong>${data.client}</strong> às <strong>${data.time}</strong>`, 'success');
+    await refreshAppointmentsTable();
+  });
+
+  socket.on('appointment_cancelled', async (data) => {
+    console.log('[SOCKET] Agendamento cancelado:', data);
+    showToast(`❌ Agendamento cancelado: <strong>${data.client}</strong> (${data.time})`, 'danger');
+    await refreshAppointmentsTable();
+  });
+
+
+}
+
+
 });
 
 function initModals() {
@@ -32,23 +56,23 @@ function initModals() {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
 }
-function initJQueryHandlers() {
-  $('.js-toggle-actions').on('click', function (e) {
-    e.preventDefault();
-    const id = $(this).data('id');
-    const menu = $('#actions-' + id);
-    const parent = $(this).closest('.actions-menu');
+// function initJQueryHandlers() {
+//   $('.js-toggle-actions').on('click', function (e) {
+//     e.preventDefault();
+//     const id = $(this).data('id');
+//     const menu = $('#actions-' + id);
+//     const parent = $(this).closest('.actions-menu');
 
-    $('.actions-menu').not(parent).removeClass('show');
-    parent.toggleClass('show');
-  });
+//     $('.actions-menu').not(parent).removeClass('show');
+//     parent.toggleClass('show');
+//   });
 
-  $(document).on('click', function (e) {
-    if (!$(e.target).closest('.actions-menu').length) {
-      $('.actions-menu').removeClass('show');
-    }
-  });
-}
+//   $(document).on('click', function (e) {
+//     if (!$(e.target).closest('.actions-menu').length) {
+//       $('.actions-menu').removeClass('show');
+//     }
+//   });
+// }
 
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
@@ -83,15 +107,15 @@ function restoreFilters() {
 }
 
 function initTableListeners() {
-  const tableBody = document.querySelector('.admin-table tbody');
-  if (!tableBody) return;
-
-  tableBody.addEventListener('click', async function (event) {
+  document.addEventListener('click', async function (event) {
     const button = event.target.closest('button');
-    if (!button) return;
+    if (!button || !button.classList.contains('action-item')) return;
 
     const appointmentId = button.dataset.id;
-    if (!appointmentId) return;
+    if (!appointmentId || isNaN(Number(appointmentId))) {
+      console.error('[ADMIN] ID inválido:', appointmentId);
+      return;
+    }
 
     closeAllMenus();
 
@@ -102,13 +126,13 @@ function initTableListeners() {
     else if (button.classList.contains('js-confirm-appointment')) confirmAppointment(appointmentId);
     else if (button.classList.contains('js-complete-appointment')) completeAppointment(appointmentId);
     else if (button.classList.contains('js-cancel-appointment')) cancelAppointment(appointmentId);
-    // else if (button.classList.contains('js-delete-appointment')) deleteAppointment(appointmentId);
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.actions-menu')) closeAllMenus();
   });
 }
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.actions-menu')) {
+    closeAllMenus();
+  }
+});
 
  window.clearFilters = function () {
     localStorage.removeItem('adminFilters');
@@ -356,7 +380,9 @@ async function cancelAppointment(appointmentId) {
   const reason = prompt('Motivo do cancelamento (opcional):');
   if (reason !== null) {
     try {
+       console.log('[DEBUG] Disparando cancelamento...');
       const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
+
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -377,28 +403,28 @@ async function cancelAppointment(appointmentId) {
   }
 }
 
-// async function deleteAppointment(appointmentId) {
-//   console.log('[ADMIN] Excluindo agendamento:', appointmentId);
-//   closeAllMenus();
+async function deleteAppointment(appointmentId) {
+  console.log('[ADMIN] Excluindo agendamento:', appointmentId);
+  closeAllMenus();
   
-//   if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
-//     try {
-//       const response = await fetch(`/admin/appointments/${appointmentId}`, {
-//         method: 'DELETE'
-//       });
+  if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
+    try {
+      const response = await fetch(`/admin/appointments/${appointmentId}`, {
+        method: 'DELETE'
+      });
       
-//       if (response.ok) {
-//         showNotification('Agendamento excluído com sucesso!', 'success');
-//         setTimeout(() => location.reload(), 1500);
-//       } else {
-//         throw new Error('Erro ao excluir agendamento');
-//       }
-//     } catch (error) {
-//       console.error('[ADMIN ERROR] Erro ao excluir:', error);
-//       showNotification('Erro ao excluir agendamento', 'error');
-//     }
-//   }
-// }
+      if (response.ok) {
+        showNotification('Agendamento excluído com sucesso!', 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        throw new Error('Erro ao excluir agendamento');
+      }
+    } catch (error) {
+      console.error('[ADMIN ERROR] Erro ao excluir:', error);
+      showNotification('Erro ao excluir agendamento', 'error');
+    }
+  }
+}
 
 async function sendWhatsApp(appointmentId) {
   console.log('[ADMIN] Enviando WhatsApp para agendamento:', appointmentId);
@@ -562,4 +588,51 @@ if (editForm) {
 }
 
 
+
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'assertive');
+  toast.setAttribute('aria-atomic', 'true');
+  toast.style.position = 'fixed';
+  toast.style.top = '20px';
+  toast.style.right = '20px';
+  toast.style.zIndex = '9999';
+  toast.style.transition = 'opacity 0.5s ease-in-out';
+
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${message}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.style.opacity = 0;
+    setTimeout(() => toast.remove(), 500);
+  }, 4000);
+}
+
+
+async function refreshAppointmentsTable() {
+  const tableBody = document.querySelector('.admin-table tbody');
+  if (!tableBody) return;
+
+  const params = new URLSearchParams(window.location.search);
+
+  try {
+    const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
+    const html = await response.text();
+    tableBody.innerHTML = html;
+
+    initTableListeners(); // reanexar eventos
+    // initJQueryHandlers(); // menu dropdown
+  } catch (err) {
+    console.error('[ADMIN] Erro ao atualizar a tabela:', err);
+  }
+}
 

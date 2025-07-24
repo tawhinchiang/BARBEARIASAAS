@@ -634,31 +634,31 @@ async function completeAppointment(appointmentId) {
   }
 }
 
-async function cancelAppointment(appointmentId) {
-  const reason = prompt('Motivo do cancelamento (opcional):');
-  if (reason !== null) {
-    try {
-      const response = await fetch(`/admin/appointments/${appointmentId}/cancel`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason })
-      });
-      if (response.ok) {
-        showAlert('Agendamento cancelado com sucesso!', 'success');
-        setTimeout(() => {
-        document.body.classList.add('fade-out-soft');
-        setTimeout(() => window.location.href = location.href, 300);
-        }, 1500);
-      } else {
-        showAlert('Erro ao cancelar agendamento', 'error');
-      }
-    } catch (error) {
-      console.error('Erro:', error);
-      showAlert('Erro ao cancelar agendamento', 'error');
-    }
-  }
-}
+// async function cancelAppointment(appointmentId) {
+//   const reason = prompt('Motivo do cancelamento (opcional):');
+//   if (reason !== null) {
+//     try {
+//       const response = await fetch(`/admin/appointments/${appointmentId}/cancel`, {
+//         method: 'POST',
+//         credentials: 'include',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ reason })
+//       });
+//       if (response.ok) {
+//         showAlert('Agendamento cancelado com sucesso!', 'success');
+//         setTimeout(() => {
+//         document.body.classList.add('fade-out-soft');
+//         setTimeout(() => window.location.href = location.href, 300);
+//         }, 1500);
+//       } else {
+//         showAlert('Erro ao cancelar agendamento', 'error');
+//       }
+//     } catch (error) {
+//       console.error('Erro:', error);
+//       showAlert('Erro ao cancelar agendamento', 'error');
+//     }
+//   }
+// }
 
 async function deleteAppointment(appointmentId) {
   if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {

@@ -80,6 +80,47 @@ router.post('/send-code', async (req, res) => {
   }
 });
 
+//checar se código já foi enviado
+
+router.post('/check-code-status', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ hasCode: false, message: 'Telefone não informado.' });
+
+  const cleanPhone = normalizePhone(phone);
+
+  try {
+    const record = await VerificationCode.findOne({
+      where: { phone: cleanPhone },
+      order: [['createdAt', 'DESC']]
+    });
+
+    if (!record) return res.json({ hasCode: false });
+
+    const now = Date.now();
+    const expiresAt = new Date(record.expiresAt).getTime();
+    const createdAt = new Date(record.createdAt).getTime();
+
+    const timeLeft = Math.max(0, Math.ceil((expiresAt - now) / 1000));
+    const timeSince = now - createdAt;
+
+    if (timeLeft <= 0) {
+      await record.destroy(); // remove se já expirou
+      return res.json({ hasCode: false });
+    }
+
+    const resendAvailable = timeSince >= 50 * 1000;
+
+    return res.json({
+      hasCode: true,
+      timeLeft,
+      resendAvailable
+    });
+  } catch (err) {
+    console.error('Erro em check-code-status:', err);
+    res.status(500).json({ hasCode: false });
+  }
+});
+
 
 // Verificar código de autenticação
 router.post('/verify-code', async (req, res) => {
@@ -211,6 +252,17 @@ router.post('/cancel/:id', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Este agendamento já foi cancelado ou concluído.' });
 
     await appointment.update({ status: 'cancelled' });
+    const io = req.app.get('io');
+
+    if (io) {
+      io.emit('appointment_cancelled', {
+        id: appointment.id,
+        client: `${appointment.client.firstName} ${appointment.client.lastName}`.trim(),
+        time: appointment.appointmentTime,
+        date: appointment.appointmentDate
+      });
+      console.log('[HISTORY] Agendamento cancelado emitido via socket:', appointment.id);
+    }
 
     try {
       const msg = `Olá, ${appointment.client.firstName}! 👋
@@ -226,7 +278,8 @@ router.post('/cancel/:id', async (req, res) => {
       Estamos à disposição para te atender quando quiser! 💈✨`;
 
       await sendWhatsAppMessage(appointment.client.phone, msg);
-          } catch (err) {
+          }
+    catch (err) {
       logError('Erro ao enviar mensagem de cancelamento', err);
     }
 

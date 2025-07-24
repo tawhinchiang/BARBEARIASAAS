@@ -425,6 +425,41 @@ router.get('/appointments', async (req, res) => {
   }
 });
 
+router.get('/appointments/partial', async (req, res) => {
+  const { startDate, endDate, barberId, status } = req.query;
+  const where = {};
+
+  if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+  if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
+  if (barberId) where.barberId = barberId;
+  if (status) where.status = status;
+
+  const appointments = await Appointment.findAll({
+    where,
+    include: [
+  { model: Client, as: 'client' },
+  { model: Barber, as: 'barber' },
+  { model: ServiceType, as: 'serviceType' }
+  ],
+    order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+  });
+
+  const formattedAppointments = appointments.map(app => {
+    const json = app.toJSON();
+    const date = new Date(json.appointmentDate + 'T03:00:00');
+    return {
+      ...json,
+      appointmentDateFormatted: date.toLocaleDateString('pt-BR'),
+      appointmentTimeFormatted: json.appointmentTime?.slice(0, 5)
+    };
+  });
+
+  res.render('partials/appointments-table-rows', {
+    layout: false,
+    appointments: formattedAppointments,
+    helpers: require('../config/handlebars-helpers')
+  });
+});
 
 // Atualizar status do agendamento
 router.post('/appointments/:id/status', async (req, res) => {
@@ -929,6 +964,9 @@ router.post('/whatsapp/disconnect', async (req, res) => {
     res.redirect('/admin/config?error=Erro ao desconectar WhatsApp');
   }
 });
+
+
+
 
 module.exports = router;
 

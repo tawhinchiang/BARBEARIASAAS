@@ -109,6 +109,14 @@ router.post('/api/appointments', async (req, res) => {
       notes: clientData.notes || null
     });
 
+    const io = req.app.get('io');
+    io.emit('new_appointment', {
+      id: appointment.id,
+      client: `${client.firstName} ${client.lastName}`,
+      time: appointment.appointmentTime,
+      date: appointment.appointmentDate
+    });
+
     const fullName = `${client.firstName} ${client.lastName}`;
     const priceNum = Number(serviceType.price);
     const priceFormatted = Number.isNaN(priceNum) ? '0.00' : priceNum.toFixed(2);
