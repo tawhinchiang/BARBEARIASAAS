@@ -497,12 +497,13 @@ function exportAppointments() {
 
 // Utilitários
 function getStatusText(status) {
-  const statusMap = {
+   const statusMap = {
     'pending': 'Pendente',
     'confirmed': 'Confirmado',
     'in_progress': 'Em atendimento',
     'completed': 'Concluído',
-    'cancelled': 'Cancelado'
+    'cancelled': 'Cancelado',
+    'no_show': 'Não compareceu'
   };
   return statusMap[status] || status;
 }

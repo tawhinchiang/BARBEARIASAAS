@@ -50,13 +50,14 @@ module.exports = {
   },
 
   statusText: function(status) {
-    const statusMap = {
-      'scheduled': 'Agendado',
-      'confirmed': 'Confirmado',
-      'completed': 'Concluído',
-      'cancelled': 'Cancelado',
-      'no_show': 'Não compareceu'
-    };
+  const statusMap = {
+    'pending': 'Pendente',
+    'confirmed': 'Confirmado',
+    'in_progress': 'Em atendimento',
+    'completed': 'Concluído',
+    'cancelled': 'Cancelado',
+    'no_show': 'Não compareceu'
+  };
     return statusMap[status] || status;
   },
 

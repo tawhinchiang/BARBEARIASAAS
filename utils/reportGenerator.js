@@ -298,7 +298,6 @@ function gerarResumoDoRelatorio(appointments, startDate, endDate, barberId) {
 // Função auxiliar para traduzir status
 function getStatusText(status) {
   const statusMap = {
-    'scheduled': 'Agendado',
     'pending': 'Pendente',
     'confirmed': 'Confirmado',
     'in_progress': 'Em atendimento',
