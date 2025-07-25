@@ -24,16 +24,19 @@ cron.schedule('*/5 * * * *', async () => {
   console.log(`\n🔁 [CRON] Executando verificação - ${now.format('YYYY-MM-DD HH:mm:ss')}`);
   console.log(`⏰ Lembrete: ${reminderHours}h antes | 📬 Acompanhamento: ${followUpHours}h depois`);
 
-  const appointments = await Appointment.findAll({
-    where: { status: 'confirmed' },
-    include: ['client', 'barber', 'serviceType']
-  });
-
-  for (const apt of appointments) {
-    const datetime = moment(`${apt.appointmentDate}T${apt.appointmentTime}`);
-    const diffInHours = datetime.diff(now, 'hours', true);
-    const hoursSince = now.diff(datetime, 'hours', true);
-
+const appointments = await Appointment.findAll({
+  where: {
+    status: ['confirmed', 'in_progress'] // pega ambos os status para avaliar no ciclo
+  },
+  include: ['client', 'barber', 'serviceType']
+});
+ for (const apt of appointments) {
+  const datetime = moment(`${apt.appointmentDate}T${apt.appointmentTime}`);
+  const diffInHours = datetime.diff(now, 'hours', true);
+  const hoursSince = now.diff(datetime, 'hours', true);
+  const duration = parseInt(apt.serviceType?.duration || 0);
+  const endTime = datetime.clone().add(duration, 'minutes');
+  const minutesSinceEnd = now.diff(endTime, 'minutes');
     // === ENVIO DE LEMBRETE ===
     if (!apt.whatsappSent && diffInHours <= reminderHours && diffInHours > reminderHours - 1) {
       const msg = `Olá, ${apt.client.firstName}! 👋
@@ -52,6 +55,17 @@ cron.schedule('*/5 * * * *', async () => {
       }
     }
 
+      // === ENTRANDO EM ATENDIMENTO ===
+  if (apt.status === 'confirmed' && diffInHours <= 0 && diffInHours > -0.1) {
+    await apt.update({ status: 'in_progress' });
+    console.log(`🚀 Agendamento iniciado: ${apt.id} (${apt.client.firstName})`);
+  }
+
+  // === MARCAR COMO CONCLUÍDO ===
+  if (apt.status === 'in_progress' && minutesSinceEnd >= 0 && minutesSinceEnd < 5) {
+    await apt.update({ status: 'completed' });
+    console.log(`✅ Agendamento concluído: ${apt.id} (${apt.client.firstName})`);
+  }
     // === ENVIO DE ACOMPANHAMENTO ===
     if (!apt.followUpSent && hoursSince >= followUpHours && hoursSince < followUpHours + 0.1) {
       const msg = `Olá, ${apt.client.firstName}! Esperamos que tenha gostado do serviço. Deixe seu feedback!`;

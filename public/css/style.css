@@ -1156,6 +1156,15 @@ body.page-fade-out {
   background-color: var(--danger-color);
   color: white;
 }
+.status-in_progress {
+  background: var(--info-color); /* azul claro */
+  color: white;
+}
+
+.status-no_show {
+  background: #6c757d; /* cinza escuro */
+  color: white;
+}
 
 .status-badge {
   padding: 0.25rem 0.75rem;

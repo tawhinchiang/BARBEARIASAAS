@@ -140,14 +140,14 @@ router.get('/dashboard', async (req, res) => {
     const monthlyRevenue = await Appointment.sum('totalPrice', {
       where: {
         appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: 'confirmed'
+        status: 'completed'
       }
     }) || 0;
 
     const todayAppointments = await Appointment.findAll({
       where: {
       appointmentDate: formatDateYYYYMMDD(today),
-      status: 'confirmed'
+      status: 'completed'
   },
       include: [
         { model: Client, as: 'client' },
@@ -179,7 +179,7 @@ router.get('/dashboard', async (req, res) => {
       attributes: ['appointmentDate', 'totalPrice'],
       where: {
         appointmentDate: { [Op.in]: datesToTrack },
-        status: { [Op.in]: ['confirmed', 'completed'] }
+        status: { [Op.in]: ['completed'] }
       },
       raw: true
     });
@@ -206,7 +206,7 @@ router.get('/dashboard', async (req, res) => {
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
       where: {appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: { [Op.in]: ['confirmed'] }
+      status: { [Op.in]: ['completed'] }
 },
       include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
       group: ['barberId', 'barber.id'],
@@ -230,7 +230,7 @@ router.get('/dashboard', async (req, res) => {
       ],
        where: {
       appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: 'confirmed'
+      status: 'completed'
      },
       include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
       group: ['serviceTypeId', 'serviceType.id'],
@@ -578,9 +578,9 @@ router.get('/reports', async (req, res) => {
       
       // Receita total
       // Receita total - ignorar agendamentos cancelados
-      if (apt.totalPrice && apt.status !== 'cancelled') {
-        stats.totalRevenue += parseFloat(apt.totalPrice);
-      }
+     if (apt.totalPrice && apt.status === 'completed') {
+      stats.totalRevenue += parseFloat(apt.totalPrice);
+    }
 
     });
     
@@ -726,7 +726,7 @@ router.patch('/appointments/:id/status', async (req, res) => {
     
     log('Atualizando status do agendamento', { id, status });
     
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
+    const validStatuses = ['pending', 'confirmed','in_progress', 'completed', 'cancelled', 'no_show'];
     
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
@@ -747,17 +747,19 @@ router.patch('/appointments/:id/status', async (req, res) => {
     }
     
     await appointment.update({ status });
-    
-    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: status });
-    
+    const updatedAppointment = await Appointment.findByPk(id); // recarrega
+
+    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: updatedAppointment.status });
+
     res.json({
       success: true,
       message: 'Status atualizado com sucesso',
       appointment: {
-        id: appointment.id,
-        status: appointment.status
+        id: updatedAppointment.id,
+        status: updatedAppointment.status
       }
     });
+
     
   } catch (error) {
     logError('Erro ao atualizar status', error);

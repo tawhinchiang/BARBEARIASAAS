@@ -19,6 +19,38 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Socket.IO - Atualização em tempo real
+document.querySelectorAll('.js-no-show-appointment').forEach(button => {
+  button.addEventListener('click', async () => {
+    const id = button.dataset.id;
+    if (!confirm('Marcar como "não compareceu"?')) return;
+
+    try {
+      const res = await fetch(`/admin/appointments/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'no_show' })
+      });
+
+      let result = {};
+      try {
+        result = await res.json();
+      } catch (e) {
+        console.warn('[WARN] Não foi possível parsear JSON da resposta');
+      }
+
+      if (res.ok && result.success !== false) {
+        showToast('Agendamento marcado como não compareceu.', 'warning');
+        await refreshAppointmentsTable(); // ✅ Correto
+      } else {
+        alert(result.error || 'Erro ao atualizar status.');
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao marcar como não compareceu.');
+    }
+  });
+});
 
 
 
@@ -323,10 +355,6 @@ async function editAppointment(appointmentId) {
 }
 
 
-
-
-
-
 async function confirmAppointment(appointmentId) {
   console.log('[ADMIN] Confirmando agendamento:', appointmentId);
   closeAllMenus();
@@ -349,6 +377,7 @@ async function confirmAppointment(appointmentId) {
     }
   }
 }
+
 
 async function completeAppointment(appointmentId) {
   console.log('[ADMIN] Concluindo agendamento:', appointmentId);
@@ -471,6 +500,7 @@ function getStatusText(status) {
   const statusMap = {
     'pending': 'Pendente',
     'confirmed': 'Confirmado',
+    'in_progress': 'Em atendimento',
     'completed': 'Concluído',
     'cancelled': 'Cancelado'
   };

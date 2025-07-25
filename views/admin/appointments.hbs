@@ -56,10 +56,13 @@
                       <option value="">Todos os status</option>
                       {{!-- <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option> --}}
                       <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-                      {{!-- <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option> --}}
+                      <option value="in_progress" {{#eq filters.status 'in_progress'}}selected{{/eq}}>Em andamento</option>
+                      <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
                       <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                      <option value="no_show" {{#eq filters.status 'no_show'}}selected{{/eq}}>Não compareceu</option>
                     </select>
                   </div>
+
                 </div>
               </div>
               <div class="row mt-3 align-items-center">

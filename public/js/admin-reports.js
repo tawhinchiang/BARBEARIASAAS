@@ -24,16 +24,21 @@ runWhenIdle(() => {
       if (status === 'cancelled') return 'Cancelado';
       if (status === 'pending') return 'Pendente';
       if (status === 'completed') return 'Concluído';
+      if (status === 'in_progress') return 'Em Atendimento';
       return status;
     });
+
 
     const backgroundColors = Object.keys(statusData).map(status => {
       if (status === 'confirmed') return '#28a745'; // Verde
       if (status === 'cancelled') return '#dc3545'; // Vermelho
-      if (status === 'pending') return '#ffc107';
-      if (status === 'completed') return '#007bff';
-      return '#6c757d';
+      if (status === 'pending') return '#ffc107';   // Amarelo
+      if (status === 'completed') return '#007bff'; // Azul
+      if (status === 'in_progress') return '#17a2b8'; // Azul claro (info)
+      return '#6c757d'; // Cinza padrão
     });
+
+
 
     chartStatus = new Chart(statusCtx, {
       type: 'doughnut',

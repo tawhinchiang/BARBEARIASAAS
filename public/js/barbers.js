@@ -1,4 +1,4 @@
-// public/js/admin/barbers.js
+// public/js/barbers.js
 document.addEventListener('DOMContentLoaded', () => {
   maskInputs();
   previewPhoto();
@@ -152,9 +152,9 @@ function applyFilters() {
   });
 }
 
-function updateStats() {
-  // desativado pois não é utilizado com os cards
-}
+// function updateStats() {
+//   // desativado pois não é utilizado com os cards
+// }
 
 function submitForm(e) {
   e.preventDefault();
@@ -267,14 +267,20 @@ window.barberReport = function (id) {
           <td>${apt.service}</td>
           <td>${apt.client?.firstName || ''} ${apt.client?.lastName || ''}</td>
           <td>
-  <span class="badge ${
-    apt.status === 'completed' || apt.status === 'confirmed'
-      ? 'bg-success'
-      : apt.status === 'cancelled'
-      ? 'bg-danger'
-      : 'bg-warning'
-  }">
-    ${apt.status === 'confirmed'
+        <span class="badge ${
+        apt.status === 'completed'
+          ? 'bg-primary'
+          : apt.status === 'confirmed'
+          ? 'bg-success'
+          : apt.status === 'in_progress'
+          ? 'bg-info'
+          : apt.status === 'cancelled'
+          ? 'bg-danger'
+          : apt.status === 'no_show'
+          ? 'bg-dark'
+          : 'bg-warning'
+      }">
+      ${apt.status === 'confirmed'
       ? 'Confirmado'
       : apt.status === 'cancelled'
       ? 'Cancelado'
@@ -282,8 +288,10 @@ window.barberReport = function (id) {
       ? 'Concluído'
       : apt.status === 'scheduled'
       ? 'Agendado'
+      : apt.status === 'in_progress'
+      ? 'Em Atendimento'
       : apt.status === 'no_show'
-      ? 'Não compareceu'
+      ? 'Não Compareceu'
       : apt.status}
   </span>
 </td>
