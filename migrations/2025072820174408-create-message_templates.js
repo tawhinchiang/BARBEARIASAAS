@@ -1,22 +1,42 @@
-// Migration para tabela: message_templates
-
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('message_templates', {
-      id: { type: Sequelize.INTEGER },
-      name: { type: Sequelize.STRING },
-      type: { type: Sequelize.ENUM },
-      title: { type: Sequelize.STRING },
-      content: { type: Sequelize.STRING },
-      triggerHours: { type: Sequelize.INTEGER },
-      triggerDays: { type: Sequelize.INTEGER },
-      isActive: { type: Sequelize.BOOLEAN },
-      platform: { type: Sequelize.ENUM },
-      createdAt: { type: Sequelize.DATE },
-      updatedAt: { type: Sequelize.DATE },
+      id: {
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+      },
+      name: Sequelize.STRING,
+      type: {
+        type: Sequelize.ENUM('lembrete', 'confirmacao', 'followup', 'cancelamento', 'personalizada'),
+        allowNull: false
+      },
+      title: Sequelize.STRING,
+      content: Sequelize.STRING,
+      triggerHours: Sequelize.INTEGER,
+      triggerDays: Sequelize.INTEGER,
+      isActive: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: true
+      },
+      platform: {
+        type: Sequelize.ENUM('whatsapp', 'sms', 'email'),
+        allowNull: false
+      },
+      createdAt: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updatedAt: {
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      }
     });
   },
+
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('message_templates');
+    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_message_templates_type";');
+    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_message_templates_platform";');
   }
 };
