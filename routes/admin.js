@@ -398,21 +398,41 @@ router.get('/appointments', async (req, res) => {
   };
 });
 
+const groupedAppointments = {};
 
-    res.render('admin/appointments', {
-      title: 'Gerenciar Agendamentos',
-      layout: 'admin',
-      user: req.session.user,
-      appointments:formattedAppointments,
-      barbers,
-      filters: { startDate, endDate, barberId, status, sort },
-      pagination: {
-        currentPage: page,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
-    });
+formattedAppointments.forEach(app => {
+  const barberName = app.barber?.name || 'Sem Barbeiro';
+  if (!groupedAppointments[barberName]) {
+    groupedAppointments[barberName] = [];
+  }
+  groupedAppointments[barberName].push(app);
+});
+
+// Ordena dentro de cada grupo por data/hora crescente
+Object.values(groupedAppointments).forEach(group => {
+  group.sort((a, b) => {
+    const d1 = new Date(`${a.appointmentDate}T${a.appointmentTime}`);
+    const d2 = new Date(`${b.appointmentDate}T${b.appointmentTime}`);
+    return d1 - d2;
+  });
+});
+
+res.render('admin/appointments', {
+  title: 'Gerenciar Agendamentos',
+  layout: 'admin',
+  user: req.session.user,
+  appointments: formattedAppointments, // ← ESSENCIAL para tabela
+  groupedAppointments,                // ← ESSENCIAL para cards por barbeiro
+  barbers,
+  filters: { startDate, endDate, barberId, status, sort },
+  pagination: {
+    currentPage: page,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1
+  }
+});
+
   } catch (error) {
     console.error('[DEBUG ERRO]', error);
     logError('Erro ao listar agendamentos', error);
@@ -459,6 +479,21 @@ router.get('/appointments/partial', async (req, res) => {
     appointments: formattedAppointments,
     helpers: require('../config/handlebars-helpers')
   });
+});
+
+router.get('/appointments/partial-cards', async (req, res) => {
+  try {
+    const appointments = await buscarAgendamentos(req); // sua lógica atual
+    const grouped = agruparPorBarbeiro(appointments);   // sua função atual
+
+    res.render('partials/appointments-cards-grouped', {
+      layout: false,
+      groupedAppointments: grouped
+    });
+  } catch (error) {
+    console.error('[ERROR] /appointments/partial-cards', error);
+    res.status(500).send('Erro ao carregar cards');
+  }
 });
 
 // Atualizar status do agendamento
