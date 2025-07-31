@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   initModals();
   initFilterForm();
   initTableListeners();
+    initCardExpandables();
   // initJQueryHandlers();
   // Executa tarefas mais leves logo
   requestIdleCallback(() => {
@@ -685,7 +686,16 @@ function showToast(message, type = 'success') {
 //     console.error('[ADMIN] Erro ao atualizar a tabela:', err);
 //   }
 // }
-
+function initCardExpandables() {
+  document.querySelectorAll('.card-collapsible').forEach(card => {
+    const newCard = card.cloneNode(true);
+    card.replaceWith(newCard); // remove listeners antigos
+    newCard.addEventListener('click', function (e) {
+      if (e.target.closest('.action-item')) return;
+      newCard.classList.toggle('expanded');
+    });
+  });
+}
 async function refreshAppointmentsTable() {
   const params = new URLSearchParams(window.location.search);
 
@@ -708,6 +718,7 @@ async function refreshAppointmentsTable() {
       const response = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
       const html = await response.text();
       cardContainer.innerHTML = html;
+      initCardExpandables(); 
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar os CARDS:', err);
     }

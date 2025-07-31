@@ -1,84 +1,85 @@
-<p class="text-white">Total grupos: {{objectLength (groupBy appointments "barber.name")}}</p>
 
+<div class="appointments-columns">
 {{#each (groupBy appointments "barber.name") as |appointmentsList|}}
-  {{#if appointmentsList.length}}
-    <div class="mb-5">
-      <div class="d-flex align-items-center mb-3">
-        <div class="avatar-sm me-2">
-          <img src="{{appointmentsList.0.barber.photo}}" alt="{{appointmentsList.0.barber.name}}" class="avatar-img">
+{{#if appointmentsList.length}}
+<div class="barber-column">
+  <div class="d-flex align-items-center mb-3">
+    <div class="avatar-sm me-2">
+      <img src="{{appointmentsList.0.barber.photo}}" alt="{{appointmentsList.0.barber.name}}" class="avatar-img">
+    </div>
+    <h5 class="mb-0">{{appointmentsList.0.barber.name}}</h5>
+  </div>
+
+  <div class="row g-3">
+    {{#each appointmentsList}}
+    <div class="col-md-4 card-wrapper fade-in-soft">
+      <div class="admin-card status-card status-{{status}} card-collapsible" data-id="{{id}}">
+
+        <!-- Cabeçalho clicável -->
+        <div class="d-flex justify-content-between align-items-center card-header-click">
+          <div class="fw-bold">{{client.firstName}} {{client.lastName}}</div>
+          <small class="text-muted">{{appointmentDateFormatted}} às {{appointmentTimeFormatted}}</small>
         </div>
-        <h5 class="mb-0">{{appointmentsList.0.barber.name}}</h5>
-      </div>
 
-      <div class="row g-3">
-        {{#each appointmentsList}}
-          <div class="col-md-6 card-wrapper fade-in-soft">
-            <div class="admin-card status-card status-{{status}}">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                  <div class="fw-bold">{{client.firstName}} {{client.lastName}}</div>
-                  <small class="text-muted">{{appointmentDateFormatted}} às {{appointmentTimeFormatted}}</small>
-                </div>
-                <span class="status-badge status-{{status}} text-end">
-                  {{statusText status}}
-                </span>
-              </div>
-
-              <div class="mb-2">
-                <div><strong>Serviço:</strong> {{serviceType.name}}</div>
-                <div><strong>Duração:</strong> {{serviceType.duration}} min</div>
-                <div><strong>Valor:</strong> {{formatCurrency totalPrice}}</div>
-              </div>
-
-              <div class="d-flex flex-wrap gap-2 mt-2">
-                <button class="btn btn-sm btn-outline-light action-item js-view-appointment" data-id="{{id}}">
-                  <i class="fas fa-eye"></i> Ver
-                </button>
-
-                {{#if (eq status "confirmed")}}
-                  <button class="btn btn-sm btn-outline-warning action-item js-no-show-appointment" data-id="{{id}}">
-                    <i class="fas fa-user-slash"></i> Não Compareceu
-                  </button>
-                {{/if}}
-
-                {{#unless whatsappSent}}
-                  <button class="btn btn-sm btn-outline-success action-item js-send-whatsapp" data-id="{{id}}">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                  </button>
-                {{/unless}}
-
-                {{#eq status "pending"}}
-                  <button class="btn btn-sm btn-outline-primary action-item js-confirm-appointment" data-id="{{id}}">
-                    <i class="fas fa-check"></i> Confirmar
-                  </button>
-                {{/eq}}
-
-                {{#unless (eq status "cancelled")}}
-                  {{#unless (eq status "completed")}}
-                    {{#if (eq status "in_progress")}}
-                      <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
-                        <i class="fas fa-check-double"></i> Concluir
-                      </button>
-                    {{/if}}
-
-                    <button class="btn btn-sm btn-outline-primary action-item js-edit-appointment" data-id="{{id}}">
-                      <i class="fas fa-edit"></i> Editar
-                    </button>
-
-                    <button class="btn btn-sm btn-outline-danger action-item js-cancel-appointment" data-id="{{id}}">
-                      <i class="fas fa-times"></i> Cancelar
-                    </button>
-                  {{/unless}}
-                {{/unless}}
-              </div>
-            </div>
+        <!-- Corpo expansível -->
+        <div class="appointment-body" id="body-{{id}}">
+          <div class="mb-2">
+            <div><strong>Serviço:</strong> {{serviceType.name}}</div>
+            <div><strong>Duração:</strong> {{serviceType.duration}} min</div>
+            <div><strong>Valor:</strong> {{formatCurrency totalPrice}}</div>
           </div>
-        {{/each}}
+
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-light action-item js-view-appointment" data-id="{{id}}">
+              <i class="fas fa-eye"></i> Ver
+            </button>
+
+            {{#if (eq status "confirmed")}}
+            <button class="btn btn-sm btn-outline-warning action-item js-no-show-appointment" data-id="{{id}}">
+              <i class="fas fa-user-slash"></i> Não Compareceu
+            </button>
+            {{/if}}
+
+            {{#unless whatsappSent}}
+            <button class="btn btn-sm btn-outline-success action-item js-send-whatsapp" data-id="{{id}}">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+            </button>
+            {{/unless}}
+
+            {{#eq status "pending"}}
+            <button class="btn btn-sm btn-outline-primary action-item js-confirm-appointment" data-id="{{id}}">
+              <i class="fas fa-check"></i> Confirmar
+            </button>
+            {{/eq}}
+
+            {{#unless (eq status "cancelled")}}
+            {{#unless (eq status "completed")}}
+            {{#if (eq status "in_progress")}}
+            <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
+              <i class="fas fa-check-double"></i> Concluir
+            </button>
+            {{/if}}
+
+            <button class="btn btn-sm btn-outline-primary action-item js-edit-appointment" data-id="{{id}}">
+              <i class="fas fa-edit"></i> Editar
+            </button>
+
+            <button class="btn btn-sm btn-outline-danger action-item js-cancel-appointment" data-id="{{id}}">
+              <i class="fas fa-times"></i> Cancelar
+            </button>
+            {{/unless}}
+            {{/unless}}
+          </div>
+        </div>
       </div>
     </div>
-  {{/if}}
-{{/each}}
 
+    {{/each}}
+  </div>
+</div>
+{{/if}}
+{{/each}}
+</div>
 {{#unless appointments.length}}
-  <p class="text-danger text-center">Nenhum agendamento encontrado.</p>
+<p class="text-danger text-center">Nenhum agendamento encontrado.</p>
 {{/unless}}

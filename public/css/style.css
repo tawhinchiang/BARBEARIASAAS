@@ -2033,8 +2033,34 @@ canvas {
   display: none;
 }
 .card-wrapper {
+    flex: 0 0 auto;
+  width: 100%;
+  max-width: 320px;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
+
+.admin-card.card-collapsible {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.card-header-click {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.appointment-body {
+  margin-top: 8px;
+  display: none;
+  transition: max-height 0.3s ease;
+}
+
+.admin-card.card-collapsible.expanded .appointment-body {
+  display: block;
+}
+
 /* Destaque lateral de status nos cards */
 .status-card {
   border-left: 5px solid transparent;
@@ -2063,4 +2089,28 @@ canvas {
 
 .status-card.status-no_show {
   border-left-color: #6c757d; /* cinza escuro */
+}
+
+/* Container de colunas horizontais por barbeiro */
+.appointments-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+/* Cada coluna vertical de um barbeiro */
+.barber-column {
+  flex: 1 1 300px;
+  max-width: 360px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cabeçalho do barbeiro */
+.barber-header {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 8px;
 }
