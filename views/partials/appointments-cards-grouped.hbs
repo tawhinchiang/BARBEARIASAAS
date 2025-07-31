@@ -1,4 +1,3 @@
-
 <div class="appointments-columns">
 {{#each (groupBy appointments "barber.name") as |appointmentsList|}}
 {{#if appointmentsList.length}}
@@ -10,7 +9,7 @@
     <h5 class="mb-0">{{appointmentsList.0.barber.name}}</h5>
   </div>
 
-  <div class="row g-3">
+  <div class="row g-3 card-group" data-barber="{{appointmentsList.0.barber.name}}">
     {{#each appointmentsList}}
     <div class="col-md-4 card-wrapper fade-in-soft">
       <div class="admin-card status-card status-{{status}} card-collapsible" data-id="{{id}}">
@@ -76,6 +75,9 @@
 
     {{/each}}
   </div>
+  <button class="btn btn-outline-light btn-sm ver-mais-cards d-none mt-2" data-barber="{{appointmentsList.0.barber.name}}">
+  Ver mais
+</button>
 </div>
 {{/if}}
 {{/each}}

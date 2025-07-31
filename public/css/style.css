@@ -985,11 +985,7 @@ body.page-fade-out {
   min-height: auto;
   will-change: opacity, transform;
 }
-@media (max-width: 768px) {
-  .dashboard-flex-group > div {
-    flex-basis: 100% !important;
-  }
-}
+
 .admin-card i {
   font-size: 1.8rem;
 }
@@ -1342,7 +1338,18 @@ body.page-fade-out {
 }
 
 /* ===== RESPONSIVIDADE ===== */
+
 @media (max-width: 768px) {
+  .card-wrapper {
+    max-width: 100% !important;
+  }
+  
+   .appointments-columns {
+    justify-content: center;
+  }
+  .dashboard-flex-group > div {
+    flex-basis: 100% !important;
+  }
    .service-name {
     white-space: normal;
     word-break: break-word;
@@ -2033,7 +2040,7 @@ canvas {
   display: none;
 }
 .card-wrapper {
-    flex: 0 0 auto;
+  flex: 0 0 auto;
   width: 100%;
   max-width: 320px;
   transition: opacity 0.2s ease, transform 0.2s ease;
@@ -2113,4 +2120,37 @@ canvas {
   padding-bottom: 8px;
   border-bottom: 1px solid #444;
   margin-bottom: 8px;
+}
+.toggle-btn-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+
+.table-row-transition {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.table-row-transition.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.card-wrapper {
+  transition: all 0.3s ease;
+  opacity: 1;
+  transform: translateY(0);
+  overflow: hidden;
+}
+
+.card-wrapper.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.btn-ver-mais,
+.btn-ver-menos {
+  min-width: 160px;
+  text-align: center;
 }
