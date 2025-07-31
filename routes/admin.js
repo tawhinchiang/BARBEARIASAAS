@@ -352,7 +352,7 @@ router.get('/appointments', async (req, res) => {
         order = [[require('sequelize').literal('"barber"."name"'), 'DESC']];
         break;
       default:
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']];
+         order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']];
     }
 
     log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
@@ -442,7 +442,8 @@ router.get('/appointments/partial', async (req, res) => {
       { model: Barber, as: 'barber' },
       { model: ServiceType, as: 'serviceType' }
     ],
-    order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']]
+
   });
 
   const formattedAppointments = appointments.map(app => {
@@ -478,7 +479,8 @@ router.get('/appointments/partial-cards', async (req, res) => {
       { model: Barber, as: 'barber' },
       { model: ServiceType, as: 'serviceType' }
     ],
-    order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']]
+
   });
 
   const formattedAppointments = appointments.map(app => {
