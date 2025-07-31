@@ -1,6 +1,13 @@
 const moment = require('moment');
 
 module.exports = {
+  objectLength: function (obj) {
+  return Object.keys(obj || {}).length;
+},
+json: function (context) {
+  return JSON.stringify(context, null, 2);
+},
+
   formatDate: function(date) {
     if (!date) return '';
     return new Date(date).toLocaleDateString('pt-BR');
@@ -149,6 +156,18 @@ canCancel: function(date, time, status, options) {
 
   // Se for modo inline (com {{canCancel}})
   return isFuture && isActive;
+},
+// ✅ NOVO HELPER: groupBy
+groupBy: function (array, key) {
+  if (!Array.isArray(array)) return {};
+
+  return array.reduce((result, item) => {
+    const groupKey = key.split('.').reduce((obj, k) => (obj ? obj[k] : undefined), item) || 'Outros';
+    if (!result[groupKey]) result[groupKey] = [];
+    result[groupKey].push(item);
+    return result;
+  }, {});
 }
+
 
 };

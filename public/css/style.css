@@ -2029,3 +2029,38 @@ canvas {
   object-fit: cover;
   display: block;
 }
+.view-mode.hidden {
+  display: none;
+}
+.card-wrapper {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+/* Destaque lateral de status nos cards */
+.status-card {
+  border-left: 5px solid transparent;
+  padding-left: 1rem;
+}
+
+.status-card.status-pending {
+  border-left-color: var(--warning-color); /* amarelo */
+}
+
+.status-card.status-confirmed {
+  border-left-color: var(--success-color); /* verde */
+}
+
+.status-card.status-in_progress {
+  border-left-color: var(--info-color); /* azul */
+}
+
+.status-card.status-completed {
+  border-left-color: #28a745; /* verde escuro */
+}
+
+.status-card.status-cancelled {
+  border-left-color: var(--danger-color); /* vermelho */
+}
+
+.status-card.status-no_show {
+  border-left-color: #6c757d; /* cinza escuro */
+}

@@ -92,11 +92,19 @@
           </div>
         </div>
       </div>
+      
+  <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
+<div class="d-flex justify-content-end mb-3">
+  <button class="btn btn-secondary" id="toggleView">
+    <i class="fas fa-columns"></i> Alternar Visualização
+  </button>
+</div>
 
-    <!-- Tabela de Agendamentos -->
-    <div class="row">
-      <div class="col-12">
-        <div class="admin-card">
+<!-- VISUALIZAÇÃO EM TABELA -->
+<div id="appointmentsTableView" class="view-mode">
+  <div class="row">
+    <div class="col-12">
+      <div class="admin-card">
         <div class="admin-table">
           <div class="admin-table-wrapper">
             {{#if appointments}}
@@ -114,10 +122,9 @@
                   </tr>
                 </thead>
                 <tbody id="appointmentsTableBody">
-                  {{> appointments-table-rows appointments=appointments}}
+                  {{> appointments-table-rows appointments=appointments }}
                 </tbody>
               </table>
-          </div>
             {{else}}
               <div class="text-center py-5">
                 <div class="display-1 text-muted mb-3">
@@ -131,6 +138,13 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
+<div id="appointmentsCardView" class="view-mode hidden">
+  {{> appointments-cards-grouped appointments=appointments }}
+</div>
 
     <!-- Paginação -->
     {{#if pagination}}

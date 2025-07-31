@@ -146,9 +146,9 @@ router.get('/dashboard', async (req, res) => {
 
     const todayAppointments = await Appointment.findAll({
       where: {
-      appointmentDate: formatDateYYYYMMDD(today),
-      status: 'completed'
-  },
+        appointmentDate: formatDateYYYYMMDD(today),
+        status: 'completed'
+      },
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber' },
@@ -205,9 +205,10 @@ router.get('/dashboard', async (req, res) => {
         [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-      where: {appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: { [Op.in]: ['completed'] }
-},
+      where: {
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+        status: { [Op.in]: ['completed'] }
+      },
       include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
       group: ['barberId', 'barber.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
@@ -222,16 +223,16 @@ router.get('/dashboard', async (req, res) => {
       totalRevenue: item.totalRevenue
     }));
 
-      const topServicesRaw = await Appointment.findAll({
+    const topServicesRaw = await Appointment.findAll({
       attributes: [
         'serviceTypeId',
         [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-       where: {
-      appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: 'completed'
-     },
+      where: {
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+        status: 'completed'
+      },
       include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
       group: ['serviceTypeId', 'serviceType.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
@@ -250,20 +251,20 @@ router.get('/dashboard', async (req, res) => {
     }));
 
     const formattedRecentAppointments = todayAppointments.map(app => {
-  const [year, month, day] = app.appointmentDate.split('-');
-  const localDate = new Date(year, month - 1, day);
-  const serviceType = app.serviceType || {};
+      const [year, month, day] = app.appointmentDate.split('-');
+      const localDate = new Date(year, month - 1, day);
+      const serviceType = app.serviceType || {};
 
-  return {
-    ...app.toJSON(),
-    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-    appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
+      return {
+        ...app.toJSON(),
+        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
@@ -371,39 +372,39 @@ router.get('/appointments', async (req, res) => {
     const barbers = await Barber.findAll({ where: { isActive: true } });
     const totalPages = Math.ceil(count / limit);
     const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const serviceType = plain.serviceType || {};
+      const plain = app.toJSON();
+      const serviceType = plain.serviceType || {};
 
-  let dateFormatted = '';
-  try {
-    const rawDate = plain.appointmentDate;
-    const safeDate = typeof rawDate === 'string'
-      ? new Date(rawDate + 'T03:00:00')
-      : new Date(rawDate);
-    if (!isNaN(safeDate)) {
-      dateFormatted = safeDate.toLocaleDateString('pt-BR');
-    }
-  } catch (err) {
-    console.error('Erro ao formatar appointmentDate:', err);
-  }
+      let dateFormatted = '';
+      try {
+        const rawDate = plain.appointmentDate;
+        const safeDate = typeof rawDate === 'string'
+          ? new Date(rawDate + 'T03:00:00')
+          : new Date(rawDate);
+        if (!isNaN(safeDate)) {
+          dateFormatted = safeDate.toLocaleDateString('pt-BR');
+        }
+      } catch (err) {
+        console.error('Erro ao formatar appointmentDate:', err);
+      }
 
-  return {
-    ...plain,
-    appointmentDateFormatted: dateFormatted,
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
+      return {
+        ...plain,
+        appointmentDateFormatted: dateFormatted,
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       layout: 'admin',
       user: req.session.user,
-      appointments:formattedAppointments,
+      appointments: formattedAppointments,
       barbers,
       filters: { startDate, endDate, barberId, status, sort },
       pagination: {
@@ -437,10 +438,10 @@ router.get('/appointments/partial', async (req, res) => {
   const appointments = await Appointment.findAll({
     where,
     include: [
-  { model: Client, as: 'client' },
-  { model: Barber, as: 'barber' },
-  { model: ServiceType, as: 'serviceType' }
-  ],
+      { model: Client, as: 'client' },
+      { model: Barber, as: 'barber' },
+      { model: ServiceType, as: 'serviceType' }
+    ],
     order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
   });
 
@@ -461,21 +462,56 @@ router.get('/appointments/partial', async (req, res) => {
   });
 });
 
+router.get('/appointments/partial-cards', async (req, res) => {
+  const { startDate, endDate, barberId, status } = req.query;
+  const where = {};
+
+  if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+  if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
+  if (barberId) where.barberId = barberId;
+  if (status) where.status = status;
+
+  const appointments = await Appointment.findAll({
+    where,
+    include: [
+      { model: Client, as: 'client' },
+      { model: Barber, as: 'barber' },
+      { model: ServiceType, as: 'serviceType' }
+    ],
+    order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+  });
+
+  const formattedAppointments = appointments.map(app => {
+    const json = app.toJSON();
+    const date = new Date(json.appointmentDate + 'T03:00:00');
+    return {
+      ...json,
+      appointmentDateFormatted: date.toLocaleDateString('pt-BR'),
+      appointmentTimeFormatted: json.appointmentTime?.slice(0, 5)
+    };
+  });
+
+  res.render('partials/appointments-cards-grouped', {
+    layout: false,
+    appointments: formattedAppointments,
+    helpers: require('../config/handlebars-helpers')
+  });
+});
 // Atualizar status do agendamento
 router.post('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     log('Atualizando status do agendamento', { id, status, user: req.session.user });
-    
+
     const result = await Appointment.update(
       { status },
       { where: { id } }
     );
-    
+
     log('Status atualizado', { id, status, affectedRows: result[0] });
-    
+
     res.json({ success: true });
   } catch (error) {
     logError('Erro ao atualizar status', error);
@@ -487,27 +523,27 @@ router.post('/appointments/:id/status', async (req, res) => {
 router.get('/reports', async (req, res) => {
   try {
     log('Acessando relatórios', { user: req.session.user, query: req.query });
-    
+
     const { startDate, endDate, barberId, status, sort } = req.query;
 
-    
+
     let whereClause = {};
-    
+
     if (startDate && endDate) {
       whereClause.appointmentDate = {
         [require('sequelize').Op.between]: [startDate, endDate]
       };
     }
 
-    if (status) {whereClause.status = status;}
+    if (status) { whereClause.status = status; }
 
-    if (barberId) {whereClause.barberId = barberId;}
-    
+    if (barberId) { whereClause.barberId = barberId; }
+
     log('Filtros de relatório aplicados', { whereClause });
     // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
-      let order = [['appointmentDate', 'DESC']]; // padrão
-  
-      switch (sort) {
+    let order = [['appointmentDate', 'DESC']]; // padrão
+
+    switch (sort) {
       case 'date_asc':
         order = [['appointmentDate', 'ASC']];
         break;
@@ -523,41 +559,41 @@ router.get('/reports', async (req, res) => {
       case 'barber_desc':
         order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
         break;
-      }
+    }
 
-      const appointments = await Appointment.findAll({
-        where: whereClause,
-        include: [
-          { model: Client, as: 'client' },
-          { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
-          { model: ServiceType, as: 'serviceType' }
-        ],
+    const appointments = await Appointment.findAll({
+      where: whereClause,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
+        { model: ServiceType, as: 'serviceType' }
+      ],
 
-        order
-      }); // padrão
+      order
+    }); // padrão
 
     const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const date = new Date(plain.appointmentDate + 'T03:00:00');
-  const serviceType = plain.serviceType || {};
+      const plain = app.toJSON();
+      const date = new Date(plain.appointmentDate + 'T03:00:00');
+      const serviceType = plain.serviceType || {};
 
-  return {
-    ...plain,
-    appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
+      return {
+        ...plain,
+        appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
 
 
     log('Dados do relatório carregados', { appointmentsCount: appointments.length });
-    
+
     const barbers = await Barber.findAll({ where: { isActive: true } });
-    
+
     // Estatísticas para relatórios
     const stats = {
       total: appointments.length,
@@ -565,25 +601,25 @@ router.get('/reports', async (req, res) => {
       byBarber: {},
       totalRevenue: 0
     };
-    
+
     appointments.forEach(apt => {
       // Contagem Por status
       console.log(`Status: ${apt.status} - Preço: ${apt.totalPrice}`);
       stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
-      
+
       // Contagem Por barbeiro
       const barberKey = `${apt.barber?.id} - ${apt.barber?.name || 'Desconhecido'}`;
       stats.byBarber[barberKey] = (stats.byBarber[barberKey] || 0) + 1;
 
-      
+
       // Receita total
       // Receita total - ignorar agendamentos cancelados
-     if (apt.totalPrice && apt.status === 'completed') {
-      stats.totalRevenue += parseFloat(apt.totalPrice);
-    }
+      if (apt.totalPrice && apt.status === 'completed') {
+        stats.totalRevenue += parseFloat(apt.totalPrice);
+      }
 
     });
-    
+
     log('Estatísticas do relatório calculadas', { stats });
     console.log('[DEBUG] formattedAppointments:', formattedAppointments);
 
@@ -627,15 +663,15 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     } else if (endDate) {
       where.appointmentDate = { [Op.lte]: endDate };
     }
-    
+
     if (typeof status === 'string' && status.trim() !== '') {
       where.status = status;
     }
-    
+
     if (typeof barberId === 'string' && barberId.trim() !== '') {
       where.barberId = barberId;
     }
-    
+
 
     // Ordenação
     let order = [['appointmentDate', 'DESC']];
@@ -683,18 +719,18 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
 
 
 router.get('/appointments/:id', async (req, res) => {
-    // const { id } = req.params;
+  // const { id } = req.params;
 
   try {
     const id = parseInt(req.params.id, 10);
-    
+
     if (isNaN(id)) {
       log('ID inválido fornecido', { id: req.params.id });
       return res.status(400).json({ success: false, error: 'ID inválido' });
     }
 
     log('Buscando agendamento por ID', { id });
-    
+
     const appointment = await Appointment.findByPk(id, {
       include: [
         { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
@@ -709,7 +745,7 @@ router.get('/appointments/:id', async (req, res) => {
     }
 
     log('Agendamento encontrado', { id, client: `${appointment.client.firstName} ${appointment.client.lastName}` });
-    
+
     res.json({ success: true, appointment });
 
   } catch (error) {
@@ -723,29 +759,29 @@ router.patch('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     log('Atualizando status do agendamento', { id, status });
-    
-    const validStatuses = ['pending', 'confirmed','in_progress', 'completed', 'cancelled', 'no_show'];
-    
+
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'];
+
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: 'Status inválido',
         validStatuses
       });
     }
-    
+
     const appointment = await Appointment.findByPk(id);
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Agendamento não encontrado'
       });
     }
-    
+
     await appointment.update({ status });
     const updatedAppointment = await Appointment.findByPk(id); // recarrega
 
@@ -760,12 +796,12 @@ router.patch('/appointments/:id/status', async (req, res) => {
       }
     });
 
-    
+
   } catch (error) {
     logError('Erro ao atualizar status', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
     });
   }
 });
@@ -774,33 +810,33 @@ router.patch('/appointments/:id/status', async (req, res) => {
 router.delete('/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     log('Cancelando agendamento', { id });
-    
+
     const appointment = await Appointment.findByPk(id);
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Agendamento não encontrado'
       });
     }
-    
+
     await appointment.update({ status: 'cancelled' });
-    
+
     log('Agendamento cancelado com sucesso', { id });
-    
+
     res.json({
       success: true,
       message: 'Agendamento cancelado com sucesso'
     });
-    
+
   } catch (error) {
     logError('Erro ao cancelar agendamento', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
     });
   }
 });
@@ -937,8 +973,8 @@ router.use('/services', require('./services'));
 router.use('/config', require('./admin-config'));
 
 router.get('/whatsapp/status', isAuthenticated, (req, res) => {
-const status = getWhatsAppStatus();
-res.json(status);
+  const status = getWhatsAppStatus();
+  res.json(status);
 });
 
 router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
@@ -957,7 +993,7 @@ router.post('/whatsapp/disconnect', async (req, res) => {
     await disconnectWhatsApp();
 
     // Força uma nova sessão após desconexão
-    await initializeWhatsApp(); 
+    await initializeWhatsApp();
 
     req.session.message = 'WhatsApp desconectado e reinicializado';
     res.redirect('/admin/config');

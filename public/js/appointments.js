@@ -1,5 +1,5 @@
 
- // Variáveis globais
+// Variáveis globais
 let selectedBarberId = '';
 let openMenuId = null;
 // No topo do seu <script>, junto com as outras variáveis
@@ -17,60 +17,78 @@ document.addEventListener('DOMContentLoaded', function () {
     setDefaultDates();
     restoreFilters();
   });
+// Restaura a visualização salva
+const savedView = localStorage.getItem('appointmentsView');
+if (savedView === 'cards') {
+  document.getElementById('appointmentsTableView')?.classList.add('hidden');
+  document.getElementById('appointmentsCardView')?.classList.remove('hidden');
+} else {
+  document.getElementById('appointmentsCardView')?.classList.add('hidden');
+  document.getElementById('appointmentsTableView')?.classList.remove('hidden');
+}
 
-  // Socket.IO - Atualização em tempo real
-document.querySelectorAll('.js-no-show-appointment').forEach(button => {
-  button.addEventListener('click', async () => {
-    const id = button.dataset.id;
-    if (!confirm('Marcar como "não compareceu"?')) return;
+document.getElementById('toggleView')?.addEventListener('click', () => {
+  const isTableHidden = document.getElementById('appointmentsTableView')?.classList.toggle('hidden');
+  document.getElementById('appointmentsCardView')?.classList.toggle('hidden');
 
-    try {
-      const res = await fetch(`/admin/appointments/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'no_show' })
-      });
-
-      let result = {};
-      try {
-        result = await res.json();
-      } catch (e) {
-        console.warn('[WARN] Não foi possível parsear JSON da resposta');
-      }
-
-      if (res.ok && result.success !== false) {
-        showToast('Agendamento marcado como não compareceu.', 'warning');
-        await refreshAppointmentsTable(); // ✅ Correto
-      } else {
-        alert(result.error || 'Erro ao atualizar status.');
-      }
-
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao marcar como não compareceu.');
-    }
-  });
+  // Atualiza no localStorage
+  localStorage.setItem('appointmentsView', isTableHidden ? 'cards' : 'table');
 });
 
 
+  // Socket.IO - Atualização em tempo real
+  document.querySelectorAll('.js-no-show-appointment').forEach(button => {
+    button.addEventListener('click', async () => {
+      const id = button.dataset.id;
+      if (!confirm('Marcar como "não compareceu"?')) return;
 
-if (typeof io !== 'undefined') {
-  const socket = io();
+      try {
+        const res = await fetch(`/admin/appointments/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'no_show' })
+        });
 
-  socket.on('new_appointment', async (data) => {
-    
-    showToast(`✅ Novo agendamento de <strong>${data.client}</strong> às <strong>${data.time}</strong>`, 'success');
-    await refreshAppointmentsTable();
+        let result = {};
+        try {
+          result = await res.json();
+        } catch (e) {
+          console.warn('[WARN] Não foi possível parsear JSON da resposta');
+        }
+
+        if (res.ok && result.success !== false) {
+          showToast('Agendamento marcado como não compareceu.', 'warning');
+          await refreshAppointmentsTable(); // ✅ Correto
+        } else {
+          alert(result.error || 'Erro ao atualizar status.');
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao marcar como não compareceu.');
+      }
+    });
   });
 
-  socket.on('appointment_cancelled', async (data) => {
-    console.log('[SOCKET] Agendamento cancelado:', data);
-    showToast(`❌ Agendamento cancelado: <strong>${data.client}</strong> (${data.time})`, 'danger');
-    await refreshAppointmentsTable();
-  });
 
 
-}
+  if (typeof io !== 'undefined') {
+    const socket = io();
+
+    socket.on('new_appointment', async (data) => {
+
+      showToast(`✅ Novo agendamento de <strong>${data.client}</strong> às <strong>${data.time}</strong>`, 'success');
+      await refreshAppointmentsTable();
+    });
+
+    socket.on('appointment_cancelled', async (data) => {
+      console.log('[SOCKET] Agendamento cancelado:', data);
+      showToast(`❌ Agendamento cancelado: <strong>${data.client}</strong> (${data.time})`, 'danger');
+      await refreshAppointmentsTable();
+    });
+
+
+  }
 
 
 });
@@ -166,10 +184,10 @@ document.addEventListener('click', function (e) {
   }
 });
 
- window.clearFilters = function () {
-    localStorage.removeItem('adminFilters');
-    window.location.href = window.location.pathname;
-  };
+window.clearFilters = function () {
+  localStorage.removeItem('adminFilters');
+  window.location.href = window.location.pathname;
+};
 
 
 
@@ -178,11 +196,11 @@ function setDefaultDates() {
   const today = new Date();
   const startDate = document.getElementById('startDate');
   const endDate = document.getElementById('endDate');
-  
+
   if (startDate && !startDate.value) {
     startDate.value = today.toISOString().split('T')[0];
   }
-  
+
   if (endDate && !endDate.value) {
     const nextMonth = new Date(today);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -202,16 +220,16 @@ function selectBarber(barberId, barberName) {
 // Toggle menu de ações
 function toggleActionsMenu(appointmentId) {
   console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
-  
+
   // Fechar outros menus
   if (openMenuId && openMenuId !== appointmentId) {
     closeMenu(openMenuId);
   }
-  
+
   const menu = document.getElementById(`actions-${appointmentId}`);
   if (menu) {
     const isOpen = menu.classList.contains('show');
-    
+
     if (isOpen) {
       closeMenu(appointmentId);
     } else {
@@ -358,13 +376,13 @@ async function editAppointment(appointmentId) {
 async function confirmAppointment(appointmentId) {
   console.log('[ADMIN] Confirmando agendamento:', appointmentId);
   closeAllMenus();
-  
+
   if (confirm('Confirmar este agendamento?')) {
     try {
       const response = await fetch(`/admin/appointments/${appointmentId}/confirm`, {
         method: 'POST'
       });
-      
+
       if (response.ok) {
         showNotification('Agendamento confirmado com sucesso!', 'success');
         setTimeout(() => location.reload(), 1500);
@@ -382,13 +400,13 @@ async function confirmAppointment(appointmentId) {
 async function completeAppointment(appointmentId) {
   console.log('[ADMIN] Concluindo agendamento:', appointmentId);
   closeAllMenus();
-  
+
   if (confirm('Marcar este agendamento como concluído?')) {
     try {
       const response = await fetch(`/admin/appointments/${appointmentId}/complete`, {
         method: 'POST'
       });
-      
+
       if (response.ok) {
         showNotification('Agendamento concluído com sucesso!', 'success');
         setTimeout(() => location.reload(), 1500);
@@ -405,11 +423,11 @@ async function completeAppointment(appointmentId) {
 async function cancelAppointment(appointmentId) {
   console.log('[ADMIN] Cancelando agendamento:', appointmentId);
   closeAllMenus();
-  
+
   const reason = prompt('Motivo do cancelamento (opcional):');
   if (reason !== null) {
     try {
-       console.log('[DEBUG] Disparando cancelamento...');
+      console.log('[DEBUG] Disparando cancelamento...');
       const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
 
         method: 'POST',
@@ -418,7 +436,7 @@ async function cancelAppointment(appointmentId) {
         },
         body: JSON.stringify({ reason })
       });
-      
+
       if (response.ok) {
         showNotification('Agendamento cancelado com sucesso!', 'success');
         setTimeout(() => location.reload(), 1500);
@@ -435,13 +453,13 @@ async function cancelAppointment(appointmentId) {
 async function deleteAppointment(appointmentId) {
   console.log('[ADMIN] Excluindo agendamento:', appointmentId);
   closeAllMenus();
-  
+
   if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
     try {
       const response = await fetch(`/admin/appointments/${appointmentId}`, {
         method: 'DELETE'
       });
-      
+
       if (response.ok) {
         showNotification('Agendamento excluído com sucesso!', 'success');
         setTimeout(() => location.reload(), 1500);
@@ -458,12 +476,12 @@ async function deleteAppointment(appointmentId) {
 async function sendWhatsApp(appointmentId) {
   console.log('[ADMIN] Enviando WhatsApp para agendamento:', appointmentId);
   closeAllMenus();
-  
+
   try {
     const response = await fetch(`/admin/appointments/${appointmentId}/whatsapp`, {
       method: 'POST'
     });
-    
+
     if (response.ok) {
       showNotification('Mensagem WhatsApp enviada com sucesso!', 'success');
       setTimeout(() => location.reload(), 1500);
@@ -497,7 +515,7 @@ function exportAppointments() {
 
 // Utilitários
 function getStatusText(status) {
-   const statusMap = {
+  const statusMap = {
     'pending': 'Pendente',
     'confirmed': 'Confirmado',
     'in_progress': 'Em atendimento',
@@ -510,20 +528,20 @@ function getStatusText(status) {
 
 function showNotification(message, type = 'info') {
 
-    const notification = document.createElement('div');
-    notification.className = `notification ${type} show`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
+  const notification = document.createElement('div');
+  notification.className = `notification ${type} show`;
+  notification.textContent = message;
+
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.classList.remove('show');
     setTimeout(() => {
-      notification.classList.remove('show');
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }, 3000);
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
 }
 
 
@@ -545,13 +563,13 @@ async function loadSelectOptions(selectId, endpoint, selectedId) {
       select.appendChild(option);
     });
     if (selectId === 'edit-service' || selectId === 'edit-barber') {
-  $(select).select2({
-    dropdownParent: $('#editModal'),
-    width: '100%',
-    placeholder: 'Selecione',
-    theme: 'bootstrap-5'
-  });
-}
+      $(select).select2({
+        dropdownParent: $('#editModal'),
+        width: '100%',
+        placeholder: 'Selecione',
+        theme: 'bootstrap-5'
+      });
+    }
   } catch (err) {
     console.error(`Erro ao carregar ${selectId}:`, err);
     showNotification(`Erro ao carregar ${selectId}`, 'error');
@@ -649,21 +667,52 @@ function showToast(message, type = 'success') {
 }
 
 
-async function refreshAppointmentsTable() {
-  const tableBody = document.querySelector('.admin-table tbody');
-  if (!tableBody) return;
+// async function refreshAppointmentsTable() {
+//   const tableBody = document.querySelector('.admin-table tbody');
+//     const cardView = document.getElementById('appointmentsCardView');
+//   if (!tableBody && !cardView) return;
 
+//   const params = new URLSearchParams(window.location.search);
+
+//   try {
+//     const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
+//     const html = await response.text();
+//     tableBody.innerHTML = html;
+
+//     initTableListeners(); // reanexar eventos
+//     // initJQueryHandlers(); // menu dropdown
+//   } catch (err) {
+//     console.error('[ADMIN] Erro ao atualizar a tabela:', err);
+//   }
+// }
+
+async function refreshAppointmentsTable() {
   const params = new URLSearchParams(window.location.search);
 
-  try {
-    const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
-    const html = await response.text();
-    tableBody.innerHTML = html;
-
-    initTableListeners(); // reanexar eventos
-    // initJQueryHandlers(); // menu dropdown
-  } catch (err) {
-    console.error('[ADMIN] Erro ao atualizar a tabela:', err);
+  // Atualiza a tabela
+  const tableBody = document.querySelector('.admin-table tbody');
+  if (tableBody) {
+    try {
+      const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
+      const html = await response.text();
+      tableBody.innerHTML = html;
+    } catch (err) {
+      console.error('[ADMIN] Erro ao atualizar a TABELA:', err);
+    }
   }
+
+  // Atualiza os cards
+  const cardContainer = document.getElementById('appointmentsCardView');
+  if (cardContainer) {
+    try {
+      const response = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
+      const html = await response.text();
+      cardContainer.innerHTML = html;
+    } catch (err) {
+      console.error('[ADMIN] Erro ao atualizar os CARDS:', err);
+    }
+  }
+
+  initTableListeners(); // reanexar eventos
 }
 
