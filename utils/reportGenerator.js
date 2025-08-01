@@ -204,7 +204,10 @@ async function generatePDF(appointments, reportInfo, filename) {
 
 
 
-
+function escapeCSV(text) {
+  if (typeof text !== 'string') text = String(text || '');
+  return `"${text.replace(/"/g, '""')}"`; // escapa aspas duplas
+}
 // Gerar relatório em CSV
 function generateCSV(appointments, filename) {
   try {
@@ -222,10 +225,10 @@ function generateCSV(appointments, filename) {
  const csvData = appointments.map(apt => [
   new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
   apt.appointmentTime || '',
-  `"${(apt.client?.firstName || '')} ${(apt.client?.lastName || '')}"`,
-  apt.client?.phone || '',
-  `"${apt.barber?.name || ''}"`,
-  `"${apt.serviceType?.name || ''}"`,
+  escapeCSV(`${apt.client?.firstName || ''} ${apt.client?.lastName || ''}`),
+  escapeCSV(apt.client?.phone || ''),
+  escapeCSV(apt.barber?.name || ''),
+  escapeCSV(apt.serviceType?.name || ''),
   getStatusText(apt.status),
   parseFloat(apt.totalPrice || 0).toFixed(2),
   apt.whatsappSent ? 'Sim' : 'Não',
@@ -235,8 +238,8 @@ function generateCSV(appointments, filename) {
 ]);
 
     const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.join(','))
+     headers.join(';'),                   // <-- agora usa ponto e vírgula
+      ...csvData.map(row => row.join(';')) 
     ].join('\n');
 
     fs.writeFileSync(filePath, csvContent, 'utf8');
