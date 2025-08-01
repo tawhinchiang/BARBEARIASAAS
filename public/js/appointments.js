@@ -884,20 +884,69 @@ function attachActionPanelListeners() {
 
 
 // Função para abrir o painel lateral
-function openActionPanel(id) {
-  console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
+async function openActionPanel(id) {
   const panel = document.getElementById('actionPanel');
   const body = document.getElementById('actionPanelBody');
+  if (!panel || !body) return;
 
-  // Exemplo: insira conteúdo dinâmico
-  body.innerHTML = `
-    <p>ID do agendamento: <strong>${id}</strong></p>
-    <button class="btn btn-primary w-100 mb-2" onclick="viewAppointment(${id})">Ver Detalhes</button>
-    <button class="btn btn-secondary w-100" onclick="editAppointment(${id})">Editar</button>
-  `;
+  console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
 
-  panel.classList.add('show');
+  try {
+    const res = await fetch(`/admin/appointments/${id}`);
+    const { appointment } = await res.json();
+    const status = appointment.status;
+
+    // Funções comuns sempre visíveis
+    let html = `
+      <button class="btn btn-outline-light w-100 mb-2 js-view-appointment" onclick="viewAppointment(${id})">
+        <i class="fas fa-eye me-2"></i> Ver Detalhes
+      </button>
+      <button class="btn btn-outline-primary w-100 mb-2 js-edit-appointment" onclick="editAppointment(${id})">
+        <i class="fas fa-pen me-2"></i> Editar
+      </button>
+    `;
+
+    // Regras específicas por status
+    if (status === 'pending') {
+      html += `
+        <button class="btn btn-outline-success w-100 mb-2 js-confirm-appointment" onclick="confirmAppointment(${id})">
+          <i class="fas fa-check-circle me-2"></i> Confirmar
+        </button>
+      `;
+    }
+
+    if (status === 'confirmed' || status === 'in_progress') {
+      html += `
+        <button class="btn btn-outline-warning w-100 mb-2 js-complete-appointment" onclick="completeAppointment(${id})">
+          <i class="fas fa-check me-2"></i> Concluir
+        </button>
+      `;
+    }
+
+    if (status !== 'cancelled' && status !== 'completed') {
+      html += `
+        <button class="btn btn-outline-danger w-100 mb-2 js-cancel-appointment" onclick="cancelAppointment(${id})">
+          <i class="fas fa-times-circle me-2"></i> Cancelar
+        </button>
+      `;
+    }
+
+    // WhatsApp é sempre visível
+    html += `
+      <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
+        <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
+      </button>
+    `;
+
+    body.innerHTML = html;
+    panel.classList.add('show');
+  } catch (err) {
+    console.error('[PAINEL] Erro ao carregar agendamento:', err);
+    showNotification('Erro ao carregar painel de ações', 'error');
+  }
 }
+
+
 
 // Função para fechar
 function closeActionPanel() {
