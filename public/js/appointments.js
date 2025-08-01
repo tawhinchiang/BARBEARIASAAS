@@ -5,49 +5,76 @@ let openMenuId = null;
 let viewAppointmentModal = null;
 let editModal;
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('[ADMIN] Página de agendamentos carregada');
-  restoreSavedView();
-  initModals();
-  initFilterForm();
-  initTableListeners();
-  
-  
-  
-  // Executa tarefas mais leves logo
-requestIdleCallback(() => {
-  initCardExpandables();
-  setDefaultDates();
-  restoreFilters();
+    console.log('[ADMIN] Página de agendamentos carregada');
+    restoreSavedView();
+    initModals();
+    initFilterForm();
+    initTableListeners();
+    // attachActionPanelListeners();
 
-  // fase visual 1: alternar view (tabela ou cards)
- 
     
+    // Executa tarefas mais leves logo
+    requestIdleCallback(() => {
+    initCardExpandables();
+    setDefaultDates();
+    restoreFilters();
+
+    // fase visual 1: alternar view (tabela ou cards)
+  
+      
 
 
-  // fase visual 2: limitar tabela
-  setTimeout(() => {
-    requestAnimationFrame(() => {
-      limitarLinhasDaTabela(10);
-    });
-  }, 50);
+    // fase visual 2: limitar tabela
+      setTimeout(() => {
+      requestAnimationFrame(() => {
+        limitarLinhasDaTabela(10);
+          });
+      }, 50);
 
-  // fase visual 3: limitar cards
-  setTimeout(() => {
-    requestAnimationFrame(() => {
-      limitarCardsPorBarbeiro(10);
-    });
-  }, 100);
+    // fase visual 3: limitar cards
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+        limitarCardsPorBarbeiro(10);
+        });
+        },100);
+
+    setTimeout(() => {
+    attachActionPanelListeners();
+  }, 200);
 });
 
 // Restaura a visualização salva
 
 
-document.getElementById('toggleView')?.addEventListener('click', () => {
-  const isTableHidden = document.getElementById('appointmentsTableView')?.classList.toggle('hidden');
-  document.getElementById('appointmentsCardView')?.classList.toggle('hidden');
-
-  // Atualiza no localStorage
-  localStorage.setItem('appointmentsView', isTableHidden ? 'cards' : 'table');
+document.getElementById('toggleView')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  console.log('[DEBUG] Toggle button clicked');
+  
+  const tableView = document.getElementById('appointmentsTableView');
+  const cardView = document.getElementById('appointmentsCardView');
+  
+  if (!tableView || !cardView) {
+  console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
+  document.getElementById('appointmentsTableView')?.classList.remove('hidden');
+  document.getElementById('appointmentsCardView')?.classList.add('hidden');
+  return;
+}
+  const isTableVisible = !tableView.classList.contains('hidden');
+  console.log('[DEBUG] Current state - Table visible:', isTableVisible);
+  
+  if (isTableVisible) {
+    // Mostrar cards, esconder tabela
+    tableView.classList.add('hidden');
+    cardView.classList.remove('hidden');
+    localStorage.setItem('appointmentsView', 'cards');
+    console.log('[DEBUG] Switched to cards view');
+  } else {
+    // Mostrar tabela, esconder cards
+    cardView.classList.add('hidden');
+    tableView.classList.remove('hidden');
+    localStorage.setItem('appointmentsView', 'table');
+    console.log('[DEBUG] Switched to table view');
+  }
 });
 
 
@@ -124,23 +151,7 @@ function initModals() {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
 }
-// function initJQueryHandlers() {
-//   $('.js-toggle-actions').on('click', function (e) {
-//     e.preventDefault();
-//     const id = $(this).data('id');
-//     const menu = $('#actions-' + id);
-//     const parent = $(this).closest('.actions-menu');
 
-//     $('.actions-menu').not(parent).removeClass('show');
-//     parent.toggleClass('show');
-//   });
-
-//   $(document).on('click', function (e) {
-//     if (!$(e.target).closest('.actions-menu').length) {
-//       $('.actions-menu').removeClass('show');
-//     }
-//   });
-// }
 
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
@@ -721,19 +732,32 @@ async function refreshAppointmentsTable() {
   }
 
   initTableListeners(); // reanexar eventos
+   attachActionPanelListeners();
 }
 
  function restoreSavedView() {
   const savedView = localStorage.getItem('appointmentsView');
   const tableView = document.getElementById('appointmentsTableView');
   const cardView = document.getElementById('appointmentsCardView');
+  
+  console.log('[DEBUG] Restoring saved view:', savedView);
+  console.log('[DEBUG] Elements found:', { tableView: !!tableView, cardView: !!cardView });
+
+ if (!tableView || !cardView) {
+  console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
+  document.getElementById('appointmentsTableView')?.classList.remove('hidden');
+  document.getElementById('appointmentsCardView')?.classList.add('hidden');
+  return;
+}
 
   if (savedView === 'cards') {
-    tableView?.classList.add('hidden');
-    cardView?.classList.remove('hidden');
+    tableView.classList.add('hidden');
+    cardView.classList.remove('hidden');
+    console.log('[DEBUG] Restored to cards view');
   } else {
-    cardView?.classList.add('hidden');
-    tableView?.classList.remove('hidden');
+    cardView.classList.add('hidden');
+    tableView.classList.remove('hidden');
+    console.log('[DEBUG] Restored to table view');
   }
 }
 function limitarLinhasDaTabela(qtd = 10) {
@@ -844,3 +868,50 @@ btnVerMenos.addEventListener('click', () => {
     }
   });
 }
+
+
+function attachActionPanelListeners() {
+  document.querySelectorAll('.js-open-action-panel').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const id = this.dataset.id;
+      console.log('[PAINEL] Clique detectado:', id);
+      openActionPanel(id);
+    });
+  });
+}
+
+
+
+// Função para abrir o painel lateral
+function openActionPanel(id) {
+  console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
+  const panel = document.getElementById('actionPanel');
+  const body = document.getElementById('actionPanelBody');
+
+  // Exemplo: insira conteúdo dinâmico
+  body.innerHTML = `
+    <p>ID do agendamento: <strong>${id}</strong></p>
+    <button class="btn btn-primary w-100 mb-2" onclick="viewAppointment(${id})">Ver Detalhes</button>
+    <button class="btn btn-secondary w-100" onclick="editAppointment(${id})">Editar</button>
+  `;
+
+  panel.classList.add('show');
+}
+
+// Função para fechar
+function closeActionPanel() {
+  const panel = document.getElementById('actionPanel');
+  panel.classList.remove('show');
+}
+
+// Tornando acessível globalmente
+window.openActionPanel = openActionPanel;
+window.closeActionPanel = closeActionPanel;
+
+document.addEventListener('click', function (e) {
+  const panel = document.getElementById('actionPanel');
+  if (panel?.classList.contains('show') && !panel.contains(e.target) && !e.target.closest('.js-open-action-panel')) {
+    closeActionPanel();
+  }
+});

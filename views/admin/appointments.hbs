@@ -175,8 +175,18 @@
     </div>
     {{/if}}
   </div>
-</div>
 
+</div>
+  <!-- Painel Lateral de Ações -->
+<div id="actionPanel" class="action-slideout">
+  <div class="action-slideout-header">
+    <h5>Ações</h5>
+    <button class="btn-close" onclick="closeActionPanel()">&times;</button>
+  </div>
+  <div class="action-slideout-body" id="actionPanelBody">
+    <!-- Conteúdo dinâmico -->
+  </div>
+</div>
 <!-- Modal de Visualização -->
 <div class="modal fade appointment-view-modal" id="viewModal" tabindex="-1" >
   <div class="modal-dialog modal-lg">
@@ -245,6 +255,8 @@
     <span class="visually-hidden">Carregando...</span>
   </div>
 </div>
+
+
 
 <style>
 /* 1. Botão Exportar alinhado com título em telas pequenas */
