@@ -60,20 +60,34 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
-  // Content Security Policy
+// Content Security Policy
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com",
-  "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+
+  // Scripts (incluso kits da FontAwesome e contas Google)
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com https://*.fontawesome.com",
+
+  "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com https://*.fontawesome.com",
+
+  // Estilos (Google Fonts, FontAwesome, Bootstrap)
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com https://use.fontawesome.com https://kit.fontawesome.com",
+
+  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com https://use.fontawesome.com https://kit.fontawesome.com",
+
+  // Imagens e fontes
   "img-src 'self' data: https:",
-  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://use.fontawesome.com https://kit.fontawesome.com",
+
+  // Conexões externas (por exemplo: WhatsApp API ou ngrok)
   "connect-src 'self' https://optimum-lizard-whole.ngrok-free.app https://cdn.jsdelivr.net",
+
+  // Segurança de iframe
   "frame-ancestors 'none'"
 ];
 
+// Aplica a política
 res.setHeader('Content-Security-Policy', csp.join('; '));
+
 
 
   
