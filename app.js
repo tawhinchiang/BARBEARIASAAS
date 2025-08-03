@@ -7,6 +7,15 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
 
+const {
+  securityHeaders,
+  strictOriginValidation,
+  attackDetection,
+  securityLogger,
+  csrfValidation,
+  generateCSRFToken
+} = require('./middleware/security');
+
 console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
 // IMPORTAR CONFIGURAÇÃO SEGURA DE CORS
 const { 
@@ -74,8 +83,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-log('Middlewares básicos configurados');
 
+
+log('Middlewares básicos configurados');
+app.use(securityHeaders);
+app.use(securityLogger);        // se quiser registrar requisições sensíveis
+app.use(attackDetection);       // para detectar SQLi, XSS, etc
 // Configurar sessões
 app.use(session({
   secret: process.env.SESSION_SECRET || 'barbershop_secret_key',
@@ -192,6 +205,7 @@ log('Configuração de CORS carregada para:', {
   corsAdmin: 'Configurado para área administrativa',
   corsDefault: 'Configurado para rotas gerais'
 });
+
 
 module.exports = app;
 

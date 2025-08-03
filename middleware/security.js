@@ -61,17 +61,21 @@ const securityHeaders = (req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   // Content Security Policy
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Ajuste conforme necessário
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "frame-ancestors 'none'"
-  ].join('; ');
-  
-  res.setHeader('Content-Security-Policy', csp);
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com",
+  "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+  "img-src 'self' data: https:",
+  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "connect-src 'self' https://optimum-lizard-whole.ngrok-free.app https://cdn.jsdelivr.net",
+  "frame-ancestors 'none'"
+];
+
+res.setHeader('Content-Security-Policy', csp.join('; '));
+
+
   
   // HSTS para produção
   if (process.env.NODE_ENV === 'production') {
