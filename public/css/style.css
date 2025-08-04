@@ -974,7 +974,7 @@ body.page-fade-out {
   border: none;
   border-radius: 12px;
   padding: 1.2rem;
-  margin-bottom: 2rem;
+  margin-bottom:2rem;
   box-shadow: var(--shadow);
   color: var(--text-dark);
   transition: transform 0.3s ease, opacity 0.3s ease;
@@ -2072,8 +2072,10 @@ canvas {
 }
 
 /* Destaque lateral de status nos cards */
-.status-card {
-  border-left: 5px solid transparent;
+.admin-card.status-card {
+  border-left-width: 6px;
+  border-left-style: solid;
+  border-left-color: transparent;
   padding-left: 1rem;
 }
 
@@ -2105,8 +2107,8 @@ canvas {
 .appointments-columns {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
-  margin-top: 20px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 /* Cada coluna vertical de um barbeiro */
@@ -2320,4 +2322,7 @@ canvas {
   border: none;
   font-size: 1.5rem;
   color: #fff;
+}
+.card-group   .admin-card{
+  margin-bottom: 0px; /* ou 0px se quiser colado mesmo */
 }
