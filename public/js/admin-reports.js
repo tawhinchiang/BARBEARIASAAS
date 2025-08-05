@@ -30,10 +30,10 @@ runWhenIdle(() => {
 
 
     const backgroundColors = Object.keys(statusData).map(status => {
-      if (status === 'confirmed') return '#28a745'; // Verde
+      if (status === 'confirmed') return '#007bff';  // Azul
       if (status === 'cancelled') return '#dc3545'; // Vermelho
       if (status === 'pending') return '#ffc107';   // Amarelo
-      if (status === 'completed') return '#007bff'; // Azul
+      if (status === 'completed') return '#28a745';// verde
       if (status === 'in_progress') return '#17a2b8'; // Azul claro (info)
       return '#6c757d'; // Cinza padrão
     });

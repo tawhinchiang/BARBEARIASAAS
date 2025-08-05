@@ -1175,7 +1175,7 @@ z-index: 0;
 }
 
 .status-confirmed {
-  background: var(--success-color);
+  background:  #007bff;
   color: white;
 }
 
@@ -2085,7 +2085,7 @@ canvas {
 }
 
 .status-card.status-confirmed {
-  border-left-color: var(--success-color); /* verde */
+  border-left-color:  #007bff; /* verde */
 }
 
 .status-card.status-in_progress {
@@ -2093,7 +2093,7 @@ canvas {
 }
 
 .status-card.status-completed {
-  border-left-color: #28a745; /* verde escuro */
+  border-left-color:#28a745; /* verde escuro */
 }
 
 .status-card.status-cancelled {
@@ -2343,4 +2343,8 @@ canvas {
   box-shadow: var(--shadow);
   width: 100%;
   max-width: 400px;
+}
+.admin-card svg.fa-check,
+.admin-card svg.fa-circle-check {
+  color: white;
 }
