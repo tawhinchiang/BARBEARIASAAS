@@ -559,7 +559,7 @@ body.page-fade-out {
   border: 2px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-dark);
-  font-size: 1rem;
+  font-size: 16px;
   transition: all 0.3s ease;
 }
 
@@ -984,6 +984,7 @@ body.page-fade-out {
   height: auto;
   min-height: auto;
   will-change: opacity, transform;
+  
 }
 
 .admin-card i {
@@ -2325,4 +2326,21 @@ canvas {
 }
 .card-group   .admin-card{
   margin-bottom: 0px; /* ou 0px se quiser colado mesmo */
+}
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-light);
+  padding: 1rem;
+}
+
+.login-form {
+  background: var(--bg-gray);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 400px;
 }
