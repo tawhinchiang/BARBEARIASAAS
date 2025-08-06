@@ -541,7 +541,7 @@ router.get('/reports', async (req, res) => {
 
     if (barberId) { whereClause.barberId = barberId; }
 
-    log('Filtros de relatório aplicados', { whereClause });
+    // log('Filtros de relatório aplicados', { whereClause });
     // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
     let order = [['appointmentDate', 'DESC']]; // padrão
 
@@ -590,10 +590,9 @@ router.get('/reports', async (req, res) => {
       };
     });
 
-
-
-    log('Dados do relatório carregados', { appointmentsCount: appointments.length });
-
+    if (process.env.NODE_ENV !== 'production') {
+        log('Dados do relatório carregados', { appointmentsCount: appointments.length });
+    }
     const barbers = await Barber.findAll({ where: { isActive: true } });
 
     // Estatísticas para relatórios
@@ -606,7 +605,7 @@ router.get('/reports', async (req, res) => {
 
     appointments.forEach(apt => {
       // Contagem Por status
-      console.log(`Status: ${apt.status} - Preço: ${apt.totalPrice}`);
+     
       stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
 
       // Contagem Por barbeiro
@@ -623,7 +622,7 @@ router.get('/reports', async (req, res) => {
     });
 
     log('Estatísticas do relatório calculadas', { stats });
-    console.log('[DEBUG] formattedAppointments:', formattedAppointments);
+   
 
     res.render('admin/reports', {
       title: 'Relatórios',

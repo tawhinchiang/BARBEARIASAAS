@@ -469,15 +469,20 @@
 
 /* Status badges */
 .status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
+  width: 140px;           /* 👈 largura fixa */
+  display: inline-block;
+  text-align: center;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* para evitar quebras se o texto for muito grande */
 }
 
 .status-confirmed {
-    background: var(--success-color);
+    background: #007bff;
     color: white;
 }
 
@@ -492,7 +497,7 @@
 }
 
 .status-completed {
-    background: var(--info-color);
+    background: #28a745;
     color: white;
 }
 

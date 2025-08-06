@@ -71,7 +71,7 @@ json: function (context) {
   statusClass: function(status) {
     const classMap = {
       'scheduled': 'warning',
-      'confirmed': 'info',
+      'confirmed': 'primary',
       'completed': 'success',
       'cancelled': 'danger',
       'no_show': 'secondary'

@@ -7,6 +7,46 @@ let editModal;
 document.addEventListener('DOMContentLoaded', function () {
     console.log('[ADMIN] Página de agendamentos carregada');
     restoreSavedView();
+    // 2. Configura alternância da visualização
+  const toggleBtn = document.getElementById('toggleView');
+  if (!toggleBtn) {
+    console.warn('[ERRO] Botão de alternância não encontrado');
+  } else {
+    toggleBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      console.log('[DEBUG] Toggle button clicked');
+
+      const tableView = document.getElementById('appointmentsTableView');
+      const cardView = document.getElementById('appointmentsCardView');
+
+      if (!tableView || !cardView) {
+        console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
+        tableView?.classList.remove('hidden');
+        cardView?.classList.add('hidden');
+        return;
+      }
+
+      const isTableVisible = !tableView.classList.contains('hidden');
+      console.log('[DEBUG] Current state - Table visible:', isTableVisible);
+
+      if (isTableVisible) {
+        tableView.classList.add('hidden');
+        cardView.classList.remove('hidden');
+        localStorage.setItem('appointmentsView', 'cards');
+          // 🔧 Reaplica listeners para expansão
+       initCardExpandables();
+        console.log('[DEBUG] Switched to cards view');
+      } else {
+        cardView.classList.add('hidden');
+        tableView.classList.remove('hidden');
+        localStorage.setItem('appointmentsView', 'table');
+          // 🔧 Reanexa os eventos da tabela
+  initTableListeners();
+  attachActionPanelListeners()
+        console.log('[DEBUG] Switched to table view');
+      }
+    });
+  }
     initModals();
     initFilterForm();
     initTableListeners();
@@ -40,42 +80,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setTimeout(() => {
     attachActionPanelListeners();
-  }, 200);
-});
+    }, 200);
 
-// Restaura a visualização salva
+    });
+
+    // Restaura a visualização salva
 
 
-document.getElementById('toggleView')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  console.log('[DEBUG] Toggle button clicked');
-  
-  const tableView = document.getElementById('appointmentsTableView');
-  const cardView = document.getElementById('appointmentsCardView');
-  
-  if (!tableView || !cardView) {
-  console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
-  document.getElementById('appointmentsTableView')?.classList.remove('hidden');
-  document.getElementById('appointmentsCardView')?.classList.add('hidden');
-  return;
-}
-  const isTableVisible = !tableView.classList.contains('hidden');
-  console.log('[DEBUG] Current state - Table visible:', isTableVisible);
-  
-  if (isTableVisible) {
-    // Mostrar cards, esconder tabela
-    tableView.classList.add('hidden');
-    cardView.classList.remove('hidden');
-    localStorage.setItem('appointmentsView', 'cards');
-    console.log('[DEBUG] Switched to cards view');
-  } else {
-    // Mostrar tabela, esconder cards
-    cardView.classList.add('hidden');
-    tableView.classList.remove('hidden');
-    localStorage.setItem('appointmentsView', 'table');
-    console.log('[DEBUG] Switched to table view');
-  }
-});
+
+
 
 
   // Socket.IO - Atualização em tempo real
@@ -753,10 +766,14 @@ async function refreshAppointmentsTable() {
   if (savedView === 'cards') {
     tableView.classList.add('hidden');
     cardView.classList.remove('hidden');
+    initCardExpandables();
     console.log('[DEBUG] Restored to cards view');
   } else {
     cardView.classList.add('hidden');
     tableView.classList.remove('hidden');
+      // reaplica eventos
+  initTableListeners();
+  attachActionPanelListeners();
     console.log('[DEBUG] Restored to table view');
   }
 }

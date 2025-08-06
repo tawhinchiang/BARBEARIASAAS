@@ -7,9 +7,24 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
 
+const {
+  securityHeaders,
+  strictOriginValidation,
+  attackDetection,
+  securityLogger,
+  csrfValidation,
+  generateCSRFToken
+} = require('./middleware/security');
+
+console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
+// IMPORTAR CONFIGURAÇÃO SEGURA DE CORS
+const { 
+  createCorsConfig, 
+  corsLogger, 
+  additionalSecurityValidation 
+} = require('./config/cors-config');
+
 const app = express();
-
-
 
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
@@ -26,7 +41,7 @@ const logError = (message, error) => {
   console.error(`[${timestamp}] [APP ERROR] Stack:`, error.stack);
 };
 
-log('Inicializando aplicação BarberShop');
+log('Inicializando aplicação BarberShop com CORS seguro');
 
 // Configurar Handlebars - CORRIGIDO
 const helpers = require('./config/handlebars-helpers');
@@ -36,15 +51,12 @@ const hbs = engine({
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
   extname: '.hbs',
-  helpers: helpers, // ou só "helpers" mesmo, ES6 shorthand
+  helpers: helpers,
   runtimeOptions: {
     allowProtoPropertiesByDefault: true,
     allowProtoMethodsByDefault: true
   }
 });
-
-
-
 
 app.engine('hbs', hbs);
 app.set('view engine', 'hbs');
@@ -52,65 +64,107 @@ app.set('views', path.join(__dirname, 'views'));
 
 log('Handlebars configurado');
 
-// Middlewares
-app.use(cors());
+// ===== CONFIGURAÇÃO SEGURA DE CORS =====
+
+// Middleware de logging para CORS (aplicado globalmente)
+app.use(corsLogger);
+
+// Middleware de validação de segurança adicional
+app.use(additionalSecurityValidation);
+
+// CORS padrão para rotas gerais (mais restritivo)
+app.use(cors(createCorsConfig('default')));
+
+log('CORS seguro configurado');
+
+// Middlewares básicos
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-log('Middlewares básicos configurados');
 
+log('Middlewares básicos configurados');
+app.use(securityHeaders);
+app.use(securityLogger);        // se quiser registrar requisições sensíveis
+app.use(attackDetection);       // para detectar SQLi, XSS, etc
 // Configurar sessões
 app.use(session({
   secret: process.env.SESSION_SECRET || 'barbershop_secret_key',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
-    maxAge: 24 * 60 * 60 * 1000
+    secure: process.env.NODE_ENV === 'production', // HTTPS apenas em produção
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true, // Previne acesso via JavaScript
+    sameSite: 'strict' // Proteção adicional contra CSRF
   }
 }));
 
-log('Sessões configuradas');
+log('Sessões configuradas com segurança aprimorada');
 
 // Middleware para log de todas as requisições
 app.use((req, res, next) => {
   log(`${req.method} ${req.url}`, {
     method: req.method,
     url: req.url,
-    headers: req.headers,
-    body: req.body,
-    query: req.query,
-    params: req.params
+    origin: req.headers.origin,
+    userAgent: req.headers['user-agent'],
+    ip: req.ip || req.connection.remoteAddress
   });
   next();
 });
 
-// Rotas - CORRIGIDAS
-log('Configurando rotas');
+// ===== ROTAS COM CORS ESPECÍFICO =====
 
-// Rotas principais (inclui APIs)
+log('Configurando rotas com CORS específico');
+
+// Rotas principais (CORS padrão já aplicado)
 app.use('/', require('./routes/index'));
 
-// Rotas de barbeiros
-app.use('/api', require('./routes/publicApi'));
-// app.use('/admin', require('./routes/barbers')); // ✅ aqui rota protegida admin
-// Rotas de agendamentos (inclui /api/appointments)
+// APIs PÚBLICAS - CORS menos restritivo para leitura
+app.use('/api', cors(createCorsConfig('public')), require('./routes/publicApi'));
+
+// Rotas de agendamentos (CORS padrão)
 app.use('/', require('./routes/appointments'));
 
-//Rotas historicos
+// Rotas de histórico (CORS padrão)
 app.use('/history', require('./routes/history'));
-// Rotas administrativas
-app.use('/admin', require('./routes/admin'));
-// app.use('/admin/services', require('./routes/services'));
 
-app.use('/admin/api', require('./routes/adminApi'));
+// ÁREA ADMINISTRATIVA - CORS MAIS RESTRITIVO
+app.use('/admin', cors(createCorsConfig('admin')), require('./routes/admin'));
+
+// APIs ADMINISTRATIVAS - CORS MUITO RESTRITIVO
+app.use('/admin/api', cors(createCorsConfig('admin')), require('./routes/adminApi'));
+
+// Rota específica para DevTools (sem CORS)
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
-  res.status(204).end(); // Sem conteúdo
+  res.status(204).end();
 });
-log('Rotas configuradas');
+
+log('Rotas configuradas com CORS específico');
+
+// ===== MIDDLEWARE DE SEGURANÇA ADICIONAL =====
+
+// Middleware para detectar tentativas de bypass de CORS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+  
+  // Log de tentativas suspeitas
+  if (origin && referer && !origin.includes(new URL(referer).hostname)) {
+    log('Possível tentativa de bypass de CORS detectada', {
+      origin,
+      referer,
+      url: req.url,
+      method: req.method
+    });
+  }
+  
+  next();
+});
+
 // Middleware de erro 404
 app.use((req, res) => {
   logError(`Rota não encontrada: ${req.method} ${req.url}`, new Error('404 Not Found'));
@@ -123,6 +177,15 @@ app.use((req, res) => {
 
 // Middleware de erro geral
 app.use((err, req, res, next) => {
+  // Log específico para erros de CORS
+  if (err.message && err.message.includes('CORS')) {
+    logError('Erro de CORS detectado', err);
+    return res.status(403).json({ 
+      error: 'Acesso negado por política de CORS',
+      message: 'Sua origem não está autorizada a acessar este recurso'
+    });
+  }
+  
   logError('Erro interno do servidor', err);
   res.status(500).render('error', {
     title: 'Erro interno',
@@ -131,7 +194,18 @@ app.use((err, req, res, next) => {
   });
 });
 
+log('Aplicação configurada com sucesso - CORS seguro ativo');
 
-log('Aplicação configurada com sucesso');
+// Log da configuração de CORS ativa
+const env = process.env.NODE_ENV || 'development';
+log(`Ambiente: ${env}`);
+log('Configuração de CORS carregada para:', {
+  ambiente: env,
+  corsPublico: 'Configurado para APIs públicas',
+  corsAdmin: 'Configurado para área administrativa',
+  corsDefault: 'Configurado para rotas gerais'
+});
+
 
 module.exports = app;
+
