@@ -62,12 +62,12 @@ function maskInputs() {
 function maskTimeRangeInputs() {
   const inputs = [
     'defaultWorkingHour',
-    'workingHoursMonday',
-    'workingHoursTuesday',
-    'workingHoursWednesday',
-    'workingHoursThursday',
-    'workingHoursFriday',
-    'workingHoursSaturday'
+    'workingHoursMondayMorning', 'workingHoursMondayAfternoon',
+    'workingHoursTuesdayMorning', 'workingHoursTuesdayAfternoon',
+    'workingHoursWednesdayMorning', 'workingHoursWednesdayAfternoon',
+    'workingHoursThursdayMorning', 'workingHoursThursdayAfternoon',
+    'workingHoursFridayMorning', 'workingHoursFridayAfternoon',
+    'workingHoursSaturdayMorning', 'workingHoursSaturdayAfternoon'
   ];
 
   inputs.forEach(id => {
@@ -91,7 +91,7 @@ function maskTimeRangeInputs() {
     });
 
     input.addEventListener('keydown', e => {
-      // Permitir Backspace, Delete, Setas etc
+      // Permitir teclas de navegação e controle
       const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
       if (allowedKeys.includes(e.key)) return;
 
@@ -102,6 +102,7 @@ function maskTimeRangeInputs() {
     });
   });
 }
+
 
 
 function previewPhoto() {
@@ -325,17 +326,18 @@ window.barberReport = function (id) {
     });
 };
 function applyDefaultWorkingHour() {
-  const defaultHour = document.getElementById('defaultWorkingHour')?.value.trim();
-
-  if (!defaultHour) {
-    alert('Informe um horário padrão válido.');
+  const value = document.getElementById('defaultWorkingHour').value;
+  if (!value || !value.includes(':')) {
+    alert('Digite um horário válido como 08:00-12:00');
     return;
   }
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   days.forEach(day => {
-    const input = document.getElementById(`workingHours${day}`);
-    if (input) input.value = defaultHour;
+    const morningInput = document.getElementById(`workingHours${day}Morning`);
+    const afternoonInput = document.getElementById(`workingHours${day}Afternoon`);
+    if (morningInput) morningInput.value = value;
+    if (afternoonInput) afternoonInput.value = value;
   });
 }
 

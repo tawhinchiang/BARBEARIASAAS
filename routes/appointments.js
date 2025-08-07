@@ -19,7 +19,12 @@ const logError = (message, error) => {
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] ${message}`);
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] Stack:`, error.stack);
 };
+function isTimeInRange(time, range) {
+  if (!range || range === 'closed') return false;
 
+  const [start, end] = range.split('-');
+  return time >= start && time < end;
+}
 // API para criar novo agendamento
 router.post('/api/appointments', async (req, res) => {
   try {
@@ -46,16 +51,44 @@ router.post('/api/appointments', async (req, res) => {
       });
     }
 
-    const barber = await Barber.findByPk(barberId);
+   const barber = await Barber.findByPk(barberId);
+
+if (!barber || !barber.workingHours) {
+  log('Barbeiro não encontrado ou sem horário definido');
+  return res.status(404).json({ success: false, error: 'Barbeiro inválido ou sem expediente configurado' });
+}
+
+// Identifica o dia da semana (segunda, terça, etc)
+const weekday = moment(appointmentDate).format('dddd').toLowerCase(); // ex: monday
+const daySchedule = barber.workingHours[weekday];
+
+if (!daySchedule || (daySchedule.morning === 'closed' && daySchedule.afternoon === 'closed')) {
+  return res.status(400).json({
+    success: false,
+    error: 'Barbeiro não atende nesse dia'
+  });
+}
+
+// Verifica se horário solicitado está dentro de algum dos turnos
+const isValidTime =
+  isTimeInRange(appointmentTime, daySchedule.morning) ||
+  isTimeInRange(appointmentTime, daySchedule.afternoon);
+
+if (!isValidTime) {
+  return res.status(400).json({
+    success: false,
+    error: 'Horário fora do expediente do barbeiro'
+  });
+}
     const serviceType = await ServiceType.findByPk(serviceId);
 
-    if (!barber || !serviceType) {
-      log('Barbeiro ou serviço não encontrado', { barberFound: !!barber, serviceFound: !!serviceType });
-      return res.status(404).json({
-        success: false,
-        error: 'Barbeiro ou serviço não encontrado'
-      });
-    }
+   if (!serviceType) {
+  log('Serviço não encontrado');
+  return res.status(404).json({
+    success: false,
+    error: 'Serviço não encontrado'
+  });
+}
 
     const existingAppointment = await Appointment.findOne({
       where: {
@@ -177,5 +210,6 @@ router.post('/', async (req, res, next) => {
   req.url = '/api/appointments';
   next();
 });
+
 
 module.exports = router;
