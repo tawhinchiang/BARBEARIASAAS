@@ -8,7 +8,7 @@ const { getLastQRCode } = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op } = require('sequelize');
-
+const fs = require('fs'); // se ainda não tiver no topo
 
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
 router.use((req, res, next) => {
@@ -702,13 +702,34 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     const filename = `relatorio-${Date.now()}.${format}`;
     const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
 
+    
+
+
     if (format === 'pdf') {
       const filePath = await generatePDF(appointments, reportInfo, filename);
-      return res.download(filePath);
+      return res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Erro ao enviar PDF:', err);
+        }
+        fs.unlink(filePath, (err) => {
+          if (err) console.error('Erro ao excluir PDF temporário:', err);
+          else console.log(`Arquivo PDF excluído: ${filename}`);
+        });
+      });
     } else if (format === 'csv') {
       const filePath = await generateCSV(appointments, filename);
-      return res.download(filePath);
-    } else {
+      return res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Erro ao enviar CSV:', err);
+        }
+    fs.unlink(filePath, (err) => {
+      if (err) console.error('Erro ao excluir CSV temporário:', err);
+      else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
+    });
+  });
+}
+
+    else {
       return res.status(400).json({ error: 'Formato inválido.' });
     }
   } catch (error) {
