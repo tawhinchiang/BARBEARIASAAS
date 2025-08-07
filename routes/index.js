@@ -131,9 +131,9 @@ router.get('/api/available-times', async (req, res) => {
     const selectedDate = new Date(date + 'T00:00:00');
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
     let workingPeriods = [];
-
+    let parsed = {};
     if (barber.workingHours) {
-      let parsed = {};
+      
       try {
         parsed = typeof barber.workingHours === 'string'
           ? JSON.parse(barber.workingHours)
