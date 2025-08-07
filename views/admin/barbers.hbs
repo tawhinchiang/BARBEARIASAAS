@@ -49,15 +49,21 @@
             <div class="col-md-12 mb-3">
               <label class="form-label">Horários de Trabalho</label>
               <div class="row mb-2">
-                <div class="col-md-6">
-                  <input type="text" id="defaultWorkingHour" class="form-control" placeholder="Ex: 08:00-12:00">
+                <div class="col-md-5">
+                  <label for="defaultMorningHour" class="form-label">Horário padrão (manhã)</label>
+                  <input type="text" id="defaultMorningHour" class="form-control" placeholder="Ex: 08:00-12:00">
                 </div>
-                <div class="col-md-6 text-end">
-                  <button type="button" class="btn btn-outline-secondary" onclick="applyDefaultWorkingHour()">
-                    <i class="fas fa-clock me-1"></i> Aplicar em todos os dias
+                <div class="col-md-5">
+                  <label for="defaultAfternoonHour" class="form-label">Horário padrão (tarde)</label>
+                  <input type="text" id="defaultAfternoonHour" class="form-control" placeholder="Ex: 14:00-19:00">
+                </div>
+                <div class="col-md-2 d-flex align-items-end justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary w-100" onclick="applyDefaultWorkingHour()">
+                    <i class="fas fa-clock me-1"></i> Aplicar
                   </button>
                 </div>
               </div>
+
 
               <div class="row g-3">
                 <div class="col-md-6">
