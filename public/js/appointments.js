@@ -451,8 +451,8 @@ async function viewAppointment(appointmentId) {
     const service = appointment.serviceType || {};
     const barber = appointment.barber || {};
     const appointmentDate = appointment.appointmentDate
-      ? new Date(appointment.appointmentDate).toLocaleDateString('pt-BR')
-      : '—';
+  ? new Date(`${appointment.appointmentDate}T00:00:00`).toLocaleDateString('pt-BR') // sem 'Z'!
+  : '—';
     const appointmentTime = appointment.appointmentTime || '—';
     const totalPrice = appointment.totalPrice
       ? Number(appointment.totalPrice).toFixed(2)

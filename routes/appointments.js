@@ -28,7 +28,8 @@ function isTimeInRange(time, range) {
 // API para criar novo agendamento
 router.post('/api/appointments', async (req, res) => {
   try {
-    log('Recebendo novo agendamento', req.body);
+    // log('Recebendo novo agendamento', req.body);
+    // log('Campos adicionais', { isEncaixe, fitInNote: rawFitInNote });
     const { isEncaixe = false } = req.body;
     const { serviceId, barberId, appointmentDate, appointmentTime, clientData } = req.body;
 
@@ -143,6 +144,7 @@ router.post('/api/appointments', async (req, res) => {
       status: 'confirmed',
       isEncaixe: isEncaixe === 'true' || isEncaixe === true,
       notes: clientData.notes || null
+    
     });
 
     const io = req.app.get('io');

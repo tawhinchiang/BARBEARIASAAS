@@ -7,9 +7,9 @@ const { getWhatsAppStatus } = require('../utils/whatsapp');
 const { getLastQRCode } = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
-
+const todayStr = new Date().toLocaleDateString('en-CA');
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
 router.use((req, res, next) => {
   const publicRoutes = ['/login', '/logout'];
@@ -296,48 +296,54 @@ router.get('/dashboard', async (req, res) => {
 // Listagem e gerenciamento de agendamentos - COM ORDENAÇÃO E FILTROS COMPLETOS
 router.get('/appointments', async (req, res) => {
   try {
-    log('Acessando listagem de agendamentos', {
+      log('Acessando listagem de agendamentos', {
       user: req.session.user,
       query: req.query
     });
-
     const { startDate, endDate, barberId, status, sort } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = 20;
     const offset = (page - 1) * limit;
 
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
     let whereClause = {};
 
+    // ✅ Data inicial: hoje (se não vier na query)
     if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
-      };
+      whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
     } else if (startDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.gte]: startDate
-      };
+      whereClause.appointmentDate = { [Op.gte]: startDate };
     } else if (endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.lte]: endDate
-      };
+      whereClause.appointmentDate = { [Op.lte]: endDate };
+    } else {
+      // default server-side
+      whereClause.appointmentDate = { [Op.gte]: todayStr };
     }
 
-    if (barberId) {
-      whereClause.barberId = barberId;
-    }
+    if (barberId) whereClause.barberId = barberId;
 
+    // ✅ Status padrão quando não vier filtro explícito
     if (status) {
       whereClause.status = status;
+    } else {
+      whereClause.status = { [Op.in]: DEFAULT_STATUSES };
     }
 
-    // Define ordenação dinâmica
+    // ✅ Ordenação: data/hora e depois status nessa ordem
+    const statusOrder = `CASE "Appointment"."status"
+                           WHEN 'in_progress' THEN 1
+                           WHEN 'confirmed'   THEN 2
+                           WHEN 'completed'   THEN 3
+                           ELSE 99
+                         END`;
+
     let order = [];
     switch (sort) {
       case 'date_asc':
-        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']];
+        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
         break;
       case 'date_desc':
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']];
+        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC'], [literal(statusOrder), 'ASC']];
         break;
       case 'value_asc':
         order = [['totalPrice', 'ASC']];
@@ -346,13 +352,14 @@ router.get('/appointments', async (req, res) => {
         order = [['totalPrice', 'DESC']];
         break;
       case 'barber_asc':
-        order = [[require('sequelize').literal('"barber"."name"'), 'ASC']];
+        order = [[literal('"barber"."name"'), 'ASC']];
         break;
       case 'barber_desc':
-        order = [[require('sequelize').literal('"barber"."name"'), 'DESC']];
+        order = [[literal('"barber"."name"'), 'DESC']];
         break;
       default:
-         order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']];
+        // 🔧 default desejado
+        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
     }
 
     log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
@@ -428,12 +435,23 @@ router.get('/appointments', async (req, res) => {
 
 router.get('/appointments/partial', async (req, res) => {
   const { startDate, endDate, barberId, status } = req.query;
-  const where = {};
+ 
+  const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
+  const where = {};
   if (startDate) where.appointmentDate = { [Op.gte]: startDate };
   if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
+  if (!startDate && !endDate) where.appointmentDate = { [Op.gte]: todayStr };
   if (barberId) where.barberId = barberId;
-  if (status) where.status = status;
+  if (status) where.status = status; else where.status = { [Op.in]: DEFAULT_STATUSES };
+
+  const statusOrder = `CASE "Appointment"."status"
+                         WHEN 'in_progress' THEN 1
+                         WHEN 'confirmed'   THEN 2
+                         WHEN 'completed'   THEN 3
+                         ELSE 99
+                       END`;
 
   const appointments = await Appointment.findAll({
     where,
@@ -442,8 +460,7 @@ router.get('/appointments/partial', async (req, res) => {
       { model: Barber, as: 'barber' },
       { model: ServiceType, as: 'serviceType' }
     ],
-    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']]
-
+    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']]
   });
 
   const formattedAppointments = appointments.map(app => {
@@ -465,12 +482,23 @@ router.get('/appointments/partial', async (req, res) => {
 
 router.get('/appointments/partial-cards', async (req, res) => {
   const { startDate, endDate, barberId, status } = req.query;
-  const where = {};
+  
+  const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
+  const where = {};
   if (startDate) where.appointmentDate = { [Op.gte]: startDate };
   if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
+  if (!startDate && !endDate) where.appointmentDate = { [Op.gte]: todayStr };
   if (barberId) where.barberId = barberId;
-  if (status) where.status = status;
+  if (status) where.status = status; else where.status = { [Op.in]: DEFAULT_STATUSES };
+
+  const statusOrder = `CASE "Appointment"."status"
+                         WHEN 'in_progress' THEN 1
+                         WHEN 'confirmed'   THEN 2
+                         WHEN 'completed'   THEN 3
+                         ELSE 99
+                       END`;
 
   const appointments = await Appointment.findAll({
     where,
@@ -479,8 +507,7 @@ router.get('/appointments/partial-cards', async (req, res) => {
       { model: Barber, as: 'barber' },
       { model: ServiceType, as: 'serviceType' }
     ],
-    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']]
-
+    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']]
   });
 
   const formattedAppointments = appointments.map(app => {
