@@ -805,7 +805,7 @@ body.page-fade-out {
   padding: 15px;
 }
 
-#meuModal.modal.show {
+#meuModal .modal.show {
   display: flex !important;
 }
 
@@ -2359,4 +2359,32 @@ canvas {
 .admin-card svg.fa-check,
 .admin-card svg.fa-circle-check {
   color: white;
+}
+#fitInModal .modal-content {
+  background-color: var(--bg-light) !important;
+  color: var(--text-dark) !important;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+#fitInModal .btn-close { filter: invert(1); opacity: .8; }
+#fitInModal .btn-close:hover { opacity: 1; }
+
+#fitInModal {
+  z-index: 1055 !important;
+}
+
+#fitInModal .modal-backdrop {
+ z-index: 15000 !important;
+}
+
+#fitInModal.modal {
+  z-index: 20000 !important;
+}
+#fitInModal .modal-dialog {
+  z-index: 20001 !important;
+}
+
+.modal.show {
+  display: flex !important;
 }

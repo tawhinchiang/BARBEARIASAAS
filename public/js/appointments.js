@@ -7,6 +7,8 @@ let editModal;
 document.addEventListener('DOMContentLoaded', function () {
     console.log('[ADMIN] Página de agendamentos carregada');
     restoreSavedView();
+
+ 
     // 2. Configura alternância da visualização
   const toggleBtn = document.getElementById('toggleView');
   if (!toggleBtn) {
@@ -28,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const isTableVisible = !tableView.classList.contains('hidden');
       console.log('[DEBUG] Current state - Table visible:', isTableVisible);
+        // Inicializar modal de encaixe
+
+      // Adicionar evento ao botão de encaixe
 
       if (isTableVisible) {
         tableView.classList.add('hidden');
@@ -47,6 +52,65 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+    
+    const fitInForm = document.getElementById('fitInForm');
+    if (fitInForm) {
+      fitInForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+      const firstName = document.getElementById('fitInFirstName').value.trim();
+      const lastName = document.getElementById('fitInLastName').value.trim();
+      const phone = document.getElementById('fitInPhone').value.trim();
+      const serviceId = document.getElementById('fitInService').value;
+      const barberId = document.getElementById('fitInBarber').value;
+      const appointmentDate = document.getElementById('fitInDate').value;
+      const appointmentTime = document.getElementById('fitInTime').value;
+      const notes = document.getElementById('fitInNote').value;
+
+      if (!firstName || !lastName || !phone || !serviceId || !barberId || !appointmentDate || !appointmentTime) {
+        alert('Preencha todos os campos obrigatórios');
+        return;
+      }
+
+    const payload = {
+      serviceId,
+      barberId,
+      appointmentDate,
+      appointmentTime,
+      isEncaixe: true,
+      fitInNote: notes, // <-- campo certo
+      clientData: {
+        firstName,
+        lastName,
+        phone
+      }
+    };
+
+      try {
+      const res = await fetch('/api/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' ,
+              'X-CSRF-Token': window.csrfToken
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('Encaixe criado com sucesso!', 'success');
+          setTimeout(() => location.reload(), 800);
+        } else {
+          alert(data.error || 'Erro ao criar encaixe');
+        }
+      } catch (err) {
+        console.error('[ERRO] Criando encaixe:', err);
+        alert('Erro ao criar encaixe');
+      }
+    });
+}
+
+
     initModals();
     initFilterForm();
     initTableListeners();
@@ -90,7 +154,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-
+ new tempusDominus.TempusDominus(document.getElementById('timepicker'), {
+      display: {
+          viewMode: 'clock',
+          components: {
+              decades: false,
+              year: false,
+              month: false,
+              date: false,
+              hours: true,
+              minutes: true,
+              seconds: false
+          }
+      },
+      localization: {
+          hourCycle: 'h23'
+      }
+  });
   // Socket.IO - Atualização em tempo real
   document.querySelectorAll('.js-no-show-appointment').forEach(button => {
     button.addEventListener('click', async () => {
@@ -151,19 +231,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 
+  function populateFitInSelects() {
+  loadSelectOptions('fitInService', '/api/services');
+  loadSelectOptions('fitInBarber', '/api/barbers');
+}
 function initModals() {
   const modalElement = document.getElementById('viewModal');
   viewAppointmentModal = modalElement ? new bootstrap.Modal(modalElement) : null;
-
+  
   const editModalElement = document.getElementById('editModal');
   editModal = editModalElement ? new bootstrap.Modal(editModalElement) : null;
-
+  
   modalElement?.querySelector('.btn-close')?.addEventListener('click', () => viewAppointmentModal.hide());
-
   modalElement?.addEventListener('click', (e) => {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
+
+  // Inicializar modal de encaixe corretamente (DENTRO DA FUNÇÃO - CORRETO!)
+  // --- colocar dentro de initModals(), substituindo a lógica atual do fitInModal ---
+const fitInModalEl = document.getElementById('fitInModal');
+if (fitInModalEl) {
+  // move modal para o body se estiver aninhado (resolve problemas de stacking/context)
+  if (fitInModalEl.parentElement !== document.body) {
+    document.body.appendChild(fitInModalEl);
+    console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
+  }
+
+  // cria modal bootstrap e listeners (mantém populateFill etc)
+  const fitInModal = new bootstrap.Modal(fitInModalEl);
+  fitInModalEl.addEventListener('show.bs.modal', () => {
+    populateFitInSelects();
+  });
+
+  const openFitInBtn = document.getElementById('openFitInBtn');
+  if (openFitInBtn) {
+    openFitInBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        fitInModal.show();
+      } catch (err) {
+        console.error('[DEBUG] Erro ao abrir fitInModal:', err);
+      }
+    });
+  }
 }
+
+
+  if (window.Inputmask) {
+    Inputmask({ mask: "(99) 99999-9999" }).mask("#fitInPhone");
+  }
+}
+
+
 
 
 function initFilterForm() {
@@ -591,13 +710,18 @@ async function loadSelectOptions(selectId, endpoint, selectedId) {
       select.appendChild(option);
     });
     if (['edit-service', 'edit-barber'].includes(selectId)) {
-      $(select).select2({
-        dropdownParent: $('#editModal'),
-        width: '100%',
-        placeholder: 'Selecione',
-        theme: 'bootstrap-5'
-      });
-    }
+    if (window.$ && $.fn && $.fn.select2) {
+    $(select).select2({
+      dropdownParent: $('#editModal'),
+      width: '100%',
+      placeholder: 'Selecione',
+      theme: 'bootstrap-5'
+    });
+  } 
+  else {
+    console.warn('[WARN] select2/jQuery indisponível — seguindo sem aprimoramento.');
+  }
+}
   } catch (err) {
     console.error(`Erro ao carregar ${selectId}:`, err);
     showNotification(`Erro ao carregar ${selectId}`, 'error');
@@ -970,6 +1094,9 @@ function closeActionPanel() {
   const panel = document.getElementById('actionPanel');
   panel.classList.remove('show');
 }
+
+
+
 
 // Tornando acessível globalmente
 window.openActionPanel = openActionPanel;

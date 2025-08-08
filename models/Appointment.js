@@ -66,6 +66,15 @@ const Appointment = sequelize.define('Appointment', {
   type: DataTypes.STRING,
   allowNull: true
 },
+isEncaixe: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: false
+},fitInNote: {
+  type: DataTypes.STRING,
+  allowNull: true
+},
+
   totalPrice: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true

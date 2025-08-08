@@ -29,7 +29,7 @@ function isTimeInRange(time, range) {
 router.post('/api/appointments', async (req, res) => {
   try {
     log('Recebendo novo agendamento', req.body);
-
+    const { isEncaixe = false } = req.body;
     const { serviceId, barberId, appointmentDate, appointmentTime, clientData } = req.body;
 
     if (!serviceId || !barberId || !appointmentDate || !appointmentTime || !clientData) {
@@ -51,44 +51,45 @@ router.post('/api/appointments', async (req, res) => {
       });
     }
 
-   const barber = await Barber.findByPk(barberId);
+    const barber = await Barber.findByPk(barberId);
 
-if (!barber || !barber.workingHours) {
-  log('Barbeiro não encontrado ou sem horário definido');
-  return res.status(404).json({ success: false, error: 'Barbeiro inválido ou sem expediente configurado' });
-}
+    if (!barber || !barber.workingHours) {
+      log('Barbeiro não encontrado ou sem horário definido');
+      return res.status(404).json({ success: false, error: 'Barbeiro inválido ou sem expediente configurado' });
+    }
 
-// Identifica o dia da semana (segunda, terça, etc)
-const weekday = moment(appointmentDate).format('dddd').toLowerCase(); // ex: monday
-const daySchedule = barber.workingHours[weekday];
+    // Identifica o dia da semana (segunda, terça, etc)
+    const weekday = moment(appointmentDate).format('dddd').toLowerCase(); // ex: monday
+    const daySchedule = barber.workingHours[weekday];
 
-if (!daySchedule || (daySchedule.morning === 'closed' && daySchedule.afternoon === 'closed')) {
-  return res.status(400).json({
-    success: false,
-    error: 'Barbeiro não atende nesse dia'
-  });
-}
+    if (!daySchedule || (daySchedule.morning === 'closed' && daySchedule.afternoon === 'closed')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Barbeiro não atende nesse dia'
+      });
+    }
 
-// Verifica se horário solicitado está dentro de algum dos turnos
-const isValidTime =
-  isTimeInRange(appointmentTime, daySchedule.morning) ||
-  isTimeInRange(appointmentTime, daySchedule.afternoon);
+    // Verifica se horário solicitado está dentro de algum dos turnos
+    const isValidTime =
+      isTimeInRange(appointmentTime, daySchedule.morning) ||
+      isTimeInRange(appointmentTime, daySchedule.afternoon);
 
-if (!isValidTime) {
-  return res.status(400).json({
-    success: false,
-    error: 'Horário fora do expediente do barbeiro'
-  });
-}
+    if (!isValidTime && !isEncaixe) {
+      return res.status(400).json({
+        success: false,
+        error: 'Horário fora do expediente do barbeiro'
+      });
+    }
+
     const serviceType = await ServiceType.findByPk(serviceId);
 
-   if (!serviceType) {
-  log('Serviço não encontrado');
-  return res.status(404).json({
-    success: false,
-    error: 'Serviço não encontrado'
-  });
-}
+    if (!serviceType) {
+      log('Serviço não encontrado');
+      return res.status(404).json({
+        success: false,
+        error: 'Serviço não encontrado'
+      });
+    }
 
     const existingAppointment = await Appointment.findOne({
       where: {
@@ -112,23 +113,24 @@ if (!isValidTime) {
 
     if (!client) {
       client = await Client.create({
-      firstName: firstName.toUpperCase(),
-      lastName: lastName.toUpperCase(),
+        firstName: firstName.toUpperCase(),
+        lastName: lastName.toUpperCase(),
         phone: cleanPhone,
         email: clientData.email || null
       });
       log('Cliente criado', { id: client.id, name: `${client.firstName} ${client.lastName}` });
     } else {
-      if (  client.firstName !== firstName.toUpperCase() ||
+      if (client.firstName !== firstName.toUpperCase() ||
         client.lastName !== lastName.toUpperCase()) {
         await client.update({
-        firstName: firstName.toUpperCase(),
-        lastName: lastName.toUpperCase(),
+          firstName: firstName.toUpperCase(),
+          lastName: lastName.toUpperCase(),
           email: clientData.email || client.email
         });
         log('Dados do cliente atualizados');
       }
     }
+
 
     const appointment = await Appointment.create({
       clientId: client.id,
@@ -139,6 +141,7 @@ if (!isValidTime) {
       serviceDuration: serviceType.duration,
       totalPrice: serviceType.price,
       status: 'confirmed',
+      isEncaixe: isEncaixe === 'true' || isEncaixe === true,
       notes: clientData.notes || null
     });
 
