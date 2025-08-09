@@ -2388,3 +2388,111 @@ canvas {
 .modal.show {
   display: flex !important;
 }
+/* === BARBERS: Lista de horários no card === */
+.barber-card .list-group {
+  margin: 0;
+}
+
+.barber-card .list-group-item {
+  background: transparent !important;              /* tira o fundo branco */
+  border: 1px solid var(--border-color) !important;/* borda discreta no tema escuro */
+  color: var(--text-dark);
+  padding: .5rem .75rem;                           /* compacto */
+}
+
+/* Tira o fundo branco das badges padrão do Bootstrap dentro do card */
+.barber-card .badge.bg-light {
+  background-color: transparent !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--border-color);
+}
+
+/* Layout em grid para a linha do dia */
+.day-row {
+  display: grid;
+  grid-template-columns: 120px 1fr; /* label fixa + conteúdo flexível */
+  align-items: center;
+  gap: 8px;
+}
+
+/* Rótulo do dia (Segunda, Terça, ...) */
+.day-label {
+  font-weight: 600;
+  white-space: nowrap; /* mantém o nome do dia numa linha */
+}
+
+/* Contêiner das “badges” de horários: quebra em múltiplas linhas quando necessário */
+.day-times {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;     /* permite quebra de linha */
+  min-width: 0;        /* evita overflow em flex/grid */
+}
+
+/* Chip minimalista no tema escuro (sem fundo branco) */
+.day-times .chip {
+  display: inline-block;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  line-height: 1.2;
+  font-size: .85rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
+/* Responsivo: empilha o label acima dos horários em telas pequenas */
+@media (max-width: 480px) {
+  .day-row {
+    grid-template-columns: 1fr;
+  }
+}
+/* QR animations */
+.qr-wrapper {
+  display: none;
+  background: #121214;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.qr-wrapper.show { display: block; }
+
+.qr-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 240px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.qr-loading.show { display: flex; }
+
+.qr-canvas {
+  display: inline-block;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px;
+  transform-origin: center;
+  opacity: 0;
+}
+
+.qr-enter {
+  animation: qrIn 280ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+.qr-exit {
+  animation: qrOut 220ms cubic-bezier(.4,0,.2,1) forwards;
+}
+
+@keyframes qrIn {
+  from { opacity: 0; transform: scale(0.92); filter: blur(2px); }
+  to   { opacity: 1; transform: scale(1);    filter: blur(0); }
+}
+
+@keyframes qrOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.96); }
+}

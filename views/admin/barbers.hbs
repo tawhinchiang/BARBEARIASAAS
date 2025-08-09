@@ -305,15 +305,20 @@
             <p class="mb-1"><strong>Email:</strong> {{email}}</p>
             <p class="mb-1"><strong>Especialidades:</strong> {{specialties}}</p>
             <p class="mb-1"><strong>Horários:</strong></p>
-            <ul class="mb-2">
-              {{#each workingHours}}
-                <li>
-                  {{@key}}: 
-                  {{#if this.morning}}{{this.morning}}{{else}}—{{/if}} / 
-                  {{#if this.afternoon}}{{this.afternoon}}{{else}}—{{/if}}
-                </li>
-              {{/each}}
+
+            {{#if workingHours}}
+            <ul class="list-group list-group-flush mb-3 small">
+              {{> dayRow w=workingHours day="monday" label="Segunda"}}
+              {{> dayRow w=workingHours day="tuesday" label="Terça"}}
+              {{> dayRow w=workingHours day="wednesday" label="Quarta"}}
+              {{> dayRow w=workingHours day="thursday" label="Quinta"}}
+              {{> dayRow w=workingHours day="friday" label="Sexta"}}
+              {{> dayRow w=workingHours day="saturday" label="Sábado"}}
+              {{> dayRow w=workingHours day="sunday" label="Domingo"}}
             </ul>
+            {{else}}
+            <p class="text-muted mb-3">Sem horários cadastrados.</p>
+            {{/if}}
 
             <p class="mb-1"><strong>Status:</strong>
               {{#if isActive}}
@@ -348,6 +353,12 @@
       </div>
       {{/each}}
     </div>
+    <style>
+      .barber-card .list-group-item {
+        padding-top: .4rem;
+        padding-bottom: .4rem;
+      }
+    </style>
 
 
     <!-- jQuery e plugins -->

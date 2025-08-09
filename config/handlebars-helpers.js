@@ -3,10 +3,10 @@ const moment = require('moment');
 module.exports = {
   objectLength: function (obj) {
   return Object.keys(obj || {}).length;
-},
-json: function (context) {
-  return JSON.stringify(context, null, 2);
-},
+  },
+  json: function (context) {
+    return JSON.stringify(context, null, 2);
+  },
 
   formatDate: function(date) {
     if (!date) return '';
@@ -140,34 +140,42 @@ json: function (context) {
   ];
   const dt = new Date(date);
   return meses[dt.getMonth()];
-},
-canCancel: function(date, time, status, options) {
-  const moment = require('moment');
-  const now = moment();
-  const appointmentDateTime = moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm');
+  },
+  canCancel: function(date, time, status, options) {
+    const moment = require('moment');
+    const now = moment();
+    const appointmentDateTime = moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm');
 
-  const isFuture = appointmentDateTime.isAfter(now.add(1, 'hour'));
-  const isActive = status !== 'cancelado';
+    const isFuture = appointmentDateTime.isAfter(now.add(1, 'hour'));
+    const isActive = status !== 'cancelado';
 
-  // Se for modo bloco (com {{#canCancel}}...{{else}}...{{/canCancel}})
-  if (options && typeof options.fn === 'function') {
-    return isFuture && isActive ? options.fn(this) : options.inverse(this);
-  }
+    // Se for modo bloco (com {{#canCancel}}...{{else}}...{{/canCancel}})
+    if (options && typeof options.fn === 'function') {
+      return isFuture && isActive ? options.fn(this) : options.inverse(this);
+    }
 
-  // Se for modo inline (com {{canCancel}})
-  return isFuture && isActive;
-},
-// ✅ NOVO HELPER: groupBy
-groupBy: function (array, key) {
-  if (!Array.isArray(array)) return {};
+    // Se for modo inline (com {{canCancel}})
+    return isFuture && isActive;
+  },
+  // ✅ NOVO HELPER: groupBy
+  groupBy: function (array, key) {
+    if (!Array.isArray(array)) return {};
 
-  return array.reduce((result, item) => {
-    const groupKey = key.split('.').reduce((obj, k) => (obj ? obj[k] : undefined), item) || 'Outros';
-    if (!result[groupKey]) result[groupKey] = [];
-    result[groupKey].push(item);
-    return result;
-  }, {});
-}
+    return array.reduce((result, item) => {
+      const groupKey = key.split('.').reduce((obj, k) => (obj ? obj[k] : undefined), item) || 'Outros';
+      if (!result[groupKey]) result[groupKey] = [];
+      result[groupKey].push(item);
+      return result;
+    }, {});
+  },
+  timeRange: function(str) {
+    if (!str) return '—';
+    const [start, end] = String(str).split(/[-–—]/).map(s => s.trim());
+    if (!start || !end) return str; // evita quebrar se não for intervalo
+    return `${start}–${end}`;
+  },
+
+
 
 
 };
