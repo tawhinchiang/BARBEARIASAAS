@@ -154,23 +154,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
- new tempusDominus.TempusDominus(document.getElementById('timepicker'), {
-      display: {
-          viewMode: 'clock',
-          components: {
-              decades: false,
-              year: false,
-              month: false,
-              date: false,
-              hours: true,
-              minutes: true,
-              seconds: false
-          }
-      },
-      localization: {
-          hourCycle: 'h23'
+function initFitInTimePicker() {
+  if (!window.tempusDominus) {
+    console.warn('[FITIN] Tempus Dominus não encontrado — fallback para <input type="time">');
+    const inp = document.getElementById('fitInTime');
+    if (inp) inp.type = 'time'; // fallback seguro
+    return;
+  }
+
+  const pickerEl = document.getElementById('fitInTimePicker');
+  if (!pickerEl) return;
+
+  // Evita montar 2x
+  if (pickerEl._tdInstance) return;
+
+  const instance = new tempusDominus.TempusDominus(pickerEl, {
+    useCurrent: false,
+    display: {
+      viewMode: 'clock',
+      components: {
+        decades: false,
+        year: false,
+        month: false,
+        date: false,
+        hours: true,
+        minutes: true,
+        seconds: false
       }
+    },
+    localization: { hourCycle: 'h23' }
   });
+
+  pickerEl._tdInstance = instance;
+}
+
   // Socket.IO - Atualização em tempo real
   document.querySelectorAll('.js-no-show-appointment').forEach(button => {
     button.addEventListener('click', async () => {
@@ -261,6 +278,16 @@ if (fitInModalEl) {
   const fitInModal = new bootstrap.Modal(fitInModalEl);
   fitInModalEl.addEventListener('show.bs.modal', () => {
     populateFitInSelects();
+ const timeInput = document.getElementById('fitInTime');
+ timeInput.addEventListener('click', () => {
+  timeInput.showPicker?.(); // Método nativo moderno
+});
+  const agora = new Date();
+  
+  const horas = String(agora.getHours()).padStart(2, '0');
+  const minutos = String(agora.getMinutes()).padStart(2, '0');
+
+  timeInput.min = `${horas}:${minutos}`;
   });
 
   const openFitInBtn = document.getElementById('openFitInBtn');
@@ -282,6 +309,25 @@ if (fitInModalEl) {
   }
 }
 
+function gerarSlotsHorarios(intervaloMinutos = 30) {
+  const agora = new Date();
+  const inicioHora = agora.getHours();
+  const inicioMin = Math.ceil(agora.getMinutes() / intervaloMinutos) * intervaloMinutos;
+  
+  const slots = [];
+  const fimDia = 20; // horário final do expediente, pode pegar do banco
+
+  for (let hora = inicioHora; hora <= fimDia; hora++) {
+    for (let minuto = (hora === inicioHora ? inicioMin : 0); minuto < 60; minuto += intervaloMinutos) {
+      if (hora < fimDia || (hora === fimDia && minuto === 0)) {
+        slots.push(
+          `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+        );
+      }
+    }
+  }
+  return slots;
+}
 
 
 

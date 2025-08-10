@@ -2,157 +2,160 @@
 <div class="admin-dashboard fade-in-soft">
   <div class="container-fluid">
     <!-- Header -->
-  <div class="row mb-4">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="fw-bold mb-1">Gerenciar Agendamentos</h2>
+              <p class="text-muted mb-0">Visualize e gerencie todos os agendamentos</p>
+            </div>
+            <div>
+              {{!-- <button class="btn btn-primary" onclick="exportAppointments()">
+                <i class="fas fa-download"></i> Exportar
+              </button> --}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros Corrigidos -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-filters">
+          <form id="filterForm">
+            <div class="row">
+              <div class="col-md-3">
+                <div class="filter-group">
+                  <label class="form-label">Data Inicial</label>
+                  <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="filter-group">
+                  <label class="form-label">Data Final</label>
+                  <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.endDate}}">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="filter-group">
+                  <label class="form-label">Barbeiro</label>
+                  <select class="form-control" name="barberId" id="barberId">
+                    <option value="">Todos os barbeiros</option>
+                    {{#each barbers}}
+                    <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="filter-group">
+                  <label class="form-label">Status</label>
+                  <select name="status" id="statusFilter" class="form-control">
+                    <option value="">Todos os status</option>
+                    {{!-- <option value="pending" {{#eq filters.status 'pending' }}selected{{/eq}}>Pendente</option>
+                    --}}
+                    <option value="confirmed" {{#eq filters.status 'confirmed' }}selected{{/eq}}>Confirmado</option>
+                    <option value="in_progress" {{#eq filters.status 'in_progress' }}selected{{/eq}}>Em andamento
+                    </option>
+                    <option value="completed" {{#eq filters.status 'completed' }}selected{{/eq}}>Concluído</option>
+                    <option value="cancelled" {{#eq filters.status 'cancelled' }}selected{{/eq}}>Cancelado</option>
+                    <option value="no_show" {{#eq filters.status 'no_show' }}selected{{/eq}}>Não compareceu</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+            <div class="row mt-3 align-items-center">
+              <div class="col-md-3">
+                <select class="form-control" name="sort" id="sort">
+                  <option value="">Ordenar por</option>
+                  <option value="date_desc" {{#eq filters.sort 'date_desc' }}selected{{/eq}}>Data/Hora (Mais recente)
+                  </option>
+                  <option value="date_asc" {{#eq filters.sort 'date_asc' }}selected{{/eq}}>Data/Hora (Mais antigo)
+                  </option>
+                  <option value="value_desc" {{#eq filters.sort 'value_desc' }}selected{{/eq}}>Valor (Maior primeiro)
+                  </option>
+                  <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
+                  </option>
+                  <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Barbeiro (A-Z)</option>
+                  <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Barbeiro (Z-A)</option>
+                </select>
+              </div>
+
+              <div class="col-md-9 d-flex">
+                <button type="submit" class="btn btn-primary me-2">
+                  <i class="fas fa-filter"></i> Aplicar Filtros
+                </button>
+                <button type="button" class="btn btn-secondary me-2" onclick="clearFilters()">
+                  <i class="fas fa-times"></i> Limpar
+                </button>
+                <button id="openFitInBtn" type="button" class="btn btn-success me-2" data-bs-toggle="modal"
+                  data-bs-target="#fitInModal">
+                  <i class="fas fa-plus"></i> Encaixe
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
+    <div class="toggle-btn-wrapper mb-3">
+      <button class="btn btn-secondary" id="toggleView">
+        <i class="fas fa-columns"></i> Alternar Visualização
+      </button>
+    </div>
+
+
+    <!-- VISUALIZAÇÃO EM TABELA -->
+    <div id="appointmentsTableView" class="view-mode">
+      <div class="row">
         <div class="col-12">
           <div class="admin-card">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h2 class="fw-bold mb-1">Gerenciar Agendamentos</h2>
-                <p class="text-muted mb-0">Visualize e gerencie todos os agendamentos</p>
-              </div>
-              <div>
-                {{!-- <button class="btn btn-primary" onclick="exportAppointments()">
-                  <i class="fas fa-download"></i> Exportar
-                </button> --}}
+            <div class="admin-table">
+              <div class="admin-table-wrapper">
+                {{#if appointments}}
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th class="d-none">ID</th>
+                      <th>Barbeiro</th>
+                      <th class="text-center">Data/Hora</th>
+                      <th>Cliente</th>
+                      <th>Serviço</th>
+                      <th class="text-center">Valor</th>
+                      <th class="text-center">Status</th>
+                      <th class="text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="appointmentsTableBody">
+                    {{> appointments-table-rows appointments=appointments }}
+                  </tbody>
+                </table>
+                {{else}}
+                <div class="text-center py-5">
+                  <div class="display-1 text-muted mb-3">
+                    <i class="fas fa-calendar-times"></i>
+                  </div>
+                  <h5 class="text-muted">Nenhum agendamento encontrado</h5>
+                  <p class="text-muted">Ajuste os filtros ou aguarde novos agendamentos.</p>
+                </div>
+                {{/if}}
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Filtros Corrigidos -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="admin-filters">
-            <form id="filterForm">
-              <div class="row">
-                <div class="col-md-3">
-                  <div class="filter-group">
-                    <label class="form-label">Data Inicial</label>
-                    <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="filter-group">
-                    <label class="form-label">Data Final</label>
-                    <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.endDate}}">
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="filter-group">
-                    <label class="form-label">Barbeiro</label>
-                    <select class="form-control" name="barberId" id="barberId">
-                      <option value="">Todos os barbeiros</option>
-                      {{#each barbers}}
-                      <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
-                      {{/each}}
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="filter-group">
-                    <label class="form-label">Status</label>
-                    <select name="status" id="statusFilter" class="form-control">
-                      <option value="">Todos os status</option>
-                      {{!-- <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option> --}}
-                      <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-                      <option value="in_progress" {{#eq filters.status 'in_progress'}}selected{{/eq}}>Em andamento</option>
-                      <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
-                      <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
-                      <option value="no_show" {{#eq filters.status 'no_show'}}selected{{/eq}}>Não compareceu</option>
-                    </select>
-                  </div>
-
-                </div>
-              </div>
-              <div class="row mt-3 align-items-center">
-                <div class="col-md-3">
-                  <select class="form-control" name="sort" id="sort">
-                    <option value="">Ordenar por</option>
-                    <option value="date_desc" {{#eq filters.sort 'date_desc'}}selected{{/eq}}>Data/Hora (Mais recente)</option>
-                    <option value="date_asc" {{#eq filters.sort 'date_asc'}}selected{{/eq}}>Data/Hora (Mais antigo)</option>
-                    <option value="value_desc" {{#eq filters.sort 'value_desc'}}selected{{/eq}}>Valor (Maior primeiro)</option>
-                    <option value="value_asc" {{#eq filters.sort 'value_asc'}}selected{{/eq}}>Valor (Menor primeiro)</option>
-                    <option value="barber_asc" {{#eq filters.sort 'barber_asc'}}selected{{/eq}}>Barbeiro (A-Z)</option>
-                    <option value="barber_desc" {{#eq filters.sort 'barber_desc'}}selected{{/eq}}>Barbeiro (Z-A)</option>
-                  </select>
-                </div>
-
-                <div class="col-md-9 d-flex">
-                  <button type="submit" class="btn btn-primary me-2">
-                    <i class="fas fa-filter"></i> Aplicar Filtros
-                  </button>
-                  <button type="button" class="btn btn-secondary me-2" onclick="clearFilters()">
-                    <i class="fas fa-times"></i> Limpar
-                  </button>
-                <button id="openFitInBtn" 
-                        type="button" 
-                        class="btn btn-success me-2"
-                        data-bs-toggle="modal" 
-                        data-bs-target="#fitInModal">
-                    <i class="fas fa-plus"></i> Encaixe
-                </button>
-                </div>
-               
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      
-  <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
-<div class="toggle-btn-wrapper mb-3">
-  <button class="btn btn-secondary" id="toggleView">
-    <i class="fas fa-columns"></i> Alternar Visualização
-  </button>
-</div>
-
-
-<!-- VISUALIZAÇÃO EM TABELA -->
-<div id="appointmentsTableView" class="view-mode">
-  <div class="row">
-    <div class="col-12">
-      <div class="admin-card">
-        <div class="admin-table">
-          <div class="admin-table-wrapper">
-            {{#if appointments}}
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th class="d-none">ID</th>
-                    <th>Barbeiro</th>
-                    <th class="text-center">Data/Hora</th>
-                    <th>Cliente</th>
-                    <th>Serviço</th>
-                    <th class="text-center">Valor</th>
-                    <th class="text-center">Status</th>
-                    <th class="text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="appointmentsTableBody">
-                  {{> appointments-table-rows appointments=appointments }}
-                </tbody>
-              </table>
-            {{else}}
-              <div class="text-center py-5">
-                <div class="display-1 text-muted mb-3">
-                  <i class="fas fa-calendar-times"></i>
-                </div>
-                <h5 class="text-muted">Nenhum agendamento encontrado</h5>
-                <p class="text-muted">Ajuste os filtros ou aguarde novos agendamentos.</p>
-              </div>
-            {{/if}}
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
-</div>
 
-<!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
-<div id="appointmentsCardView" class="view-mode hidden">
-  {{> appointments-cards-grouped appointments=appointments }}
-</div>
+    <!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
+    <div id="appointmentsCardView" class="view-mode hidden">
+      {{> appointments-cards-grouped appointments=appointments }}
+    </div>
 
     <!-- Paginação -->
     {{#if pagination}}
@@ -165,13 +168,13 @@
               <a class="page-link" href="?page={{pagination.prevPage}}&{{queryString}}">Anterior</a>
             </li>
             {{/if}}
-            
+
             {{#each pagination.pages}}
             <li class="page-item {{#if active}}active{{/if}}">
               <a class="page-link" href="?page={{page}}&{{../queryString}}">{{page}}</a>
             </li>
             {{/each}}
-            
+
             {{#if pagination.hasNext}}
             <li class="page-item">
               <a class="page-link" href="?page={{pagination.nextPage}}&{{queryString}}">Próximo</a>
@@ -185,7 +188,7 @@
   </div>
 
 </div>
-  <!-- Painel Lateral de Ações -->
+<!-- Painel Lateral de Ações -->
 <div id="actionPanel" class="action-slideout">
   <div class="action-slideout-header">
     <h5>Ações</h5>
@@ -196,12 +199,12 @@
   </div>
 </div>
 <!-- Modal de Visualização -->
-<div class="modal fade appointment-view-modal" id="viewModal" tabindex="-1" >
+<div class="modal fade appointment-view-modal" id="viewModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detalhes do Agendamento</h5>
-         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
 
       </div>
       <div class="modal-body" id="modalContent">
@@ -220,40 +223,40 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body">
-        <div id="edit-loading" class="d-flex justify-content-center align-items-center py-5" style="display: none;">
+          <div id="edit-loading" class="d-flex justify-content-center align-items-center py-5" style="display: none;">
 
 
-          <input type="hidden" name="id" id="edit-id">
-          <div class="row">
-            <div class="col-md-6">
-              <label class="form-label">Nome</label>
-              <input type="text" id="edit-client-name" class="form-control" disabled>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Telefone</label>
-              <input type="text" id="edit-client-phone" class="form-control" disabled>
-            </div>
-            <div class="col-md-6 mt-3">
-              <label class="form-label">Serviço</label>
-              <select id="edit-service" class="form-control" required></select>
-            </div>
-            <div class="col-md-6 mt-3">
-              <label class="form-label">Barbeiro</label>
-              <select id="edit-barber" class="form-control" required></select>
-            </div>
-            <div class="col-md-6 mt-3">
-              <label class="form-label">Data</label>
-              <input type="date" id="edit-date" class="form-control" required>
-            </div>
-            <div class="col-md-6 mt-3">
-              <label class="form-label">Horário</label>
-              <input type="time" id="edit-time" class="form-control" required>
+            <input type="hidden" name="id" id="edit-id">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label">Nome</label>
+                <input type="text" id="edit-client-name" class="form-control" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Telefone</label>
+                <input type="text" id="edit-client-phone" class="form-control" disabled>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Serviço</label>
+                <select id="edit-service" class="form-control" required></select>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Barbeiro</label>
+                <select id="edit-barber" class="form-control" required></select>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Data</label>
+                <input type="date" id="edit-date" class="form-control" required>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Horário</label>
+                <input type="time" id="edit-time" class="form-control" required>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-        </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+          </div>
       </form>
     </div>
   </div>
@@ -299,13 +302,16 @@
             <input type="date" class="form-control" id="fitInDate" required>
           </div>
 
-          <div class="mb-3">
+          <div class="mb-3 position-relative">
             <label for="fitInTime" class="form-label">Horário</label>
-            <div class="input-group" id="timepicker">
-              <input type="text" id="fitInTime" name="fitInTime" class="form-control" />
-              <span class="input-group-text"><i class="fas fa-clock"></i></span>
-            </div>
+            <input type="time" id="fitInTime" name="fitInTime" class="form-control" step="300" <!-- 5 minutos -->
+            
+            >
           </div>
+
+
+
+
 
           <div class="col-md-12">
             <label class="form-label">Observação (opcional)</label>
@@ -334,140 +340,142 @@
 
 
 <style>
-/* 1. Botão Exportar alinhado com título em telas pequenas */
-@media (max-width: 768px) {
-  .admin-card .d-flex {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
+  /* 1. Botão Exportar alinhado com título em telas pequenas */
+  @media (max-width: 768px) {
+    .admin-card .d-flex {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .admin-card .btn {
+      align-self: flex-start;
+      width: 100%;
+    }
   }
 
-  .admin-card .btn {
-    align-self: flex-start;
-    width: 100%;
-  }
-}
-
-/* 2. Dropdowns e campos de data não estouram layout */
-.admin-filters {
-  overflow-x: auto;
-}
-
-.admin-filters select,
-.admin-filters input[type="date"] {
-  max-width: 100%;
-}
-
-/* 3. Espaçamento entre filtros e ordenação em telas pequenas */
-@media (max-width: 768px) {
-  #filterForm .row.mt-3 {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  #filterForm .col-md-9 {
-    margin-top: 0;
-  }
-}
-
-/* 4. Scroll horizontal na tabela */
-.admin-table {
-  overflow-x: auto;
-  padding-bottom: 1rem;
-}
-
-.admin-table table {
-  min-width: 800px;
-}
-
-/* 5. Ações (menu de 3 pontos) responsivo e funcional */
-
-.actions-menu {
-  position: relative;
-  display: flex;
-  justify-content: center;
-}
-
-.actions-menu .js-toggle-actions {
-  background: var(--bg-gray);
-  border: none;
-  padding: 6px 10px;
-  border-radius: 4px;
-  z-index: 2;
-}
-
-/* Dropdown flutuante e sem quebrar tabela */
-.actions-dropdown {
-  display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  box-shadow: var(--shadow);
-  min-width: 180px;
-  white-space: nowrap;
-  z-index: 9999;
-}
-
-.actions-dropdown .action-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: none;
-  padding: 10px 15px;
-  font-size: 0.9rem;
-  color: var(--text-dark);
-}
-
-.actions-dropdown .action-item:hover {
-  background-color: var(--bg-gray);
-}
-
-.actions-menu.show .actions-dropdown {
-  display: block;
-}
-/* Responsivo para dropdown e tabela */
-@media (max-width: 576px) {
-  .admin-table table {
-    font-size: 0.875rem;
-  }
-
-.actions-dropdown {
-    min-width: 100%;
-    max-width: 100vw;
+  /* 2. Dropdowns e campos de data não estouram layout */
+  .admin-filters {
     overflow-x: auto;
-    overflow-y: auto;
-    max-height: 60vh;
-    left: auto;
-    right: 0;
+  }
+
+  .admin-filters select,
+  .admin-filters input[type="date"] {
+    max-width: 100%;
+  }
+
+  /* 3. Espaçamento entre filtros e ordenação em telas pequenas */
+  @media (max-width: 768px) {
+    #filterForm .row.mt-3 {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    #filterForm .col-md-9 {
+      margin-top: 0;
+    }
+  }
+
+  /* 4. Scroll horizontal na tabela */
+  .admin-table {
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+
+  .admin-table table {
+    min-width: 800px;
+  }
+
+  /* 5. Ações (menu de 3 pontos) responsivo e funcional */
+
+  .actions-menu {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .actions-menu .js-toggle-actions {
+    background: var(--bg-gray);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    z-index: 2;
+  }
+
+  /* Dropdown flutuante e sem quebrar tabela */
+  .actions-dropdown {
+    display: none;
     position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    min-width: 180px;
+    white-space: nowrap;
+    z-index: 9999;
   }
 
   .actions-dropdown .action-item {
-    font-size: 1rem;
-    padding: 14px;
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
   }
-}
 
-/* Scroll vertical para dashboard em telas pequenas */
-@media (max-width: 768px) {
-  .admin-dashboard {
-    overflow-y: auto;
-    padding-bottom: 3rem;
+  .actions-dropdown .action-item:hover {
+    background-color: var(--bg-gray);
   }
-}
 
-.admin-table-wrapper {
-  overflow-x: auto;
-  width: 100%;
-}
-.admin-table-wrapper table {
-  min-width: 900px;
-}
+  .actions-menu.show .actions-dropdown {
+    display: block;
+  }
+
+  /* Responsivo para dropdown e tabela */
+  @media (max-width: 576px) {
+    .admin-table table {
+      font-size: 0.875rem;
+    }
+
+    .actions-dropdown {
+      min-width: 100%;
+      max-width: 100vw;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 60vh;
+      left: auto;
+      right: 0;
+      position: absolute;
+    }
+
+    .actions-dropdown .action-item {
+      font-size: 1rem;
+      padding: 14px;
+    }
+  }
+
+  /* Scroll vertical para dashboard em telas pequenas */
+  @media (max-width: 768px) {
+    .admin-dashboard {
+      overflow-y: auto;
+      padding-bottom: 3rem;
+    }
+  }
+
+  .admin-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  .admin-table-wrapper table {
+    min-width: 900px;
+  }
 </style>
 
 

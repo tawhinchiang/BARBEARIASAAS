@@ -2496,3 +2496,20 @@ canvas {
   from { opacity: 1; transform: scale(1); }
   to   { opacity: 0; transform: scale(0.96); }
 }
+
+
+.tempus-dominus-widget {
+  z-index: 21000 !important;
+}
+#fitInTimePicker .input-group-text { cursor: pointer; }
+#fitInTime {
+  background: var(--bg-light);
+  color: var(--text-dark);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+}
+
+#fitInTime::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* ícone claro no tema escuro */
+  cursor: pointer;
+}
