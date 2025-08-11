@@ -56,16 +56,19 @@
                   {{/each}}
                 </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-control">
-                  <option value="">Todos os status</option>
-                  
-                  <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-              
-                  <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
-                </select>
-              </div>
+                <div class="col-md-3">
+                  <label class="form-label">Status</label>
+                  <select name="status" class="form-control">
+                    <option value="">Todos os status</option>
+                    <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option>
+                    <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
+                    <option value="in_progress" {{#eq filters.status 'in_progress'}}selected{{/eq}}>Em andamento</option>
+                    <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
+                    <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                    <option value="no_show" {{#eq filters.status 'no_show'}}selected{{/eq}}>Não compareceu</option>
+                  </select>
+                </div>
+
             </div>
 
             <div class="row mt-3">
@@ -121,8 +124,8 @@
       <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
         <div class="admin-card text-center w-100">
           <div class="fs-3 mb-1"><i class="fas fa-check-circle"></i></div>
-          <h3 class="fw-bold">{{stats.byStatus.confirmed}}</h3>
-          <p class="text-muted mb-0">Confirmados</p>
+          <h3 class="fw-bold">{{stats.byStatus.completed}}</h3>
+          <p class="text-muted mb-0">Concluídos</p>
         </div>
       </div>
       <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
@@ -184,13 +187,16 @@
                     <td>{{serviceType.name}}</td>
                     <td>R$ {{totalPrice}}</td>
                     <td>
-                      <span class="status-badge status-{{status}}">
-                        {{#if (eq status 'confirmed')}}Confirmado
-                        {{else if (eq status 'pending')}}Pendente
-                        {{else if (eq status 'cancelled')}}Cancelado
-                        {{else if (eq status 'completed')}}Concluído
-                        {{else}}Desconhecido{{/if}}
-                      </span>
+                 <span class="status-badge status-{{status}}">
+                {{#if (eq status 'pending')}}<i class="fas fa-clock text-secondary me-1"></i> Pendente
+                {{else if (eq status 'confirmed')}}<i class="fas fa-check text-primary me-1"></i> Confirmado
+                {{else if (eq status 'in_progress')}}<i class="fas fa-spinner fa-spin text-info me-1"></i> Em Atendimento
+                {{else if (eq status 'completed')}}<i class="fas fa-check-circle text-success me-1"></i> Concluído
+                {{else if (eq status 'cancelled')}}<i class="fas fa-times-circle text-muted me-1"></i> Cancelado
+                {{else}}Desconhecido{{/if}}
+              </span>
+
+
                     </td>
                   </tr>
                   {{/each}}

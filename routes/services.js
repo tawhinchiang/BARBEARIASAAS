@@ -2,6 +2,11 @@ const express = require('express');
 const { ServiceType, Appointment } = require('../models');
 const { isAuthenticated } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const {
+  ACTIVE_STATUSES,
+  COMPLETED_STATUSES,
+  VALID_FOR_REVENUE
+} = require('../constants/appointmentStatuses');
 
 const router = express.Router();
 
@@ -75,7 +80,7 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 
   const appointmentsThisMonth = appointments.length;
   const revenueThisMonth = appointments
-    .filter(a => a.status === 'confirmed')
+    .filter(a => ['confirmed', 'completed'].includes(a.status))
     .reduce((acc, a) => acc + parseFloat(a.totalPrice || 0), 0);
 
   return {
@@ -379,10 +384,9 @@ router.get('/:id/report', async (req, res) => {
     
     // Calcular estatísticas
     const totalAppointments = appointments.length;
-    const completedAppointments = appointments.filter(apt => apt.status === 'confirmed').length;
-    const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled').length;
+    const completedAppointments = appointments.filter(apt => apt.status === 'completed').length;    const cancelledAppointments = appointments.filter(apt => apt.status === 'cancelled').length;
     const totalRevenue = appointments
-      .filter(apt => apt.status === 'confirmed')
+      .filter(apt => apt.status === 'completed')
       .reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
     
     // Agrupar por barbeiro

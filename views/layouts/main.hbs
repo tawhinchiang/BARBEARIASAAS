@@ -2,7 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    {{!-- <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com 'unsafe-inline';
+  style-src 'self' https://fonts.googleapis.com 'unsafe-inline';
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data:;
+  connect-src 'self';
+"> --}}
     <title>{{#if title}}{{title}} - {{/if}}{{barbershopName}}</title>
     
     <!-- Bootstrap 5 CSS -->
@@ -41,6 +50,29 @@
     {{#if isClientPage}}
     <script src="/js/app.js"></script>
     {{/if}}
+    <!-- Stack de Toasts -->
+<div id="toastStack" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:2000;"></div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmDialogModal" tabindex="-1" aria-labelledby="confirmDialogLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDialogLabel">Confirmar ação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="confirmDialogMessage">Tem certeza?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmDialogCancel" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmDialogOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UI util compartilhado -->
+<script src="/js/ui.js"></script>
+
 </body>
 </html>
 

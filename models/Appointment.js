@@ -46,9 +46,10 @@ const Appointment = sequelize.define('Appointment', {
 },
 
   status: {
-    type: DataTypes.ENUM('scheduled', 'confirmed', 'completed', 'cancelled', 'no_show'),
-    defaultValue: 'scheduled'
-  },
+  type: DataTypes.ENUM('pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'),
+  defaultValue: 'pending',
+},
+
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
@@ -65,6 +66,15 @@ const Appointment = sequelize.define('Appointment', {
   type: DataTypes.STRING,
   allowNull: true
 },
+isEncaixe: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: false
+},fitInNote: {
+  type: DataTypes.STRING,
+  allowNull: true
+},
+
   totalPrice: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: true

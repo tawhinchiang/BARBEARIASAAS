@@ -1,13 +1,13 @@
-// public/js/admin/barbers.js
+// public/js/barbers.js
 document.addEventListener('DOMContentLoaded', () => {
   maskInputs();
   previewPhoto();
   setupFilters();
   maskTimeRangeInputs();
 
-const form = document.getElementById('barberForm');
-const modalElement = document.getElementById('barberModal');
-const modalTitle = document.getElementById('barberModalTitle');
+  const form = document.getElementById('barberForm');
+  const modalElement = document.getElementById('barberModal');
+  const modalTitle = document.getElementById('barberModalTitle');
 
   if (form && modalElement && modalTitle) {
   const modal = new bootstrap.Modal(modalElement);
@@ -19,7 +19,10 @@ const modalTitle = document.getElementById('barberModalTitle');
     modalTitle.textContent = 'Novo Barbeiro';
     document.getElementById('photoPreview').classList.add('d-none');
   });
-
+  modalElement.addEventListener('shown.bs.modal', () => {
+  // Garante que a máscara seja aplicada mesmo que o modal tenha sido aberto depois
+  maskInputs();
+});
   window._barberModal = modal;
   window._barberForm = form;
   window._barberModalTitle = modalTitle;
@@ -57,18 +60,31 @@ function maskInputs() {
   if (window.Inputmask) {
     Inputmask({ mask: "(99) 99999-9999" }).mask("#barberPhone");
     Inputmask({ mask: "999.999.999-99" }).mask("#barberCpf");
+
+    // Máscaras dos novos campos de horário padrão
+    Inputmask({ mask: "99:99-99:99" }).mask("#defaultMorningHour");
+    Inputmask({ mask: "99:99-99:99" }).mask("#defaultAfternoonHour");
+
+    // Máscaras dos campos de cada dia
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    days.forEach(day => {
+      Inputmask({ mask: "99:99-99:99" }).mask(`#workingHours${day}Morning`);
+      Inputmask({ mask: "99:99-99:99" }).mask(`#workingHours${day}Afternoon`);
+    });
   }
 }
+
+
 function maskTimeRangeInputs() {
   const inputs = [
-    'defaultWorkingHour',
-    'workingHoursMonday',
-    'workingHoursTuesday',
-    'workingHoursWednesday',
-    'workingHoursThursday',
-    'workingHoursFriday',
-    'workingHoursSaturday'
-  ];
+  'defaultMorningHour', 'defaultAfternoonHour', // ← adicionados
+  'workingHoursMondayMorning', 'workingHoursMondayAfternoon',
+  'workingHoursTuesdayMorning', 'workingHoursTuesdayAfternoon',
+  'workingHoursWednesdayMorning', 'workingHoursWednesdayAfternoon',
+  'workingHoursThursdayMorning', 'workingHoursThursdayAfternoon',
+  'workingHoursFridayMorning', 'workingHoursFridayAfternoon',
+  'workingHoursSaturdayMorning', 'workingHoursSaturdayAfternoon'
+];
 
   inputs.forEach(id => {
     const input = document.getElementById(id);
@@ -91,7 +107,7 @@ function maskTimeRangeInputs() {
     });
 
     input.addEventListener('keydown', e => {
-      // Permitir Backspace, Delete, Setas etc
+      // Permitir teclas de navegação e controle
       const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
       if (allowedKeys.includes(e.key)) return;
 
@@ -102,6 +118,7 @@ function maskTimeRangeInputs() {
     });
   });
 }
+
 
 
 function previewPhoto() {
@@ -152,9 +169,9 @@ function applyFilters() {
   });
 }
 
-function updateStats() {
-  // desativado pois não é utilizado com os cards
-}
+// function updateStats() {
+//   // desativado pois não é utilizado com os cards
+// }
 
 function submitForm(e) {
   e.preventDefault();
@@ -267,14 +284,20 @@ window.barberReport = function (id) {
           <td>${apt.service}</td>
           <td>${apt.client?.firstName || ''} ${apt.client?.lastName || ''}</td>
           <td>
-  <span class="badge ${
-    apt.status === 'completed' || apt.status === 'confirmed'
-      ? 'bg-success'
-      : apt.status === 'cancelled'
-      ? 'bg-danger'
-      : 'bg-warning'
-  }">
-    ${apt.status === 'confirmed'
+        <span class="badge ${
+        apt.status === 'completed'
+          ? 'bg-primary'
+          : apt.status === 'confirmed'
+          ? 'bg-success'
+          : apt.status === 'in_progress'
+          ? 'bg-info'
+          : apt.status === 'cancelled'
+          ? 'bg-danger'
+          : apt.status === 'no_show'
+          ? 'bg-dark'
+          : 'bg-warning'
+      }">
+      ${apt.status === 'confirmed'
       ? 'Confirmado'
       : apt.status === 'cancelled'
       ? 'Cancelado'
@@ -282,8 +305,10 @@ window.barberReport = function (id) {
       ? 'Concluído'
       : apt.status === 'scheduled'
       ? 'Agendado'
+      : apt.status === 'in_progress'
+      ? 'Em Atendimento'
       : apt.status === 'no_show'
-      ? 'Não compareceu'
+      ? 'Não Compareceu'
       : apt.status}
   </span>
 </td>
@@ -317,19 +342,26 @@ window.barberReport = function (id) {
     });
 };
 function applyDefaultWorkingHour() {
-  const defaultHour = document.getElementById('defaultWorkingHour')?.value.trim();
+  const morning = document.getElementById('defaultMorningHour').value.trim();
+  const afternoon = document.getElementById('defaultAfternoonHour').value.trim();
 
-  if (!defaultHour) {
-    alert('Informe um horário padrão válido.');
+  // Validar formato mínimo dos horários
+  if ((!morning || !morning.includes(':')) && (!afternoon || !afternoon.includes(':'))) {
+    alert('Digite pelo menos um horário válido em manhã ou tarde (Ex: 08:00-12:00)');
     return;
   }
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
   days.forEach(day => {
-    const input = document.getElementById(`workingHours${day}`);
-    if (input) input.value = defaultHour;
+    const morningInput = document.getElementById(`workingHours${day}Morning`);
+    const afternoonInput = document.getElementById(`workingHours${day}Afternoon`);
+
+    if (morningInput && morning) morningInput.value = morning;
+    if (afternoonInput && afternoon) afternoonInput.value = afternoon;
   });
 }
+
 
 window.printReport = function () {
   window.print();

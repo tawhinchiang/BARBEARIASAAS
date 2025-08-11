@@ -154,20 +154,8 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       email: email ? email.trim() : null,
       cpf: cpf.trim(),
       specialties: specialties ? specialties.trim() : null,
-      workingHours: (() => {
-  if (!workingHours || typeof workingHours !== 'object') return null;
-
-  return {
-    monday: workingHours.monday || 'closed',
-    tuesday: workingHours.tuesday || 'closed',
-    wednesday: workingHours.wednesday || 'closed',
-    thursday: workingHours.thursday || 'closed',
-    friday: workingHours.friday || 'closed',
-    saturday: workingHours.saturday || 'closed',
-    sunday: 'closed'
-  };
-})(),
-     isActive: isActive === 'true' || isActive === true || isActive === 'on',
+      workingHours: typeof workingHours === 'object' ? workingHours : barber.workingHours,
+      isActive: isActive === 'true' || isActive === true || isActive === 'on',
       photo: req.file ? `/uploads/barbers/${req.file.filename}` : null
     };
     
@@ -270,19 +258,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       email: email ? email.trim() : barber.email,
       cpf: cpf ? cpf.trim() : barber.cpf,
       specialties: specialties ? specialties.trim() : barber.specialties,
-      workingHours: (() => {
-      if (!workingHours || typeof workingHours !== 'object') return null;
-
-      return {
-        monday: workingHours.monday || 'closed',
-        tuesday: workingHours.tuesday || 'closed',
-        wednesday: workingHours.wednesday || 'closed',
-        thursday: workingHours.thursday || 'closed',
-        friday: workingHours.friday || 'closed',
-        saturday: workingHours.saturday || 'closed',
-        sunday: 'closed'
-      };
-    })(),
+      workingHours: typeof workingHours === 'object' ? workingHours : null,
       isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : barber.isActive
     };
     

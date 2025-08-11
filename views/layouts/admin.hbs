@@ -32,100 +32,87 @@
     <!-- Navbar Administrativa -->
     {{#unless hideNavbar}}
    
+<!-- Botão hambúrguer flutuante (libera 100% o topo) -->
+<button class="btn btn-primary admin-hamburger" type="button"
+        data-bs-toggle="offcanvas" data-bs-target="#adminSidebar"
+        aria-controls="adminSidebar" aria-label="Abrir menu">
+  <i class="fa fa-bars"></i>
+</button>
 
-     <nav class="navbar navbar-expand-lg navbar-dark admin-navbar" style="background-color: #19191c !important;">
-        <div class="container-fluid">
-            <!-- Logo -->
-            <a class="navbar-brand d-flex align-items-center" href="/admin/dashboard">
-            <div class="logo-icon imagem">
-                <img src="/images/logo.png"  loading="lazy">
-            </div>
-                <span class="fw-bold"> {{barbershopName}}</span>
-            </a>
-            
-            <!-- Toggle para mobile -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <!-- Menu de navegação -->
-            <div class="collapse navbar-collapse" id="adminNavbar">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {{#eq currentPage 'dashboard'}}active{{/eq}}" href="/admin/dashboard">
-                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{#eq currentPage 'appointments'}}active{{/eq}}" href="/admin/appointments">
-                            <i class="fas fa-calendar-alt me-1"></i> Agendamentos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{#eq currentPage 'reports'}}active{{/eq}}" href="/admin/reports">
-                            <i class="fas fa-chart-bar me-1"></i> Relatórios
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-cogs me-1"></i> Gerenciar
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/admin/barbers">
-                                <i class="fas fa-user-tie me-2"></i> Barbeiros
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/services">
-                                <i class="fas fa-cut me-2"></i> Serviços
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/clients">
-                                <i class="fas fa-users me-2"></i> Clientes
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/admin/config">
-                                <i class="fas fa-cog me-2"></i> Configurações
-                            </a></li>
+<!-- Sidebar Offcanvas -->
+<div class="offcanvas offcanvas-start admin-offcanvas" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarLabel">
+  <div class="offcanvas-header">
+    <div class="d-flex align-items-center gap-2">
+      <div class="logo-icon imagem">
+        <img src="/images/logo.png" alt="Logo" loading="lazy">
+      </div>
+      <h5 class="offcanvas-title m-0" id="adminSidebarLabel">{{barbershopName}}</h5>
+    </div>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+  </div>
 
-                        </ul>
-                    </li>
-                </ul>
-                
-                <!-- Menu do usuário -->
-                <ul class="navbar-nav">
-                     <li class="nav-item d-none d-lg-block me-2" id="whatsapp-status-container">
-                    <div id="whatsapp-status-toast" class="d-none">
-                    <i class="fab fa-whatsapp me-2"></i>
-                    <span id="whatsapp-status-text">...</span>
-                    </div>
-                </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/" target="_blank">
-                            <i class="fas fa-external-link-alt me-1"></i> Ver Site
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <div class="user-avatar me-2">
-                                {{#if user.username}}{{substring user.username 0 1}}{{else}}A{{/if}}
-                            </div>
-                            <span>{{#if user.username}}{{user.username}}{{else}}Admin{{/if}}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/admin/profile">
-                                <i class="fas fa-user me-2"></i> Meu Perfil
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/settings">
-                                <i class="fas fa-cog me-2"></i> Configurações
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/admin/logout">
-                                <i class="fas fa-sign-out-alt me-2"></i> Sair
-                            </a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
+  <div class="offcanvas-body p-0 d-flex flex-column">
+    <!-- MENU VERTICAL -->
+    <nav class="list-group list-group-flush admin-menu">
+      <a class="list-group-item list-group-item-action" href="/admin/dashboard">
+        <i class="fa fa-tachometer-alt me-2"></i> Dashboard
+      </a>
+      <a class="list-group-item list-group-item-action" href="/admin/appointments">
+        <i class="fa fa-calendar-alt me-2"></i> Agendamentos
+      </a>
+      <a class="list-group-item list-group-item-action" href="/admin/reports">
+        <i class="fa fa-chart-bar me-2"></i> Relatórios
+      </a>
+      <a class="list-group-item list-group-item-action" href="/admin/barbers">
+        <i class="fa fa-user-tie me-2"></i> Barbeiros
+      </a>
+      <a class="list-group-item list-group-item-action" href="/admin/services">
+        <i class="fa fa-cut me-2"></i> Serviços
+      </a>
+      {{!-- <a class="list-group-item list-group-item-action" href="/admin/clients">
+        <i class="fa fa-users me-2"></i> Clientes
+      </a> --}}
+      <a class="list-group-item list-group-item-action" href="/admin/config">
+        <i class="fa fa-cog me-2"></i> Configurações
+      </a>
+      <a class="list-group-item list-group-item-action" href="/" target="_blank">
+        <i class="fa fa-external-link-alt me-2"></i> Ver Site
+      </a>
     </nav>
+
+    <!-- RODAPÉ DA SIDEBAR: STATUS + USUÁRIO -->
+    <div class="mt-auto border-top p-3">
+      <!-- Mantém os mesmos IDs que seu JS usa -->
+      <div id="whatsapp-status-toast" class="mb-3 d-none">
+        <i class="fab fa-whatsapp me-2"></i>
+        <span id="whatsapp-status-text">...</span>
+      </div>
+
+      <div class="d-flex align-items-center mb-2">
+        <div class="user-avatar me-2">
+          {{#if user.username}}{{substring user.username 0 1}}{{else}}A{{/if}}
+        </div>
+        <div>
+          <div class="fw-semibold">{{#if user.username}}{{user.username}}{{else}}Admin{{/if}}</div>
+          <small class="text-muted">Conectado</small>
+        </div>
+      </div>
+
+      <div class="d-grid gap-2">
+        <a class="btn btn-outline-secondary" href="/admin/profile">
+          <i class="fa fa-user me-2"></i> Meu Perfil
+        </a>
+        {{!-- <a class="btn btn-outline-secondary" href="/admin/settings">
+          <i class="fa fa-cog me-2"></i> Configurações
+        </a> --}}
+        <a class="btn btn-danger" href="/admin/logout">
+          <i class="fa fa-sign-out-alt me-2"></i> Sair
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
     {{/unless}}
     
     <!-- Conteúdo principal -->
@@ -153,7 +140,27 @@
         </div>
     </footer>
     {{/unless}}
-    
+    <!-- Stack de Toasts (notificações) -->
+<div id="toastStack" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;"></div>
+
+<!-- Modal de Confirmação (reutilizável) -->
+<div class="modal fade" id="confirmDialogModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDialogLabel">Confirmar ação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" id="confirmDialogMessage">Tem certeza?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-dark" id="confirmDialogCancel" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmDialogOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -167,89 +174,101 @@
     <script src="/js/admin.js"></script>
     
     <!-- Script para atualizar horário -->
-    <script>
-        setTimeout(() => {
+<script>
+  // Remove alert de sucesso após 4s
+  setTimeout(() => {
     const alert = document.querySelector('.alert-success');
     if (alert) alert.remove();
   }, 4000);
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('pt-BR');
-            const timeElement = document.getElementById('currentTime');
-            if (timeElement) {
-                timeElement.textContent = timeString;
-            }
-        }
-        
-        // Atualizar horário a cada segundo
-        setInterval(updateTime, 1000);
-        updateTime(); // Atualizar imediatamente
-        
-        // Marcar link ativo na navegação
-      document.addEventListener('DOMContentLoaded', function() {
-  checkWhatsAppStatus();
-  const currentPath = window.location.pathname;
-  const links = document.querySelectorAll('.navbar-nav .nav-link, .dropdown-menu .dropdown-item');
 
-  links.forEach(link => {
-    const href = link.getAttribute('href');
-    if (href && currentPath.startsWith(href)) {
-      link.classList.add('active');
+  // Atualiza relógio do rodapé
+  function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('pt-BR');
+    const timeElement = document.getElementById('currentTime');
+    if (timeElement) timeElement.textContent = timeString;
+  }
+  setInterval(updateTime, 1000);
+  updateTime();
 
-      // Ativa dropdown do menu "Gerenciar" se filho estiver ativo
-      const parentDropdown = link.closest('.dropdown');
-      if (parentDropdown) {
-        const toggle = parentDropdown.querySelector('.nav-link.dropdown-toggle');
-        if (toggle) toggle.classList.add('active');
+  // Marca link ativo na sidebar
+  document.addEventListener('DOMContentLoaded', function () {
+    // se existir fade-in global, garanta que o body apareça
+    requestAnimationFrame(() => document.body.style.opacity = '1');
+
+    checkWhatsAppStatus();
+
+    const currentPath = window.location.pathname;
+    const links = document.querySelectorAll('.admin-menu .list-group-item');
+
+    links.forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+      if (currentPath === href || currentPath.startsWith(href + '/')) {
+        link.classList.add('active');
       }
-    }
+    });
   });
-});
 
-        async function checkWhatsAppStatus() {
-            try {
-            const res = await fetch('/admin/whatsapp/status');
-            const data = await res.json();
+  // Fecha a Offcanvas e navega (sem duplicar handlers)
+  document.addEventListener('DOMContentLoaded', () => {
+    const sidebarEl = document.getElementById('adminSidebar');
+    if (!sidebarEl || typeof bootstrap === 'undefined') return;
 
-            const toast = document.getElementById('whatsapp-status-toast');
-            const text = document.getElementById('whatsapp-status-text');
+    const sidebar = bootstrap.Offcanvas.getOrCreateInstance(sidebarEl);
 
-            if (!toast || !text) return;
+    sidebarEl.querySelectorAll('a[href]').forEach(a => {
+      const href = a.getAttribute('href');
+      const target = a.getAttribute('target');
 
-            toast.classList.remove('success', 'error', 'd-none', 'show');
+      // 1) pula links externos/âncoras e os que abrem em nova aba
+      if (!href || href.startsWith('http') || href.includes('#') || target === '_blank') return;
 
-            if (data.isConnected) {
-            toast.classList.add('success', 'show');
-            text.innerText = 'WhatsApp está conectado ✅';
+      a.addEventListener('click', (e) => {
+        // 2) evita que outro listener global também intercepte
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
-            // Esconde depois de 7 segundos
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 7000);
-            } else {
-            toast.classList.add('error', 'show');
-            text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
-            }
-            } catch (err) {
-            console.error('[WHATSAPP STATUS ERROR]', err);
-            }
-        }
-        document.addEventListener('click', function (e) {
-  const dropdownToggle = document.getElementById('managementDropdown');
-  const dropdownMenu = dropdownToggle?.nextElementSibling;
+        sidebar.hide();
 
-  if (dropdownToggle && dropdownMenu && dropdownMenu.classList.contains('show')) {
-    return;
+        // pequeno delay para o offcanvas fechar sem travar o foco
+        setTimeout(() => {
+          if (typeof navigateWithFade === 'function') {
+            navigateWithFade(href);
+          } else {
+            window.location.href = href;
+          }
+        }, 180);
+      });
+    });
+  });
+
+  // Status do WhatsApp (mantém os mesmos IDs que você já usa)
+  async function checkWhatsAppStatus() {
+    try {
+      const res = await fetch('/admin/whatsapp/status');
+      const data = await res.json();
+
+      const toast = document.getElementById('whatsapp-status-toast');
+      const text = document.getElementById('whatsapp-status-text');
+      if (!toast || !text) return;
+
+      toast.classList.remove('success', 'error', 'd-none', 'show');
+
+      if (data.isConnected) {
+        toast.classList.add('success', 'show');
+        text.innerText = 'WhatsApp está conectado ✅';
+        setTimeout(() => toast.classList.remove('show'), 7000);
+      } else {
+        toast.classList.add('error', 'show');
+        text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
+      }
+    } catch (err) {
+      console.error('[WHATSAPP STATUS ERROR]', err);
+    }
   }
-
-  if (e.target.closest('#managementDropdown')) {
-    e.preventDefault();
-    const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
-    bsDropdown.toggle();
-  }
-});
-
 </script>
+
 </body>
 </html>
 
@@ -469,15 +488,20 @@
 
 /* Status badges */
 .status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
+  width: 140px;           /* 👈 largura fixa */
+  display: inline-block;
+  text-align: center;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* para evitar quebras se o texto for muito grande */
 }
 
 .status-confirmed {
-    background: var(--success-color);
+    background: #007bff;
     color: white;
 }
 
@@ -492,7 +516,7 @@
 }
 
 .status-completed {
-    background: var(--info-color);
+    background: #28a745;
     color: white;
 }
 

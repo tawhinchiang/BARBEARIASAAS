@@ -1,10 +1,10 @@
-
 let currentPhone = '';
 let resendCooldown = 50; // segundos
 let codeExpireSeconds = 120;
 let resendTimerInterval = null;
 let expireTimerInterval = null;
 const phoneInput = document.getElementById('phoneInput');
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
 document.addEventListener('DOMContentLoaded', () => {
   const savedPhone = localStorage.getItem('lastPhone');
@@ -56,6 +56,7 @@ document.getElementById('phoneInput').addEventListener('blur', async function ()
     const res = await fetch('/history/check-code-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: JSON.stringify({ phone })
     });
 
@@ -125,6 +126,7 @@ async function enviarCodigo() {
     const response = await fetch('/history/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: JSON.stringify({ phone })
     });
 
@@ -191,9 +193,11 @@ async function verificarCodigo(codeArg = null) {
 
   try {
     showLoading(true);
+
     const response = await fetch('/history/verify-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: JSON.stringify({ phone: currentPhone, code })
     });
 
@@ -205,14 +209,51 @@ async function verificarCodigo(codeArg = null) {
       return;
     }
 
-    // Oculta todo o container de verificação
+    // ✅ CORREÇÃO: Esconde completamente o container de autenticação
     const authContainer = document.querySelector('.container.fade-in-soft');
-    authContainer.classList.add('d-none');
+    if (authContainer) {
+      authContainer.style.display = 'none';
+      authContainer.style.visibility = 'hidden';
+      authContainer.style.position = 'absolute';
+      authContainer.style.top = '-9999px';
+      authContainer.style.left = '-9999px';
+      authContainer.style.width = '0';
+      authContainer.style.height = '0';
+      authContainer.style.overflow = 'hidden';
+      authContainer.style.margin = '0';
+      authContainer.style.padding = '0';
+      authContainer.style.minHeight = '0';
+    }
 
-    // Continua com os elementos internos, caso ainda queira
-    document.getElementById('verificationSection').classList.add('d-none');
-    document.querySelector('form').classList.add('d-none');
-        carregarHistorico();
+    // ✅ CORREÇÃO: Remove o min-height do main-container
+    const mainContainer = document.querySelector('.main-container');
+    if (mainContainer) {
+      mainContainer.style.minHeight = 'auto';
+      mainContainer.style.height = 'auto';
+    }
+
+    // ✅ Esconde seção/formulário
+    document.getElementById('verificationSection')?.classList.add('d-none');
+    document.querySelector('form')?.classList.add('d-none');
+
+    // ✅ CORREÇÃO: Revela histórico com posicionamento correto
+    const historyContainer = document.getElementById('historyContainer');
+    historyContainer.classList.remove('d-none');
+    historyContainer.style.display = 'block';
+    historyContainer.style.opacity = '1';
+    historyContainer.style.position = 'relative';
+    historyContainer.style.top = '0';
+    historyContainer.style.left = '0';
+    historyContainer.style.width = '100%';
+    historyContainer.style.height = 'auto';
+    historyContainer.style.minHeight = 'auto';
+    historyContainer.style.marginTop = '20px';
+    historyContainer.style.paddingTop = '20px';
+
+    console.log('[DEBUG] Container revelado com posicionamento corrigido');
+
+    // ✅ Carrega agendamentos
+    carregarHistorico();
 
   } catch (err) {
     console.error('Erro ao verificar código:', err);
@@ -220,6 +261,7 @@ async function verificarCodigo(codeArg = null) {
     showLoading(false);
   }
 }
+
 
 
 async function carregarHistorico() {
@@ -239,6 +281,7 @@ async function carregarHistorico() {
     const res = await fetch('/history/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: new URLSearchParams({ phone })
     });
 
@@ -278,6 +321,7 @@ async function verificarAgendamentosAtivos() {
     const res = await fetch('/history/active', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: new URLSearchParams({ phone: currentPhone })
     });
 
@@ -304,14 +348,19 @@ async function verificarAgendamentosAtivos() {
 }
 
 async function cancelarAgendamento(appointmentId) {
-  if (!confirm('Tem certeza que deseja cancelar este agendamento?')) {
-    return;
-  }
+   const ok = await confirmDialog({
+    title: 'Cancelar agendamento',
+    message: 'Tem certeza que deseja cancelar este agendamento?',
+    confirmText: 'Cancelar',
+    variant: 'danger'
+  });
+  if (!ok) return;
 
   try {
     const res = await fetch(`/history/cancel/${appointmentId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
     });
 
     const data = await res.json();
@@ -333,6 +382,7 @@ async function cancelarAgendamento(appointmentId) {
 }
 
 function renderAppointments(appointments, activeOnly = false) {
+  
   const container = document.getElementById('historyContainer');
   
   const title = activeOnly ? 
@@ -375,14 +425,22 @@ function renderAppointments(appointments, activeOnly = false) {
 
   }).join('');
 
+  // ✅ CORREÇÃO: Container com posicionamento adequado
   container.innerHTML = `
-  <div class="container py-4">
+  <div class="container py-4" style="margin-top: 0; padding-top: 20px;">
     ${title}
     <div class="row row-cols-1 row-cols-md-2 g-4">${cards}</div>
   </div>
 `;
 
+  // ✅ CORREÇÃO: Garante posicionamento correto do container
   container.classList.remove('d-none');
+  container.style.position = 'relative';
+  container.style.top = '0';
+  container.style.marginTop = '0';
+  container.style.paddingTop = '20px';
+  
+  console.log('[DEBUG] Container revelado com posicionamento corrigido');
 }
 
 function getStatusClass(status) {
@@ -416,18 +474,21 @@ function getStatusText(status) {
   }
 }
 
-function showAlert(message, type) {
-  const container = document.getElementById('historyContainer');
-  const alertClass = `alert-${type}`;
-  
-  container.innerHTML = `<div class="alert ${alertClass} text-center mt-3">${message}</div>`;
-  container.classList.remove('d-none');
+function showAlert(message, type = 'info') {
+  // Usa toasts padronizados
+  const map = { danger: 'error', error: 'error', success: 'success', warning: 'warning', info: 'info' };
+  notify({ type: map[type] || 'info', message });
 }
+
 
 function showLoading(show) {
   const loading = document.getElementById('loadingIndicator');
   if (show) {
     loading.classList.remove('d-none');
+    // ✅ CORREÇÃO: Loading com posicionamento adequado
+    loading.style.position = 'relative';
+    loading.style.top = '0';
+    loading.style.marginTop = '20px';
   } else {
     loading.classList.add('d-none');
   }
@@ -441,6 +502,10 @@ function hideContainer() {
 function showActiveAppointmentsButton() {
   const section = document.getElementById('activeAppointmentsSection');
   section.classList.remove('d-none');
+  // ✅ CORREÇÃO: Botão com posicionamento adequado
+  section.style.position = 'relative';
+  section.style.top = '0';
+  section.style.marginTop = '20px';
 }
 
 // Transição suave entre páginas

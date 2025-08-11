@@ -7,9 +7,9 @@ const { getWhatsAppStatus } = require('../utils/whatsapp');
 const { getLastQRCode } = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
-const { Op } = require('sequelize');
-
-
+const { Op, literal } = require('sequelize');
+const fs = require('fs'); // se ainda não tiver no topo
+const todayStr = new Date().toLocaleDateString('en-CA');
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
 router.use((req, res, next) => {
   const publicRoutes = ['/login', '/logout'];
@@ -140,15 +140,15 @@ router.get('/dashboard', async (req, res) => {
     const monthlyRevenue = await Appointment.sum('totalPrice', {
       where: {
         appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: 'confirmed'
+        status: 'completed'
       }
     }) || 0;
 
     const todayAppointments = await Appointment.findAll({
       where: {
-      appointmentDate: formatDateYYYYMMDD(today),
-      status: 'confirmed'
-  },
+        appointmentDate: formatDateYYYYMMDD(today),
+        status: 'completed'
+      },
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber' },
@@ -179,7 +179,7 @@ router.get('/dashboard', async (req, res) => {
       attributes: ['appointmentDate', 'totalPrice'],
       where: {
         appointmentDate: { [Op.in]: datesToTrack },
-        status: { [Op.in]: ['confirmed', 'completed'] }
+        status: { [Op.in]: ['completed'] }
       },
       raw: true
     });
@@ -205,9 +205,10 @@ router.get('/dashboard', async (req, res) => {
         [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-      where: {appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: { [Op.in]: ['confirmed'] }
-},
+      where: {
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+        status: { [Op.in]: ['completed'] }
+      },
       include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
       group: ['barberId', 'barber.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
@@ -222,16 +223,16 @@ router.get('/dashboard', async (req, res) => {
       totalRevenue: item.totalRevenue
     }));
 
-      const topServicesRaw = await Appointment.findAll({
+    const topServicesRaw = await Appointment.findAll({
       attributes: [
         'serviceTypeId',
         [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
       ],
-       where: {
-      appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: 'confirmed'
-     },
+      where: {
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+        status: 'completed'
+      },
       include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
       group: ['serviceTypeId', 'serviceType.id'],
       order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
@@ -250,20 +251,20 @@ router.get('/dashboard', async (req, res) => {
     }));
 
     const formattedRecentAppointments = todayAppointments.map(app => {
-  const [year, month, day] = app.appointmentDate.split('-');
-  const localDate = new Date(year, month - 1, day);
-  const serviceType = app.serviceType || {};
+      const [year, month, day] = app.appointmentDate.split('-');
+      const localDate = new Date(year, month - 1, day);
+      const serviceType = app.serviceType || {};
 
-  return {
-    ...app.toJSON(),
-    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-    appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
+      return {
+        ...app.toJSON(),
+        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
@@ -295,48 +296,54 @@ router.get('/dashboard', async (req, res) => {
 // Listagem e gerenciamento de agendamentos - COM ORDENAÇÃO E FILTROS COMPLETOS
 router.get('/appointments', async (req, res) => {
   try {
-    log('Acessando listagem de agendamentos', {
+      log('Acessando listagem de agendamentos', {
       user: req.session.user,
       query: req.query
     });
-
     const { startDate, endDate, barberId, status, sort } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = 20;
     const offset = (page - 1) * limit;
 
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
     let whereClause = {};
 
+    // ✅ Data inicial: hoje (se não vier na query)
     if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
-      };
+      whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
     } else if (startDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.gte]: startDate
-      };
+      whereClause.appointmentDate = { [Op.gte]: startDate };
     } else if (endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.lte]: endDate
-      };
+      whereClause.appointmentDate = { [Op.lte]: endDate };
+    } else {
+      // default server-side
+      whereClause.appointmentDate = { [Op.gte]: todayStr };
     }
 
-    if (barberId) {
-      whereClause.barberId = barberId;
-    }
+    if (barberId) whereClause.barberId = barberId;
 
+    // ✅ Status padrão quando não vier filtro explícito
     if (status) {
       whereClause.status = status;
+    } else {
+      whereClause.status = { [Op.in]: DEFAULT_STATUSES };
     }
 
-    // Define ordenação dinâmica
+    // ✅ Ordenação: data/hora e depois status nessa ordem
+    const statusOrder = `CASE "Appointment"."status"
+                           WHEN 'in_progress' THEN 1
+                           WHEN 'confirmed'   THEN 2
+                           WHEN 'completed'   THEN 3
+                           ELSE 99
+                         END`;
+
     let order = [];
     switch (sort) {
       case 'date_asc':
-        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']];
+        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
         break;
       case 'date_desc':
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']];
+        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC'], [literal(statusOrder), 'ASC']];
         break;
       case 'value_asc':
         order = [['totalPrice', 'ASC']];
@@ -345,13 +352,14 @@ router.get('/appointments', async (req, res) => {
         order = [['totalPrice', 'DESC']];
         break;
       case 'barber_asc':
-        order = [[require('sequelize').literal('"barber"."name"'), 'ASC']];
+        order = [[literal('"barber"."name"'), 'ASC']];
         break;
       case 'barber_desc':
-        order = [[require('sequelize').literal('"barber"."name"'), 'DESC']];
+        order = [[literal('"barber"."name"'), 'DESC']];
         break;
       default:
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']];
+        // 🔧 default desejado
+        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
     }
 
     log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
@@ -371,39 +379,39 @@ router.get('/appointments', async (req, res) => {
     const barbers = await Barber.findAll({ where: { isActive: true } });
     const totalPages = Math.ceil(count / limit);
     const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const serviceType = plain.serviceType || {};
+      const plain = app.toJSON();
+      const serviceType = plain.serviceType || {};
 
-  let dateFormatted = '';
-  try {
-    const rawDate = plain.appointmentDate;
-    const safeDate = typeof rawDate === 'string'
-      ? new Date(rawDate + 'T03:00:00')
-      : new Date(rawDate);
-    if (!isNaN(safeDate)) {
-      dateFormatted = safeDate.toLocaleDateString('pt-BR');
-    }
-  } catch (err) {
-    console.error('Erro ao formatar appointmentDate:', err);
-  }
+      let dateFormatted = '';
+      try {
+        const rawDate = plain.appointmentDate;
+        const safeDate = typeof rawDate === 'string'
+          ? new Date(rawDate + 'T03:00:00')
+          : new Date(rawDate);
+        if (!isNaN(safeDate)) {
+          dateFormatted = safeDate.toLocaleDateString('pt-BR');
+        }
+      } catch (err) {
+        console.error('Erro ao formatar appointmentDate:', err);
+      }
 
-  return {
-    ...plain,
-    appointmentDateFormatted: dateFormatted,
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
+      return {
+        ...plain,
+        appointmentDateFormatted: dateFormatted,
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       layout: 'admin',
       user: req.session.user,
-      appointments:formattedAppointments,
+      appointments: formattedAppointments,
       barbers,
       filters: { startDate, endDate, barberId, status, sort },
       pagination: {
@@ -427,21 +435,32 @@ router.get('/appointments', async (req, res) => {
 
 router.get('/appointments/partial', async (req, res) => {
   const { startDate, endDate, barberId, status } = req.query;
-  const where = {};
+ 
+  const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+  const todayStr = new Date().toLocaleDateString('en-CA');
 
+  const where = {};
   if (startDate) where.appointmentDate = { [Op.gte]: startDate };
   if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
+  if (!startDate && !endDate) where.appointmentDate = { [Op.gte]: todayStr };
   if (barberId) where.barberId = barberId;
-  if (status) where.status = status;
+  if (status) where.status = status; else where.status = { [Op.in]: DEFAULT_STATUSES };
+
+  const statusOrder = `CASE "Appointment"."status"
+                         WHEN 'in_progress' THEN 1
+                         WHEN 'confirmed'   THEN 2
+                         WHEN 'completed'   THEN 3
+                         ELSE 99
+                       END`;
 
   const appointments = await Appointment.findAll({
     where,
     include: [
-  { model: Client, as: 'client' },
-  { model: Barber, as: 'barber' },
-  { model: ServiceType, as: 'serviceType' }
-  ],
-    order: [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']]
+      { model: Client, as: 'client' },
+      { model: Barber, as: 'barber' },
+      { model: ServiceType, as: 'serviceType' }
+    ],
+    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']]
   });
 
   const formattedAppointments = appointments.map(app => {
@@ -461,21 +480,67 @@ router.get('/appointments/partial', async (req, res) => {
   });
 });
 
+router.get('/appointments/partial-cards', async (req, res) => {
+  const { startDate, endDate, barberId, status } = req.query;
+  
+  const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+  const todayStr = new Date().toLocaleDateString('en-CA');
+
+  const where = {};
+  if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+  if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
+  if (!startDate && !endDate) where.appointmentDate = { [Op.gte]: todayStr };
+  if (barberId) where.barberId = barberId;
+  if (status) where.status = status; else where.status = { [Op.in]: DEFAULT_STATUSES };
+
+  const statusOrder = `CASE "Appointment"."status"
+                         WHEN 'in_progress' THEN 1
+                         WHEN 'confirmed'   THEN 2
+                         WHEN 'completed'   THEN 3
+                         ELSE 99
+                       END`;
+
+  const appointments = await Appointment.findAll({
+    where,
+    include: [
+      { model: Client, as: 'client' },
+      { model: Barber, as: 'barber' },
+      { model: ServiceType, as: 'serviceType' }
+    ],
+    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']]
+  });
+
+  const formattedAppointments = appointments.map(app => {
+    const json = app.toJSON();
+    const date = new Date(json.appointmentDate + 'T03:00:00');
+    return {
+      ...json,
+      appointmentDateFormatted: date.toLocaleDateString('pt-BR'),
+      appointmentTimeFormatted: json.appointmentTime?.slice(0, 5)
+    };
+  });
+
+  res.render('partials/appointments-cards-grouped', {
+    layout: false,
+    appointments: formattedAppointments,
+    helpers: require('../config/handlebars-helpers')
+  });
+});
 // Atualizar status do agendamento
 router.post('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     log('Atualizando status do agendamento', { id, status, user: req.session.user });
-    
+
     const result = await Appointment.update(
       { status },
       { where: { id } }
     );
-    
+
     log('Status atualizado', { id, status, affectedRows: result[0] });
-    
+
     res.json({ success: true });
   } catch (error) {
     logError('Erro ao atualizar status', error);
@@ -487,27 +552,27 @@ router.post('/appointments/:id/status', async (req, res) => {
 router.get('/reports', async (req, res) => {
   try {
     log('Acessando relatórios', { user: req.session.user, query: req.query });
-    
+
     const { startDate, endDate, barberId, status, sort } = req.query;
 
-    
+
     let whereClause = {};
-    
+
     if (startDate && endDate) {
       whereClause.appointmentDate = {
         [require('sequelize').Op.between]: [startDate, endDate]
       };
     }
 
-    if (status) {whereClause.status = status;}
+    if (status) { whereClause.status = status; }
 
-    if (barberId) {whereClause.barberId = barberId;}
-    
-    log('Filtros de relatório aplicados', { whereClause });
+    if (barberId) { whereClause.barberId = barberId; }
+
+    // log('Filtros de relatório aplicados', { whereClause });
     // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
-      let order = [['appointmentDate', 'DESC']]; // padrão
-  
-      switch (sort) {
+    let order = [['appointmentDate', 'DESC']]; // padrão
+
+    switch (sort) {
       case 'date_asc':
         order = [['appointmentDate', 'ASC']];
         break;
@@ -523,41 +588,40 @@ router.get('/reports', async (req, res) => {
       case 'barber_desc':
         order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
         break;
-      }
+    }
 
-      const appointments = await Appointment.findAll({
-        where: whereClause,
-        include: [
-          { model: Client, as: 'client' },
-          { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
-          { model: ServiceType, as: 'serviceType' }
-        ],
+    const appointments = await Appointment.findAll({
+      where: whereClause,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
+        { model: ServiceType, as: 'serviceType' }
+      ],
 
-        order
-      }); // padrão
+      order
+    }); // padrão
 
     const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const date = new Date(plain.appointmentDate + 'T03:00:00');
-  const serviceType = plain.serviceType || {};
+      const plain = app.toJSON();
+      const date = new Date(plain.appointmentDate + 'T03:00:00');
+      const serviceType = plain.serviceType || {};
 
-  return {
-    ...plain,
-    appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
+      return {
+        ...plain,
+        appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
+
+    if (process.env.NODE_ENV !== 'production') {
+        log('Dados do relatório carregados', { appointmentsCount: appointments.length });
     }
-  };
-});
-
-
-
-    log('Dados do relatório carregados', { appointmentsCount: appointments.length });
-    
     const barbers = await Barber.findAll({ where: { isActive: true } });
-    
+
     // Estatísticas para relatórios
     const stats = {
       total: appointments.length,
@@ -565,27 +629,27 @@ router.get('/reports', async (req, res) => {
       byBarber: {},
       totalRevenue: 0
     };
-    
+
     appointments.forEach(apt => {
       // Contagem Por status
-      console.log(`Status: ${apt.status} - Preço: ${apt.totalPrice}`);
+     
       stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
-      
+
       // Contagem Por barbeiro
       const barberKey = `${apt.barber?.id} - ${apt.barber?.name || 'Desconhecido'}`;
       stats.byBarber[barberKey] = (stats.byBarber[barberKey] || 0) + 1;
 
-      
+
       // Receita total
       // Receita total - ignorar agendamentos cancelados
-      if (apt.totalPrice && apt.status !== 'cancelled') {
+      if (apt.totalPrice && apt.status === 'completed') {
         stats.totalRevenue += parseFloat(apt.totalPrice);
       }
 
     });
-    
+
     log('Estatísticas do relatório calculadas', { stats });
-    console.log('[DEBUG] formattedAppointments:', formattedAppointments);
+   
 
     res.render('admin/reports', {
       title: 'Relatórios',
@@ -627,15 +691,15 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     } else if (endDate) {
       where.appointmentDate = { [Op.lte]: endDate };
     }
-    
+
     if (typeof status === 'string' && status.trim() !== '') {
       where.status = status;
     }
-    
+
     if (typeof barberId === 'string' && barberId.trim() !== '') {
       where.barberId = barberId;
     }
-    
+
 
     // Ordenação
     let order = [['appointmentDate', 'DESC']];
@@ -665,13 +729,34 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     const filename = `relatorio-${Date.now()}.${format}`;
     const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
 
+    
+
+
     if (format === 'pdf') {
       const filePath = await generatePDF(appointments, reportInfo, filename);
-      return res.download(filePath);
+      return res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Erro ao enviar PDF:', err);
+        }
+        fs.unlink(filePath, (err) => {
+          if (err) console.error('Erro ao excluir PDF temporário:', err);
+          else console.log(`Arquivo PDF excluído: ${filename}`);
+        });
+      });
     } else if (format === 'csv') {
       const filePath = await generateCSV(appointments, filename);
-      return res.download(filePath);
-    } else {
+      return res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Erro ao enviar CSV:', err);
+        }
+    fs.unlink(filePath, (err) => {
+      if (err) console.error('Erro ao excluir CSV temporário:', err);
+      else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
+    });
+  });
+}
+
+    else {
       return res.status(400).json({ error: 'Formato inválido.' });
     }
   } catch (error) {
@@ -683,18 +768,18 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
 
 
 router.get('/appointments/:id', async (req, res) => {
-    // const { id } = req.params;
+  // const { id } = req.params;
 
   try {
     const id = parseInt(req.params.id, 10);
-    
+
     if (isNaN(id)) {
       log('ID inválido fornecido', { id: req.params.id });
       return res.status(400).json({ success: false, error: 'ID inválido' });
     }
 
     log('Buscando agendamento por ID', { id });
-    
+
     const appointment = await Appointment.findByPk(id, {
       include: [
         { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
@@ -709,7 +794,7 @@ router.get('/appointments/:id', async (req, res) => {
     }
 
     log('Agendamento encontrado', { id, client: `${appointment.client.firstName} ${appointment.client.lastName}` });
-    
+
     res.json({ success: true, appointment });
 
   } catch (error) {
@@ -723,47 +808,49 @@ router.patch('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     log('Atualizando status do agendamento', { id, status });
-    
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
-    
+
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'];
+
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: 'Status inválido',
         validStatuses
       });
     }
-    
+
     const appointment = await Appointment.findByPk(id);
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Agendamento não encontrado'
       });
     }
-    
+
     await appointment.update({ status });
-    
-    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: status });
-    
+    const updatedAppointment = await Appointment.findByPk(id); // recarrega
+
+    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: updatedAppointment.status });
+
     res.json({
       success: true,
       message: 'Status atualizado com sucesso',
       appointment: {
-        id: appointment.id,
-        status: appointment.status
+        id: updatedAppointment.id,
+        status: updatedAppointment.status
       }
     });
-    
+
+
   } catch (error) {
     logError('Erro ao atualizar status', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
     });
   }
 });
@@ -772,33 +859,33 @@ router.patch('/appointments/:id/status', async (req, res) => {
 router.delete('/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     log('Cancelando agendamento', { id });
-    
+
     const appointment = await Appointment.findByPk(id);
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Agendamento não encontrado'
       });
     }
-    
+
     await appointment.update({ status: 'cancelled' });
-    
+
     log('Agendamento cancelado com sucesso', { id });
-    
+
     res.json({
       success: true,
       message: 'Agendamento cancelado com sucesso'
     });
-    
+
   } catch (error) {
     logError('Erro ao cancelar agendamento', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
     });
   }
 });
@@ -935,8 +1022,8 @@ router.use('/services', require('./services'));
 router.use('/config', require('./admin-config'));
 
 router.get('/whatsapp/status', isAuthenticated, (req, res) => {
-const status = getWhatsAppStatus();
-res.json(status);
+  const status = getWhatsAppStatus();
+  res.json(status);
 });
 
 router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
@@ -955,7 +1042,7 @@ router.post('/whatsapp/disconnect', async (req, res) => {
     await disconnectWhatsApp();
 
     // Força uma nova sessão após desconexão
-    await initializeWhatsApp(); 
+    await initializeWhatsApp();
 
     req.session.message = 'WhatsApp desconectado e reinicializado';
     res.redirect('/admin/config');

@@ -107,8 +107,10 @@
                         <span class="status-badge status-{{status}}">
                           {{#if (eq status 'confirmed')}}Confirmado
                           {{else if (eq status 'pending')}}Pendente
-                          {{else if (eq status 'cancelled')}}Cancelado
+                          {{else if (eq status 'in_progress')}}Em andamento
                           {{else if (eq status 'completed')}}Concluído
+                          {{else if (eq status 'cancelled')}}Cancelado
+                          {{else if (eq status 'no_show')}}Não compareceu
                           {{else}}Desconhecido
                           {{/if}}
                         </span>

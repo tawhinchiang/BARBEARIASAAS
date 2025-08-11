@@ -130,10 +130,10 @@ router.get('/api/available-times', async (req, res) => {
     // Definir horário de trabalho para o dia da semana
     const selectedDate = new Date(date + 'T00:00:00');
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
-    let workingHours = '09:00-19:40';
-
+    let workingPeriods = [];
+    let parsed = {};
     if (barber.workingHours) {
-      let parsed = {};
+      
       try {
         parsed = typeof barber.workingHours === 'string'
           ? JSON.parse(barber.workingHours)
@@ -144,37 +144,51 @@ router.get('/api/available-times', async (req, res) => {
       }
       log('workingHours recebido do banco', { raw: barber.workingHours });
 
-      if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
-  workingHours = parsed[dayOfWeek];
+if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
+  const dayConfig = parsed[dayOfWeek];
+  if (dayConfig.morning && dayConfig.morning !== 'closed') {
+    workingPeriods.push(dayConfig.morning);
+  }
+  if (dayConfig.afternoon && dayConfig.afternoon !== 'closed') {
+    workingPeriods.push(dayConfig.afternoon);
+  }
 }
     }
 
 
-    if (workingHours === 'closed') {
-      return res.json({ availableTimes: [] });
-    }
-
-    const [startTime, endTime] = workingHours.split('-');
-
-    // Buscar agendamentos existentes do barbeiro na data
+    if (workingPeriods.length === 0) {
+  return res.json({ availableTimes: [] });
+}
+ // Buscar agendamentos existentes do barbeiro na data
     const existingAppointments = await Appointment.findAll({
       where: { barberId, appointmentDate: date },
       attributes: ['appointmentTime', 'serviceDuration'] // ajuste o nome da coluna se necessário
     });
 
-    // Obter tempos bloqueados
+  // Obter tempos bloqueados
     const bookedTimes = getBlockedTimesWithDuration(existingAppointments);
+    // Gerar slots disponíveis a partir de todos os turnos (manhã e tarde)
+let availableTimes = [];
+workingPeriods.forEach(period => {
+  const [start, end] = period.split('-');
+  const slots = generateTimeSlots(start, end, bookedTimes, date, requiredDuration);
+  availableTimes = availableTimes.concat(slots);
+});
+
+   
+  
 
     // Gerar slots disponíveis
-    const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes, date, requiredDuration);
 
-    return res.json({
-      availableTimes,
-      date,
-      barberId,
-      barberName: barber.name,
-      workingHours
-    });
+
+return res.json({
+  availableTimes,
+  date,
+  barberId,
+  barberName: barber.name,
+  workingHours: parsed[dayOfWeek] || {}
+});
+
 
   } catch (error) {
     logError('Erro ao buscar horários', error);

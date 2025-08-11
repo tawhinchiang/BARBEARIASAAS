@@ -1,7 +1,5 @@
 <div class="modal fade" id="barberModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-
-
     <div class="modal-content">
       <form id="barberForm" enctype="multipart/form-data">
         <div class="modal-header">
@@ -9,11 +7,11 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          
+
           <input type="hidden" id="barberId" name="barberId">
 
           <div class="row">
-           <div class="col-12 col-md-6 mb-3">
+            <div class="col-12 col-md-6 mb-3">
 
               <label for="barberName" class="form-label">Nome *</label>
               <input type="text" class="form-control" id="barberName" name="name" placeholder="Nome completo" required>
@@ -21,7 +19,8 @@
             <div class="col-12 col-md-6 mb-3">
 
               <label for="barberPhone" class="form-label">Telefone *</label>
-              <input type="tel" class="form-control" id="barberPhone" name="phone" placeholder="(00) 00000-0000" required>
+              <input type="tel" class="form-control" id="barberPhone" name="phone" placeholder="(00) 00000-0000"
+                required>
             </div>
           </div>
 
@@ -38,54 +37,120 @@
             </div>
           </div>
 
+          <!-- ESPECIALIDADES -->
           <div class="row">
-           <div class="col-12 col-md-6 mb-3">
-
+            <div class="col-12 col-md-6 mb-3">
               <label for="barberSpecialties" class="form-label">Especialidades</label>
-              <input type="text" class="form-control" id="barberSpecialties" name="specialties" placeholder="Cortes, barba, pintura...">
+              <input type="text" class="form-control" id="barberSpecialties" name="specialties"
+                placeholder="Cortes, barba, pintura...">
             </div>
-              <div class="col-md-12 mb-3">
-                <label class="form-label">Horários de Trabalho</label>
+          </div>
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label class="form-label">Horários de Trabalho</label>
               <div class="row mb-2">
-                <div class="col-md-6">
-                  <input type="text" id="defaultWorkingHour" class="form-control" placeholder="Ex: 09:00-19:40">
+                <div class="col-md-5">
+                  <label for="defaultMorningHour" class="form-label">Horário padrão (manhã)</label>
+                  <input type="text" id="defaultMorningHour" class="form-control" placeholder="Ex: 08:00-12:00">
                 </div>
-                <div class="col-md-6 text-end">
-                  <button type="button" class="btn btn-outline-secondary" onclick="applyDefaultWorkingHour()">
-                    <i class="fas fa-clock me-1"></i> Aplicar horário padrão
+                <div class="col-md-5">
+                  <label for="defaultAfternoonHour" class="form-label">Horário padrão (tarde)</label>
+                  <input type="text" id="defaultAfternoonHour" class="form-control" placeholder="Ex: 14:00-19:00">
+                </div>
+                <div class="col-md-2 d-flex align-items-end justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary w-100" onclick="applyDefaultWorkingHour()">
+                    <i class="fas fa-clock me-1"></i> Aplicar
                   </button>
                 </div>
               </div>
 
 
-                <div class="row g-2">
-                  <div class="col-md-4">
-                    <label for="workingHoursMonday" class="form-label">Segunda-feira</label>
-                    <input type="text" class="form-control" id="workingHoursMonday" name="workingHours[monday]" placeholder="Ex: 09:00-18:00">
-                  </div>
-                  <div class="col-md-4">
-                    <label for="workingHoursTuesday" class="form-label">Terça-feira</label>
-                    <input type="text" class="form-control" id="workingHoursTuesday" name="workingHours[tuesday]" placeholder="Ex: 09:00-18:00">
-                  </div>
-                  <div class="col-md-4">
-                    <label for="workingHoursWednesday" class="form-label">Quarta-feira</label>
-                    <input type="text" class="form-control" id="workingHoursWednesday" name="workingHours[wednesday]" placeholder="Ex: 09:00-18:00">
-                  </div>
-                  <div class="col-md-4">
-                    <label for="workingHoursThursday" class="form-label">Quinta-feira</label>
-                    <input type="text" class="form-control" id="workingHoursThursday" name="workingHours[thursday]" placeholder="Ex: 09:00-18:00">
-                  </div>
-                  <div class="col-md-4">
-                    <label for="workingHoursFriday" class="form-label">Sexta-feira</label>
-                    <input type="text" class="form-control" id="workingHoursFriday" name="workingHours[friday]" placeholder="Ex: 09:00-18:00">
-                  </div>
-                  <div class="col-md-4">
-                    <label for="workingHoursSaturday" class="form-label">Sábado</label>
-                    <input type="text" class="form-control" id="workingHoursSaturday" name="workingHours[saturday]" placeholder="Ex: 09:00-13:00">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Segunda-feira</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursMondayMorning"
+                        name="workingHours[monday][morning]" placeholder="08:00-12:00">
+                    </div>
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursMondayAfternoon"
+                        name="workingHours[monday][afternoon]" placeholder="14:00-19:00">
+                    </div>
                   </div>
                 </div>
-              </div> 
 
+                <div class="col-md-6">
+                  <label class="form-label">Terça-feira</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursTuesdayMorning"
+                        name="workingHours[tuesday][morning]" placeholder="08:00-12:00">
+                    </div>
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursTuesdayAfternoon"
+                        name="workingHours[tuesday][afternoon]" placeholder="14:00-19:00">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Quarta-feira</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursWednesdayMorning"
+                        name="workingHours[wednesday][morning]" placeholder="08:00-12:00">
+                    </div>
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursWednesdayAfternoon"
+                        name="workingHours[wednesday][afternoon]" placeholder="14:00-19:00">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Quinta-feira</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursThursdayMorning"
+                        name="workingHours[thursday][morning]" placeholder="08:00-12:00">
+                    </div>
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursThursdayAfternoon"
+                        name="workingHours[thursday][afternoon]" placeholder="14:00-19:00">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Sexta-feira</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursFridayMorning"
+                        name="workingHours[friday][morning]" placeholder="08:00-12:00">
+                    </div>
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursFridayAfternoon"
+                        name="workingHours[friday][afternoon]" placeholder="14:00-19:00">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Sábado</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursSaturdayMorning"
+                        name="workingHours[saturday][morning]" placeholder="08:00-12:00">
+                    </div>
+                    <div class="col-6">
+                      <input type="text" class="form-control" id="workingHoursSaturdayAfternoon"
+                        name="workingHours[saturday][afternoon]" placeholder="14:00-18:00">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="row">
@@ -105,7 +170,8 @@
           <div id="photoPreview" class="mb-3 d-none">
             <label class="form-label">Preview:</label>
             <div>
-              <img id="photoPreviewImg" src="" alt="Preview" class="rounded" style="max-width: 200px; max-height: 200px;">
+              <img id="photoPreviewImg" src="" alt="Preview" class="rounded"
+                style="max-width: 200px; max-height: 200px;">
             </div>
           </div>
 
@@ -159,9 +225,9 @@
               <p class="text-muted mb-0">Visualize e gerencie os profissionais cadastrados</p>
             </div>
             <div>
-             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#barberModal">
-              <i class="fas fa-plus me-2"></i> Novo Barbeiro
-            </button>
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#barberModal">
+                <i class="fas fa-plus me-2"></i> Novo Barbeiro
+              </button>
             </div>
           </div>
         </div>
@@ -169,114 +235,138 @@
     </div>
 
 
-<!-- Filtros Rápidos -->
-<!-- Filtros Rápidos -->
-<!-- Filtros Rápidos -->
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="admin-filters">
-      <form id="filterForm">
-        <div class="row">
-          <div class="col-md-4">
-            <div class="filter-group">
-              <label class="form-label">Buscar</label>
-              <input type="text" class="form-control" id="filterSearch" placeholder="Nome, telefone ou CPF">
+    <!-- Filtros Rápidos -->
+    <!-- Filtros Rápidos -->
+    <!-- Filtros Rápidos -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="admin-filters">
+          <form id="filterForm">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="filter-group">
+                  <label class="form-label">Buscar</label>
+                  <input type="text" class="form-control" id="filterSearch" placeholder="Nome, telefone ou CPF">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="filter-group">
+                  <label class="form-label">Status</label>
+                  <select class="form-control" id="filterStatus">
+                    <option value="">Todos</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="inativo">Inativo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="filter-group">
+                  <label class="form-label">Especialidade</label>
+                  <input type="text" class="form-control" id="filterSpecialty" placeholder="Ex: Cortes, barba...">
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="col-md-4">
-            <div class="filter-group">
-              <label class="form-label">Status</label>
-              <select class="form-control" id="filterStatus">
-                <option value="">Todos</option>
-                <option value="ativo">Ativo</option>
-                <option value="inativo">Inativo</option>
-              </select>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="filter-group">
-              <label class="form-label">Especialidade</label>
-              <input type="text" class="form-control" id="filterSpecialty" placeholder="Ex: Cortes, barba...">
-            </div>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-
-
-{{#if error}}
-<div class="alert alert-danger">
-  <i class="fas fa-exclamation-triangle me-2"></i>
-  {{error}}
-</div>
-{{/if}}
-
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="barbersContainer">
-  {{#each barbers}}
-  <div class="col-md-6 col-lg-4 barber-card" data-id="{{id}}" data-name="{{name}}" data-phone="{{phone}}" data-cpf="{{cpf}}" data-specialties="{{specialties}}" data-status="{{#if isActive}}ativo{{else}}inativo{{/if}}">
-    <div class="card admin-card h-100">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          {{#if photo}}
-          <img src="{{photo}}" alt="{{name}}" class="rounded-circle me-3" width="50" height="50">
-          {{else}}
-          <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
-            <i class="fas fa-user text-white"></i>
-          </div>
-          {{/if}}
-          <div>
-            <h5 class="card-title mb-0">{{name}}</h5>
-            <small class="text-muted">{{phone}}</small>
-          </div>
-        </div>
-
-        <p class="mb-1"><strong>CPF:</strong> <code>{{cpf}}</code></p>
-        <p class="mb-1"><strong>Email:</strong> {{email}}</p>
-        <p class="mb-1"><strong>Especialidades:</strong> {{specialties}}</p>
-        <p class="mb-1"><strong>Horário:</strong> {{workingHours}}</p>
-
-        <p class="mb-1"><strong>Status:</strong>
-          {{#if isActive}}
-            <span class="badge bg-success">Ativo</span>
-          {{else}}
-            <span class="badge bg-secondary">Inativo</span>
-          {{/if}}
-        </p>
-
-        <p class="mb-3"><strong>Agendamentos:</strong>
-          <span class="badge bg-primary">{{appointmentsThisMonth}}</span>
-          <small class="text-muted">este mês</small>
-        </p>
-
-        <div class="d-flex justify-content-between">
-          <button class="btn btn-sm btn-outline-primary" onclick="editBarber({{id}})">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-info" onclick="barberReport({{id}})">
-            <i class="fas fa-chart-bar"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-{{#if isActive}}secondary{{else}}success{{/if}}" onclick="toggleBarber({{id}})">
-            <i class="fas fa-{{#if isActive}}pause{{else}}play{{/if}}"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteBarber({{id}})">
-            <i class="fas fa-trash"></i>
-          </button>
+          </form>
         </div>
       </div>
     </div>
-  </div>
-  {{/each}}
-</div>
 
 
-<!-- jQuery e plugins -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<!-- Seu script personalizado (por último) -->
-<script src="/js/barbers.js"></script>
+    {{#if error}}
+    <div class="alert alert-danger">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{error}}
+    </div>
+    {{/if}}
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="barbersContainer">
+      {{#each barbers}}
+      <div class="col-md-6 col-lg-4 barber-card" data-id="{{id}}" data-name="{{name}}" data-phone="{{phone}}"
+        data-cpf="{{cpf}}" data-specialties="{{specialties}}" data-status="{{#if isActive}}ativo{{else}}inativo{{/if}}">
+        <div class="card admin-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              {{#if photo}}
+              <img src="{{photo}}" alt="{{name}}" class="rounded-circle me-3" width="50" height="50">
+              {{else}}
+              <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                style="width: 50px; height: 50px;">
+                <i class="fas fa-user text-white"></i>
+              </div>
+              {{/if}}
+              <div>
+                <h5 class="card-title mb-0">{{name}}</h5>
+                <small class="text-muted">{{phone}}</small>
+              </div>
+            </div>
+
+            <p class="mb-1"><strong>CPF:</strong> <code>{{cpf}}</code></p>
+            <p class="mb-1"><strong>Email:</strong> {{email}}</p>
+            <p class="mb-1"><strong>Especialidades:</strong> {{specialties}}</p>
+            <p class="mb-1"><strong>Horários:</strong></p>
+
+            {{#if workingHours}}
+            <ul class="list-group list-group-flush mb-3 small">
+              {{> dayRow w=workingHours day="monday" label="Segunda"}}
+              {{> dayRow w=workingHours day="tuesday" label="Terça"}}
+              {{> dayRow w=workingHours day="wednesday" label="Quarta"}}
+              {{> dayRow w=workingHours day="thursday" label="Quinta"}}
+              {{> dayRow w=workingHours day="friday" label="Sexta"}}
+              {{> dayRow w=workingHours day="saturday" label="Sábado"}}
+              {{> dayRow w=workingHours day="sunday" label="Domingo"}}
+            </ul>
+            {{else}}
+            <p class="text-muted mb-3">Sem horários cadastrados.</p>
+            {{/if}}
+
+            <p class="mb-1"><strong>Status:</strong>
+              {{#if isActive}}
+              <span class="badge bg-success">Ativo</span>
+              {{else}}
+              <span class="badge bg-secondary">Inativo</span>
+              {{/if}}
+            </p>
+
+            <p class="mb-3"><strong>Agendamentos:</strong>
+              <span class="badge bg-primary">{{appointmentsThisMonth}}</span>
+              <small class="text-muted">este mês</small>
+            </p>
+
+            <div class="d-flex justify-content-between">
+              <button class="btn btn-sm btn-outline-primary" onclick="editBarber({{id}})">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-info" onclick="barberReport({{id}})">
+                <i class="fas fa-chart-bar"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-{{#if isActive}}secondary{{else}}success{{/if}}"
+                onclick="toggleBarber({{id}})">
+                <i class="fas fa-{{#if isActive}}pause{{else}}play{{/if}}"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteBarber({{id}})">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    <style>
+      .barber-card .list-group-item {
+        padding-top: .4rem;
+        padding-bottom: .4rem;
+      }
+    </style>
+
+
+    <!-- jQuery e plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- Seu script personalizado (por último) -->
+    <script src="/js/barbers.js"></script>
