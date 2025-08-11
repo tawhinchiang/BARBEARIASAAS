@@ -149,6 +149,22 @@ function getWhatsAppStatus() {
     qrCode: isReady ? null : latestQrCode
   };
 }
+function isWhatsAppReady() {
+  return isReady;
+}
+
+async function waitWhatsAppReady(timeoutMs = 20000) {
+  if (isReady) return true;
+  const started = Date.now();
+  return new Promise((resolve) => {
+    const iv = setInterval(() => {
+      if (isReady || (Date.now() - started) > timeoutMs) {
+        clearInterval(iv);
+        resolve(isReady);
+      }
+    }, 500);
+  });
+}
 
 // Desconectar WhatsApp
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -182,5 +198,7 @@ module.exports = {
   sendWhatsAppMessage,
   getWhatsAppStatus,
   getLastQRCode,
-  disconnectWhatsApp
+  disconnectWhatsApp,
+   isWhatsAppReady,      
+  waitWhatsAppReady
 };

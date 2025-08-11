@@ -4,12 +4,29 @@ const moment = require('moment');
 const { Appointment, Client, Barber, ServiceType, SystemConfig } = require('../models');
 const cleanupExpiredCodes = require('../utils/cleanUpCodes');
 
-const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const {
+  sendWhatsAppMessage,
+  isWhatsAppReady,
+  waitWhatsAppReady
+} = require('../utils/whatsapp');
 
 // Variáveis da barbearia via .env
 const BARBERSHOP_NAME = process.env.BARBERSHOP_NAME || 'Barbearia';
 const BARBERSHOP_ADDRESS = process.env.BARBERSHOP_ADDRESS || 'Endereço não definido';
 const BARBERSHOP_MAPS_LINK = process.env.BARBERSHOP_MAPS_LINK || '';
+
+// Evita iniciar duas vezes se importado em loop
+if (global.__CRON_SCHEDULED__) {
+  console.log('[CRON] Já iniciado. Ignorando segundo start.');
+  return;
+}
+global.__CRON_SCHEDULED__ = true;
+
+// (opcional) Se alguém executar diretamente: alerta e encerra
+if (require.main === module) {
+  console.warn('[CRON] Este arquivo não deve ser executado diretamente. Inicie o servidor (server.js).');
+  process.exit(1);
+}
 
 async function getConfig(key) {
   const config = await SystemConfig.findByPk(key);
@@ -17,6 +34,14 @@ async function getConfig(key) {
 }
 
 cron.schedule('*/5 * * * *', async () => {
+    if (!isWhatsAppReady()) {
+    console.log('⏳ WhatsApp ainda não conectado; aguardando até 15s...');
+    const ok = await waitWhatsAppReady(15000);
+    if (!ok) {
+      console.log('⏭️ WhatsApp não conectou a tempo; pulando este ciclo.');
+      return;
+    }
+  }
   const now = moment();
   const reminderHours = parseInt(await getConfig('reminderHoursBefore'), 10);
   const followUpHours = parseInt(await getConfig('followUpHoursAfter'), 10);
@@ -50,10 +75,10 @@ cron.schedule('*/5 * * * *', async () => {
       // === ENVIO DE LEMBRETE ===
       if (!apt.whatsappSent && diffInHours <= reminderHours && diffInHours > reminderHours - 1) {
         const msg = `Olá, ${apt.client.firstName}! 👋
-Seu agendamento é hoje às ${apt.appointmentTime?.slice(0, 5)} com ${apt.barber.name}. ✂️
+          Seu agendamento é hoje às ${apt.appointmentTime?.slice(0, 5)} com ${apt.barber.name}. ✂️
 
-📍 ${BARBERSHOP_NAME}
-🗺 ${BARBERSHOP_MAPS_LINK}`;
+          📍 ${BARBERSHOP_NAME}
+          🗺 ${BARBERSHOP_MAPS_LINK}`;
 
         const sent = await sendWhatsAppMessage(apt.client.phone, msg);
         if (sent) {
@@ -96,7 +121,8 @@ Seu agendamento é hoje às ${apt.appointmentTime?.slice(0, 5)} com ${apt.barber
   await cleanupExpiredCodes();
 
   console.log(`✅ [CRON] Ciclo concluído com ${appointments.length} agendamentos verificados.`);
-});
+},{ timezone: process.env.TZ || 'America/Araguaina' } 
+);
 
 
 console.log('[🕒 CRON] Agendado para rodar a cada 5 minutos.');
