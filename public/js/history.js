@@ -4,6 +4,7 @@ let codeExpireSeconds = 120;
 let resendTimerInterval = null;
 let expireTimerInterval = null;
 const phoneInput = document.getElementById('phoneInput');
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
 document.addEventListener('DOMContentLoaded', () => {
   const savedPhone = localStorage.getItem('lastPhone');
@@ -55,6 +56,7 @@ document.getElementById('phoneInput').addEventListener('blur', async function ()
     const res = await fetch('/history/check-code-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: JSON.stringify({ phone })
     });
 
@@ -124,6 +126,7 @@ async function enviarCodigo() {
     const response = await fetch('/history/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: JSON.stringify({ phone })
     });
 
@@ -194,6 +197,7 @@ async function verificarCodigo(codeArg = null) {
     const response = await fetch('/history/verify-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: JSON.stringify({ phone: currentPhone, code })
     });
 
@@ -277,6 +281,7 @@ async function carregarHistorico() {
     const res = await fetch('/history/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: new URLSearchParams({ phone })
     });
 
@@ -316,6 +321,7 @@ async function verificarAgendamentosAtivos() {
     const res = await fetch('/history/active', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       body: new URLSearchParams({ phone: currentPhone })
     });
 
@@ -342,14 +348,19 @@ async function verificarAgendamentosAtivos() {
 }
 
 async function cancelarAgendamento(appointmentId) {
-  if (!confirm('Tem certeza que deseja cancelar este agendamento?')) {
-    return;
-  }
+   const ok = await confirmDialog({
+    title: 'Cancelar agendamento',
+    message: 'Tem certeza que deseja cancelar este agendamento?',
+    confirmText: 'Cancelar',
+    variant: 'danger'
+  });
+  if (!ok) return;
 
   try {
     const res = await fetch(`/history/cancel/${appointmentId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
     });
 
     const data = await res.json();
@@ -463,21 +474,12 @@ function getStatusText(status) {
   }
 }
 
-function showAlert(message, type) {
-  const container = document.getElementById('historyContainer');
-  const alertClass = `alert-${type}`;
-  
-  // ✅ CORREÇÃO: Alert com posicionamento adequado
-  container.innerHTML = `
-    <div class="container" style="margin-top: 20px; padding-top: 20px;">
-      <div class="alert ${alertClass} text-center mt-3">${message}</div>
-    </div>
-  `;
-  container.classList.remove('d-none');
-  container.style.position = 'relative';
-  container.style.top = '0';
-  container.style.marginTop = '0';
+function showAlert(message, type = 'info') {
+  // Usa toasts padronizados
+  const map = { danger: 'error', error: 'error', success: 'success', warning: 'warning', info: 'info' };
+  notify({ type: map[type] || 'info', message });
 }
+
 
 function showLoading(show) {
   const loading = document.getElementById('loadingIndicator');

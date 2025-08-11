@@ -38,7 +38,10 @@ async function startServer() {
 
     // Inicializar WhatsApp e cron jobs
     await initializeWhatsApp();
-    // require('./worker/cronScheduler');
+    if (!global.__CRON_STARTED__) {
+  global.__CRON_STARTED__ = true;
+  require('./worker/cronScheduler'); // inicia seus schedules
+}
 
     // Iniciar servidor com suporte a WebSocket
     server.listen(PORT, '0.0.0.0', () => {

@@ -19,12 +19,18 @@ const logError = (message, error) => {
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] ${message}`);
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] Stack:`, error.stack);
 };
+function isTimeInRange(time, range) {
+  if (!range || range === 'closed') return false;
 
+  const [start, end] = range.split('-');
+  return time >= start && time < end;
+}
 // API para criar novo agendamento
 router.post('/api/appointments', async (req, res) => {
   try {
-    log('Recebendo novo agendamento', req.body);
-
+    // log('Recebendo novo agendamento', req.body);
+    // log('Campos adicionais', { isEncaixe, fitInNote: rawFitInNote });
+    const { isEncaixe = false } = req.body;
     const { serviceId, barberId, appointmentDate, appointmentTime, clientData } = req.body;
 
     if (!serviceId || !barberId || !appointmentDate || !appointmentTime || !clientData) {
@@ -47,13 +53,42 @@ router.post('/api/appointments', async (req, res) => {
     }
 
     const barber = await Barber.findByPk(barberId);
+
+    if (!barber || !barber.workingHours) {
+      log('Barbeiro não encontrado ou sem horário definido');
+      return res.status(404).json({ success: false, error: 'Barbeiro inválido ou sem expediente configurado' });
+    }
+
+    // Identifica o dia da semana (segunda, terça, etc)
+    const weekday = moment(appointmentDate).format('dddd').toLowerCase(); // ex: monday
+    const daySchedule = barber.workingHours[weekday];
+
+    if (!daySchedule || (daySchedule.morning === 'closed' && daySchedule.afternoon === 'closed')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Barbeiro não atende nesse dia'
+      });
+    }
+
+    // Verifica se horário solicitado está dentro de algum dos turnos
+    const isValidTime =
+      isTimeInRange(appointmentTime, daySchedule.morning) ||
+      isTimeInRange(appointmentTime, daySchedule.afternoon);
+
+    if (!isValidTime && !isEncaixe) {
+      return res.status(400).json({
+        success: false,
+        error: 'Horário fora do expediente do barbeiro'
+      });
+    }
+
     const serviceType = await ServiceType.findByPk(serviceId);
 
-    if (!barber || !serviceType) {
-      log('Barbeiro ou serviço não encontrado', { barberFound: !!barber, serviceFound: !!serviceType });
+    if (!serviceType) {
+      log('Serviço não encontrado');
       return res.status(404).json({
         success: false,
-        error: 'Barbeiro ou serviço não encontrado'
+        error: 'Serviço não encontrado'
       });
     }
 
@@ -79,23 +114,24 @@ router.post('/api/appointments', async (req, res) => {
 
     if (!client) {
       client = await Client.create({
-      firstName: firstName.toUpperCase(),
-      lastName: lastName.toUpperCase(),
+        firstName: firstName.toUpperCase(),
+        lastName: lastName.toUpperCase(),
         phone: cleanPhone,
         email: clientData.email || null
       });
       log('Cliente criado', { id: client.id, name: `${client.firstName} ${client.lastName}` });
     } else {
-      if (  client.firstName !== firstName.toUpperCase() ||
+      if (client.firstName !== firstName.toUpperCase() ||
         client.lastName !== lastName.toUpperCase()) {
         await client.update({
-        firstName: firstName.toUpperCase(),
-        lastName: lastName.toUpperCase(),
+          firstName: firstName.toUpperCase(),
+          lastName: lastName.toUpperCase(),
           email: clientData.email || client.email
         });
         log('Dados do cliente atualizados');
       }
     }
+
 
     const appointment = await Appointment.create({
       clientId: client.id,
@@ -106,7 +142,9 @@ router.post('/api/appointments', async (req, res) => {
       serviceDuration: serviceType.duration,
       totalPrice: serviceType.price,
       status: 'confirmed',
+      isEncaixe: isEncaixe === 'true' || isEncaixe === true,
       notes: clientData.notes || null
+    
     });
 
     const io = req.app.get('io');
@@ -177,5 +215,6 @@ router.post('/', async (req, res, next) => {
   req.url = '/api/appointments';
   next();
 });
+
 
 module.exports = router;

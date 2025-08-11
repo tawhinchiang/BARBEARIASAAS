@@ -35,15 +35,19 @@ const Barber = sequelize.define('Barber', {
   workingHours: {
     type: DataTypes.JSON,
     allowNull: true,
-    defaultValue: {
-      monday: '08:00-18:00',
-      tuesday: '08:00-18:00',
-      wednesday: '08:00-18:00',
-      thursday: '08:00-18:00',
-      friday: '08:00-18:00',
-      saturday: '08:00-16:00',
-      sunday: 'closed'
-    }
+   workingHours: {
+  type: DataTypes.JSON,
+  allowNull: true,
+  defaultValue: {
+    monday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+    tuesday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+    wednesday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+    thursday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+    friday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+    saturday: { morning: '08:00-12:00', afternoon: '14:00-16:00' },
+    sunday: { morning: null, afternoon: null }
+  }
+}
   },
   isActive: {
     type: DataTypes.BOOLEAN,

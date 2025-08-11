@@ -1,182 +1,182 @@
-const bcrypt = require('bcryptjs');
-const { syncDatabase } = require('../models');
+// const bcrypt = require('bcryptjs');
+// const { syncDatabase } = require('../models');
 
-async function seedDatabase() {
-  try {
-    // Sincronizar banco (recriar tabelas)
-    await syncDatabase(true);
+// async function seedDatabase() {
+//   try {
+//     // Sincronizar banco (recriar tabelas)
+//     await syncDatabase(true);
     
-    const { User, Barber, ServiceType } = require('../models');
+//     const { User, Barber, ServiceType } = require('../models');
     
-    // Criar usuário admin
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    await User.create({
-      username: 'admin',
-      password: hashedPassword,
-      email: 'admin@barbearia.com',
-      role: 'admin',
-      isActive: true
-    });
+//     // Criar usuário admin
+//     const hashedPassword = await bcrypt.hash('admin123', 10);
+//     await User.create({
+//       username: 'admin',
+//       password: hashedPassword,
+//       email: 'admin@barbearia.com',
+//       role: 'admin',
+//       isActive: true
+//     });
     
-    // Criar barbeiros
-    await Barber.bulkCreate([
-      {
-        name: 'Junior Alves',
-        phone: '(11) 99999-9999',
-        email: 'joao@barbearia.com',
-        specialties: ['Corte', 'Barba', 'Bigode'],
-        workingHours: {
-          monday: '09:00-19:40',
-          tuesday: '09:00-19:40',
-          wednesday: '09:00-19:40',
-          thursday: '09:00-19:40',
-          friday: '09:00-19:40',
-          saturday: '09:00-19:40',
-          sunday: 'closed'
-        },
-        isActive: true
-      },
-      {
-        name: 'Daniel Barone',
-        phone: '(11) 88888-8888',
-        email: '',
-        specialties: ['Corte', 'Barba', 'Sobrancelha'],
-        workingHours: {
-           monday: '09:00-19:40',
-          tuesday: '09:00-19:40',
-          wednesday: '09:00-19:40',
-          thursday: '09:00-19:40',
-          friday: '09:00-19:40',
-          saturday: '09:00-19:40',
-          sunday: 'closed'
-        },
-        isActive: true
-      },
-      {
-        name: 'Pedro Assunção',
-        phone: '(11) 77777-7777',
-        email: '',
-        specialties: ['Corte', 'Barba', 'Relaxamento'],
-        workingHours: {
-          monday: '09:00-19:40',
-          tuesday: '09:00-19:40',
-          wednesday: '09:00-19:40',
-          thursday: '09:00-19:40',
-          friday: '09:00-19:40',
-          saturday: '09:00-19:40',
-          sunday: 'closed'
-        },
-        isActive: true
-      } , {
-        name: 'Enzo Muralha',
-        phone: '(11) 77777-7777',
-        email: '',
-        specialties: ['Corte', 'Barba', 'Relaxamento'],
-        workingHours: {
-          monday: '09:00-19:40',
-          tuesday: '09:00-19:40',
-          wednesday: '09:00-19:40',
-          thursday: '09:00-19:40',
-          friday: '09:00-19:40',
-          saturday: '09:00-19:40',
-          sunday: 'closed'
-        },
-        isActive: true
-      },{
-        name: 'Adenilson',
-        phone: '(11) 77777-7777',
-        email: '',
-        specialties: ['Corte', 'Barba', 'Relaxamento'],
-        workingHours: {
-           monday: '09:00-19:40',
-          tuesday: '09:00-19:40',
-          wednesday: '09:00-19:40',
-          thursday: '09:00-19:40',
-          friday: '09:00-19:40',
-          saturday: '09:00-19:40',
-          sunday: 'closed'
-        },
-        isActive: true
-      },{
-        name: 'Hugo Gonçalves',
-        phone: '(11) 77777-7777',
-        email: 'carlos@barbearia.com',
-        specialties: ['Corte', 'Barba', 'Relaxamento'],
-        workingHours: {
-           monday: '09:00-19:40',
-          tuesday: '09:00-19:40',
-          wednesday: '09:00-19:40',
-          thursday: '09:00-19:40',
-          friday: '09:00-19:40',
-          saturday: '09:00-19:40',
-          sunday: 'closed'
-        },
-        isActive: true
-      }
-    ]);
+//     // Criar barbeiros
+//     await Barber.bulkCreate([
+//       {
+//         name: 'Junior Alves',
+//         phone: '(11) 99999-9999',
+//         email: 'joao@barbearia.com',
+//         specialties: ['Corte', 'Barba', 'Bigode'],
+//         workingHours: {
+//           monday: '09:00-19:40',
+//           tuesday: '09:00-19:40',
+//           wednesday: '09:00-19:40',
+//           thursday: '09:00-19:40',
+//           friday: '09:00-19:40',
+//           saturday: '09:00-19:40',
+//           sunday: 'closed'
+//         },
+//         isActive: true
+//       },
+//       {
+//         name: 'Daniel Barone',
+//         phone: '(11) 88888-8888',
+//         email: '',
+//         specialties: ['Corte', 'Barba', 'Sobrancelha'],
+//         workingHours: {
+//            monday: '09:00-19:40',
+//           tuesday: '09:00-19:40',
+//           wednesday: '09:00-19:40',
+//           thursday: '09:00-19:40',
+//           friday: '09:00-19:40',
+//           saturday: '09:00-19:40',
+//           sunday: 'closed'
+//         },
+//         isActive: true
+//       },
+//       {
+//         name: 'Pedro Assunção',
+//         phone: '(11) 77777-7777',
+//         email: '',
+//         specialties: ['Corte', 'Barba', 'Relaxamento'],
+//         workingHours: {
+//           monday: '09:00-19:40',
+//           tuesday: '09:00-19:40',
+//           wednesday: '09:00-19:40',
+//           thursday: '09:00-19:40',
+//           friday: '09:00-19:40',
+//           saturday: '09:00-19:40',
+//           sunday: 'closed'
+//         },
+//         isActive: true
+//       } , {
+//         name: 'Enzo Muralha',
+//         phone: '(11) 77777-7777',
+//         email: '',
+//         specialties: ['Corte', 'Barba', 'Relaxamento'],
+//         workingHours: {
+//           monday: '09:00-19:40',
+//           tuesday: '09:00-19:40',
+//           wednesday: '09:00-19:40',
+//           thursday: '09:00-19:40',
+//           friday: '09:00-19:40',
+//           saturday: '09:00-19:40',
+//           sunday: 'closed'
+//         },
+//         isActive: true
+//       },{
+//         name: 'Adenilson',
+//         phone: '(11) 77777-7777',
+//         email: '',
+//         specialties: ['Corte', 'Barba', 'Relaxamento'],
+//         workingHours: {
+//            monday: '09:00-19:40',
+//           tuesday: '09:00-19:40',
+//           wednesday: '09:00-19:40',
+//           thursday: '09:00-19:40',
+//           friday: '09:00-19:40',
+//           saturday: '09:00-19:40',
+//           sunday: 'closed'
+//         },
+//         isActive: true
+//       },{
+//         name: 'Hugo Gonçalves',
+//         phone: '(11) 77777-7777',
+//         email: 'carlos@barbearia.com',
+//         specialties: ['Corte', 'Barba', 'Relaxamento'],
+//         workingHours: {
+//            monday: '09:00-19:40',
+//           tuesday: '09:00-19:40',
+//           wednesday: '09:00-19:40',
+//           thursday: '09:00-19:40',
+//           friday: '09:00-19:40',
+//           saturday: '09:00-19:40',
+//           sunday: 'closed'
+//         },
+//         isActive: true
+//       }
+//     ]);
     
-    // Criar tipos de serviço
-    await ServiceType.bulkCreate([
-      {
-        name: 'Corte Simples',
-        description: 'Corte de cabelo tradicional',
-        price: 25.00,
-        duration: 30,
-        isActive: true
-      },
-      {
-        name: 'Corte + Barba',
-        description: 'Corte de cabelo + barba completa',
-        price: 35.00,
-        duration: 45,
-        isActive: true
-      },
-      {
-        name: 'Barba Completa',
-        description: 'Barba, bigode e acabamento',
-        price: 20.00,
-        duration: 30,
-        isActive: true
-      },
-      {
-        name: 'Corte Premium',
-        description: 'Corte estilizado + lavagem + finalização',
-        price: 45.00,
-        duration: 60,
-        isActive: true
-      },
-      {
-        name: 'Sobrancelha',
-        description: 'Design e limpeza de sobrancelha',
-        price: 15.00,
-        duration: 20,
-        isActive: true
-      },
-      {
-        name: 'Relaxamento',
-        description: 'Relaxamento capilar completo',
-        price: 80.00,
-        duration: 120,
-        isActive: true
-      }
-    ]);
+//     // Criar tipos de serviço
+//     await ServiceType.bulkCreate([
+//       {
+//         name: 'Corte Simples',
+//         description: 'Corte de cabelo tradicional',
+//         price: 25.00,
+//         duration: 30,
+//         isActive: true
+//       },
+//       {
+//         name: 'Corte + Barba',
+//         description: 'Corte de cabelo + barba completa',
+//         price: 35.00,
+//         duration: 45,
+//         isActive: true
+//       },
+//       {
+//         name: 'Barba Completa',
+//         description: 'Barba, bigode e acabamento',
+//         price: 20.00,
+//         duration: 30,
+//         isActive: true
+//       },
+//       {
+//         name: 'Corte Premium',
+//         description: 'Corte estilizado + lavagem + finalização',
+//         price: 45.00,
+//         duration: 60,
+//         isActive: true
+//       },
+//       {
+//         name: 'Sobrancelha',
+//         description: 'Design e limpeza de sobrancelha',
+//         price: 15.00,
+//         duration: 20,
+//         isActive: true
+//       },
+//       {
+//         name: 'Relaxamento',
+//         description: 'Relaxamento capilar completo',
+//         price: 80.00,
+//         duration: 120,
+//         isActive: true
+//       }
+//     ]);
     
-    console.log('✅ Banco de dados populado com sucesso!');
-    console.log('👤 Usuário admin criado: admin / admin123');
-    console.log('💇 3 barbeiros criados');
-    console.log('✂️ 6 tipos de serviço criados');
+//     console.log('✅ Banco de dados populado com sucesso!');
+//     console.log('👤 Usuário admin criado: admin / admin123');
+//     console.log('💇 3 barbeiros criados');
+//     console.log('✂️ 6 tipos de serviço criados');
     
-  } catch (error) {
-    console.error('❌ Erro ao popular banco de dados:', error);
-  } finally {
-    process.exit();
-  }
-}
+//   } catch (error) {
+//     console.error('❌ Erro ao popular banco de dados:', error);
+//   } finally {
+//     process.exit();
+//   }
+// }
 
-// Executar se chamado diretamente
-if (require.main === module) {
-  seedDatabase();
-}
+// // Executar se chamado diretamente
+// if (require.main === module) {
+//   seedDatabase();
+// }
 
-module.exports = { seedDatabase };
+// module.exports = { seedDatabase };
 
