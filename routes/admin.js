@@ -1,10 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
-const { disconnectWhatsApp, initializeWhatsApp } = require('../utils/whatsapp');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-const { getWhatsAppStatus } = require('../utils/whatsapp');
-const { getLastQRCode } = require('../utils/whatsapp');
+const {
+  disconnectWhatsApp,
+  initializeWhatsApp,
+  getWhatsAppStatus,
+  getLastQRCode,
+  sendWhatsAppMessage            
+} = require('../utils/whatsapp');
 const { isAuthenticated } = require('../middleware/auth');
 const router = express.Router();
 const { Op, literal } = require('sequelize');
@@ -49,6 +53,7 @@ router.get('/login', (req, res) => {
 
   log('Renderizando página de login');
   res.render('admin/login', {
+    hideNavbar: true,
     title: 'Login Administrativo',
     layout: 'admin',
     error: req.query.error
@@ -268,6 +273,8 @@ router.get('/dashboard', async (req, res) => {
 
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
+      pageTitle: 'Dashboard Administrativo',
+      pageSubtitle: `Bem-vindo, ${req.session?.user?.username || 'admin'}!`,
       layout: 'admin',
       user: req.session.user,
       todayAppointmentsCount: todayAppointments.length,
@@ -320,7 +327,8 @@ router.get('/appointments', async (req, res) => {
       whereClause.appointmentDate = { [Op.gte]: todayStr };
     }
 
-    if (barberId) whereClause.barberId = barberId;
+    if (barberId) whereClause.barberId = Number(barberId);
+
 
     // ✅ Status padrão quando não vier filtro explícito
     if (status) {
@@ -409,6 +417,8 @@ router.get('/appointments', async (req, res) => {
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
+      pageTitle: 'Agendamentos',
+      pageSubtitle: 'Gerencie e filtre seus horários',
       layout: 'admin',
       user: req.session.user,
       appointments: formattedAppointments,
@@ -551,44 +561,76 @@ router.post('/appointments/:id/status', async (req, res) => {
 // Relatórios administrativos - CORRIGIDA
 router.get('/reports', async (req, res) => {
   try {
-    log('Acessando relatórios', { user: req.session.user, query: req.query });
+    // log('Acessando relatórios', { user: req.session.user, query: req.query });
 
     const { startDate, endDate, barberId, status, sort } = req.query;
-
+    
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
     let whereClause = {};
 
-    if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
-      };
-    }
 
-    if (status) { whereClause.status = status; }
+if (startDate && endDate) {
+  whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
+} else if (startDate) {
+  whereClause.appointmentDate = { [Op.gte]: startDate };
+} else if (endDate) {
+  whereClause.appointmentDate = { [Op.lte]: endDate };
+} else {
+  whereClause.appointmentDate = { [Op.gte]: todayStr };
+}
 
-    if (barberId) { whereClause.barberId = barberId; }
 
-    // log('Filtros de relatório aplicados', { whereClause });
-    // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
-    let order = [['appointmentDate', 'DESC']]; // padrão
+if (status) {
+  whereClause.status = status;
+} 
 
-    switch (sort) {
-      case 'date_asc':
-        order = [['appointmentDate', 'ASC']];
-        break;
-      case 'value_desc':
-        order = [['totalPrice', 'DESC']];
-        break;
-      case 'value_asc':
-        order = [['totalPrice', 'ASC']];
-        break;
-      case 'barber_asc':
-        order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
-        break;
-      case 'barber_desc':
-        order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
-        break;
-    }
+
+if (barberId) whereClause.barberId = Number(barberId);
+    /// 🔄 ORDENAR COMO /appointments
+const statusOrder = `CASE "Appointment"."status"
+                       WHEN 'in_progress' THEN 1
+                       WHEN 'confirmed'   THEN 2
+                       WHEN 'completed'   THEN 3
+                       ELSE 99
+                     END`;
+
+      // 🎯 Padrão idêntico ao /appointments
+      let order = [
+        ['appointmentDate', 'ASC'],
+        ['appointmentTime', 'ASC'],
+        [literal(statusOrder), 'ASC']
+      ];
+
+      switch (sort) {
+        case 'date_asc':
+          order = [
+            ['appointmentDate', 'ASC'],
+            ['appointmentTime', 'ASC'],
+            [literal(statusOrder), 'ASC']
+          ];
+          break;
+        case 'date_desc':
+          order = [
+            ['appointmentDate', 'DESC'],
+            ['appointmentTime', 'DESC'],
+            [literal(statusOrder), 'ASC']
+          ];
+          break;
+        case 'value_desc':
+          order = [['totalPrice', 'DESC']];
+          break;
+        case 'value_asc':
+          order = [['totalPrice', 'ASC']];
+          break;
+        case 'barber_asc':
+          order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
+          break;
+        case 'barber_desc':
+          order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
+          break;
+      }
+
 
     const appointments = await Appointment.findAll({
       where: whereClause,
@@ -653,6 +695,8 @@ router.get('/reports', async (req, res) => {
 
     res.render('admin/reports', {
       title: 'Relatórios',
+      pageTitle: 'Relatórios',
+      pageSubtitle: 'Indicadores e exportações',
       layout: 'admin',
       user: req.session.user,
       appointments: formattedAppointments,
@@ -697,17 +741,45 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     }
 
     if (typeof barberId === 'string' && barberId.trim() !== '') {
-      where.barberId = barberId;
+      where.barberId = Number(barberId);
     }
 
 
-    // Ordenação
-    let order = [['appointmentDate', 'DESC']];
-    if (sort === 'date_asc') order = [['appointmentDate', 'ASC']];
-    else if (sort === 'value_desc') order = [['totalPrice', 'DESC']];
-    else if (sort === 'value_asc') order = [['totalPrice', 'ASC']];
-    else if (sort === 'barber_asc') order = [[{ model: Barber }, 'name', 'ASC']];
-    else if (sort === 'barber_desc') order = [[{ model: Barber }, 'name', 'DESC']];
+    // ---- ORDENAR COMO /appointments ----
+const statusOrder = `CASE "Appointment"."status"
+                       WHEN 'in_progress' THEN 1
+                       WHEN 'confirmed'   THEN 2
+                       WHEN 'completed'   THEN 3
+                       ELSE 99
+                     END`;
+
+let order = [
+  ['appointmentDate', 'ASC'],
+  ['appointmentTime', 'ASC'],
+  [literal(statusOrder), 'ASC']
+];
+
+if (sort === 'date_asc') {
+  order = [
+    ['appointmentDate', 'ASC'],
+    ['appointmentTime', 'ASC'],
+    [literal(statusOrder), 'ASC']
+  ];
+} else if (sort === 'date_desc') {
+  order = [
+    ['appointmentDate', 'DESC'],
+    ['appointmentTime', 'DESC'],
+    [literal(statusOrder), 'ASC']
+  ];
+} else if (sort === 'value_desc') {
+  order = [['totalPrice', 'DESC']];
+} else if (sort === 'value_asc') {
+  order = [['totalPrice', 'ASC']];
+} else if (sort === 'barber_asc') {
+  order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];  // 👈 alias correto
+} else if (sort === 'barber_desc') {
+  order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
+}
 
     // Buscar dados com Sequelize
     const appointments = await Appointment.findAll({
@@ -743,22 +815,19 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
           else console.log(`Arquivo PDF excluído: ${filename}`);
         });
       });
-    } else if (format === 'csv') {
-      const filePath = await generateCSV(appointments, filename);
-      return res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error('Erro ao enviar CSV:', err);
-        }
+} else if (format === 'csv') {
+  const filePath = await generateCSV(appointments, filename);
+  return res.download(filePath, filename, (err) => {
+    if (err) console.error('Erro ao enviar CSV:', err);
     fs.unlink(filePath, (err) => {
       if (err) console.error('Erro ao excluir CSV temporário:', err);
       else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
     });
   });
+} else {
+  return res.status(400).json({ error: 'Formato inválido.' });
 }
 
-    else {
-      return res.status(400).json({ error: 'Formato inválido.' });
-    }
   } catch (error) {
     console.error('[EXPORT ERROR]', error);
     res.status(500).json({ error: 'Erro ao gerar relatório.' });

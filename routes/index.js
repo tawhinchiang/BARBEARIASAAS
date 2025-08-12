@@ -43,10 +43,10 @@ router.get('/agendamento-confirmado', (req, res) => {
 });
 
 // Rota de teste para login (remover se não necessária)
-router.get('/login', (req, res) => {
-  log('Acessando rota de login via cliente (redirecionando para admin)');
-  res.redirect('/admin/login');
-});
+// router.get('/login', (req, res) => {
+//   log('Acessando rota de login via cliente (redirecionando para admin)');
+//   res.redirect('/admin/login');
+// });
 
 // API para listar serviços disponíveis
 router.get('/api/services', async (req, res) => {

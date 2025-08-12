@@ -187,7 +187,7 @@
   </div>
 </div>
 <!-- Modal de Relatório do Barbeiro -->
-<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true" "mt-5">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content bg-dark text-white">
       <div class="modal-header">
@@ -199,7 +199,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-        <button class="btn btn-primary" onclick="printReport()">Imprimir</button>
+        {{!-- <button class="btn btn-primary" onclick="printReport()">Imprimir</button> --}}
       </div>
     </div>
   </div>
@@ -208,37 +208,9 @@
 
 
 </div>
-
-
-
-
 <div class="admin-dashboard fade-in-soft">
   <div class="container-fluid">
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="admin-card">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h2 class="fw-bold mb-1">
-                <i class="fas fa-user-tie me-2"></i> Gerenciar Barbeiros
-              </h2>
-              <p class="text-muted mb-0">Visualize e gerencie os profissionais cadastrados</p>
-            </div>
-            <div>
-              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#barberModal">
-                <i class="fas fa-plus me-2"></i> Novo Barbeiro
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- Filtros Rápidos -->
-    <!-- Filtros Rápidos -->
-    <!-- Filtros Rápidos -->
-    <div class="row mb-4">
+    <div class="row mt-5">
       <div class="col-12">
         <div class="admin-filters">
           <form id="filterForm">
@@ -265,108 +237,115 @@
                   <input type="text" class="form-control" id="filterSpecialty" placeholder="Ex: Cortes, barba...">
                 </div>
               </div>
+              <div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#barberModal">
+                  <i class="fas fa-plus me-2"></i> Novo Barbeiro
+                </button>
+              </div>
             </div>
           </form>
         </div>
       </div>
     </div>
+  </div>
+  {{#if error}}
+<div class="alert alert-danger">
+  <i class="fas fa-exclamation-triangle me-2"></i>
+  {{error}}
+</div>
+{{/if}}
 
-
-
-    {{#if error}}
-    <div class="alert alert-danger">
-      <i class="fas fa-exclamation-triangle me-2"></i>
-      {{error}}
-    </div>
-    {{/if}}
-
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="barbersContainer">
-      {{#each barbers}}
-      <div class="col-md-6 col-lg-4 barber-card" data-id="{{id}}" data-name="{{name}}" data-phone="{{phone}}"
-        data-cpf="{{cpf}}" data-specialties="{{specialties}}" data-status="{{#if isActive}}ativo{{else}}inativo{{/if}}">
-        <div class="card admin-card h-100">
-          <div class="card-body">
-            <div class="d-flex align-items-center mb-3">
-              {{#if photo}}
-              <img src="{{photo}}" alt="{{name}}" class="rounded-circle me-3" width="50" height="50">
-              {{else}}
-              <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
-                style="width: 50px; height: 50px;">
-                <i class="fas fa-user text-white"></i>
-              </div>
-              {{/if}}
-              <div>
-                <h5 class="card-title mb-0">{{name}}</h5>
-                <small class="text-muted">{{phone}}</small>
-              </div>
-            </div>
-
-            <p class="mb-1"><strong>CPF:</strong> <code>{{cpf}}</code></p>
-            <p class="mb-1"><strong>Email:</strong> {{email}}</p>
-            <p class="mb-1"><strong>Especialidades:</strong> {{specialties}}</p>
-            <p class="mb-1"><strong>Horários:</strong></p>
-
-            {{#if workingHours}}
-            <ul class="list-group list-group-flush mb-3 small">
-              {{> dayRow w=workingHours day="monday" label="Segunda"}}
-              {{> dayRow w=workingHours day="tuesday" label="Terça"}}
-              {{> dayRow w=workingHours day="wednesday" label="Quarta"}}
-              {{> dayRow w=workingHours day="thursday" label="Quinta"}}
-              {{> dayRow w=workingHours day="friday" label="Sexta"}}
-              {{> dayRow w=workingHours day="saturday" label="Sábado"}}
-              {{> dayRow w=workingHours day="sunday" label="Domingo"}}
-            </ul>
-            {{else}}
-            <p class="text-muted mb-3">Sem horários cadastrados.</p>
-            {{/if}}
-
-            <p class="mb-1"><strong>Status:</strong>
-              {{#if isActive}}
-              <span class="badge bg-success">Ativo</span>
-              {{else}}
-              <span class="badge bg-secondary">Inativo</span>
-              {{/if}}
-            </p>
-
-            <p class="mb-3"><strong>Agendamentos:</strong>
-              <span class="badge bg-primary">{{appointmentsThisMonth}}</span>
-              <small class="text-muted">este mês</small>
-            </p>
-
-            <div class="d-flex justify-content-between">
-              <button class="btn btn-sm btn-outline-primary" onclick="editBarber({{id}})">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-info" onclick="barberReport({{id}})">
-                <i class="fas fa-chart-bar"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-{{#if isActive}}secondary{{else}}success{{/if}}"
-                onclick="toggleBarber({{id}})">
-                <i class="fas fa-{{#if isActive}}pause{{else}}play{{/if}}"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteBarber({{id}})">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="barbersContainer">
+  {{#each barbers}}
+  <div class="col-md-6 col-lg-4 barber-card" data-id="{{id}}" data-name="{{name}}" data-phone="{{phone}}"
+    data-cpf="{{cpf}}" data-specialties="{{specialties}}" data-status="{{#if isActive}}ativo{{else}}inativo{{/if}}">
+    <div class="card admin-card h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          {{#if photo}}
+          <img src="{{photo}}" alt="{{name}}" class="rounded-circle me-3" width="50" height="50">
+          {{else}}
+          <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+            style="width: 50px; height: 50px;">
+            <i class="fas fa-user text-white"></i>
+          </div>
+          {{/if}}
+          <div>
+            <h5 class="card-title mb-0">{{name}}</h5>
+            <small class="text-muted">{{phone}}</small>
           </div>
         </div>
+
+        <p class="mb-1"><strong>CPF:</strong> <code>{{cpf}}</code></p>
+        <p class="mb-1"><strong>Email:</strong> {{email}}</p>
+        <p class="mb-1"><strong>Especialidades:</strong> {{specialties}}</p>
+        <p class="mb-1"><strong>Horários:</strong></p>
+
+        {{#if workingHours}}
+        <ul class="list-group list-group-flush mb-3 small">
+          {{> dayRow w=workingHours day="monday" label="Segunda"}}
+          {{> dayRow w=workingHours day="tuesday" label="Terça"}}
+          {{> dayRow w=workingHours day="wednesday" label="Quarta"}}
+          {{> dayRow w=workingHours day="thursday" label="Quinta"}}
+          {{> dayRow w=workingHours day="friday" label="Sexta"}}
+          {{> dayRow w=workingHours day="saturday" label="Sábado"}}
+          {{> dayRow w=workingHours day="sunday" label="Domingo"}}
+        </ul>
+        {{else}}
+        <p class="text-muted mb-3">Sem horários cadastrados.</p>
+        {{/if}}
+
+        <p class="mb-1"><strong>Status:</strong>
+          {{#if isActive}}
+          <span class="badge bg-success">Ativo</span>
+          {{else}}
+          <span class="badge bg-secondary">Inativo</span>
+          {{/if}}
+        </p>
+
+        <p class="mb-3"><strong>Agendamentos:</strong>
+          <span class="badge bg-primary">{{appointmentsThisMonth}}</span>
+          <small class="text-muted">este mês</small>
+        </p>
+
+        <div class="d-flex justify-content-between">
+          <button class="btn btn-sm btn-outline-primary" onclick="editBarber({{id}})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-info" onclick="barberReport({{id}})">
+            <i class="fas fa-chart-bar"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-{{#if isActive}}secondary{{else}}success{{/if}}"
+            onclick="toggleBarber({{id}})">
+            <i class="fas fa-{{#if isActive}}pause{{else}}play{{/if}}"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteBarber({{id}})">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
       </div>
-      {{/each}}
     </div>
-    <style>
-      .barber-card .list-group-item {
-        padding-top: .4rem;
-        padding-bottom: .4rem;
-      }
-    </style>
+  </div>
+  {{/each}}
+</div>
+</div>
 
 
-    <!-- jQuery e plugins -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<style>
+  .barber-card .list-group-item {
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+  }
+</style>
 
-    <!-- Seu script personalizado (por último) -->
-    <script src="/js/barbers.js"></script>
+
+<!-- jQuery e plugins -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/inputmask.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Seu script personalizado (por último) -->
+<script src="/js/barbers.js"></script>

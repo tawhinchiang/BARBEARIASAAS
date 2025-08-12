@@ -99,6 +99,8 @@ router.get('/', async (req, res) => {
     res.render('admin/barbers', {
       
       title: 'Gerenciar Barbeiros',
+      pageTitle: 'Gerenciar Barbeiros',
+      pageSubtitle: 'Visualize e gerencie os profissionais cadastrados',
       barbers: barbersWithStats,
       layout: 'admin'
     });

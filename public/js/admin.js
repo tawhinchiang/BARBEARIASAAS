@@ -1,35 +1,88 @@
 // JavaScript para área administrativa - Frontend
 document.addEventListener('DOMContentLoaded', function () {
   // Filtros de agendamentos
+   const toggler = document.getElementById('sidebarToggle');
   const filterForm = document.getElementById('filterForm');
+  // Aplica estado salvo
+  const saved = localStorage.getItem('adminSidebarCollapsed');
+  if (saved === '1') document.body.classList.add('sidebar-collapsed');
 
+  // === NUNCA PERSISTIR FILTROS (para qualquer formulário) ===
   if (filterForm) {
-    // Restaurar filtros do localStorage
-    const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
-    for (const [key, value] of Object.entries(savedFilters)) {
-      const el = filterForm.elements[key];
-      if (el) el.value = value;
+    // 1) limpa qualquer persistência legada
+    try {
+      localStorage.removeItem('adminFilters');
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('adminFilters:')) localStorage.removeItem(k);
+      }
+    } catch (_) {}
+
+    // 2) se veio com query (?startDate=...), limpa a URL sem recarregar
+    if (window.location.search) {
+      history.replaceState(null, '', window.location.pathname + window.location.hash);
     }
 
-    // Submeter formulário com filtros e salvar no localStorage
+    // 3) submit: apenas navega (GET) com fade, sem salvar nada
     filterForm.addEventListener('submit', function (e) {
       e.preventDefault();
 
       const formData = new FormData(filterForm);
       const params = new URLSearchParams();
-      const filtersToSave = {};
-
-      for (let [key, value] of formData.entries()) {
-        if (value) {
-          params.append(key, value);
-          filtersToSave[key] = value;
-        }
+      for (const [key, value] of formData.entries()) {
+        if (value) params.append(key, value);
       }
 
-      localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
       navigateWithFade(`${window.location.pathname}?${params.toString()}`);
     });
+
+    // 4) "Limpar": zera campos e volta ao estado base (sem query)
+    function clearFilters() {
+      Array.from(filterForm.elements).forEach(el => {
+        if (!el?.name) return;
+        const type = (el.type || '').toLowerCase();
+
+        if (type === 'checkbox' || type === 'radio') {
+          el.checked = false;
+        } else if (el.tagName === 'SELECT') {
+          el.selectedIndex = 0;
+          // dispara change se usar select2 ou similares
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
+          el.value = '';
+        }
+      });
+
+      // volta para a rota base sem parâmetros
+      navigateWithFade(window.location.pathname);
+    }
+    // expõe global para onclick do HBS
+    window.clearFilters = clearFilters;
   }
+
+  toggler?.addEventListener('click', (e) => {
+    if (window.innerWidth >= 992) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.body.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('adminSidebarCollapsed',
+        document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+    }
+  });
+  
+   // Marca ativo nos dois menus (fixo e offcanvas)
+  const current = window.location.pathname;
+  const markActive = (selector) => {
+    document.querySelectorAll(selector).forEach(a => {
+      const href = a.getAttribute('href');
+      if (href && (current === href || current.startsWith(href + '/'))) {
+        a.classList.add('active');
+        a.setAttribute('aria-current', 'page');
+      }
+    });
+  };
+  markActive('.sidenav-item');
+  markActive('.admin-menu .list-group-item'); // sua offcanvas
 
   // Atualizar status do agendamento
   document.querySelectorAll('.status-select').forEach(select => {

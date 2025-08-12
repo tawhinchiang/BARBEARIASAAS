@@ -101,7 +101,10 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
   } catch (error) {
     logError('Erro ao carregar serviços', error);
     res.render('admin/services', {
+
       title: 'Gerenciar Serviços',
+      pageTitle: 'Gerenciar Serviços',
+      pageSubtitle: 'Visualize e gerencie os serviços oferecidos',
       services: [],
       error: 'Erro ao carregar serviços',
       layout: 'admin'

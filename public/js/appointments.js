@@ -4,6 +4,7 @@ let selectedBarberId = '';
 let openMenuId = null;
 let viewAppointmentModal = null;
 let editModal;
+const FILTER_KEY = `adminFilters:${window.location.pathname}`;
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -367,7 +368,7 @@ function initFilterForm() {
       }
     }
 
-    localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
+    localStorage.setItem(FILTER_KEY, JSON.stringify(filtersToSave));
     requestAnimationFrame(() => {
   window.location.href = `/admin/appointments?${params.toString()}`;
 });
@@ -376,8 +377,9 @@ function initFilterForm() {
 
 function restoreFilters() {
   const filterForm = document.getElementById('filterForm');
-  const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
-
+  const savedFilters = JSON.parse(
+     localStorage.getItem(FILTER_KEY) ||
+      localStorage.getItem('adminFilters') ||'{}');
   for (const [key, value] of Object.entries(savedFilters)) {
     const el = filterForm.elements[key];
     if (el) el.value = value;
@@ -412,29 +414,39 @@ document.addEventListener('click', function (e) {
   }
 });
 
-const clearFilters = () => {
+function clearFilters() {
+  // remove o novo e o legado
+  localStorage.removeItem(FILTER_KEY);
   localStorage.removeItem('adminFilters');
+  // recarrega sem querystring
   window.location.href = window.location.pathname;
-};
-
+}
+// garante acessível ao onclick inline do HBS, mesmo se mudar p/ type="module"
+window.clearFilters = clearFilters;
 
 
 // Configurar datas padrão
+function toLocalYMD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function setDefaultDates() {
   const today = new Date();
   const startDate = document.getElementById('startDate');
   const endDate = document.getElementById('endDate');
 
-  if (startDate && !startDate.value) {
-    startDate.value = today.toISOString().split('T')[0];
-  }
+  if (startDate && !startDate.value) startDate.value = toLocalYMD(today);
 
   if (endDate && !endDate.value) {
     const nextMonth = new Date(today);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
-    endDate.value = nextMonth.toISOString().split('T')[0];
+    endDate.value = toLocalYMD(nextMonth);
   }
 }
+
 
 // Selecionar barbeiro no filtro
 function selectBarber(barberId, barberName) {
@@ -1015,7 +1027,12 @@ function limitarLinhasDaTabela(qtd = 10) {
       if (index >= qtd) tr.classList.add('d-none');
     });
 
-    const container = document.querySelector('#appointmentsTableView .admin-card');
+    // DEPOIS (com fallbacks)
+    const container =
+      document.querySelector('#appointmentsTableView .admin-card') ||
+      document.querySelector('#appointmentsTableView .admin-table') ||
+      document.getElementById('appointmentsTableView');
+    if (!container) return; // segurança
 
     // Remover botões antigos
     container.querySelectorAll('.btn-ver-mais, .btn-ver-menos').forEach(btn => btn.remove());

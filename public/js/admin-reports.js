@@ -1,6 +1,30 @@
 let chartStatus = null;
 let chartBarber = null;
 
+const FILTER_KEY = `adminFilters:${window.location.pathname}`;
+function setDefaultDatesForReports() {
+  const startEl = document.getElementById('startDate');
+  const endEl   = document.getElementById('endDate');
+  if (!startEl || !endEl) return;
+
+  // Só define se estiver vazio (não pisa em filtros restaurados/salvos)
+  if (!startEl.value) {
+    const today = new Date();
+    startEl.value = today.toISOString().split('T')[0];
+  }
+  if (!endEl.value) {
+    const next = new Date();
+    next.setMonth(next.getMonth() + 1);
+    endEl.value = next.toISOString().split('T')[0];
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Se o admin.js já restaurou do localStorage, os inputs terão valor;
+  // então só setamos quando estiver vazio:
+  setDefaultDatesForReports();
+});
+
 const runWhenIdle = window.requestIdleCallback || function (cb) {
   setTimeout(cb, 200);
 };
@@ -117,9 +141,15 @@ runWhenIdle(() => {
 });
 
 function clearFilters() {
+  // remove o novo e o legado
+  localStorage.removeItem(FILTER_KEY);
   localStorage.removeItem('adminFilters');
-  window.location.href = '/admin/reports';
+  // recarrega sem querystring
+  window.location.href = window.location.pathname;
 }
+// garante acessível ao onclick inline do HBS, mesmo se mudar p/ type="module"
+window.clearFilters = clearFilters;
+
 
 function exportReport(format) {
   const form = document.getElementById('exportForm');
@@ -127,8 +157,19 @@ function exportReport(format) {
   form.submit();
 }
 
+// substitua a função atual:
 function submitExport(format) {
   const form = document.getElementById('exportForm');
+  const filterForm = document.getElementById('filterForm');
+
+  // Copia os valores visíveis para os hidden antes do submit
+  form.elements['startDate'].value = filterForm.elements['startDate']?.value || '';
+  form.elements['endDate'].value   = filterForm.elements['endDate']?.value   || '';
+  form.elements['barberId'].value  = filterForm.elements['barberId']?.value  || '';
+  form.elements['status'].value    = filterForm.elements['status']?.value    || '';
+  form.elements['sort'].value      = filterForm.elements['sort']?.value      || '';
+
   document.getElementById('exportFormat').value = format;
   form.submit();
 }
+
