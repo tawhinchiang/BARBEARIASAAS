@@ -119,6 +119,15 @@
                     {{> appointments-table-rows appointments=appointments }}
                   </tbody>
                 </table>
+                <div class="text-center my-3">
+                  <button id="loadMoreTable"
+                          class="btn btn-outline-primary"
+                          data-page="2"
+                          data-limit="10"
+                          {{#unless pagination.hasNext}}hidden{{/unless}}>
+                    Ver mais
+                  </button>
+                </div>
                 {{else}}
                 <div class="text-center py-5">
                   <div class="display-1 text-muted mb-3">
@@ -136,7 +145,18 @@
 
     <!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
     <div id="appointmentsCardView" class="view-mode hidden">
+        <div id="appointmentsCardsContainer">
       {{> appointments-cards-grouped appointments=appointments }}
+      </div>
+      <div class="text-center my-3">
+          <button id="loadMoreCards"
+                  class="btn btn-outline-primary"
+                  data-page="2"
+                  data-limit="10"
+                  {{#unless pagination.hasNext}}hidden{{/unless}}>
+            Ver mais
+          </button>
+      </div>
     </div>
 
     <!-- Paginação -->

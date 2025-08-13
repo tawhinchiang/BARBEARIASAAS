@@ -1,5 +1,61 @@
 // JavaScript para área administrativa - Frontend
 document.addEventListener('DOMContentLoaded', function () {
+  const qs = (s) => document.querySelector(s);
+
+  const tableBody = qs('#appointmentsTableBody');
+  const btnMoreTable = qs('#loadMoreTable');
+  const cardsContainer = qs('#appointmentsCardsContainer');
+  const btnMoreCards = qs('#loadMoreCards');
+
+  // coleta filtros atuais da URL
+  function buildQuery(base = {}) {
+    const url = new URL(window.location.href);
+    for (const [k, v] of url.searchParams.entries()) {
+      if (v) base[k] = v; // startDate, endDate, barberId, status, sort...
+    }
+    return new URLSearchParams(base).toString();
+  }
+
+  async function loadMore({ view }) {
+    const isTable = view === 'table';
+    const btn = isTable ? btnMoreTable : btnMoreCards;
+    if (!btn) return;
+
+    const page = parseInt(btn.dataset.page || '2', 10);
+    const limit = parseInt(btn.dataset.limit || '10', 10);
+
+    const endpoint = isTable
+      ? '/admin/appointments/partial'
+      : '/admin/appointments/partial-cards';
+
+    const url = `${endpoint}?${buildQuery({ page, limit })}`;
+
+    btn.disabled = true;
+    btn.innerText = 'Carregando...';
+
+    const res = await fetch(url, { credentials: 'include' });
+    const data = await res.json();
+
+    if (data?.html) {
+      if (isTable && tableBody) {
+        tableBody.insertAdjacentHTML('beforeend', data.html);
+      } else if (cardsContainer) {
+        cardsContainer.insertAdjacentHTML('beforeend', data.html);
+      }
+    }
+
+    if (data?.hasNext) {
+      btn.dataset.page = String(data.nextPage || (page + 1));
+      btn.disabled = false;
+      btn.innerText = 'Ver mais';
+    } else {
+      btn.remove(); // acabou
+    }
+  }
+
+  btnMoreTable?.addEventListener('click', () => loadMore({ view: 'table' }));
+  btnMoreCards?.addEventListener('click', () => loadMore({ view: 'cards' }));
+
   // Filtros de agendamentos
    const toggler = document.getElementById('sidebarToggle');
   const filterForm = document.getElementById('filterForm');
@@ -856,7 +912,7 @@ async function deleteAppointment(appointmentId) {
     const response = await fetch(`/admin/appointments/${appointmentId}`, {
       method: 'DELETE',
       credentials: 'include',
-      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {}
+      headers: ADMIN_CSRF ? { 'X-CSRF-Token': ADMIN_CSRF } : {}
     });
     if (response.ok) {
       showAlert('Agendamento excluído com sucesso!', 'success');

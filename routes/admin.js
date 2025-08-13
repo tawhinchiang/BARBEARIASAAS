@@ -14,6 +14,27 @@ const router = express.Router();
 const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
 const todayStr = new Date().toLocaleDateString('en-CA');
+
+// admin.js (rotas admin) – helper no topo do arquivo
+function buildOrder(sort) {
+  const statusOrder = `CASE "Appointment"."status"
+                         WHEN 'in_progress' THEN 1
+                         WHEN 'confirmed'   THEN 2
+                         WHEN 'completed'   THEN 3
+                         ELSE 99
+                       END`;
+  switch (sort) {
+    case 'date_asc':  return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
+    case 'date_desc': return [['appointmentDate','DESC'],['appointmentTime','DESC'], [literal(statusOrder),'ASC']];
+    case 'value_asc': return [['totalPrice','ASC']];
+    case 'value_desc':return [['totalPrice','DESC']];
+    case 'barber_asc':return [[literal('"barber"."name"'),'ASC']];
+    case 'barber_desc':return [[literal('"barber"."name"'),'DESC']];
+    default:          return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
+  }
+}
+
+
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
 router.use((req, res, next) => {
   const publicRoutes = ['/login', '/logout'];
@@ -443,98 +464,111 @@ router.get('/appointments', async (req, res) => {
 });
 
 router.get('/appointments/partial', async (req, res) => {
-  const { startDate, endDate, barberId, status } = req.query;
- 
-  const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
-  const todayStr = new Date().toLocaleDateString('en-CA');
+  try {
+    const { startDate, endDate, barberId, status, sort, page = 1, limit = 10 } = req.query;
+    const p = Math.max(parseInt(page) || 1, 1);
+    const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-  const where = {};
-  if (startDate) where.appointmentDate = { [Op.gte]: startDate };
-  if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
-  if (!startDate && !endDate) where.appointmentDate = { [Op.gte]: todayStr };
-  if (barberId) where.barberId = barberId;
-  if (status) where.status = status; else where.status = { [Op.in]: DEFAULT_STATUSES };
+    const DEFAULT_STATUSES = ['in_progress','confirmed','completed'];
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
-  const statusOrder = `CASE "Appointment"."status"
-                         WHEN 'in_progress' THEN 1
-                         WHEN 'confirmed'   THEN 2
-                         WHEN 'completed'   THEN 3
-                         ELSE 99
-                       END`;
+    const where = {};
+    if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
+    else where.appointmentDate = { [Op.gte]: todayStr };
 
-  const appointments = await Appointment.findAll({
-    where,
-    include: [
-      { model: Client, as: 'client' },
-      { model: Barber, as: 'barber' },
-      { model: ServiceType, as: 'serviceType' }
-    ],
-    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']]
-  });
+    if (barberId) where.barberId = Number(barberId);
+    where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
 
-  const formattedAppointments = appointments.map(app => {
-    const json = app.toJSON();
-    const date = new Date(json.appointmentDate + 'T03:00:00');
-    return {
-      ...json,
-      appointmentDateFormatted: date.toLocaleDateString('pt-BR'),
-      appointmentTimeFormatted: json.appointmentTime?.slice(0, 5)
-    };
-  });
+    const order = buildOrder(sort);
 
-  res.render('partials/appointments-table-rows', {
-    layout: false,
-    appointments: formattedAppointments,
-    helpers: require('../config/handlebars-helpers')
-  });
+    const { count, rows } = await Appointment.findAndCountAll({
+      where,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber' },
+        { model: ServiceType, as: 'serviceType' }
+      ],
+      order,
+      limit: l,
+      offset: (p - 1) * l
+    });
+
+    const formatted = rows.map(a => {
+      const j = a.toJSON();
+      const d = new Date((typeof j.appointmentDate === 'string' ? j.appointmentDate + 'T03:00:00' : j.appointmentDate));
+      return {
+        ...j,
+        appointmentDateFormatted: isNaN(d) ? '' : d.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: j.appointmentTime?.slice(0, 5)
+      };
+    });
+
+    // Renderiza partial em string
+    res.render('partials/appointments-table-rows', { layout: false, appointments: formatted }, (err, html) => {
+      if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
+      const hasNext = (p * l) < count;
+      res.json({ html, hasNext, nextPage: p + 1 });
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao paginar agendamentos' });
+  }
 });
+
 
 router.get('/appointments/partial-cards', async (req, res) => {
-  const { startDate, endDate, barberId, status } = req.query;
-  
-  const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
-  const todayStr = new Date().toLocaleDateString('en-CA');
+  try {
+    const { startDate, endDate, barberId, status, sort, page = 1, limit = 10 } = req.query;
+    const p = Math.max(parseInt(page) || 1, 1);
+    const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-  const where = {};
-  if (startDate) where.appointmentDate = { [Op.gte]: startDate };
-  if (endDate) where.appointmentDate = { ...(where.appointmentDate || {}), [Op.lte]: endDate };
-  if (!startDate && !endDate) where.appointmentDate = { [Op.gte]: todayStr };
-  if (barberId) where.barberId = barberId;
-  if (status) where.status = status; else where.status = { [Op.in]: DEFAULT_STATUSES };
+    const DEFAULT_STATUSES = ['in_progress','confirmed','completed'];
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
-  const statusOrder = `CASE "Appointment"."status"
-                         WHEN 'in_progress' THEN 1
-                         WHEN 'confirmed'   THEN 2
-                         WHEN 'completed'   THEN 3
-                         ELSE 99
-                       END`;
+    const where = {};
+    if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
+    else where.appointmentDate = { [Op.gte]: todayStr };
 
-  const appointments = await Appointment.findAll({
-    where,
-    include: [
-      { model: Client, as: 'client' },
-      { model: Barber, as: 'barber' },
-      { model: ServiceType, as: 'serviceType' }
-    ],
-    order: [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']]
-  });
+    if (barberId) where.barberId = Number(barberId);
+    where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
 
-  const formattedAppointments = appointments.map(app => {
-    const json = app.toJSON();
-    const date = new Date(json.appointmentDate + 'T03:00:00');
-    return {
-      ...json,
-      appointmentDateFormatted: date.toLocaleDateString('pt-BR'),
-      appointmentTimeFormatted: json.appointmentTime?.slice(0, 5)
-    };
-  });
+    const order = buildOrder(sort);
 
-  res.render('partials/appointments-cards-grouped', {
-    layout: false,
-    appointments: formattedAppointments,
-    helpers: require('../config/handlebars-helpers')
-  });
+    const { count, rows } = await Appointment.findAndCountAll({
+      where,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber' },
+        { model: ServiceType, as: 'serviceType' }
+      ],
+      order,
+      limit: l,
+      offset: (p - 1) * l
+    });
+
+    const formatted = rows.map(a => {
+      const j = a.toJSON();
+      const d = new Date((typeof j.appointmentDate === 'string' ? j.appointmentDate + 'T03:00:00' : j.appointmentDate));
+      return {
+        ...j,
+        appointmentDateFormatted: isNaN(d) ? '' : d.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: j.appointmentTime?.slice(0, 5)
+      };
+    });
+
+    res.render('partials/appointments-cards-grouped', { layout: false, appointments: formatted }, (err, html) => {
+      if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
+      const hasNext = (p * l) < count;
+      res.json({ html, hasNext, nextPage: p + 1 });
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao paginar agendamentos (cards)' });
+  }
 });
+
 // Atualizar status do agendamento
 router.post('/appointments/:id/status', async (req, res) => {
   try {
