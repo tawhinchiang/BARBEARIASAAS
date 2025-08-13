@@ -35,7 +35,7 @@
           <div class="display-6 mb-2"><i class="fas fa-dollar-sign"></i></div>
           <h3 class="fw-bold">{{formatCurrency monthlyRevenue}} </h3>
           <p class="text-muted mb-0">Receita do Mês</p>
-      </div>
+        </div>
       </div>
 
       <div class="col-lg-3 col-md-6 mb-3 d-flex">
@@ -56,8 +56,8 @@
     </div>
 
     <!-- Agendamentos Recentes -->
-    <div class="d-flex flex-wrap gap-4 mb-4 dashboard-flex-group">
-      <div class="flex-grow-1" style="flex-basis: 100%;">
+    <div class="row g-4 mb-4">
+      <div class="col-12">
         <div class="admin-card">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <h4 class="fw-bold mb-0">Agendamentos de Hoje</h4>
@@ -65,7 +65,7 @@
               <i class="fas fa-eye"></i> Ver Todos
             </a>
           </div>
-          {{#if recentAppointments}} 
+          {{#if recentAppointments}}
           <div class="admin-table-wrapper">
             <div class="scroll-x-overflow">
               <div class="scroll-x-inner">
@@ -131,92 +131,105 @@
             </div>
             <h5 class="text-muted">Nenhum agendamento para hoje</h5>
           </div>
-           {{/if}}
-          </div>
-          </div>
-       </div>
-    </div>
-
-    <!-- Gráfico de Agendamentos -->
-  
-<div class="d-flex flex-wrap gap-4 mb-4 dashboard-flex-group">
-    <div class="flex-grow-1" style="flex-basis: 66%;">
-        <div class="admin-card h-100">
-          <h4 class="fw-bold mb-3">Receita dos últimos 7 dias</h4>
-          <canvas id="appointmentsChart" height="400"></canvas>
-        </div>
-    </div>
-
-    <div class="flex-grow-1" style="flex-basis: 32%;">
-        <div class="admin-card h-100 d-flex flex-column">
-          <h4 class="fw-bold mb-3">Barbeiros Mais Solicitados</h4>
-            <div class="table-barbers flex-grow-1">
-                  {{#if topBarbers.length}}
-                  {{#each topBarbers}}
-                  <div class="barber-row d-flex align-items-center py-2 px-2 border-bottom">
-                      <div class="me-2 text-center" style="width: 30px;">
-                        <span class="badge bg-primary text-dark">{{add @index 1}}</span>
-                      </div>
-                      <div class="avatar-sm me-2">{{substring name 0 1}}</div>
-                      <div class="flex-grow-1">
-                      <div class="fw-semibold">{{name}}</div>
-                        <small class="text-muted">{{appointmentCount}} agendamentos</small>
-                      </div>
-                      <div class="fw-bold text-end">{{formatCurrency totalRevenue}}</div>
-                  </div>  
-                {{/each}}
-                {{else}}
-                <div class="text-center py-4">
-                  <i class="fas fa-user-friends display-4 text-muted mb-2"></i>
-                  <p class="text-muted">Nenhum dado disponível</p>
-                </div>
-                {{/if}}
-            </div>
-        </div>
-    </div>
-
-</div>
-
-    <!-- Serviços Mais Populares -->
-    <div class="d-flex flex-wrap gap-4 mb-4 dashboard-flex-group">
-      <div class="flex-grow-1" style="flex-basis: 100%;">
-        <div class="admin-card">
-          <h4 class="fw-bold mb-4">Serviços Mais Populares</h4>
-          {{#if topServices.length}}
-              <div class="services-scroll-container">
-                <div class="d-flex flex-nowrap gap-3">
-                  {{#each topServices}}
-                  <div class="service-stat-card flex-shrink-0" style="width: 240px;">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <h6 class="fw-bold mb-1">{{name}}</h6>
-                        <small class="text-muted">{{duration}}</small>
-                      </div>
-                      <div class="text-end">
-                        <div class="fw-bold">{{appointmentCount}}</div>
-                        <small class="text-muted">agendamentos</small>
-                      </div>
-                    </div>
-                    <div class="progress mb-2" style="height: 6px;">
-                      <div class="progress-bar bg-primary" style="width: {{percentage}}%"></div>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                      <small class="text-muted">R$ {{formatCurrency price}}</small>
-                      <small class="fw-bold">R$ {{formatCurrency totalRevenue}}</small>
-                    </div>
-                  </div>
-                  {{/each}}
-                </div>
-              </div>
-          {{else}}
-          <div class="text-center py-4">
-            <i class="fas fa-cut display-4 text-muted mb-2"></i>
-            <p class="text-muted">Sem dados de serviços</p>
-          </div>
           {{/if}}
         </div>
       </div>
     </div>
+
+
+    <!-- Gráfico de Agendamentos -->
+
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-xl-8">
+        <div class="admin-card h-100">
+          <h4 class="fw-bold mb-3">Receita dos últimos 7 dias</h4>
+          <canvas id="appointmentsChart" height="400"></canvas>
+        </div>
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="admin-card h-100 d-flex flex-column">
+          <h4 class="fw-bold mb-3">Barbeiros Mais Solicitados</h4>
+          <div class="table-barbers flex-grow-1">
+            {{#if topBarbers.length}}
+            {{#each topBarbers}}
+            <div class="barber-row d-flex align-items-center py-2 px-2 border-bottom">
+              <div class="me-2 text-center" style="width: 30px;">
+                <span class="badge bg-primary text-dark">{{add @index 1}}</span>
+              </div>
+              <div class="avatar-sm me-2">{{substring name 0 1}}</div>
+              <div class="flex-grow-1">
+                <div class="fw-semibold">{{name}}</div>
+                <small class="text-muted">{{appointmentCount}} agendamentos</small>
+              </div>
+              <div class="fw-bold text-end">{{formatCurrency totalRevenue}}</div>
+            </div>
+            {{/each}}
+            {{else}}
+            <div class="text-center py-4">
+              <i class="fas fa-user-friends display-4 text-muted mb-2"></i>
+              <p class="text-muted">Nenhum dado disponível</p>
+            </div>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Serviços Mais Populares -->
+<!-- Serviços Mais Populares -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="admin-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0">Serviços Mais Populares</h4>
+        {{!-- Espaço para filtro/intervalo no futuro (opcional) --}}
+      </div>
+
+      {{#if topServices.length}}
+      <div class="services-scroll-container">
+        <div class="d-flex flex-nowrap gap-3 px-1">
+          {{#each topServices}}
+          <div class="service-stat-card flex-shrink-0">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="pe-2">
+                <h6 class="fw-bold mb-1 text-truncate-2">{{name}}</h6>
+                <div class="service-meta">
+                  <span class="text-muted"><i class="far fa-clock me-1"></i>{{duration}} min</span>
+                  <span class="text-muted"><i class="fas fa-tag ms-3 me-1"></i>R$ {{formatCurrency price}}</span>
+                </div>
+              </div>
+              <div class="text-end ms-2">
+                <div class="fw-bold fs-6">{{appointmentCount}}</div>
+                <small class="text-muted">agendamentos</small>
+              </div>
+            </div>
+
+            <div class="progress progress-thick mb-3"
+                 role="progressbar"
+                 aria-valuenow="{{percentage}}" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-bar bg-primary" style="width: {{percentage}}%"></div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <small class="text-muted">Participação: {{percentage}}%</small>
+              <small class="fw-bold">Total: R$ {{formatCurrency totalRevenue}}</small>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{else}}
+      <div class="text-center py-4">
+        <i class="fas fa-cut display-4 text-muted mb-2"></i>
+        <p class="text-muted">Sem dados de serviços</p>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
 
   </div>
 </div>
@@ -231,64 +244,64 @@
       new Chart(chartEl, {
         type: 'line',
         data: {
-          labels: {{{json revenueChartLabels}}},
-          datasets: [{
-            label: 'Receita (R$)',
-            data: {{{json revenueChartData}}},
-            backgroundColor: 'rgba(0, 123, 255, 0.2)',
-            borderColor: '#007bff',
-            pointBackgroundColor: '#007bff',
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3
-          }]
+        labels: {{{json revenueChartLabels}}},
+        datasets: [{
+        label: 'Receita (R$)',
+        data: {{{json revenueChartData}}},
+        backgroundColor: 'rgba(0, 123, 255, 0.2)',
+        borderColor: '#007bff',
+        pointBackgroundColor: '#007bff',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3
+      }]
         },
-        options: {
-          responsive: true,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Receita Confirmada por Dia da Semana'
-            },
-            legend: {
-              labels: { font: { size: 14 } }
-            },
-            tooltip: {
-              bodyFont: { size: 14 },
-              titleFont: { size: 16 }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { font: { size: 13 } }
-            },
-            x: {
-              ticks: { font: { size: 13 } }
-            }
-          }
-        },
-        plugins: [{
-          id: 'showCanvas',
-          afterRender(chart) {
-            const chartEl = chart.canvas;
-            chartEl.style.visibility = 'visible';
-            chartEl.style.opacity = '1';
-          }
-        }]
+    options: {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Receita Confirmada por Dia da Semana'
+      },
+      legend: {
+        labels: { font: { size: 14 } }
+      },
+      tooltip: {
+        bodyFont: { size: 14 },
+        titleFont: { size: 16 }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { font: { size: 13 } }
+      },
+      x: {
+        ticks: { font: { size: 13 } }
+      }
+    }
+  },
+    plugins: [{
+      id: 'showCanvas',
+      afterRender(chart) {
+        const chartEl = chart.canvas;
+        chartEl.style.visibility = 'visible';
+        chartEl.style.opacity = '1';
+      }
+    }]
       });
     }
 
-    // === Transição Suave da Página ===
-    const dashboardEl = document.querySelector('.fade-in-soft');
-    if (dashboardEl) {
-      dashboardEl.addEventListener('animationend', () => {
-        dashboardEl.classList.remove('fade-in-soft');
-        dashboardEl.style.opacity = '1'; // Garante permanência após a animação
-      });
-    }
+  // === Transição Suave da Página ===
+  const dashboardEl = document.querySelector('.fade-in-soft');
+  if (dashboardEl) {
+    dashboardEl.addEventListener('animationend', () => {
+      dashboardEl.classList.remove('fade-in-soft');
+      dashboardEl.style.opacity = '1'; // Garante permanência após a animação
+    });
+  }
   });
 </script>
 
@@ -296,144 +309,158 @@
 
 
 <style>
-.service-stat-card {
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-}
-.service-stat-card:hover {
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
-}
-.progress {
-  background: var(--bg-gray);
-}
-.ranking-position .badge {
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#appointmentsChart {
-  width: 100% !important;
-  max-width: 100%;
-  min-width: 300px;
-}
-/*.table-barbers {
+  .service-stat-card {
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .service-stat-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+  
+  .progress {
+    background: var(--bg-gray);
+  }
+
+  .ranking-position .badge {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #appointmentsChart {
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 300px;
+  }
+
+  /*.table-barbers {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
   background: var(--bg-light);
 }*/
 
-.barber-row {
-  border-bottom: 1px solid var(--border-color);
-}
-
-.barber-row:last-child {
-  border-bottom: none;
-}
-.admin-table-wrapper {
-  overflow-x: auto;
-}
-
-.admin-table table {
-  min-width: 700px;
-}
-
-/* Scroll horizontal para serviços populares */
-.services-scroll-container {
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-
-.services-scroll-container .service-stat-card {
-  min-width: 220px;
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-}
-
-@media (max-width: 768px) {
-  .dashboard-flex-group > div {
-    flex-basis: 100% !important;
+  .barber-row {
+    border-bottom: 1px solid var(--border-color);
   }
 
-  .admin-card {
+  .barber-row:last-child {
+    border-bottom: none;
+  }
+
+  .admin-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .admin-table table {
+    min-width: 700px;
+  }
+
+  /* Scroll horizontal para serviços populares */
+  .services-scroll-container {
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .services-scroll-container .service-stat-card {
+    min-width: 220px;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-flex-group>div {
+      flex-basis: 100% !important;
+    }
+
+    .admin-card {
+      min-width: 320px;
+    }
+  }
+
+  .double-scroll {
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .double-scroll::before {
+    content: "";
+    display: block;
+    height: 16px;
+    overflow-x: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .dashboard-flex-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .dashboard-flex-group>div {
+    flex-basis: 100%;
     min-width: 320px;
   }
-}
-.double-scroll {
-  overflow-x: auto;
-  position: relative;
-}
-.double-scroll::before {
-  content: "";
-  display: block;
-  height: 16px;
-  overflow-x: auto;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-.dashboard-flex-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-}
 
-.dashboard-flex-group > div {
-  flex-basis: 100%;
-  min-width: 320px;
-}
-.admin-table-wrapper {
-  overflow-x: auto;
-  position: relative;
-  padding-top: 16px; /* espaço para o scroll de cima */
-}
+  .admin-table-wrapper {
+    overflow-x: auto;
+    position: relative;
+    padding-top: 16px;
+    /* espaço para o scroll de cima */
+  }
 
-.admin-table-scroll {
-  overflow-x: auto;
-}
+  .admin-table-scroll {
+    overflow-x: auto;
+  }
 
-.admin-table-scroll table {
-  min-width: 700px;
-  width: 100%;
-}
+  .admin-table-scroll table {
+    min-width: 700px;
+    width: 100%;
+  }
 
-.scroll-top-helper {
-  height: 1px;
-  margin-bottom: -1px;
-  overflow-x: auto;
-}
-.admin-table-wrapper::after {
-  content: "";
-  position: absolute;
-  top: 0;A
-  right: 0;
-  height: 100%;
-  width: 16px;
-  background: linear-gradient(to left, var(--bg-light), transparent);
-  pointer-events: none;
-}
-.scroll-x-overflow {
-  overflow-x: auto;
-  max-width: 100%;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  position: relative;
-}
-.scroll-x-inner {
-  min-width: 700px;
-}
+  .scroll-top-helper {
+    height: 1px;
+    margin-bottom: -1px;
+    overflow-x: auto;
+  }
+
+  .admin-table-wrapper::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 16px;
+    background: linear-gradient(to left, var(--bg-light), transparent);
+    pointer-events: none;
+  }
+
+  .scroll-x-overflow {
+    overflow-x: auto;
+    max-width: 100%;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    position: relative;
+  }
+
+  .scroll-x-inner {
+    min-width: 700px;
+  }
 </style>

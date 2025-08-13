@@ -2532,7 +2532,9 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 
 
 
-
+.admin-dashboard .admin-card {
+  margin-bottom: 0 !important;
+}
 
 @keyframes fadeIn {
   from {
