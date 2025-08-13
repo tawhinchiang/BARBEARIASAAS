@@ -274,7 +274,7 @@ router.get('/dashboard', async (req, res) => {
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
       pageTitle: 'Dashboard Administrativo',
-      pageSubtitle: `Bem-vindo, ${req.session?.user?.username || 'admin'}!`,
+     
       layout: 'admin',
       user: req.session.user,
       todayAppointmentsCount: todayAppointments.length,
@@ -418,7 +418,6 @@ router.get('/appointments', async (req, res) => {
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       pageTitle: 'Agendamentos',
-      pageSubtitle: 'Gerencie e filtre seus horários',
       layout: 'admin',
       user: req.session.user,
       appointments: formattedAppointments,
@@ -696,7 +695,7 @@ const statusOrder = `CASE "Appointment"."status"
     res.render('admin/reports', {
       title: 'Relatórios',
       pageTitle: 'Relatórios',
-      pageSubtitle: 'Indicadores e exportações',
+      
       layout: 'admin',
       user: req.session.user,
       appointments: formattedAppointments,

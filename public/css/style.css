@@ -2903,3 +2903,160 @@ body.sidebar-collapsed .sidenav-footer .btn i {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== MELHORIAS PARA RESPONSIVIDADE MÓVEL ===== */
+
+/* Garantir que o offcanvas funcione corretamente em mobile */
+.admin-offcanvas {
+  background: var(--sidebar-bg) !important;
+  color: var(--sidebar-text) !important;
+  width: 280px !important;
+}
+
+/* Melhorar visibilidade do botão hamburger em mobile */
+@media (max-width: 991.98px) {
+  .admin-navbar .navbar-toggler {
+    border: none !important;
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.5rem;
+  }
+  
+  .admin-navbar .navbar-toggler:focus {
+    box-shadow: none !important;
+  }
+  
+  .admin-navbar .navbar-toggler-icon {
+    width: 1.5em;
+    height: 1.5em;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath stroke='white' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+  }
+  
+  /* Esconder sidebar fixa em mobile */
+  .admin-sidenav {
+    display: none !important;
+  }
+  
+  /* Ajustar padding do conteúdo principal em mobile */
+  .admin-main {
+    padding-left: 0 !important;
+    padding-top: 64px;
+  }
+}
+
+/* Melhorar estilos do offcanvas */
+.admin-offcanvas .sidebar-header {
+  background: var(--sidebar-header-bg);
+  color: var(--sidebar-text);
+  padding: 1rem;
+  border-bottom: 1px solid var(--sidebar-sep);
+}
+
+.admin-offcanvas .sidebar-header h5 {
+  color: var(--sidebar-text);
+  margin: 0;
+}
+
+.admin-offcanvas .sidebar-search {
+  background: var(--sidebar-search-bg);
+  border-bottom: 1px solid var(--sidebar-sep);
+}
+
+.admin-offcanvas .sidebar-search .form-control {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sidebar-sep);
+  color: var(--sidebar-text);
+}
+
+.admin-offcanvas .sidebar-search .form-control::placeholder {
+  color: var(--sidebar-text-muted);
+}
+
+.admin-offcanvas .sidebar-search .btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sidebar-sep);
+  color: var(--sidebar-text-muted);
+}
+
+/* Melhorar itens do menu offcanvas */
+.admin-offcanvas .admin-menu .list-group-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--sidebar-sep);
+  color: var(--sidebar-text);
+  padding: 0.85rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.admin-offcanvas .admin-menu .list-group-item:hover,
+.admin-offcanvas .admin-menu .list-group-item:focus {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-text);
+}
+
+.admin-offcanvas .admin-menu .list-group-item.active {
+  background: var(--sidebar-active);
+  color: var(--sidebar-text);
+  border-left: 3px solid var(--primary-color);
+}
+
+/* Footer do offcanvas */
+.admin-offcanvas .sidebar-footer {
+  background: var(--sidebar-bg);
+  border-top: 1px solid var(--sidebar-sep);
+  padding: 1rem;
+}
+
+.admin-offcanvas .sidebar-footer .user-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--primary-color);
+  color: var(--text-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.admin-offcanvas .sidebar-footer .btn {
+  border-radius: 6px;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.admin-offcanvas .sidebar-footer .btn-outline-secondary {
+  border-color: var(--sidebar-sep);
+  color: var(--sidebar-text);
+}
+
+.admin-offcanvas .sidebar-footer .btn-outline-secondary:hover {
+  background: var(--sidebar-hover);
+  border-color: var(--sidebar-text);
+}
+
+.admin-offcanvas .sidebar-footer .btn-danger {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+/* Garantir que o backdrop funcione corretamente */
+.offcanvas-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Melhorar touch targets para mobile */
+@media (max-width: 767.98px) {
+  .admin-offcanvas .admin-menu .list-group-item {
+    padding: 1rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .admin-offcanvas .sidebar-footer .btn {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+}
+

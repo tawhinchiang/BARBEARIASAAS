@@ -104,7 +104,7 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 
       title: 'Gerenciar Serviços',
       pageTitle: 'Gerenciar Serviços',
-      pageSubtitle: 'Visualize e gerencie os serviços oferecidos',
+    
       services: [],
       error: 'Erro ao carregar serviços',
       layout: 'admin'
