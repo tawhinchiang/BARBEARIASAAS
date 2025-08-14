@@ -74,8 +74,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     } catch (_) {}
 
-    // 2) se veio com query (?startDate=...), limpa a URL sem recarregar
-    if (window.location.search) {
+    
+   // Depois (não limpar em /admin/appointments):
+    if (window.location.search && !window.location.pathname.startsWith('/admin/appointments')) {
       history.replaceState(null, '', window.location.pathname + window.location.hash);
     }
 
@@ -299,6 +300,36 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 });
+// Navegação da paginação numerada
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('.pagination .page-link');
+  if (!link || link.parentElement.classList.contains('disabled')) return;
+
+  const page = parseInt(link.dataset.page, 10);
+  if (!page || Number.isNaN(page)) return;
+
+  e.preventDefault();
+
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', String(page));
+
+  // preserva/atualiza o limit atual (seletor "Itens por página")
+  const pageSize = document.getElementById('pageSize');
+  if (pageSize && pageSize.value) url.searchParams.set('limit', pageSize.value);
+
+  // mantém demais filtros já presentes (startDate, endDate, barberId, status, sort...)
+  // navigateWithFade já está sendo usado no projeto
+  navigateWithFade(url.pathname + '?' + url.searchParams.toString());
+});
+
+// Mudar "Itens por página" deve ir para a página 1 mantendo filtros
+document.getElementById('pageSize')?.addEventListener('change', function () {
+  const url = new URL(window.location.href);
+  url.searchParams.set('limit', this.value);
+  url.searchParams.set('page', '1');
+  navigateWithFade(url.pathname + '?' + url.searchParams.toString());
+});
+
 const ADMIN_CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 // API: notify({ type: 'success'|'error'|'warning'|'info', message, title, delay })
 function notify({ type = 'info', message = '', title = '', delay = 5000 } = {}) {

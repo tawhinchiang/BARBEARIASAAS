@@ -33,6 +33,19 @@ function buildOrder(sort) {
     default:          return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
   }
 }
+// Helper para paginação numerada com "…"
+function buildPages(current, total) {
+  const pages = [];
+  const delta = 2;
+  const left = Math.max(1, current - delta);
+  const right = Math.min(total, current + delta);
+  if (left > 1) pages.push(1);
+  if (left > 2) pages.push('...');     // ← aqui
+  for (let p = left; p <= right; p++) pages.push(p);
+  if (right < total - 1) pages.push('...'); // ← e aqui
+  if (right < total) pages.push(total);
+  return pages;
+}
 
 
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
@@ -329,8 +342,8 @@ router.get('/appointments', async (req, res) => {
       query: req.query
     });
     const { startDate, endDate, barberId, status, sort } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = 20;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100); // 5–100 itens por página
     const offset = (page - 1) * limit;
 
     const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
@@ -366,31 +379,7 @@ router.get('/appointments', async (req, res) => {
                            ELSE 99
                          END`;
 
-    let order = [];
-    switch (sort) {
-      case 'date_asc':
-        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
-        break;
-      case 'date_desc':
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC'], [literal(statusOrder), 'ASC']];
-        break;
-      case 'value_asc':
-        order = [['totalPrice', 'ASC']];
-        break;
-      case 'value_desc':
-        order = [['totalPrice', 'DESC']];
-        break;
-      case 'barber_asc':
-        order = [[literal('"barber"."name"'), 'ASC']];
-        break;
-      case 'barber_desc':
-        order = [[literal('"barber"."name"'), 'DESC']];
-        break;
-      default:
-        // 🔧 default desejado
-        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
-    }
-
+   const order = buildOrder(sort);
     log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
 
     const { count, rows: appointments } = await Appointment.findAndCountAll({
@@ -404,9 +393,13 @@ router.get('/appointments', async (req, res) => {
       limit,
       offset
     });
-
+     const totalPages = Math.max(1, Math.ceil(count / limit));
+    const pages = buildPages(page, totalPages);
+    const prevPage = page > 1 ? page - 1 : 1;
+    const nextPage = page < totalPages ? page + 1 : totalPages;
+ 
     const barbers = await Barber.findAll({ where: { isActive: true } });
-    const totalPages = Math.ceil(count / limit);
+   
     const formattedAppointments = appointments.map(app => {
       const plain = app.toJSON();
       const serviceType = plain.serviceType || {};
@@ -443,13 +436,17 @@ router.get('/appointments', async (req, res) => {
       user: req.session.user,
       appointments: formattedAppointments,
       barbers,
-      filters: { startDate, endDate, barberId, status, sort },
-      pagination: {
-        currentPage: page,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+      filters: { startDate, endDate, barberId, status, sort, limit },
+       selectedLimit: limit,
+       pagination: {
+      currentPage: page,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+      nextPage,
+      prevPage,
+      pages   
+    }
     });
   } catch (error) {
     console.error('[DEBUG ERRO]', error);

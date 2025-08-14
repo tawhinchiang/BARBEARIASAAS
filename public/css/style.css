@@ -3062,3 +3062,28 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 }
 
+/* Centralizar paginação dentro do bloco */
+.pagination-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* Estilo padronizado de acordo com tema */
+.pagination .page-link {
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  background-color: transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.pagination .page-link:hover {
+  background-color: var(--primary-color);
+  color: #000;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #fff;
+  color: #000 !important;
+  border-color: var(--primary-color);
+}

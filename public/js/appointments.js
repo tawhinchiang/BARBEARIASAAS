@@ -137,11 +137,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     // fase visual 2: limitar tabela
-      setTimeout(() => {
-      requestAnimationFrame(() => {
-        limitarLinhasDaTabela(10);
-          });
-      }, 50);
+      // setTimeout(() => {
+      // requestAnimationFrame(() => {
+      //   limitarLinhasDaTabela(10);
+      //     });
+      // }, 50);
 
     // fase visual 3: limitar cards
       setTimeout(() => {
@@ -961,9 +961,9 @@ async function refreshAppointmentsTable() {
   if (tableBody) {
     try {
       const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
-      const html = await response.text();
-      tableBody.innerHTML = html;
-      limitarLinhasDaTabela(10);
+      const data = await response.json();
+      tableBody.innerHTML = data;
+      
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar a TABELA:', err);
     }
@@ -974,8 +974,8 @@ async function refreshAppointmentsTable() {
   if (cardContainer) {
     try {
       const response = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
-      const html = await response.text();
-      cardContainer.innerHTML = html;
+      const data = await response.json();
+      cardContainer.innerHTML = data;
       
       requestAnimationFrame(() => {
         initCardExpandables();
@@ -1080,6 +1080,24 @@ btnVerMenos.addEventListener('click', () => {
   }
 }
 
+document.getElementById('pageSize')?.addEventListener('change', (e) => {
+  const limit = e.target.value;
+  const url = new URL(window.location.href);
+  url.searchParams.set('limit', limit);
+  url.searchParams.set('page', '1');
+  window.location.href = url.toString();
+});
+
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('.pagination a[data-page]');
+  if (!a) return;
+  e.preventDefault();
+  const page = a.dataset.page;
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', page);
+  // preserva filtros e limit existentes
+  window.location.href = url.toString();
+});
 
 
 
