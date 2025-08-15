@@ -174,8 +174,20 @@ module.exports = {
     if (!start || !end) return str; // evita quebrar se não for intervalo
     return `${start}–${end}`;
   },
-
-
+ array: function(...args) {
+    return args.slice(0, -1);
+  },ifEquals: function(a, b, options) {
+  if (a == b) {
+    return options.fn(this);
+  }
+  return options.inverse(this);
+},
+gt: function(a, b, options) {
+  if (options && typeof options.fn === 'function') {
+    return a > b ? options.fn(this) : options.inverse(this);
+  }
+  return a > b;
+},
 
 
 };

@@ -144,6 +144,48 @@
           <div class="card-header"><h5 class="card-title mb-0">Detalhamento dos Agendamentos</h5></div>
           <div class="card-body">
             <div class="table-responsive">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="d-flex align-items-center gap-2">
+    <label class="form-label m-0 small opacity-75">Itens por página</label>
+    <select id="itemsPerPage" class="form-select form-select-sm" style="width: 90px;">
+      {{#each (array 5 10 20 50 100)}}
+        <option value="{{this}}" {{#ifEquals ../selectedLimit this}}selected{{/ifEquals}}>{{this}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{#if (gt pagination.totalPages 1)}}
+<ul class="pagination mb-0">
+  <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
+    <a class="page-link"
+       href="?page={{pagination.prevPage}}&limit={{selectedLimit}}&startDate={{filters.startDate}}&endDate={{filters.endDate}}&barberId={{filters.barberId}}&status={{filters.status}}&sort={{filters.sort}}&view={{view}}">
+       &laquo;
+    </a>
+  </li>
+
+  {{#each pagination.pages}}
+    {{#if (eq this "...")}}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+    {{else}}
+      <li class="page-item {{#ifEquals ../pagination.currentPage this}}active{{/ifEquals}}">
+        <a class="page-link"
+           href="?page={{this}}&limit={{../selectedLimit}}&startDate={{../filters.startDate}}&endDate={{../filters.endDate}}&barberId={{../filters.barberId}}&status={{../filters.status}}&sort={{../filters.sort}}&view={{../view}}">
+           {{this}}
+        </a>
+      </li>
+    {{/if}}
+  {{/each}}
+
+  <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
+    <a class="page-link"
+       href="?page={{pagination.nextPage}}&limit={{selectedLimit}}&startDate={{filters.startDate}}&endDate={{filters.endDate}}&barberId={{filters.barberId}}&status={{filters.status}}&sort={{filters.sort}}&view={{view}}">
+       &raquo;
+    </a>
+  </li>
+</ul>
+{{/if}}
+
+</div>
+
               <table class="table table-hover" id="appointmentsTable">
                 <thead>
                   <tr>

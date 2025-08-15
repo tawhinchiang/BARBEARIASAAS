@@ -589,155 +589,116 @@ router.post('/appointments/:id/status', async (req, res) => {
 });
 
 // Relatórios administrativos - CORRIGIDA
+// /admin/reports – LISTAGEM COM PAGINAÇÃO + VIEW MODE
 router.get('/reports', async (req, res) => {
   try {
-    // log('Acessando relatórios', { user: req.session.user, query: req.query });
-
     const { startDate, endDate, barberId, status, sort } = req.query;
-    
+
+    // paginação
+    const page  = Math.max(parseInt(req.query.page)  || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100);
+    const offset = (page - 1) * limit;
+
+    // view mode (table|cards)
+    const view = (req.query.view === 'cards') ? 'cards' : 'table';
+
     const todayStr = new Date().toLocaleDateString('en-CA');
+    const whereClause = {};
 
-    let whereClause = {};
+    if (startDate && endDate)       whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate)             whereClause.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate)               whereClause.appointmentDate = { [Op.lte]: endDate };
+    else                            whereClause.appointmentDate = { [Op.gte]: todayStr };
 
+    if (barberId) whereClause.barberId = Number(barberId);
+    if (status)   whereClause.status   = status;
 
-if (startDate && endDate) {
-  whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
-} else if (startDate) {
-  whereClause.appointmentDate = { [Op.gte]: startDate };
-} else if (endDate) {
-  whereClause.appointmentDate = { [Op.lte]: endDate };
-} else {
-  whereClause.appointmentDate = { [Op.gte]: todayStr };
-}
+    const order = buildOrder(sort);
 
-
-if (status) {
-  whereClause.status = status;
-} 
-
-
-if (barberId) whereClause.barberId = Number(barberId);
-    /// 🔄 ORDENAR COMO /appointments
-const statusOrder = `CASE "Appointment"."status"
-                       WHEN 'in_progress' THEN 1
-                       WHEN 'confirmed'   THEN 2
-                       WHEN 'completed'   THEN 3
-                       ELSE 99
-                     END`;
-
-      // 🎯 Padrão idêntico ao /appointments
-      let order = [
-        ['appointmentDate', 'ASC'],
-        ['appointmentTime', 'ASC'],
-        [literal(statusOrder), 'ASC']
-      ];
-
-      switch (sort) {
-        case 'date_asc':
-          order = [
-            ['appointmentDate', 'ASC'],
-            ['appointmentTime', 'ASC'],
-            [literal(statusOrder), 'ASC']
-          ];
-          break;
-        case 'date_desc':
-          order = [
-            ['appointmentDate', 'DESC'],
-            ['appointmentTime', 'DESC'],
-            [literal(statusOrder), 'ASC']
-          ];
-          break;
-        case 'value_desc':
-          order = [['totalPrice', 'DESC']];
-          break;
-        case 'value_asc':
-          order = [['totalPrice', 'ASC']];
-          break;
-        case 'barber_asc':
-          order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
-          break;
-        case 'barber_desc':
-          order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
-          break;
-      }
-
-
-    const appointments = await Appointment.findAll({
+    const { count, rows } = await Appointment.findAndCountAll({
       where: whereClause,
       include: [
         { model: Client, as: 'client' },
-        { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
+        { model: Barber, as: 'barber' },
         { model: ServiceType, as: 'serviceType' }
       ],
+      order,
+      limit,
+      offset
+    });
 
-      order
-    }); // padrão
+    const totalPages = Math.max(1, Math.ceil(count / limit));
+    const pages      = buildPages(page, totalPages);
+    const prevPage   = page > 1 ? page - 1 : 1;
+    const nextPage   = page < totalPages ? page + 1 : totalPages;
 
-    const formattedAppointments = appointments.map(app => {
-      const plain = app.toJSON();
-      const date = new Date(plain.appointmentDate + 'T03:00:00');
-      const serviceType = plain.serviceType || {};
-
+    const formatted = rows.map(app => {
+      const j = app.toJSON();
+      const d = new Date((typeof j.appointmentDate === 'string' ? j.appointmentDate + 'T03:00:00' : j.appointmentDate));
       return {
-        ...plain,
-        appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+        ...j,
+        appointmentDateFormatted: isNaN(d) ? '' : d.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: j.appointmentTime?.slice(0, 5),
         serviceType: {
-          name: serviceType.name || 'Não informado',
-          duration: serviceType.duration || 'n/d'
+          name: j.serviceType?.name || 'Não informado',
+          duration: j.serviceType?.duration || 'n/d'
         }
       };
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-        log('Dados do relatório carregados', { appointmentsCount: appointments.length });
-    }
+    // barbeiros para filtro (mantém consistência)
     const barbers = await Barber.findAll({ where: { isActive: true } });
 
-    // Estatísticas para relatórios
-    const stats = {
-      total: appointments.length,
-      byStatus: {},
-      byBarber: {},
-      totalRevenue: 0
+    // --- Estatísticas para os gráficos ---
+    let stats = {
+      total: count,
+      totalRevenue: 0,
+      byStatus: {
+        pending: 0,
+        confirmed: 0,
+        in_progress: 0,
+        completed: 0,
+        cancelled: 0,
+        no_show: 0
+      },
+      byBarber: {}
     };
 
-    appointments.forEach(apt => {
-      // Contagem Por status
-     
-      stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
+    rows.forEach(a => {
+      stats.totalRevenue += Number(a.totalPrice) || 0;
 
-      // Contagem Por barbeiro
-      const barberKey = `${apt.barber?.id} - ${apt.barber?.name || 'Desconhecido'}`;
-      stats.byBarber[barberKey] = (stats.byBarber[barberKey] || 0) + 1;
-
-
-      // Receita total
-      // Receita total - ignorar agendamentos cancelados
-      if (apt.totalPrice && apt.status === 'completed') {
-        stats.totalRevenue += parseFloat(apt.totalPrice);
+      if (stats.byStatus[a.status] !== undefined) {
+        stats.byStatus[a.status]++;
       }
 
+      const barberName = a.barber?.name || 'Não informado';
+      stats.byBarber[barberName] = (stats.byBarber[barberName] || 0) + 1;
     });
-
-    log('Estatísticas do relatório calculadas', { stats });
-   
 
     res.render('admin/reports', {
       title: 'Relatórios',
       pageTitle: 'Relatórios',
-      
       layout: 'admin',
       user: req.session.user,
-      appointments: formattedAppointments,
+      appointments: formatted, // usado pela tabela e pelos cards
       barbers,
-      stats,
-      filters: { startDate, endDate, barberId, status, sort }
-
+      view,
+      stats, // <-- Agora sempre enviamos stats
+      filters: { startDate, endDate, barberId, status, sort, limit },
+      selectedLimit: limit,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+        nextPage,
+        prevPage,
+        pages
+      }
     });
 
   } catch (error) {
-    logError('Erro ao gerar relatórios', error);
+    console.error('[ADMIN][REPORTS] Erro:', error);
     res.render('admin/reports', {
       title: 'Relatórios',
       layout: 'admin',
@@ -746,6 +707,8 @@ const statusOrder = `CASE "Appointment"."status"
     });
   }
 });
+
+
 
 // Exportar relatórios (PDF/CSV) - CORRIGIDA
 // Exemplo da rota corrigida

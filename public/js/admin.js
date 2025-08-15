@@ -1,5 +1,49 @@
 // JavaScript para área administrativa - Frontend
 document.addEventListener('DOMContentLoaded', function () {
+  // ======= Inicialização específica de /admin/reports =======
+if (window.location.pathname.startsWith('/admin/reports')) {
+  const filterForm = document.getElementById('filterForm'); // se você tiver um form de filtros na view
+  const toggleBtn  = document.getElementById('toggleReportView');
+  const tableView  = document.getElementById('reportsTableView');
+  const cardView   = document.getElementById('reportsCardView');
+  const limitSel   = document.getElementById('reportItemsPerPage');
+
+  // Alternar visualização (table <-> cards)
+  toggleBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const url = new URL(window.location.href);
+    const current = url.searchParams.get('view') === 'cards' ? 'cards' : 'table';
+    const next = current === 'table' ? 'cards' : 'table';
+    url.searchParams.set('view', next);
+    url.searchParams.set('page', '1'); // volta p/ página 1 ao alternar
+    navigateWithFade(url.pathname + '?' + url.searchParams.toString());
+  });
+
+  // Alterar itens por página
+  limitSel?.addEventListener('change', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('limit', limitSel.value);
+    url.searchParams.set('page', '1');
+    navigateWithFade(url.pathname + '?' + url.searchParams.toString());
+  });
+
+  // Paginação numerada
+  document.querySelectorAll('[data-report-page]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = a.getAttribute('data-report-page');
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', page);
+      navigateWithFade(url.pathname + '?' + url.searchParams.toString());
+    });
+  });
+
+  // Setar o select conforme a URL atual (evita discrepância ao render)
+  const url = new URL(window.location.href);
+  const limit = url.searchParams.get('limit');
+  if (limitSel && limit) limitSel.value = limit;
+}
+
   const qs = (s) => document.querySelector(s);
 
   const tableBody = qs('#appointmentsTableBody');

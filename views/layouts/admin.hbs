@@ -70,12 +70,16 @@
     </div>
   </header>
 
-  <!-- Sidebar fixa (desktop) -->
-  {{> adminSideDock user=user isBarber=isBarber}}
+ {{!-- Só renderiza a fixa se for desktop --}}
+  <div class="d-none d-lg-block">
+    {{> adminSideDock user=user isBarber=isBarber}}
+  </div>
 
-  <!-- Sidebar offcanvas (mobile) -->
-  {{> adminSidebar sidebarTitle=title user=user isBarber=isBarber}}
-  {{/unless}}
+  {{!-- Só renderiza a offcanvas se for mobile --}}
+  <div class="d-lg-none">
+    {{> adminSidebar sidebarTitle=title user=user isBarber=isBarber}}
+  </div>
+{{/unless}}
 
 
 
@@ -178,7 +182,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const sidebarEl = document.getElementById('adminSidebar');
       if (!sidebarEl || typeof bootstrap === 'undefined') return;
-
+       if (window.innerWidth >= 992) return;
       const sidebar = bootstrap.Offcanvas.getOrCreateInstance(sidebarEl);
 
       sidebarEl.querySelectorAll('a[href]').forEach(a => {
