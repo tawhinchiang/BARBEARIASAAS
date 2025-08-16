@@ -4,7 +4,12 @@ const SafeLocalAuth = require('../utils/CustomLocalAuth');
 const { formatBrazilianPhoneForWhatsApp } = require('./smartphoneformatter');
 const { generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
-
+const TIMEOUTS = {
+  send: 10000,       // 10s para envio
+  ack: 20000,        // 20s para ACK
+  retryBase: 1000,   // 1s, 2s, 3s... progressivo
+  debugDelay: 10000  // 10s no modo debug
+};
 let client = null;
 let isReady = false;
 let latestQrCode = null;
@@ -123,35 +128,48 @@ async function ensureClientReady() {
 async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   console.log(`[WHATSAPP] 🚀 Enviando para: ${phone}`);
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      await ensureClientReady();
+  await ensureClientReady();
 
-      const formattedPhone = await formatBrazilianPhoneForWhatsApp(client, phone);
-      if (!formattedPhone) throw new Error("Falha no formatador");
+  const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
+  const variations = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))];
 
-      // Validação oficial do número
-      const numberId = await client.getNumberId(formattedPhone);
-      if (!numberId) throw new Error(`Número não existe no WhatsApp: ${formattedPhone}`);
+  for (const variation of variations) {
+    if (!variation) continue;
+    console.log(`[WHATSAPP] 🔍 Testando variação: ${variation}`);
 
-      await sendMessageWithTimeout(numberId._serialized, message);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const numberId = await client.getNumberId(variation);
+        if (!numberId) throw new Error(`Número inválido no WhatsApp: ${variation}`);
 
-      console.log(`[WHATSAPP] ✅ Sucesso na tentativa ${attempt}`);
-      return true;
+        const msg = await sendMessageWithTimeout(numberId._serialized, message, TIMEOUTS.send);
+        console.log(`[WHATSAPP] ✅ Envio aceito pelo WhatsApp (tentativa ${attempt})`);
 
-    } catch (err) {
-      console.error(`[WHATSAPP] ❌ Tentativa ${attempt} falhou: ${err.message}`);
-      if (attempt < maxRetries) {
-        const waitTime = attempt * 1000; // 1s, 2s, 3s...
-        console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
-        await delay(waitTime);
+        // --- Marca como sucesso IMEDIATAMENTE ---
+        // O ACK fica só como log
+        client.on("message_ack", (ackMsg, ack) => {
+          if (ackMsg.id.id === msg.id.id) {
+            console.log(`[WHATSAPP] 📬 ACK recebido (${ack}) para ${variation}`);
+          }
+        });
+
+        return true; // considera sucesso aqui
+
+      } catch (err) {
+        console.error(`[WHATSAPP] ❌ Falha com ${variation} (tentativa ${attempt}): ${err.message}`);
+        if (attempt < maxRetries) {
+          const waitTime = attempt * TIMEOUTS.retryBase;
+          console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
+          await delay(waitTime);
+        }
       }
     }
   }
 
-  console.error(`[WHATSAPP] 💥 Todas as ${maxRetries} tentativas falharam para ${phone}`);
+  console.error(`[WHATSAPP] 💥 Todas as variações falharam para ${phone}`);
   return false;
 }
+
 
 /**
  * Versão debug (testa variações do número, com delay maior)
