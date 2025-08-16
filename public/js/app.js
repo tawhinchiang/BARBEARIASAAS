@@ -688,22 +688,30 @@ function setupPhoneMask() {
   phoneInput.addEventListener('blur', () => {
     validateClientForm(); // força validação após sair do campo
   });
+phoneInput.addEventListener('input', function (e) {
+  let value = e.target.value.replace(/\D/g, '');
 
-  phoneInput.addEventListener('input', function (e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
+  // Se apagar tudo, não força nada
+  if (value.length === 0) {
+    e.target.value = '';
+    return;
+  }
 
-    if (value.length >= 2) {
-      if (value.length <= 10) {
-        value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-      } else {
-        value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-      }
-    }
+  if (value.length > 11) value = value.slice(0, 11);
 
-    e.target.value = value;
-    setTimeout(validateClientForm, 0);
-  });
+  if (value.length <= 2) {
+    value = value.replace(/(\d{0,2})/, '($1');
+  } else if (value.length <= 6) {
+    value = value.replace(/(\d{2})(\d{0,4})/, '($1) $2');
+  } else if (value.length <= 10) {
+    value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  } else {
+    value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  }
+
+  e.target.value = value;
+  setTimeout(validateClientForm, 0);
+});
 
 }
 
