@@ -179,6 +179,34 @@ router.post('/verify-code', async (req, res) => {
 });
 
 
+// Gera variações plausíveis do telefone para busca no banco
+// Gera variações plausíveis do telefone para busca no banco
+function buildPhoneVariants(input) {
+  let cleaned = String(input || '').replace(/\D/g, '');
+  if (cleaned.startsWith('55')) cleaned = cleaned.slice(2);
+
+  const ddd = cleaned.slice(0, 2);
+  let num = cleaned.slice(2);
+
+  const variants = new Set();
+  variants.add(cleaned);
+  variants.add('55' + cleaned);
+
+  // Se começar com 9, tenta sem
+  if (num.length === 9 && num.startsWith('9')) {
+    variants.add(ddd + num.slice(1));
+    variants.add('55' + ddd + num.slice(1));
+  }
+
+  // Se tiver 8 dígitos, tenta com 9
+  if (num.length === 8) {
+    variants.add(ddd + '9' + num);
+    variants.add('55' + ddd + '9' + num);
+  }
+
+  return [...variants];
+}
+
 
 // Buscar histórico por telefone
 router.post('/search', async (req, res) => {
@@ -188,9 +216,10 @@ router.post('/search', async (req, res) => {
     if (!phone) return res.json({ success: false, message: 'Telefone não informado.' });
 
     const cleanPhone = normalizePhone(phone);
-    log('Telefone limpo para busca', { original: phone, clean: cleanPhone });
+    const variants = buildPhoneVariants(cleanPhone);
+    log('Variações de telefone para busca', variants);
 
-    const client = await Client.findOne({ where: { phone: cleanPhone } });
+    const client = await Client.findOne({ where: { phone: variants } });
     if (!client) return res.json({ success: false, message: 'Nenhum cliente encontrado com este telefone.' });
 
     const appointments = await Appointment.findAll({
@@ -264,24 +293,33 @@ router.post('/cancel/:id', async (req, res) => {
       console.log('[HISTORY] Agendamento cancelado emitido via socket:', appointment.id);
     }
 
-    try {
-      const msg = `Olá, ${appointment.client.firstName}! 👋
+ try {
+  const msg = `Olá, ${appointment.client.firstName}! 👋
 
-      Seu agendamento foi cancelado com sucesso:
-      🗓️ *Data:* ${appointment.appointmentDate}
-      ⏰ *Horário:* ${appointment.appointmentTime}
-      ✂️ *Serviço:* ${appointment.serviceType.name}
-      💈 *Barbeiro:* ${appointment.barber.name}
+  Seu agendamento foi cancelado com sucesso:
+  🗓️ *Data:* ${appointment.appointmentDate}
+  ⏰ *Horário:* ${appointment.appointmentTime}
+  ✂️ *Serviço:* ${appointment.serviceType.name}
+  💈 *Barbeiro:* ${appointment.barber.name}
 
-      Se precisar remarcar ou se tiver algum motivo para o cancelamento, ficaremos felizes em ouvir. 😊
+  Se precisar remarcar ou se tiver algum motivo para o cancelamento, ficaremos felizes em ouvir. 😊
 
-      Estamos à disposição para te atender quando quiser! 💈✨`;
+  Estamos à disposição para te atender quando quiser! 💈✨`;
 
-      await sendWhatsAppMessage(appointment.client.phone, msg);
-          }
-    catch (err) {
-      logError('Erro ao enviar mensagem de cancelamento', err);
+  const variants = buildPhoneVariants(appointment.client.phone);
+  let sent = false;
+  for (const v of variants) {
+    if (await sendWhatsAppMessage(v, msg)) {
+      sent = true;
+      break;
     }
+  }
+  if (!sent) logError('Nenhuma variação válida para enviar WhatsApp de cancelamento', new Error());
+}
+catch (err) {
+  logError('Erro ao enviar mensagem de cancelamento', err);
+}
+
 
     res.json({ success: true, message: 'Agendamento cancelado com sucesso.', appointment });
   } catch (error) {
@@ -297,7 +335,8 @@ router.post('/active', async (req, res) => {
     if (!phone) return res.json({ success: false, message: 'Telefone não informado.' });
 
     const cleanPhone = normalizePhone(phone);
-    const client = await Client.findOne({ where: { phone: cleanPhone } });
+    const variants = buildPhoneVariants(cleanPhone);
+    const client = await Client.findOne({ where: { phone: variants } });
     if (!client) return res.json({ success: false, message: 'Cliente não encontrado.' });
 
     const now = new Date();
@@ -339,6 +378,7 @@ router.post('/active', async (req, res) => {
     res.status(500).json({ success: false, message: 'Erro interno ao buscar agendamentos ativos.' });
   }
 });
+
 
 
 module.exports = router;
