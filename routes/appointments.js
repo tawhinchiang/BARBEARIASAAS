@@ -1,6 +1,6 @@
 const express = require('express');
-const { sendWhatsAppMessage } = require('../utils/whatsapp');
-const normalizePhone = require('../utils/normalizePhone');
+const { sendWhatsAppMessage } = require('../utils/whatsapp'); // Usando versão corrigida
+const normalizePhone = require('../utils/normalizePhone'); // Usando versão corrigida
 const moment = require('moment');
 const { Client, Barber, ServiceType, Appointment } = require('../models');
 const router = express.Router();
@@ -19,17 +19,17 @@ const logError = (message, error) => {
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] ${message}`);
   console.error(`[${timestamp}] [APPOINTMENTS ERROR] Stack:`, error.stack);
 };
+
 function isTimeInRange(time, range) {
   if (!range || range === 'closed') return false;
 
   const [start, end] = range.split('-');
   return time >= start && time < end;
 }
+
 // API para criar novo agendamento
 router.post('/api/appointments', async (req, res) => {
   try {
-    // log('Recebendo novo agendamento', req.body);
-    // log('Campos adicionais', { isEncaixe, fitInNote: rawFitInNote });
     const { isEncaixe = false } = req.body;
     const { serviceId, barberId, appointmentDate, appointmentTime, clientData } = req.body;
 
@@ -108,7 +108,9 @@ router.post('/api/appointments', async (req, res) => {
       });
     }
 
+    // CORREÇÃO CRÍTICA: Usar a nova função de normalização
     const cleanPhone = normalizePhone(phone);
+    log(`Telefone normalizado: ${phone} -> ${cleanPhone}`);
 
     let client = await Client.findOne({ where: { phone: cleanPhone } });
 
@@ -132,7 +134,6 @@ router.post('/api/appointments', async (req, res) => {
       }
     }
 
-
     const appointment = await Appointment.create({
       clientId: client.id,
       barberId,
@@ -144,7 +145,6 @@ router.post('/api/appointments', async (req, res) => {
       status: 'confirmed',
       isEncaixe: isEncaixe === 'true' || isEncaixe === true,
       notes: clientData.notes || null
-    
     });
 
     const io = req.app.get('io');
@@ -161,9 +161,18 @@ router.post('/api/appointments', async (req, res) => {
 
     const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:* ${appointmentTime}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
 
-    const sent = await sendWhatsAppMessage(client.phone, msg);
-    if (!sent) {
-      logError('❌ Falha ao enviar mensagem pelo WhatsApp', { phone: client.phone });
+    // CORREÇÃO CRÍTICA: Usar o telefone original (não normalizado) para o WhatsApp
+    // A nova função sendWhatsAppMessage vai fazer a formatação inteligente
+    log(`Tentando enviar WhatsApp para: ${phone} (original)`);
+    const sent = await sendWhatsAppMessage(phone, msg);
+    
+    if (sent) {
+      log('✅ Mensagem WhatsApp enviada com sucesso');
+    } else {
+      logError('❌ Falha ao enviar mensagem pelo WhatsApp', { 
+        originalPhone: phone, 
+        normalizedPhone: cleanPhone 
+      });
     }
 
     log('Agendamento criado com sucesso', {
@@ -173,7 +182,8 @@ router.post('/api/appointments', async (req, res) => {
       service: serviceType.name,
       date: appointmentDate,
       time: appointmentTime,
-      price: serviceType.price
+      price: serviceType.price,
+      whatsappSent: sent
     });
 
     res.status(201).json({
@@ -216,5 +226,5 @@ router.post('/', async (req, res, next) => {
   next();
 });
 
-
 module.exports = router;
+

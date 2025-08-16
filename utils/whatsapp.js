@@ -1,6 +1,7 @@
 const whatsapp = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const SafeLocalAuth = require('../utils/CustomLocalAuth');
+const { formatBrazilianPhoneForWhatsApp } = require('./smartphoneformatter');
 
 let client = null;
 let isReady = false;
@@ -43,7 +44,6 @@ async function initializeWhatsApp() {
       latestQrCode = qr;
       console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
       qrcode.generate(qr, { small: true });
-      // console.log('Ou acesse: https://web.whatsapp.com e escaneie o código');
     });
 
     client.on('authenticated', () => {
@@ -65,43 +65,18 @@ async function initializeWhatsApp() {
     });
 
     console.log('🔄 Inicializando WhatsApp...');
-
-    // await Promise.race([
-      client.initialize(),
-    //   timeout(15000)
-    // ]);
-
-    console.log('✅ Inicialização do WhatsApp finalizada .');
+    client.initialize();
+    console.log('✅ Inicialização do WhatsApp finalizada.');
 
   } catch (error) {
     console.error('❌ Erro ao inicializar WhatsApp:', error);
   }
 }
 
-// Enviar mensagem WhatsApp
-function formatBrazilianPhone(raw) {
-  let cleaned = raw.replace(/\D/g, '');
-
-  if (cleaned.startsWith('55')) {
-    cleaned = cleaned.slice(2);
-  }
-
-  const ddd = cleaned.slice(0, 2);
-  let number = cleaned.slice(2);
-
-  if (number.length === 8) {
-    return `55${ddd}${number}`;
-  } else if (number.length === 9 && number.startsWith('9')) {
-    return `55${ddd}${number}`;
-  } else if (number.length === 8 && !number.startsWith('9')) {
-    return `55${ddd}9${number}`;
-  } else if (number.length === 9 && !number.startsWith('9')) {
-    return `55${ddd}9${number}`;
-  } else {
-    throw new Error('Número inválido');
-  }
-}
-
+/**
+ * Enviar mensagem WhatsApp com formatação inteligente
+ * Esta é a versão corrigida que resolve o problema dos números brasileiros
+ */
 async function sendWhatsAppMessage(phone, message) {
   try {
     if (!client || !isReady) {
@@ -109,32 +84,20 @@ async function sendWhatsAppMessage(phone, message) {
       return false;
     }
 
-    const trySend = async (formatted) => {
-      const chatId = formatted + '@c.us';
-      const exists = await client.isRegisteredUser(chatId);
-      if (!exists) return false;
-      await client.sendMessage(chatId, message);
-      console.log(`✅ Mensagem enviada para ${formatted}`);
-      return true;
-    };
-
-    let raw = phone.replace(/\D/g, '');
-    if (!raw.startsWith('55')) raw = '55' + raw;
-
-    let sent = await trySend(raw);
-
-    if (!sent && raw.length === 13) {
-      const sem9 = raw.slice(0, 4) + raw.slice(5);
-      if (sem9.length === 12) {
-        sent = await trySend(sem9);
-      }
+    console.log(`[WHATSAPP] Iniciando envio para: ${phone}`);
+    
+    // Usa o formatador inteligente para encontrar o ID correto
+    const formattedPhone = await formatBrazilianPhoneForWhatsApp(client, phone);
+    
+    if (!formattedPhone) {
+      console.warn(`⚠️ Não foi possível encontrar um ID válido para: ${phone}`);
+      return false;
     }
-
-    if (!sent) {
-      console.warn(`⚠️ Nenhuma tentativa funcionou para ${phone}`);
-    }
-
-    return sent;
+    
+    // Envia a mensagem usando o ID correto
+    await client.sendMessage(formattedPhone, message);
+    console.log(`✅ Mensagem enviada com sucesso para ${formattedPhone}`);
+    return true;
 
   } catch (err) {
     console.error('❌ Erro ao enviar WhatsApp:', err);
@@ -149,6 +112,7 @@ function getWhatsAppStatus() {
     qrCode: isReady ? null : latestQrCode
   };
 }
+
 function isWhatsAppReady() {
   return isReady;
 }
@@ -178,7 +142,7 @@ async function disconnectWhatsApp() {
       await delay(3000);
       client = null;
       isReady = false;
-      latestQrCode = null; // ✅ ESSENCIAL: limpa QR antigo
+      latestQrCode = null;
       const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
       await deleteSession(sessionId);
       console.log('📱 WhatsApp desconectado e sessão removida com segurança');
@@ -187,7 +151,6 @@ async function disconnectWhatsApp() {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
   }
 }
-
 
 function getLastQRCode() {
   return latestQrCode;
@@ -199,6 +162,7 @@ module.exports = {
   getWhatsAppStatus,
   getLastQRCode,
   disconnectWhatsApp,
-   isWhatsAppReady,      
+  isWhatsAppReady,      
   waitWhatsAppReady
 };
+
