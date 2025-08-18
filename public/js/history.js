@@ -27,23 +27,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // Função para formatar telefone enquanto digita
-document.getElementById('phoneInput').addEventListener('input', function(e) {
-  let value = e.target.value.replace(/\D/g, '');
-  
-  if (value.length <= 11) {
-    if (value.length <= 2) {
-      value = value.replace(/(\d{0,2})/, '($1');
-    } else if (value.length <= 7) {
-      value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-    } else {
-      value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+const phoneInputEl = document.getElementById('phoneInput');
+if (phoneInputEl) {
+  phoneInputEl.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+      if (value.length <= 2) {
+        value = value.replace(/(\d{0,2})/, '($1');
+      } else if (value.length <= 7) {
+        value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+      } else {
+        value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+      }
     }
-  }
-  
-  e.target.value = value;
-});
+    e.target.value = value;
+  });
+}
+
 
 document.getElementById('phoneInput').addEventListener('blur', async function () {
+  
   const phoneInput = document.getElementById('phoneInput');
   const phone = phoneInput.value.trim();
     // Salva no localStorage com timestamp
@@ -535,34 +538,48 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.querySelectorAll('.code-digit').forEach((input, idx, all) => {
+  // Quando digita um número
   input.addEventListener('input', (e) => {
-    const val = e.target.value.replace(/\D/g, '');
-    e.target.value = val.slice(0, 1);
+    const val = e.target.value.replace(/\D/g, ''); // apenas dígitos
+    e.target.value = val.slice(0, 1); // mantém só o primeiro
 
-    if (val.length === 1 && idx < all.length - 1) {
-      all[idx + 1].focus();
+    if (val && idx < all.length - 1) {
+      all[idx + 1].focus(); // pula pro próximo automaticamente
     }
 
-    // Verificar automaticamente quando todos preenchidos
+    // Verifica automaticamente quando todos preenchidos
     const code = Array.from(all).map(el => el.value).join('');
-    if (code.length === 4) {
+    if (code.length === all.length && !code.includes('')) {
       verificarCodigo(code);
     }
   });
 
+  // Backspace: volta pro campo anterior
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Backspace' && !e.target.value && idx > 0) {
       all[idx - 1].focus();
     }
   });
 
-  // Suporte a colar os 4 dígitos de uma vez
+  // Suporte a colar todos os dígitos de uma vez
   input.addEventListener('paste', (e) => {
     const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-    if (paste.length === 4) {
-      e.preventDefault();
-      all.forEach((el, i) => el.value = paste[i] || '');
-      verificarCodigo(paste);
+    if (!paste) return;
+
+    e.preventDefault();
+    all.forEach((el, i) => {
+      el.value = paste[i] || '';
+    });
+
+    // Move foco para o último preenchido
+    const filled = Math.min(paste.length, all.length);
+    if (filled < all.length) {
+      all[filled].focus();
+    }
+
+    // Se já colou os 4 dígitos, verifica automaticamente
+    if (paste.length >= all.length) {
+      verificarCodigo(paste.slice(0, all.length));
     }
   });
 });

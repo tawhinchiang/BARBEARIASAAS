@@ -25,7 +25,9 @@
     
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/css/style.css">
-    
+    {{#if isHistoryPage}}
+    <script src="/js/history.js"></script>
+    {{/if}}
     <!-- Meta tags para SEO -->
     <meta name="description" content="Sistema de agendamento para barbearias - Agende seu corte online">
     <meta name="keywords" content="barbearia, agendamento, corte de cabelo, barba">
@@ -74,6 +76,27 @@
 <script src="/js/ui.js"></script>
 
 </body>
+<!-- 🔹 Barra de Navegação Inferior -->
+<nav class="navbar navbar-dark bg-dark fixed-bottom border-top border-secondary">
+  <div class="container d-flex justify-content-around">
+    <a href="/" class="nav-link text-light text-center">
+      <i class="fas fa-home fa-lg"></i><br>
+      <small>Início</small>
+    </a>
+    <a href="/history" class="nav-link text-light text-center">
+      <i class="fas fa-calendar-alt fa-lg"></i><br>
+      <small>Historico</small>
+    </a>
+    {{!-- <a href="#" class="nav-link text-light text-center">
+      <i class="fas fa-star fa-lg"></i><br>
+      <small>Favoritos</small>
+    </a> --}}
+  </div>
+</nav>
+
+<!-- Espaço extra para não esconder o conteúdo atrás da barra -->
+<div style="margin-bottom: 80px;"></div>
+
 </html>
 
 <style>

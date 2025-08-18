@@ -23,6 +23,8 @@ const logError = (message, error) => {
 router.get('/', (req, res) => {
   log('Acessando página de histórico');
   res.render('history', {
+    layout: 'main', 
+    isHistoryPage: true,
     appointments: null,
     bodyClass: 'fade-in-soft',
     title: 'Histórico de Agendamentos'

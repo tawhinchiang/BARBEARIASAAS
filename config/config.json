@@ -3,20 +3,20 @@
   "development": {
     "username": "postgres",
     "password": "admin",
-    "database": "barbershop_db", 
+    "database": "Barber_Server", 
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
     "password": "admin",
-    "database": "barbershop_db",
+    "database": "Barber_Server",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "production": {
     "username": "postgres",
     "password": "admin",
-    "database": "barbershop_db",
+    "database": "Barber_Server",
     "host": "127.0.0.1",
     "dialect": "mysql"
   }
