@@ -537,50 +537,86 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-document.querySelectorAll('.code-digit').forEach((input, idx, all) => {
-  // Quando digita um número
-  input.addEventListener('input', (e) => {
-    const val = e.target.value.replace(/\D/g, ''); // apenas dígitos
-    e.target.value = val.slice(0, 1); // mantém só o primeiro
+// === Inputs do código de verificação (robusto) ===
+document.addEventListener('DOMContentLoaded', () => {
+  const group = document.getElementById('codeInputGroup');
+  if (!group) return;
 
-    if (val && idx < all.length - 1) {
-      all[idx + 1].focus(); // pula pro próximo automaticamente
+  const inputs = [...group.querySelectorAll('.code-digit')];
+
+  // Normaliza atributos e cria um índice para cada input
+  inputs.forEach((i, idx) => {
+    i.type = 'text';
+    i.inputMode = 'numeric';
+    i.maxLength = 1;
+    i.autocomplete = 'one-time-code';
+    i.dataset.idx = String(idx); // 👈 chave para navegar
+  });
+
+  const getInputs = () => [...group.querySelectorAll('.code-digit')];
+
+  // Avança automaticamente quando digita
+  group.addEventListener('input', (e) => {
+    const el = e.target.closest('.code-digit');
+    if (!el) return;
+
+    el.value = (el.value || '').replace(/\D/g, '').slice(0, 1);
+
+    const idx = Number(el.dataset.idx || 0);
+    const next = group.querySelector(`.code-digit[data-idx="${idx + 1}"]`);
+    if (el.value && next) {
+      next.focus();
+      next.select?.();
     }
 
-    // Verifica automaticamente quando todos preenchidos
-    const code = Array.from(all).map(el => el.value).join('');
-    if (code.length === all.length && !code.includes('')) {
-      verificarCodigo(code);
+    const code = getInputs().map(i => i.value).join('');
+    if (code.length === 4) verificarCodigo(code);
+  });
+
+  // Volta no backspace e permite setas
+  group.addEventListener('keydown', (e) => {
+    const el = e.target.closest('.code-digit');
+    if (!el) return;
+
+    const idx = Number(el.dataset.idx || 0);
+
+    if (e.key === 'Backspace' && !el.value) {
+      const prev = group.querySelector(`.code-digit[data-idx="${idx - 1}"]`);
+      prev?.focus();
+      prev?.select?.();
+    } else if (e.key === 'ArrowLeft') {
+      const prev = group.querySelector(`.code-digit[data-idx="${idx - 1}"]`);
+      prev?.focus();
+      prev?.select?.();
+      e.preventDefault();
+    } else if (e.key === 'ArrowRight') {
+      const next = group.querySelector(`.code-digit[data-idx="${idx + 1}"]`);
+      next?.focus();
+      next?.select?.();
+      e.preventDefault();
     }
   });
 
-  // Backspace: volta pro campo anterior
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && !e.target.value && idx > 0) {
-      all[idx - 1].focus();
-    }
-  });
+  // Cola 4 dígitos de uma vez em qualquer campo
+  group.addEventListener('paste', (e) => {
+    const el = e.target.closest('.code-digit');
+    if (!el) return;
 
-  // Suporte a colar todos os dígitos de uma vez
-  input.addEventListener('paste', (e) => {
-    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-    if (!paste) return;
+    const text = (e.clipboardData || window.clipboardData)
+      .getData('text')
+      .replace(/\D/g, '')
+      .slice(0, 4);
 
+    if (!text) return;
     e.preventDefault();
-    all.forEach((el, i) => {
-      el.value = paste[i] || '';
-    });
 
-    // Move foco para o último preenchido
-    const filled = Math.min(paste.length, all.length);
-    if (filled < all.length) {
-      all[filled].focus();
-    }
-
-    // Se já colou os 4 dígitos, verifica automaticamente
-    if (paste.length >= all.length) {
-      verificarCodigo(paste.slice(0, all.length));
+    const list = getInputs();
+    list.forEach((input, i) => (input.value = text[i] || ''));
+    if (text.length === 4) {
+      verificarCodigo(text);
+    } else {
+      list[text.length]?.focus();
+      list[text.length]?.select?.();
     }
   });
 });
-
