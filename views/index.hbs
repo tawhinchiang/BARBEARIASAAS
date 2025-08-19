@@ -3,10 +3,12 @@
 <div class="container fade-in-soft py-4">
 
   <!-- 🔹 Cabeçalho do Estabelecimento -->
+  {{!-- Cabeçalho --}}
   <div class="text-center mb-4">
-    <img src="/images/logo.png" alt="Logo" class="rounded-circle mb-2" style="width:80px; height:80px; object-fit:cover;">
+    <img src="{{barbershopLogo}}" alt="Logo" class="rounded-circle mb-2"
+        style="width:80px; height:80px; object-fit:cover;">
     <h3 class="text-light">{{barbershopName}}</h3>
-    <p class="small text-muted">Agende online de forma prática</p>
+    <p class="small text-muted">{{tagline}}</p>
   </div>
 
   <!-- STEP 1: Serviços -->
@@ -127,46 +129,80 @@
     </div>
   </div>
 
-  <!-- 🔹 Detalhes do Estabelecimento -->
-  <div class="mb-4 mt-5">
-    <h5 class="text-muted border-bottom pb-2 mb-3">Detalhes do Estabelecimento</h5>
+{{!-- Detalhes do Estabelecimento --}}
+<div class="mb-4 mt-5">
+  <h5 class="text-muted border-bottom pb-2 mb-3">Detalhes do Estabelecimento</h5>
+
+  {{#if barbershopMapsLink}}
+    <p>
+      <i class="fas fa-map-marker-alt me-2"></i>
+      <a href="{{barbershopMapsLink}}" class="text-decoration-none text-light" target="_blank" rel="noopener">
+        {{barbershopAddress}}
+      </a>
+    </p>
+  {{else}}
     <p><i class="fas fa-map-marker-alt me-2"></i>{{barbershopAddress}}</p>
+  {{/if}}
+
+  {{#if barbershopHours}}
     <p><i class="fas fa-clock me-2"></i>{{barbershopHours}}</p>
-  </div>
+  {{/if}}
+</div>
 
-  <!-- 🔹 Formas de Pagamento -->
-  <div class="mb-4">
-    <h5 class="text-muted border-bottom pb-2 mb-3">Formas de Pagamento</h5>
-    <div class="d-flex flex-wrap gap-2">
+{{!-- Formas de Pagamento --}}
+<div class="mb-4">
+  <h5 class="text-muted border-bottom pb-2 mb-3">Formas de Pagamento</h5>
+  <div class="d-flex flex-wrap gap-2">
+    {{#if paymentMethods}}
+      {{#each paymentMethods}}
+        <span class="badge bg-secondary px-3 py-2">{{this}}</span>
+      {{/each}}
+    {{else}}
+      {{!-- Fallback amigável, caso não configure no .env --}}
       <span class="badge bg-secondary px-3 py-2">Dinheiro</span>
-      <span class="badge bg-secondary px-3 py-2">Cartão de Crédito</span>
-      <span class="badge bg-secondary px-3 py-2">Cartão de Débito</span>
+      <span class="badge bg-secondary px-3 py-2">Cartão</span>
       <span class="badge bg-secondary px-3 py-2">PIX</span>
-    </div>
-  </div>
-
-  <!-- 🔹 Redes Sociais -->
-  <div class="mb-4">
-    <h5 class="text-muted border-bottom pb-2 mb-3">Redes Sociais</h5>
-    <div class="d-flex gap-3">
-      <a href="https://wa.me/{{whatsappNumber}}" class="text-success"><i class="fab fa-whatsapp fa-2x"></i></a>
-      <a href="https://instagram.com/{{instagram}}" class="text-danger"><i class="fab fa-instagram fa-2x"></i></a>
-      <a href="#" class="text-light"><i class="fab fa-facebook fa-2x"></i></a>
-    </div>
-  </div>
-
-  <!-- 🔹 Contato -->
-  <div class="mb-5">
-    <h5 class="text-muted border-bottom pb-2 mb-3">Contato</h5>
-    <p><i class="fas fa-phone-alt me-2"></i> (63) 99210-1247</p>
-    <p><i class="fas fa-envelope me-2"></i> contato@barbearia.com</p>
+    {{/if}}
   </div>
 </div>
 
-<!-- 🔹 Rodapé -->
+ {{!-- Redes Sociais --}}
+<div class="mb-4">
+  <h5 class="text-muted border-bottom pb-2 mb-3">Redes Sociais</h5>
+  <div class="d-flex gap-3">
+    {{#if whatsappNumber}}
+      <a href="https://wa.me/{{whatsappNumber}}" class="text-success" target="_blank" rel="noopener">
+        <i class="fab fa-whatsapp fa-2x"></i>
+      </a>
+    {{/if}}
+    {{#if instagramUrl}}
+      <a href="{{instagramUrl}}" class="text-danger" target="_blank" rel="noopener">
+        <i class="fab fa-instagram fa-2x"></i>
+      </a>
+    {{/if}}
+    {{#if facebookUrl}}
+      <a href="{{facebookUrl}}" class="text-light" target="_blank" rel="noopener">
+        <i class="fab fa-facebook fa-2x"></i>
+      </a>
+    {{/if}}
+  </div>
+</div>
+
+{{!-- Contato --}}
+<div class="mb-5">
+  <h5 class="text-muted border-bottom pb-2 mb-3">Contato</h5>
+  {{#if contactPhone}}
+    <p><i class="fas fa-phone-alt me-2"></i> {{contactPhone}}</p>
+  {{/if}}
+  {{#if contactEmail}}
+    <p><i class="fas fa-envelope me-2"></i> {{contactEmail}}</p>
+  {{/if}}
+</div>
+
+{{!-- Rodapé --}}
 <footer class="bg-dark text-center py-4 mt-5 border-top border-secondary">
-  <img src="/images/logo.png" alt="Logo" style="width:60px; height:60px;" class="mb-2">
-  <p class="small text-muted">Uma nova experiência para uma tradição antiga.</p>
+  <img src="{{barbershopLogo}}" alt="Logo" style="width:60px; height:60px;" class="mb-2">
+  <p class="small text-muted">{{tagline}}</p>
 
   <div class="d-flex justify-content-center gap-3 mb-3">
     <a href="/" class="text-light">Início</a>
@@ -174,12 +210,7 @@
   </div>
 
   <div class="d-flex justify-content-center gap-3 mb-3">
-    <a href="#" class="text-muted small">Termos de uso</a>
-    <a href="#" class="text-muted small">Política de Cookies</a>
+    <a href="{{#if termsUrl}}{{termsUrl}}{{else}}#{{/if}}" class="text-muted small">Termos de uso</a>
+    <a href="{{#if cookiesUrl}}{{cookiesUrl}}{{else}}#{{/if}}" class="text-muted small">Política de Cookies</a>
   </div>
-
-  {{!-- <div class="d-flex justify-content-center gap-3">
-    <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-apple"></i> App Store</a>
-    <a href="#" class="btn btn-outline-light btn-sm"><i class="fab fa-google-play"></i> Google Play</a>
-  </div> --}}
 </footer>

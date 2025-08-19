@@ -396,40 +396,38 @@ function renderAppointments(appointments, activeOnly = false) {
     '<h4 class="text-center text-light mb-3"><i class="fas fa-list me-2"></i>Todos os Agendamentos</h4>';
 
   const cards = appointments.map(app => {
-    const statusClass = getStatusClass(app.status);
-    const statusText = getStatusText(app.status);
-    
-    const cancelButton = app.canCancel
-      ? `<button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="cancelarAgendamento(${app.id})">
-          <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
-        </button>`
-      : '';
+  const meta = getStatusMeta(app.status);
 
-    const priceDisplay = app.totalPrice > 0 
-      ? `<p class="mb-1"><i class="fas fa-money-bill-wave me-2"></i> Valor: R$ ${parseFloat(app.totalPrice).toFixed(2)}</p>`
-      : '';
+  const cancelButton = app.canCancel
+    ? `<button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="cancelarAgendamento(${app.id})">
+         <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
+       </button>`
+    : '';
 
-      return `
-        <div class="col">
-          <div class="card ${statusClass} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
-            <div class="card-body">
-              <h5 class="card-title mb-2">
-                <i class="fas fa-cut me-1"></i> ${app.service}
-              </h5>
-              <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
-              <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
-              <p class="mb-1">
-                <i class="fas fa-info-circle me-2"></i>
-                Status: <span class="fw-bold ${statusClass.replace('card-', 'text-')}">${statusText}</span>
-              </p>
-              ${priceDisplay}
-              ${cancelButton}
-            </div>
-          </div>
+  const priceDisplay = app.totalPrice > 0 
+    ? `<p class="mb-1"><i class="fas fa-money-bill-wave me-2"></i> Valor: R$ ${parseFloat(app.totalPrice).toFixed(2)}</p>`
+    : '';
+
+  return `
+    <div class="col">
+      <div class="card ${meta.card} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
+        <div class="card-body">
+          <h5 class="card-title mb-2">
+            <i class="fas fa-cut me-1"></i> ${app.service}
+          </h5>
+          <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
+          <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
+          <p class="mb-1">
+            <i class="fas fa-info-circle me-2"></i>
+            Status: <span class="${meta.badge}">${meta.text}</span>
+          </p>
+          ${priceDisplay}
+          ${cancelButton}
         </div>
-      `;
-
-  }).join('');
+      </div>
+    </div>
+  `;
+}).join('');
 
   // ✅ CORREÇÃO: Container com posicionamento adequado
   container.innerHTML = `
@@ -449,36 +447,25 @@ function renderAppointments(appointments, activeOnly = false) {
   console.log('[DEBUG] Container revelado com posicionamento corrigido');
 }
 
-function getStatusClass(status) {
+function getStatusMeta(status) {
   switch (status) {
     case 'confirmed':
-    case 'scheduled':
-      return 'card-neon-green';
+      return { card: 'status-card status-confirmed', badge: 'status-badge status-confirmed', text: 'Confirmado' };
+    case 'scheduled': // tratamos como "pendente" visualmente
+      return { card: 'status-card status-pending',   badge: 'status-badge status-pending',   text: 'Agendado' };
     case 'cancelled':
-      return 'card-neon-red';
+      return { card: 'status-card status-cancelled', badge: 'status-badge status-cancelled', text: 'Cancelado' };
     case 'completed':
-      return 'card-neon-blue';
+      return { card: 'status-card status-completed', badge: 'status-badge status-completed', text: 'Concluído' };
+    case 'in_progress':
+      return { card: 'status-card status-in_progress', badge: 'status-badge status-in_progress', text: 'Em andamento' };
+    case 'no_show':
+      return { card: 'status-card status-no_show',   badge: 'status-badge status-no_show',   text: 'Não Compareceu' };
     default:
-      return '';
+      return { card: '', badge: 'status-badge', text: status };
   }
 }
 
-function getStatusText(status) {
-  switch (status) {
-    case 'scheduled':
-      return 'Agendado';
-    case 'confirmed':
-      return 'Confirmado';
-    case 'cancelled':
-      return 'Cancelado';
-    case 'completed':
-      return 'Concluído';
-    case 'no_show':
-      return 'Não Compareceu';
-    default:
-      return status;
-  }
-}
 
 function showAlert(message, type = 'info') {
   // Usa toasts padronizados

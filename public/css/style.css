@@ -3143,3 +3143,51 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 .list-group-item button {
   min-width: 100px;
 }
+/* Base para faixa lateral também em .card */
+.card.status-card {
+  border-left: 6px solid transparent;
+  padding-left: 1rem;
+}
+
+/* Badge que faltava */
+.status-completed {
+  background: var(--success-color);
+  color: #fff;
+}
+
+/* Alias útil caso venha "scheduled" do backend */
+.status-scheduled { 
+  background: var(--warning-color);
+  color: var(--text-dark);
+}
+.status-card.status-scheduled { 
+  border-left-color: var(--warning-color);
+}
+/* Faixa lateral robusta por pseudo-elemento (independente do border do Bootstrap) */
+.card.status-card {
+  position: relative;
+  overflow: hidden; /* garante curva da faixa no canto */
+}
+
+/* Base da faixa */
+.card.status-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;                 /* espessura da faixa */
+  background: transparent;    /* cor definida por estado abaixo */
+  z-index: 1;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+/* Cores por estado (mantém sua paleta atual) */
+.card.status-card.status-pending::before      { background: var(--warning-color); }
+.card.status-card.status-confirmed::before    { background: #007bff; }            /* mesma usada no seu CSS */
+.card.status-card.status-cancelled::before    { background: var(--danger-color); }
+.card.status-card.status-completed::before    { background: var(--success-color); }
+.card.status-card.status-in_progress::before  { background: var(--info-color); }
+.card.status-card.status-no_show::before      { background: var(--danger-color); }/* pode usar outra se preferir */
+.card.status-card.status-scheduled::before    { background: var(--warning-color); }/* alias útil */
