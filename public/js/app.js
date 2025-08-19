@@ -162,7 +162,7 @@ function renderServices(services) {
 
     item.innerHTML = `
       <div class="d-flex align-items-center gap-3">
-        <img src="${svc.photo || '/images/logo.png'}" alt="${svc.name}" 
+        <img src="${svc.photo || '/images/logo.jpg'}" alt="${svc.name}" 
              class="rounded-circle" style="width:40px; height:40px; object-fit:cover;">
         <div>
           <h6 class="mb-0 fw-bold service-name">${svc.name}</h6>

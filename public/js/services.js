@@ -29,21 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const url = id ? `/admin/services/${id}` : '/admin/services/create';
   const method = id ? 'PUT' : 'POST';
 
-  const payload = {
-    name: formData.get('name'),
-    description: formData.get('description'),
-    price: parseFloat(formData.get('price')),
-    duration: parseInt(formData.get('duration')),
-    isActive: formData.get('isActive') === 'on',
-    isPromo: formData.get('isPromo') === 'on'
-  };
-
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+ try {
+  const res = await fetch(url, {
+    method,
+    body: formData // 👈 envia o FormData direto
+  });
 
     if (!res.ok) throw new Error('Erro ao salvar serviço');
 
@@ -94,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
       form.duration.value = s.duration;
       form.isActive.checked = s.isActive;
       form.isPromo.checked = s.isPromo;
+      form.photo.value = s.photo || '';
 
       modalTitle.textContent = 'Editar Serviço';
       modal.show();

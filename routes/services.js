@@ -118,7 +118,7 @@ router.post('/create', async (req, res) => {
     log('Criando novo serviço', req.body);
     
     const { name, description, price, duration, isActive, isPromo } = req.body;
-
+    const photo = req.file ? '/uploads/services/' + req.file.filename : null;
     // Validações
     if (!name || !price || !duration) {
       return res.status(400).json({
@@ -154,7 +154,8 @@ router.post('/create', async (req, res) => {
       price: parseFloat(price),
       duration: parseInt(duration),
       isActive: isActive === 'true' || isActive === true,
-      isPromo: isPromo === 'true' || isPromo === true
+      isPromo: isPromo === 'true' || isPromo === true,
+      photo: photo || null
     };
     console.log('[DEBUG] Dados que vão para o banco:', serviceData); // 👈 Adicione isso aqui
     const service = await ServiceType.create(serviceData);
@@ -236,8 +237,9 @@ router.put('/:id', async (req, res) => {
       });
     }
     
+  
     const { name, description, price, duration, isActive, isPromo } = req.body;
-    
+    const photo = req.file ? '/uploads/services/' + req.file.filename : service.photo;
     // Verificar se nome já existe em outro serviço
     if (name && name.trim() !== service.name) {
       const existingService = await ServiceType.findOne({ 
@@ -276,7 +278,8 @@ router.put('/:id', async (req, res) => {
       price: price !== undefined ? parseFloat(price) : service.price,
       duration: duration !== undefined ? parseInt(duration) : service.duration,
       isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : service.isActive,
-      isPromo: isPromo !== undefined ? (isPromo === 'true' || isPromo === true) : service.isPromo
+      isPromo: isPromo !== undefined ? (isPromo === 'true' || isPromo === true) : service.isPromo,
+      photo
     };
     
     await service.update(updateData);
