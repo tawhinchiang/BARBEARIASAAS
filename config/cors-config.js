@@ -125,7 +125,9 @@ const publicApiCorsConfig = {
   
   production: {
     allowedOrigins: [
-      'https://optimum-lizard-whole.ngrok-free.app',
+      'https://agendastudios.com.br',
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000'
             // Pode incluir mais domínios para APIs públicas
     ],
     allowedMethods: ['GET', 'OPTIONS'],
