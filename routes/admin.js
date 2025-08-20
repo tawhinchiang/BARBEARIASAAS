@@ -268,11 +268,11 @@ const topBarbersRaw = await Appointment.findAll({
 });
 
 
-    const topBarbers = topBarbersRaw.map(item => ({
-      name: item.barber.name,
-      appointmentCount: item.appointmentCount,
-      totalRevenue: item.totalRevenue
-    }));
+  const topBarbers = topBarbersRaw.map(item => ({
+  name: item.barber?.name || 'Barbeiro Desconhecido', // <-- Usa o nome do barbeiro da inclusão
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue
+}));
 
    // Substitua pelo Bloco Novo e Mais Robusto
 const topServicesRaw = await Appointment.findAll({
@@ -304,15 +304,14 @@ const topServicesRaw = await Appointment.findAll({
   nest: true
 });
 
-    const topServices = topServicesRaw.map(item => ({
-      name: item.serviceType.name,
-      duration: item.serviceType.duration,
-      price: item.serviceType.price,
-      appointmentCount: item.appointmentCount,
-      totalRevenue: item.totalRevenue,
-      percentage: 0
-    }));
-
+const topServices = topServicesRaw.map(item => ({
+  name: item.serviceType?.name || 'Serviço Desconhecido', // <-- Usa o nome do serviço da inclusão
+  duration: item.serviceType?.duration || 0,
+  price: item.serviceType?.price || '0.00',
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue,
+  percentage: 0
+}));
     const formattedRecentAppointments = todayAppointments.map(app => {
       const [year, month, day] = app.appointmentDate.split('-');
       const localDate = new Date(year, month - 1, day);
