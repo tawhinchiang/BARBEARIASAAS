@@ -102,7 +102,7 @@ allowedOrigins: [
     credentials: true,
     maxAge: 1800 // 30 minutos
   }
-};
+
 
 // Configuração para APIs públicas (menos restritiva, mas ainda segura)
 const publicApiCorsConfig = {
