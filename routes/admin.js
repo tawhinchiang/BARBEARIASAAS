@@ -239,31 +239,32 @@ router.get('/dashboard', async (req, res) => {
     });
 
     // Bloco Novo e Corrigido
+// Substitua pelo Bloco Novo e Mais Robusto
 const topBarbersRaw = await Appointment.findAll({
-    attributes: [
-        'barberId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
-        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-    ],
-    where: {
-        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: { [Op.in]: ['completed'] }
-    },
-    include: [{
-        model: Barber,
-        as: 'barber',
-        attributes: ['name'] // Apenas o nome é necessário aqui
-    }],
-    group: [
-        'barberId',
-        require('sequelize').col('barber.id') // Agrupamento correto
-    ],
-    order: [
-        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
-    ],
-    limit: 5,
-    raw: true,
-    nest: true
+  attributes: [
+    [require('sequelize').col('barber.id'), 'barberId'], // Seleciona o ID do barbeiro diretamente
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+    status: { [Op.in]: ['completed'] }
+  },
+  include: [{
+    model: Barber,
+    as: 'barber',
+    attributes: ['name'] // Apenas o nome é necessário para o resultado
+  }],
+  group: [
+    require('sequelize').col('barber.id'), // Agrupa pelo ID e nome do barbeiro
+    require('sequelize').col('barber.name')
+  ],
+  order: [
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+  ],
+  limit: 5,
+  raw: true,
+  nest: true
 });
 
 
@@ -273,23 +274,35 @@ const topBarbersRaw = await Appointment.findAll({
       totalRevenue: item.totalRevenue
     }));
 
-    const topServicesRaw = await Appointment.findAll({
-      attributes: [
-        'serviceTypeId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
-        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-      ],
-      where: {
-        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: 'completed'
-      },
-      include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
-      group: ['serviceTypeId', 'serviceType.id'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
-      limit: 5,
-      raw: true,
-      nest: true
-    });
+   // Substitua pelo Bloco Novo e Mais Robusto
+const topServicesRaw = await Appointment.findAll({
+  attributes: [
+    [require('sequelize').col('serviceType.id'), 'serviceTypeId'], // Seleciona o ID do serviço
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+    status: 'completed'
+  },
+  include: [{
+    model: ServiceType,
+    as: 'serviceType',
+    attributes: ['name', 'duration', 'price'] // Atributos necessários
+  }],
+  group: [
+    require('sequelize').col('serviceType.id'), // Agrupa por todas as colunas não agregadas
+    require('sequelize').col('serviceType.name'),
+    require('sequelize').col('serviceType.duration'),
+    require('sequelize').col('serviceType.price')
+  ],
+  order: [
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+  ],
+  limit: 5,
+  raw: true,
+  nest: true
+});
 
     const topServices = topServicesRaw.map(item => ({
       name: item.serviceType.name,
