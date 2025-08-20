@@ -105,7 +105,7 @@ router.get('/api/services', async (req, res) => {
     const { ServiceType } = require('../models');
     const services = await ServiceType.findAll({
       where: { isActive: true },
-      attributes: ['id', 'name', 'price', 'duration'],    // ← inclui duration
+      attributes: ['id', 'name', 'price', 'duration','photo'],    // ← inclui duration
       order: [['name', 'ASC']]
     });
     
