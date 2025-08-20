@@ -65,13 +65,14 @@ const corsConfig = {
 };
 
 // Configuração específica para APIs administrativas (mais restritiva)
+
 const adminApiCorsConfig = {
   development: {
-allowedOrigins: [
-  'https://agendastudios.com.br',   // domínio final
-  'https://www.agendastudios.com.br',
-  'http://64.227.83.125:3000',      // IP da VM (apenas para teste)
-],
+    allowedOrigins: [
+      'https://agendastudios.com.br',
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000'
+    ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
@@ -84,13 +85,14 @@ allowedOrigins: [
     credentials: true,
     maxAge: 3600
   },
-  
- allowedOrigins: [
-    'https://agendastudios.com.br',
-    'https://www.agendastudios.com.br',
-    'http://64.227.83.125:3000'
-  ],
-    allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], // Sem DELETE em produção
+
+  production: { 
+    allowedOrigins: [
+      'https://agendastudios.com.br',
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000'
+    ],
+    allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], 
     allowedHeaders: [
       'Origin',
       'X-Requested-With',
@@ -100,8 +102,10 @@ allowedOrigins: [
       'X-CSRF-Token'
     ],
     credentials: true,
-    maxAge: 1800 // 30 minutos
+    maxAge: 1800 
   }
+};
+
 
 
 // Configuração para APIs públicas (menos restritiva, mas ainda segura)
