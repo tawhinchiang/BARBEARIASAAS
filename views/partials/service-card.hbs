@@ -1,11 +1,11 @@
 <div class="col" data-service-id="{{id}}">
   <div class="card h-100 shadow-sm admin-card">
     
-    {{#if photo}}
-      <img src="{{photo}}" alt="{{name}}" 
-           class="card-img-top" 
-           style="height: 160px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">
-    {{/if}}
+    <img 
+      src="{{#if photo}}{{photo}}{{else}}/images/logo.jpg{{/if}}" 
+      alt="{{name}}" 
+      class="card-img-top" 
+      style="height: 160px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">
 
     <div class="card-body">
       <h5 class="card-title">{{name}}</h5>
