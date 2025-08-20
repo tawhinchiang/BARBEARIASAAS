@@ -7,6 +7,25 @@ const {
   COMPLETED_STATUSES,
   VALID_FOR_REVENUE
 } = require('../constants/appointmentStatuses');
+const multer = require('multer');
+const path = require('path');
+
+// Configuração do multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'services');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -113,13 +132,12 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 });
 
 // ===== CRIAR SERVIÇO =====
-router.post('/create', async (req, res) => {
+router.post('/create', upload.single('photo'), async (req, res) => {
   try {
-    log('Criando novo serviço', req.body);
-    
+    log('Criando novo serviço', { body: req.body, file: req.file?.filename });
+
     const { name, description, price, duration, isActive, isPromo } = req.body;
     const photo = req.file ? '/uploads/services/' + req.file.filename : null;
-    // Validações
     if (!name || !price || !duration) {
       return res.status(400).json({
         success: false,
@@ -224,23 +242,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // ===== ATUALIZAR SERVIÇO =====
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
-    const { id } = req.params;
-    log(`Atualizando serviço ID: ${id}`, req.body);
+    log(`Atualizando serviço ID: ${id}`, { body: req.body, file: req.file?.filename });
     
-    const service = await ServiceType.findByPk(id);
-    if (!service) {
-      return res.status(404).json({
-        success: false,
-        error: 'Serviço não encontrado'
-      });
-    }
-    
-  
+    const service = await ServiceType.findByPk(req.params.id);
+    if (!service) return res.status(404).json({ success: false, error: 'Serviço não encontrado' });
+
     const { name, description, price, duration, isActive, isPromo } = req.body;
     const photo = req.file ? '/uploads/services/' + req.file.filename : service.photo;
-    // Verificar se nome já existe em outro serviço
+    
     if (name && name.trim() !== service.name) {
       const existingService = await ServiceType.findOne({ 
         where: { 
