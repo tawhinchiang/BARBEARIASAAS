@@ -238,23 +238,34 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    const topBarbersRaw = await Appointment.findAll({
-      attributes: [
+    // Bloco Novo e Corrigido
+const topBarbersRaw = await Appointment.findAll({
+    attributes: [
         'barberId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
+        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
         [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-      ],
-      where: {
+    ],
+    where: {
         appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
         status: { [Op.in]: ['completed'] }
-      },
-      include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
-      group: ['barberId', 'barber.id'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
-      limit: 5,
-      raw: true,
-      nest: true
-    });
+    },
+    include: [{
+        model: Barber,
+        as: 'barber',
+        attributes: ['name'] // Apenas o nome é necessário aqui
+    }],
+    group: [
+        'barberId',
+        require('sequelize').col('barber.id') // Agrupamento correto
+    ],
+    order: [
+        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+    ],
+    limit: 5,
+    raw: true,
+    nest: true
+});
+
 
     const topBarbers = topBarbersRaw.map(item => ({
       name: item.barber.name,
