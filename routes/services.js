@@ -9,7 +9,7 @@ const {
 } = require('../constants/appointmentStatuses');
 const multer = require('multer');
 const path = require('path');
-
+const fs = require('fs');
 // Configuração do multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
