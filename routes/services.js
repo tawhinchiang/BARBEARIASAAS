@@ -245,8 +245,8 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
     log(`Atualizando serviço ID: ${id}`, { body: req.body, file: req.file?.filename });
+    const { id } = req.params;   // 👈 capture aqui
     
-    const service = await ServiceType.findByPk(req.params.id);
     if (!service) return res.status(404).json({ success: false, error: 'Serviço não encontrado' });
 
     const { name, description, price, duration, isActive, isPromo } = req.body;
