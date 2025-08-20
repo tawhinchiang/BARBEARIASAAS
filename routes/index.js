@@ -115,7 +115,8 @@ router.get('/api/services', async (req, res) => {
         id: s.id,
         name: s.name,
         price: s.price,
-        duration: s.duration    // ← loga também a duração
+        duration: s.duration,
+        photo: s.photo   // ← loga também a duração
       }))
     });
     
