@@ -5,6 +5,8 @@ const { engine } = require('express-handlebars');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
+const { sequelize } = require('./models');
 require('dotenv').config();
 
 const {
@@ -25,7 +27,7 @@ const {
 } = require('./config/cors-config');
 
 const app = express();
-
+app.set('trust proxy', 1);
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -90,17 +92,37 @@ app.use(securityHeaders);
 app.use(securityLogger);        // se quiser registrar requisições sensíveis
 app.use(attackDetection);       // para detectar SQLi, XSS, etc
 // Configurar sessões
+const sessionStore = new SequelizeStore({
+  db: sequelize,
+  tableName: 'sessions',
+  checkExpirationInterval: 15 * 60 * 1000, // Limpa sessões expiradas a cada 15min
+  expiration: 24 * 60 * 60 * 1000         // Sessão expira em 24h
+});
+
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('[DB] Conexão com o banco de dados OK');
+    await sessionStore.sync();
+    console.log('[SESSION] Tabela de sessões sincronizada');
+  } catch (error) {
+    console.error('[SESSION] Erro ao sincronizar a tabela de sessões:', error);
+  }
+})();
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'barbershop_secret_key',
+  store: sessionStore,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // process.env.NODE_ENV === 'production' ==> HTTPS apenas em produção
+    secure: process.env.NODE_ENV === 'production', // Em produção, só HTTPS
     maxAge: 24 * 60 * 60 * 1000,
-    httpOnly: true, // Previne acesso via JavaScript
-    sameSite: 'strict' // Proteção adicional contra CSRF
+    httpOnly: true,
+    sameSite: 'lax'
   }
 }));
+console.log('[SESSION] Store em uso:', sessionStore && sessionStore.constructor && sessionStore.constructor.name);
 
 log('Sessões configuradas com segurança aprimorada');
 
