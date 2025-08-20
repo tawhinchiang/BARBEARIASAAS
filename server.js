@@ -20,7 +20,11 @@ async function startServer() {
     // Iniciar socket.io e injetar no app
     const io = new Server(server, {
       cors: {
-        origin: '*', // ou coloque o domínio correto
+        origin: [
+    'https://agendastudios.com.br',
+    'https://www.agendastudios.com.br',
+    'http://64.227.83.125:3000'
+  ], // ou coloque o domínio correto
       }
     });
 

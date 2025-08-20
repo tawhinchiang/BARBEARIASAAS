@@ -41,12 +41,10 @@ const corsConfig = {
   production: {
     // IMPORTANTE: Substitua pelos seus domínios reais de produção
     allowedOrigins: [
-      'https://seu-dominio.com',
-      'https://www.seu-dominio.com',
-      'https://app.seu-dominio.com',
-      // Adicione APENAS os domínios que você controla
+      'https://agendastudios.com.br',   // domínio final
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000',      // IP da VM (apenas para teste)
     ],
-    
     // Métodos mais restritivos para produção
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'],
     
@@ -69,11 +67,10 @@ const corsConfig = {
 // Configuração específica para APIs administrativas (mais restritiva)
 const adminApiCorsConfig = {
   development: {
-  allowedOrigins: [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost',
-  'https://optimum-lizard-whole.ngrok-free.app' 
+allowedOrigins: [
+  'https://agendastudios.com.br',   // domínio final
+  'https://www.agendastudios.com.br',
+  'http://64.227.83.125:3000',      // IP da VM (apenas para teste)
 ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -88,11 +85,11 @@ const adminApiCorsConfig = {
     maxAge: 3600
   },
   
-  production: {
-    allowedOrigins: [
-     'https://optimum-lizard-whole.ngrok-free.app', // Apenas subdomínio admin
-      // NÃO adicione domínios públicos aqui
-    ],
+ allowedOrigins: [
+    'https://agendastudios.com.br',
+    'https://www.agendastudios.com.br',
+    'http://64.227.83.125:3000'
+  ],
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], // Sem DELETE em produção
     allowedHeaders: [
       'Origin',
