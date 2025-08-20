@@ -132,68 +132,75 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 });
 
 // ===== CRIAR SERVIÇO =====
+// ===== CRIAR SERVIÇO =====
 router.post('/create', upload.single('photo'), async (req, res) => {
   try {
-    log('Criando novo serviço', { body: req.body, file: req.file?.filename });
-
     const { name, description, price, duration, isActive, isPromo } = req.body;
     const photo = req.file ? '/uploads/services/' + req.file.filename : null;
+
+    log('Criando novo serviço', { body: req.body, file: req.file?.filename });
+
+    // === Validações ===
     if (!name || !price || !duration) {
       return res.status(400).json({
         success: false,
         error: 'Nome, preço e duração são obrigatórios'
       });
     }
-    
+
     const priceParsed = parseFloat(price);
     const durationParsed = parseInt(duration);
 
     if (isNaN(priceParsed) || priceParsed <= 0) {
-      return res.status(400).json({ success: false, error: 'Preço inválido' });
+      return res.status(400).json({ success: false, error: 'Preço deve ser válido e maior que 0' });
     }
 
     if (isNaN(durationParsed) || durationParsed <= 0) {
-      return res.status(400).json({ success: false, error: 'Duração inválida' });
+      return res.status(400).json({ success: false, error: 'Duração deve ser válida e maior que 0' });
     }
-    // Verificar se nome já existe
-    const existingService = await ServiceType.findOne({ 
-      where: { name: name.trim() } 
+
+    // Verificar duplicidade de nome
+    const existingService = await ServiceType.findOne({
+      where: { name: name.trim() }
     });
+
     if (existingService) {
       return res.status(400).json({
         success: false,
         error: 'Já existe um serviço com este nome'
       });
     }
-    
+
+    // === Dados a salvar ===
     const serviceData = {
       name: name.trim(),
       description: description ? description.trim() : null,
-      price: parseFloat(price),
-      duration: parseInt(duration),
+      price: priceParsed,
+      duration: durationParsed,
       isActive: isActive === 'true' || isActive === true,
       isPromo: isPromo === 'true' || isPromo === true,
-      photo: photo || null
+      photo
     };
-    console.log('[DEBUG] Dados que vão para o banco:', serviceData); // 👈 Adicione isso aqui
+
     const service = await ServiceType.create(serviceData);
-    
+
     log('Serviço criado com sucesso', { id: service.id, name: service.name });
-    
+
     res.json({
       success: true,
       message: 'Serviço criado com sucesso',
-      service: service
+      service
     });
-  } catch (error) {
-  logError('Erro ao criar serviço', error);
-  res.status(500).json({
-    success: false,
-    error: error.message || 'Erro interno do servidor' // ← Aqui!
-  });
-}
 
+  } catch (error) {
+    logError('Erro ao criar serviço', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Erro interno do servidor'
+    });
+  }
 });
+
 
 // ===== BUSCAR SERVIÇO POR ID =====
 router.get('/:id', async (req, res) => {
@@ -242,19 +249,24 @@ router.get('/:id', async (req, res) => {
 });
 
 // ===== ATUALIZAR SERVIÇO =====
+// ===== ATUALIZAR SERVIÇO =====
 router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
+    const { id } = req.params;   // 👈 captura primeiro
     log(`Atualizando serviço ID: ${id}`, { body: req.body, file: req.file?.filename });
-    const { id } = req.params;   // 👈 capture aqui
-    
-    if (!service) return res.status(404).json({ success: false, error: 'Serviço não encontrado' });
+
+    const service = await ServiceType.findByPk(id); // 👈 busca aqui
+    if (!service) {
+      return res.status(404).json({ success: false, error: 'Serviço não encontrado' });
+    }
 
     const { name, description, price, duration, isActive, isPromo } = req.body;
     const photo = req.file ? '/uploads/services/' + req.file.filename : service.photo;
-    
+
+    // Verificar duplicidade de nome
     if (name && name.trim() !== service.name) {
-      const existingService = await ServiceType.findOne({ 
-        where: { 
+      const existingService = await ServiceType.findOne({
+        where: {
           name: name.trim(),
           id: { [Op.ne]: id }
         }
@@ -266,23 +278,16 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
         });
       }
     }
-    
-    // Validar preço se fornecido
+
+    // Validações
     if (price !== undefined && (isNaN(price) || parseFloat(price) <= 0)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Preço deve ser um número válido maior que zero'
-      });
+      return res.status(400).json({ success: false, error: 'Preço deve ser válido' });
     }
-    
-    // Validar duração se fornecida
+
     if (duration !== undefined && (isNaN(duration) || parseInt(duration) <= 0)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Duração deve ser um número válido maior que zero'
-      });
+      return res.status(400).json({ success: false, error: 'Duração deve ser válida' });
     }
-    
+
     const updateData = {
       name: name ? name.trim() : service.name,
       description: description !== undefined ? (description ? description.trim() : null) : service.description,
@@ -292,15 +297,15 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       isPromo: isPromo !== undefined ? (isPromo === 'true' || isPromo === true) : service.isPromo,
       photo
     };
-    
+
     await service.update(updateData);
-    
+
     log('Serviço atualizado com sucesso', { id: service.id, name: service.name });
-    
+
     res.json({
       success: true,
       message: 'Serviço atualizado com sucesso',
-      service: service
+      service
     });
   } catch (error) {
     logError('Erro ao atualizar serviço', error);
@@ -310,6 +315,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     });
   }
 });
+
 
 // ===== DELETAR SERVIÇO =====
 router.delete('/:id', async (req, res) => {
