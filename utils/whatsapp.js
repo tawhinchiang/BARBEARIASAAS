@@ -39,18 +39,27 @@ async function initializeWhatsApp() {
         clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
       }),
       puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu'
-        ]
-      }
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--disable-gpu',
+    '--disable-software-rasterizer',
+    '--no-first-run',
+    '--no-zygote',
+    '--single-process',
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-extensions',
+    '--mute-audio',
+    '--disable-sync',
+    '--disable-translate'
+  ]
+}
+
     });
 
     console.log('[WHATSAPP] Registrando eventos...');
