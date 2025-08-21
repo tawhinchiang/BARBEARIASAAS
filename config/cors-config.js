@@ -41,9 +41,10 @@ const corsConfig = {
   production: {
     // IMPORTANTE: Substitua pelos seus domínios reais de produção
     allowedOrigins: [
-      'https://agendastudios.com.br',   // domínio final
+      'https://agendastudios.com.br',   
       'https://www.agendastudios.com.br',
-      'http://64.227.83.125:3000',      // IP da VM (apenas para teste)
+      'http://agendastudios.com.br',
+      'http://64.227.83.125:3000',      
     ],
     // Métodos mais restritivos para produção
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'],
@@ -89,6 +90,7 @@ const adminApiCorsConfig = {
   production: { 
     allowedOrigins: [
       'https://agendastudios.com.br',
+      'http://agendastudios.com.br',
       'https://www.agendastudios.com.br',
       'http://64.227.83.125:3000'
     ],
@@ -126,6 +128,7 @@ const publicApiCorsConfig = {
   production: {
     allowedOrigins: [
       'https://agendastudios.com.br',
+      'http://agendastudios.com.br',
       'https://www.agendastudios.com.br',
       'http://64.227.83.125:3000'
             // Pode incluir mais domínios para APIs públicas
@@ -205,7 +208,7 @@ function additionalSecurityValidation(req, res, next) {
 
   // Bloquear user-agents suspeitos
   const suspiciousUserAgents = [
-    'curl', 'wget', 'python-requests', 'bot', 'crawler'
+    'curl', 'wget', 'python-requests', 'bot', 'crawler','insomnia', 'aiohttp', 'httpclient', 'postman', 'java'
   ];
 
   if (userAgent && suspiciousUserAgents.some(ua => userAgent.toLowerCase().includes(ua))) {
