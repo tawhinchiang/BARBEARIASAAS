@@ -192,29 +192,33 @@ app.use((req, res) => {
   logError(`Rota não encontrada: ${req.method} ${req.url}`, new Error('404 Not Found'));
   res.status(404).render('error', {
     title: 'Página não encontrada',
-    error: 'A página que você procura não foi encontrada.',
+    message: 'A página que você procura não foi encontrada.',
+    error: {}, 
     layout: req.url.startsWith('/admin') ? 'admin' : 'main'
   });
 });
 
 // Middleware de erro geral
 app.use((err, req, res, next) => {
-  // Log específico para erros de CORS
   if (err.message && err.message.includes('CORS')) {
     logError('Erro de CORS detectado', err);
-    return res.status(403).json({ 
-      error: 'Acesso negado por política de CORS',
-      message: 'Sua origem não está autorizada a acessar este recurso'
+    return res.status(403).render('error', {
+      title: 'Acesso negado por política de CORS',
+      message: 'Sua origem não está autorizada a acessar este recurso',
+      error: err,
+      layout: req.url.startsWith('/admin') ? 'admin' : 'main'
     });
   }
-  
+
   logError('Erro interno do servidor', err);
   res.status(500).render('error', {
     title: 'Erro interno',
-    error: 'Ocorreu um erro interno no servidor.',
+    message: 'Ocorreu um erro interno no servidor.',
+    error: err, // aqui sim passa o objeto, tem .stack
     layout: req.url.startsWith('/admin') ? 'admin' : 'main'
   });
 });
+
 
 log('Aplicação configurada com sucesso - CORS seguro ativo');
 
