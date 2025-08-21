@@ -208,7 +208,7 @@ function additionalSecurityValidation(req, res, next) {
 
   // Bloquear user-agents suspeitos
   const suspiciousUserAgents = [
-    'curl', 'wget', 'python-requests', 'bot', 'crawler','insomnia', 'aiohttp', 'httpclient', 'postman', 'java'
+    'curl', 'wget', 'axios','okhttp','libwww','python-requests', 'bot', 'crawler','insomnia', 'aiohttp', 'httpclient', 'postman', 'java'
   ];
 
   if (userAgent && suspiciousUserAgents.some(ua => userAgent.toLowerCase().includes(ua))) {

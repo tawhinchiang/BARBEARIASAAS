@@ -1,4 +1,4 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const sequelize = new Sequelize(
@@ -10,19 +10,24 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT,
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
+
     pool: {
-      max: 5,
+      max: 5,            
       min: 0,
-      acquire: 30000,
-      idle: 10000
-    }
+      acquire: 20000,    
+      idle: 10000,      
+      evict: 10000       
+    },
+
+    dialectOptions: {
+      keepAlive: true,
+      statement_timeout: 15000,                 
+      idle_in_transaction_session_timeout: 15000 
+    },
+
+    retry: { max: 2 }   
   }
 );
-console.log('DB config:', {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  typeOfPassword: typeof process.env.DB_PASSWORD,
-});
+
 
 module.exports = sequelize;
-

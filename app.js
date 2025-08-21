@@ -8,7 +8,7 @@ const cors = require('cors');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 const { sequelize } = require('./models');
 require('dotenv').config();
-
+const rateLimit = require('express-rate-limit');
 const {
   securityHeaders,
   strictOriginValidation,
@@ -59,6 +59,12 @@ const hbs = engine({
     allowProtoMethodsByDefault: true
   }
 });
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 50, 
+  message: { error: 'Muitas requisições, tente mais tarde.' }
+});
+
 
 app.engine('hbs', hbs);
 app.set('view engine', 'hbs');
@@ -109,14 +115,13 @@ const sessionStore = new SequelizeStore({
     console.error('[SESSION] Erro ao sincronizar a tabela de sessões:', error);
   }
 })();
-
 app.use(session({
   secret: process.env.SESSION_SECRET || 'barbershop_secret_key',
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, // Em produção, só HTTPS
+    secure: process.env.NODE_ENV === 'production', // 🔒 só HTTPS em produção
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
     sameSite: 'lax'
@@ -146,8 +151,8 @@ log('Configurando rotas com CORS específico');
 app.use('/', require('./routes/index'));
 
 // APIs PÚBLICAS - CORS menos restritivo para leitura
-app.use('/api', cors(createCorsConfig('public')), require('./routes/publicApi'));
-
+app.use('/api',apiLimiter, cors(createCorsConfig('public')),require('./routes/publicApi')      
+);
 // Rotas de agendamentos (CORS padrão)
 app.use('/', require('./routes/appointments'));
 
@@ -231,6 +236,8 @@ log('Configuração de CORS carregada para:', {
   corsAdmin: 'Configurado para área administrativa',
   corsDefault: 'Configurado para rotas gerais'
 });
+
+
 
 
 module.exports = app;
