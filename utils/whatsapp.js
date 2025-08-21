@@ -4,21 +4,21 @@ const SafeLocalAuth = require('../utils/CustomLocalAuth');
 const { formatBrazilianPhoneForWhatsApp } = require('./smartphoneformatter');
 const { generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
 const deleteSession = require('../utils/deleteSession');
+const { exec } = require('child_process');
 
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
-  send: 10000,       // 10s para envio
-  ack: 20000,        // 20s para ACK
-  retryBase: 1000,   // 1s, 2s, 3s... progressivo
-  debugDelay: 10000  // 10s no modo debug
+  send: 10000,
+  ack: 20000,
+  retryBase: 1000,
+  debugDelay: 10000
 };
 
 let client = null;
 let isReady = false;
 let latestQrCode = null;
-let initializing = false; // 🔒 trava para não inicializar múltiplas vezes
+let initializing = false; // trava para não inicializar múltiplas vezes
 
-// Auxiliar de delay
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -68,14 +68,15 @@ async function initializeWhatsApp() {
     client.on('ready', () => {
       console.log('🚀 WhatsApp conectado e pronto para uso!');
       isReady = true;
+      initializing = false; // libera lock só quando estiver pronto
     });
 
-    client.on('disconnected', async (reason) => {
+    // Usar ONCE para não acumular listeners
+    client.once('disconnected', async (reason) => {
       console.log('❌ WhatsApp desconectado:', reason);
       isReady = false;
       console.log('🔄 Reinicializando em 5s...');
 
-      // 🔑 FECHAR instância antiga antes de recriar
       await disconnectWhatsApp();
 
       setTimeout(async () => {
@@ -93,37 +94,11 @@ async function initializeWhatsApp() {
 
   } catch (error) {
     console.error('❌ Erro ao inicializar WhatsApp:', error);
-  } finally {
     initializing = false;
   }
 }
 
-// Verificar status da conexão
-function getWhatsAppStatus() {
-  return {
-    isConnected: isReady,
-    qrCode: isReady ? null : latestQrCode
-  };
-}
-
-function isWhatsAppReady() {
-  return isReady;
-}
-
-async function waitWhatsAppReady(timeoutMs = 20000) {
-  if (isReady) return true;
-  const started = Date.now();
-  return new Promise((resolve) => {
-    const iv = setInterval(() => {
-      if (isReady || (Date.now() - started) > timeoutMs) {
-        clearInterval(iv);
-        resolve(isReady);
-      }
-    }, 500);
-  });
-}
-
-// 🔌 Desconectar WhatsApp corretamente
+// Desconectar WhatsApp corretamente
 async function disconnectWhatsApp() {
   try {
     if (client) {
@@ -133,6 +108,16 @@ async function disconnectWhatsApp() {
       client = null;
       isReady = false;
       latestQrCode = null;
+
+      // Força matar processos Chrome/Chromium que ficarem abertos
+      exec("pkill -f '(chrome|chromium)'", (err) => {
+        if (err) {
+          console.error('⚠️ Erro ao matar processos chrome:', err.message);
+        } else {
+          console.log('🧹 Processos Chrome/Chromium encerrados.');
+        }
+      });
+
       const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
       await deleteSession(sessionId);
       console.log('📱 WhatsApp desconectado e sessão removida com segurança');
@@ -142,7 +127,7 @@ async function disconnectWhatsApp() {
   }
 }
 
-// === Funções de envio mantidas === //
+// === Funções de envio === //
 async function ensureClientReady() {
   if (!client) throw new Error('Cliente WhatsApp não inicializado');
   if (!isReady) throw new Error('Cliente WhatsApp não está pronto');
@@ -235,6 +220,30 @@ async function sendWhatsAppMessageDebug(phone, message) {
     console.error(`[DEBUG] 💥 Erro geral:`, err.message);
     return false;
   }
+}
+
+function getWhatsAppStatus() {
+  return {
+    isConnected: isReady,
+    qrCode: isReady ? null : latestQrCode
+  };
+}
+
+function isWhatsAppReady() {
+  return isReady;
+}
+
+async function waitWhatsAppReady(timeoutMs = 20000) {
+  if (isReady) return true;
+  const started = Date.now();
+  return new Promise((resolve) => {
+    const iv = setInterval(() => {
+      if (isReady || (Date.now() - started) > timeoutMs) {
+        clearInterval(iv);
+        resolve(isReady);
+      }
+    }, 500);
+  });
 }
 
 function getLastQRCode() {
