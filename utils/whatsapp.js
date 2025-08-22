@@ -116,9 +116,18 @@ client = new whatsapp.Client({
       }, 5000);
     });
 
-    client.on('auth_failure', (msg) => {
-      console.error('❌ Falha na autenticação WhatsApp:', msg);
-    });
+   client.on('auth_failure', async (msg) => {
+  console.error('❌ Falha na autenticação WhatsApp:', msg);
+  try {
+    const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+    await deleteSession(sessionId);
+    console.log('🧹 Sessão WhatsApp apagada após auth_failure');
+  } catch (e) {
+    console.error('⚠️ Erro ao limpar sessão após auth_failure:', e.message);
+  }
+  try { await disconnectWhatsApp(); } catch {}
+  setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
+});
 
     console.log('🔄 Inicializando WhatsApp...');
     await client.initialize();
