@@ -61,7 +61,7 @@ client = new whatsapp.Client({
     clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
   }),
   puppeteer: {
-    headless: true,                       // (ou 'new' se sua versão suportar)
+    headless:'new',                       // (ou 'new' se sua versão suportar)
     executablePath: chromePath || undefined,
     args: [
       '--no-sandbox',
