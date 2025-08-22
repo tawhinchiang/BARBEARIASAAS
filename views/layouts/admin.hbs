@@ -142,6 +142,7 @@
   <script src="/js/admin.js"></script>
 
   <!-- Script para atualizar horário -->
+  {{#if isAuthenticated}}
   <script>
     // Remove alert de sucesso após 4s
     setTimeout(() => {
@@ -236,7 +237,7 @@
       }
     }
   </script>
-
+  {{/if}}
 </body>
 
 </html>

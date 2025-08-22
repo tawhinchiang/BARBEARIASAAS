@@ -94,9 +94,11 @@ app.use(cors(createCorsConfig('default')));
 log('CORS seguro configurado');
 
 // Middlewares básicos
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -128,11 +130,12 @@ app.use(session({
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
+  proxy: true,                 
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // 🔒 só HTTPS em produção
-    maxAge: 24 * 60 * 60 * 1000,
+    secure: 'auto',           
     httpOnly: true,
-    sameSite: 'lax'
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 console.log('[SESSION] Store em uso:', sessionStore && sessionStore.constructor && sessionStore.constructor.name);

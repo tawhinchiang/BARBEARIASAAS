@@ -9,7 +9,7 @@ const {
   getLastQRCode,
   sendWhatsAppMessage            
 } = require('../utils/whatsapp');
-const { isAuthenticated } = require('../middleware/auth');
+const { isAuthenticated, isAuthenticatedApi } = require('../middleware/auth');
 const router = express.Router();
 const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
@@ -1106,12 +1106,12 @@ router.use('/services', require('./services'));
 // ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
 router.use('/config', require('./admin-config'));
 
-router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+router.get('/whatsapp/status', isAuthenticatedApi, (req, res) => {
   const status = getWhatsAppStatus();
   res.json(status);
 });
 
-router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
+router.get('/whatsapp/qr', isAuthenticatedApi, (req, res) => {
   try {
     const qr = getLastQRCode();
     if (!qr) return res.status(204).json({ message: 'QR ainda não gerado' });
