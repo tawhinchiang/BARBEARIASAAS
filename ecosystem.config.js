@@ -18,7 +18,8 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: 3000,
-        NODE_OPTIONS: '--max-old-space-size=256' // limita V8
+        NODE_OPTIONS: '--max-old-space-size=256',
+        WHATSAPP_CHROME_BIN: '/usr/bin/google-chrome-stable' // limita V8
       }
     }
   ]

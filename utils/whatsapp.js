@@ -5,6 +5,7 @@ const { formatBrazilianPhoneForWhatsApp } = require('./smartphoneformatter');
 const { generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
 const deleteSession = require('../utils/deleteSession');
 const { exec } = require('child_process');
+const fs = require('fs');
 
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
@@ -33,36 +34,56 @@ async function initializeWhatsApp() {
   initializing = true;
   try {
     console.log('[WHATSAPP] Criando instância do cliente...');
+    function resolveChromePath() {
+  const fromEnv = process.env.WHATSAPP_CHROME_BIN
+               || process.env.CHROMIUM_PATH
+               || process.env.CHROME_BIN
+               || process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (fromEnv && fs.existsSync(fromEnv)) return fromEnv;
 
-    client = new whatsapp.Client({
-      authStrategy: new SafeLocalAuth({
-        clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
-      }),
-      puppeteer: {
-  headless: true,
-  
-  executablePath: '/usr/bin/chromium-browser',
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--disable-accelerated-2d-canvas',
-    '--disable-gpu',
-    '--disable-software-rasterizer',
-    '--no-first-run',
-    '--no-zygote',
-    '--single-process',
-    '--disable-background-timer-throttling',
-    '--disable-backgrounding-occluded-windows',
-    '--disable-renderer-backgrounding',
-    '--disable-extensions',
-    '--mute-audio',
-    '--disable-sync',
-    '--disable-translate'
-  ]
-}
+  const candidates = [
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/snap/bin/chromium'
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return null; 
+    }
+    const chromePath = resolveChromePath();
+    console.log('[WHATSAPP] Browser detectado em:', chromePath || '(auto/puppeteer)');
 
-    });
+client = new whatsapp.Client({
+  authStrategy: new SafeLocalAuth({
+    clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
+  }),
+  puppeteer: {
+    headless: true,                       // (ou 'new' se sua versão suportar)
+    executablePath: chromePath || undefined,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--no-first-run',
+      '--no-zygote',
+      // REMOVIDO: '--single-process' (instável em alguns hosts)
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-extensions',
+      '--mute-audio',
+      '--disable-sync',
+      '--disable-translate'
+    ]
+  }
+});
+
 
     console.log('[WHATSAPP] Registrando eventos...');
 
