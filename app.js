@@ -19,6 +19,8 @@ const {
 } = require('./middleware/security');
 
 console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
+
+
 // IMPORTAR CONFIGURAÇÃO SEGURA DE CORS
 const { 
   createCorsConfig, 
@@ -27,6 +29,7 @@ const {
 } = require('./config/cors-config');
 
 const app = express();
+
 app.set('trust proxy', 1);
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
@@ -36,7 +39,12 @@ const log = (message, data = null) => {
     console.log(`[${timestamp}] [APP] Data:`, JSON.stringify(data, null, 2));
   }
 };
-
+app.use((req, res, next) => {
+  if (req.url.includes('wp-includes') || req.url.includes('xmlrpc')) {
+    return res.status(404).send('Not Found');
+  }
+  next();
+});
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [APP ERROR] ${message}`);
