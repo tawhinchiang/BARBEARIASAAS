@@ -7,14 +7,24 @@
 //     console.log(`[${timestamp}] [AUTH] Data:`, JSON.stringify(data, null, 2));
 //   }
 // };
+const log = (message, data = null) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [AUTH] ${message}`);
+  if (data !== null && data !== undefined) {
+    try {
+      console.log(`[${timestamp}] [AUTH] Data:`, JSON.stringify(data, null, 2));
+    } catch (_e) {
+      console.log(`[${timestamp}] [AUTH] Data:`, data);
+    }
+  }
+};
 
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [AUTH ERROR] ${message}`);
-  if (error && error.stack) {
-    console.error(`[${timestamp}] [AUTH ERROR] Stack:`, error.stack);
-  }
+  if (error) console.error(error);
 };
+
 
 // Middleware para rotas web (redireciona para login se não autenticado)
 const isAuthenticated = (req, res, next) => {
