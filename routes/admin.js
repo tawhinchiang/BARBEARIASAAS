@@ -1,13 +1,51 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
-const { disconnectWhatsApp, initializeWhatsApp } = require('../utils/whatsapp');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-const { getWhatsAppStatus } = require('../utils/whatsapp');
-const { getLastQRCode } = require('../utils/whatsapp');
-const { isAuthenticated } = require('../middleware/auth');
+const {
+  disconnectWhatsApp,
+  initializeWhatsApp,
+  getWhatsAppStatus,
+  getLastQRCode,
+  sendWhatsAppMessage            
+} = require('../utils/whatsapp');
+const { isAuthenticated, isAuthenticatedApi } = require('../middleware/auth');
 const router = express.Router();
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
+const fs = require('fs'); // se ainda não tiver no topo
+const todayStr = new Date().toLocaleDateString('en-CA');
+
+// admin.js (rotas admin) – helper no topo do arquivo
+function buildOrder(sort) {
+  const statusOrder = `CASE "Appointment"."status"
+                         WHEN 'in_progress' THEN 1
+                         WHEN 'confirmed'   THEN 2
+                         WHEN 'completed'   THEN 3
+                         ELSE 99
+                       END`;
+  switch (sort) {
+    case 'date_asc':  return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
+    case 'date_desc': return [['appointmentDate','DESC'],['appointmentTime','DESC'], [literal(statusOrder),'ASC']];
+    case 'value_asc': return [['totalPrice','ASC']];
+    case 'value_desc':return [['totalPrice','DESC']];
+    case 'barber_asc':return [[literal('"barber"."name"'),'ASC']];
+    case 'barber_desc':return [[literal('"barber"."name"'),'DESC']];
+    default:          return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
+  }
+}
+// Helper para paginação numerada com "…"
+function buildPages(current, total) {
+  const pages = [];
+  const delta = 2;
+  const left = Math.max(1, current - delta);
+  const right = Math.min(total, current + delta);
+  if (left > 1) pages.push(1);
+  if (left > 2) pages.push('...');     // ← aqui
+  for (let p = left; p <= right; p++) pages.push(p);
+  if (right < total - 1) pages.push('...'); // ← e aqui
+  if (right < total) pages.push(total);
+  return pages;
+}
 
 
 // Middleware de autenticação para todas as rotas do admin (exceto login e logout)
@@ -19,13 +57,13 @@ router.use((req, res, next) => {
 });
 
 // ===== LOGS DETALHADOS =====
-const log = (message, data = null) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [ADMIN] ${message}`);
-  if (data) {
-    console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
-  }
-};
+// const log = (message, data = null) => {
+//   const timestamp = new Date().toISOString();
+//   console.log(`[${timestamp}] [ADMIN] ${message}`);
+//   if (data) {
+//     console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
+//   }
+// };
 
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
@@ -49,6 +87,7 @@ router.get('/login', (req, res) => {
 
   log('Renderizando página de login');
   res.render('admin/login', {
+    hideNavbar: true,
     title: 'Login Administrativo',
     layout: 'admin',
     error: req.query.error
@@ -140,15 +179,15 @@ router.get('/dashboard', async (req, res) => {
     const monthlyRevenue = await Appointment.sum('totalPrice', {
       where: {
         appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: 'confirmed'
+        status: 'completed'
       }
     }) || 0;
 
     const todayAppointments = await Appointment.findAll({
       where: {
-      appointmentDate: formatDateYYYYMMDD(today),
-      status: 'confirmed'
-  },
+        appointmentDate: formatDateYYYYMMDD(today),
+        status: 'completed'
+      },
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber' },
@@ -179,7 +218,7 @@ router.get('/dashboard', async (req, res) => {
       attributes: ['appointmentDate', 'totalPrice'],
       where: {
         appointmentDate: { [Op.in]: datesToTrack },
-        status: { [Op.in]: ['confirmed', 'completed'] }
+        status: { [Op.in]: ['completed'] }
       },
       raw: true
     });
@@ -199,74 +238,100 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    const topBarbersRaw = await Appointment.findAll({
-      attributes: [
-        'barberId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
-        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-      ],
-      where: {appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: { [Op.in]: ['confirmed'] }
-},
-      include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
-      group: ['barberId', 'barber.id'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
-      limit: 5,
-      raw: true,
-      nest: true
-    });
-
-    const topBarbers = topBarbersRaw.map(item => ({
-      name: item.barber.name,
-      appointmentCount: item.appointmentCount,
-      totalRevenue: item.totalRevenue
-    }));
-
-      const topServicesRaw = await Appointment.findAll({
-      attributes: [
-        'serviceTypeId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
-        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-      ],
-       where: {
-      appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-      status: 'confirmed'
-     },
-      include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
-      group: ['serviceTypeId', 'serviceType.id'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
-      limit: 5,
-      raw: true,
-      nest: true
-    });
-
-    const topServices = topServicesRaw.map(item => ({
-      name: item.serviceType.name,
-      duration: item.serviceType.duration,
-      price: item.serviceType.price,
-      appointmentCount: item.appointmentCount,
-      totalRevenue: item.totalRevenue,
-      percentage: 0
-    }));
-
-    const formattedRecentAppointments = todayAppointments.map(app => {
-  const [year, month, day] = app.appointmentDate.split('-');
-  const localDate = new Date(year, month - 1, day);
-  const serviceType = app.serviceType || {};
-
-  return {
-    ...app.toJSON(),
-    appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
-    appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
+    // Bloco Novo e Corrigido
+// Substitua pelo Bloco Novo e Mais Robusto
+const topBarbersRaw = await Appointment.findAll({
+  attributes: [
+    [require('sequelize').col('barber.id'), 'barberId'], // Seleciona o ID do barbeiro diretamente
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+    status: { [Op.in]: ['completed'] }
+  },
+  include: [{
+    model: Barber,
+    as: 'barber',
+    attributes: ['name'] // Apenas o nome é necessário para o resultado
+  }],
+  group: [
+    require('sequelize').col('barber.id'), // Agrupa pelo ID e nome do barbeiro
+    require('sequelize').col('barber.name')
+  ],
+  order: [
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+  ],
+  limit: 5,
+  raw: true,
+  nest: true
 });
+
+
+  const topBarbers = topBarbersRaw.map(item => ({
+  name: item.barber?.name || 'Barbeiro Desconhecido', // <-- Usa o nome do barbeiro da inclusão
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue
+}));
+
+   // Substitua pelo Bloco Novo e Mais Robusto
+const topServicesRaw = await Appointment.findAll({
+  attributes: [
+    [require('sequelize').col('serviceType.id'), 'serviceTypeId'], // Seleciona o ID do serviço
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+    status: 'completed'
+  },
+  include: [{
+    model: ServiceType,
+    as: 'serviceType',
+    attributes: ['name', 'duration', 'price'] // Atributos necessários
+  }],
+  group: [
+    require('sequelize').col('serviceType.id'), // Agrupa por todas as colunas não agregadas
+    require('sequelize').col('serviceType.name'),
+    require('sequelize').col('serviceType.duration'),
+    require('sequelize').col('serviceType.price')
+  ],
+  order: [
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+  ],
+  limit: 5,
+  raw: true,
+  nest: true
+});
+
+const topServices = topServicesRaw.map(item => ({
+  name: item.serviceType?.name || 'Serviço Desconhecido', // <-- Usa o nome do serviço da inclusão
+  duration: item.serviceType?.duration || 0,
+  price: item.serviceType?.price || '0.00',
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue,
+  percentage: 0
+}));
+    const formattedRecentAppointments = todayAppointments.map(app => {
+      const [year, month, day] = app.appointmentDate.split('-');
+      const localDate = new Date(year, month - 1, day);
+      const serviceType = app.serviceType || {};
+
+      return {
+        ...app.toJSON(),
+        appointmentDateFormatted: localDate.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: app.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
+      pageTitle: 'Dashboard Administrativo',
+     
       layout: 'admin',
       user: req.session.user,
       todayAppointmentsCount: todayAppointments.length,
@@ -295,66 +360,50 @@ router.get('/dashboard', async (req, res) => {
 // Listagem e gerenciamento de agendamentos - COM ORDENAÇÃO E FILTROS COMPLETOS
 router.get('/appointments', async (req, res) => {
   try {
-    log('Acessando listagem de agendamentos', {
+      log('Acessando listagem de agendamentos', {
       user: req.session.user,
       query: req.query
     });
-
     const { startDate, endDate, barberId, status, sort } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = 20;
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100); // 5–100 itens por página
     const offset = (page - 1) * limit;
 
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
     let whereClause = {};
 
+    // ✅ Data inicial: hoje (se não vier na query)
     if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
-      };
+      whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
     } else if (startDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.gte]: startDate
-      };
+      whereClause.appointmentDate = { [Op.gte]: startDate };
     } else if (endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.lte]: endDate
-      };
+      whereClause.appointmentDate = { [Op.lte]: endDate };
+    } else {
+      // default server-side
+      whereClause.appointmentDate = { [Op.gte]: todayStr };
     }
 
-    if (barberId) {
-      whereClause.barberId = barberId;
-    }
+    if (barberId) whereClause.barberId = Number(barberId);
 
+
+    // ✅ Status padrão quando não vier filtro explícito
     if (status) {
       whereClause.status = status;
+    } else {
+      whereClause.status = { [Op.in]: DEFAULT_STATUSES };
     }
 
-    // Define ordenação dinâmica
-    let order = [];
-    switch (sort) {
-      case 'date_asc':
-        order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC']];
-        break;
-      case 'date_desc':
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']];
-        break;
-      case 'value_asc':
-        order = [['totalPrice', 'ASC']];
-        break;
-      case 'value_desc':
-        order = [['totalPrice', 'DESC']];
-        break;
-      case 'barber_asc':
-        order = [[require('sequelize').literal('"barber"."name"'), 'ASC']];
-        break;
-      case 'barber_desc':
-        order = [[require('sequelize').literal('"barber"."name"'), 'DESC']];
-        break;
-      default:
-        order = [['appointmentDate', 'DESC'], ['appointmentTime', 'ASC']];
-    }
+    // ✅ Ordenação: data/hora e depois status nessa ordem
+    const statusOrder = `CASE "Appointment"."status"
+                           WHEN 'in_progress' THEN 1
+                           WHEN 'confirmed'   THEN 2
+                           WHEN 'completed'   THEN 3
+                           ELSE 99
+                         END`;
 
-    log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
+   const order = buildOrder(sort);
+    
 
     const { count, rows: appointments } = await Appointment.findAndCountAll({
       where: whereClause,
@@ -367,51 +416,60 @@ router.get('/appointments', async (req, res) => {
       limit,
       offset
     });
-
+     const totalPages = Math.max(1, Math.ceil(count / limit));
+    const pages = buildPages(page, totalPages);
+    const prevPage = page > 1 ? page - 1 : 1;
+    const nextPage = page < totalPages ? page + 1 : totalPages;
+ 
     const barbers = await Barber.findAll({ where: { isActive: true } });
-    const totalPages = Math.ceil(count / limit);
+   
     const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const serviceType = plain.serviceType || {};
+      const plain = app.toJSON();
+      const serviceType = plain.serviceType || {};
 
-  let dateFormatted = '';
-  try {
-    const rawDate = plain.appointmentDate;
-    const safeDate = typeof rawDate === 'string'
-      ? new Date(rawDate + 'T03:00:00')
-      : new Date(rawDate);
-    if (!isNaN(safeDate)) {
-      dateFormatted = safeDate.toLocaleDateString('pt-BR');
-    }
-  } catch (err) {
-    console.error('Erro ao formatar appointmentDate:', err);
-  }
+      let dateFormatted = '';
+      try {
+        const rawDate = plain.appointmentDate;
+        const safeDate = typeof rawDate === 'string'
+          ? new Date(rawDate + 'T03:00:00')
+          : new Date(rawDate);
+        if (!isNaN(safeDate)) {
+          dateFormatted = safeDate.toLocaleDateString('pt-BR');
+        }
+      } catch (err) {
+        console.error('Erro ao formatar appointmentDate:', err);
+      }
 
-  return {
-    ...plain,
-    appointmentDateFormatted: dateFormatted,
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
+      return {
+        ...plain,
+        appointmentDateFormatted: dateFormatted,
+        appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: serviceType.name || 'Não informado',
+          duration: serviceType.duration || 'n/d'
+        }
+      };
+    });
 
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
+      pageTitle: 'Agendamentos',
       layout: 'admin',
       user: req.session.user,
-      appointments:formattedAppointments,
+      appointments: formattedAppointments,
       barbers,
-      filters: { startDate, endDate, barberId, status, sort },
-      pagination: {
-        currentPage: page,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+      filters: { startDate, endDate, barberId, status, sort, limit },
+       selectedLimit: limit,
+       pagination: {
+      currentPage: page,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+      nextPage,
+      prevPage,
+      pages   
+    }
     });
   } catch (error) {
     console.error('[DEBUG ERRO]', error);
@@ -425,22 +483,127 @@ router.get('/appointments', async (req, res) => {
   }
 });
 
+router.get('/appointments/partial', async (req, res) => {
+  try {
+    const { startDate, endDate, barberId, status, sort, page = 1, limit = 10 } = req.query;
+    const p = Math.max(parseInt(page) || 1, 1);
+    const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
+
+    const DEFAULT_STATUSES = ['in_progress','confirmed','completed'];
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
+    const where = {};
+    if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
+    else where.appointmentDate = { [Op.gte]: todayStr };
+
+    if (barberId) where.barberId = Number(barberId);
+    where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
+
+    const order = buildOrder(sort);
+
+    const { count, rows } = await Appointment.findAndCountAll({
+      where,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber' },
+        { model: ServiceType, as: 'serviceType' }
+      ],
+      order,
+      limit: l,
+      offset: (p - 1) * l
+    });
+
+    const formatted = rows.map(a => {
+      const j = a.toJSON();
+      const d = new Date((typeof j.appointmentDate === 'string' ? j.appointmentDate + 'T03:00:00' : j.appointmentDate));
+      return {
+        ...j,
+        appointmentDateFormatted: isNaN(d) ? '' : d.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: j.appointmentTime?.slice(0, 5)
+      };
+    });
+
+    // Renderiza partial em string
+    res.render('partials/appointments-table-rows', { layout: false, appointments: formatted }, (err, html) => {
+      if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
+      const hasNext = (p * l) < count;
+      res.json({ html, hasNext, nextPage: p + 1 });
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao paginar agendamentos' });
+  }
+});
+
+
+router.get('/appointments/partial-cards', async (req, res) => {
+  try {
+    const { startDate, endDate, barberId, status, sort, page = 1, limit = 10 } = req.query;
+    const p = Math.max(parseInt(page) || 1, 1);
+    const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
+
+    const DEFAULT_STATUSES = ['in_progress','confirmed','completed'];
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
+    const where = {};
+    if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
+    else where.appointmentDate = { [Op.gte]: todayStr };
+
+    if (barberId) where.barberId = Number(barberId);
+    where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
+
+    const order = buildOrder(sort);
+
+    const { count, rows } = await Appointment.findAndCountAll({
+      where,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber' },
+        { model: ServiceType, as: 'serviceType' }
+      ],
+      order,
+      limit: l,
+      offset: (p - 1) * l
+    });
+
+    const formatted = rows.map(a => {
+      const j = a.toJSON();
+      const d = new Date((typeof j.appointmentDate === 'string' ? j.appointmentDate + 'T03:00:00' : j.appointmentDate));
+      return {
+        ...j,
+        appointmentDateFormatted: isNaN(d) ? '' : d.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: j.appointmentTime?.slice(0, 5)
+      };
+    });
+
+    res.render('partials/appointments-cards-grouped', { layout: false, appointments: formatted }, (err, html) => {
+      if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
+      const hasNext = (p * l) < count;
+      res.json({ html, hasNext, nextPage: p + 1 });
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao paginar agendamentos (cards)' });
+  }
+});
 
 // Atualizar status do agendamento
 router.post('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     log('Atualizando status do agendamento', { id, status, user: req.session.user });
-    
+
     const result = await Appointment.update(
       { status },
       { where: { id } }
     );
-    
+
     log('Status atualizado', { id, status, affectedRows: result[0] });
-    
+
     res.json({ success: true });
   } catch (error) {
     logError('Erro ao atualizar status', error);
@@ -449,122 +612,116 @@ router.post('/appointments/:id/status', async (req, res) => {
 });
 
 // Relatórios administrativos - CORRIGIDA
+// /admin/reports – LISTAGEM COM PAGINAÇÃO + VIEW MODE
 router.get('/reports', async (req, res) => {
   try {
-    log('Acessando relatórios', { user: req.session.user, query: req.query });
-    
     const { startDate, endDate, barberId, status, sort } = req.query;
 
-    
-    let whereClause = {};
-    
-    if (startDate && endDate) {
-      whereClause.appointmentDate = {
-        [require('sequelize').Op.between]: [startDate, endDate]
-      };
-    }
+    // paginação
+    const page  = Math.max(parseInt(req.query.page)  || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100);
+    const offset = (page - 1) * limit;
 
-    if (status) {whereClause.status = status;}
+    // view mode (table|cards)
+    const view = (req.query.view === 'cards') ? 'cards' : 'table';
 
-    if (barberId) {whereClause.barberId = barberId;}
-    
-    log('Filtros de relatório aplicados', { whereClause });
-    // 🔄 DEFINIR ORDENAMENTO ANTES DO findAll
-      let order = [['appointmentDate', 'DESC']]; // padrão
-  
-      switch (sort) {
-      case 'date_asc':
-        order = [['appointmentDate', 'ASC']];
-        break;
-      case 'value_desc':
-        order = [['totalPrice', 'DESC']];
-        break;
-      case 'value_asc':
-        order = [['totalPrice', 'ASC']];
-        break;
-      case 'barber_asc':
-        order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
-        break;
-      case 'barber_desc':
-        order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
-        break;
-      }
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const whereClause = {};
 
-      const appointments = await Appointment.findAll({
-        where: whereClause,
-        include: [
-          { model: Client, as: 'client' },
-          { model: Barber, as: 'barber', attributes: ['id', 'name'], required: true },
-          { model: ServiceType, as: 'serviceType' }
-        ],
+    if (startDate && endDate)       whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate)             whereClause.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate)               whereClause.appointmentDate = { [Op.lte]: endDate };
+    else                            whereClause.appointmentDate = { [Op.gte]: todayStr };
 
-        order
-      }); // padrão
+    if (barberId) whereClause.barberId = Number(barberId);
+    if (status)   whereClause.status   = status;
 
-    const formattedAppointments = appointments.map(app => {
-  const plain = app.toJSON();
-  const date = new Date(plain.appointmentDate + 'T03:00:00');
-  const serviceType = plain.serviceType || {};
+    const order = buildOrder(sort);
 
-  return {
-    ...plain,
-    appointmentDateFormatted: !isNaN(date) ? date.toLocaleDateString('pt-BR') : '',
-    appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
-    serviceType: {
-      name: serviceType.name || 'Não informado',
-      duration: serviceType.duration || 'n/d'
-    }
-  };
-});
-
-
-
-    log('Dados do relatório carregados', { appointmentsCount: appointments.length });
-    
-    const barbers = await Barber.findAll({ where: { isActive: true } });
-    
-    // Estatísticas para relatórios
-    const stats = {
-      total: appointments.length,
-      byStatus: {},
-      byBarber: {},
-      totalRevenue: 0
-    };
-    
-    appointments.forEach(apt => {
-      // Contagem Por status
-      console.log(`Status: ${apt.status} - Preço: ${apt.totalPrice}`);
-      stats.byStatus[apt.status] = (stats.byStatus[apt.status] || 0) + 1;
-      
-      // Contagem Por barbeiro
-      const barberKey = `${apt.barber?.id} - ${apt.barber?.name || 'Desconhecido'}`;
-      stats.byBarber[barberKey] = (stats.byBarber[barberKey] || 0) + 1;
-
-      
-      // Receita total
-      // Receita total - ignorar agendamentos cancelados
-      if (apt.totalPrice && apt.status !== 'cancelled') {
-        stats.totalRevenue += parseFloat(apt.totalPrice);
-      }
-
+    const { count, rows } = await Appointment.findAndCountAll({
+      where: whereClause,
+      include: [
+        { model: Client, as: 'client' },
+        { model: Barber, as: 'barber' },
+        { model: ServiceType, as: 'serviceType' }
+      ],
+      order,
+      limit,
+      offset
     });
-    
-    log('Estatísticas do relatório calculadas', { stats });
-    console.log('[DEBUG] formattedAppointments:', formattedAppointments);
+
+    const totalPages = Math.max(1, Math.ceil(count / limit));
+    const pages      = buildPages(page, totalPages);
+    const prevPage   = page > 1 ? page - 1 : 1;
+    const nextPage   = page < totalPages ? page + 1 : totalPages;
+
+    const formatted = rows.map(app => {
+      const j = app.toJSON();
+      const d = new Date((typeof j.appointmentDate === 'string' ? j.appointmentDate + 'T03:00:00' : j.appointmentDate));
+      return {
+        ...j,
+        appointmentDateFormatted: isNaN(d) ? '' : d.toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: j.appointmentTime?.slice(0, 5),
+        serviceType: {
+          name: j.serviceType?.name || 'Não informado',
+          duration: j.serviceType?.duration || 'n/d'
+        }
+      };
+    });
+
+    // barbeiros para filtro (mantém consistência)
+    const barbers = await Barber.findAll({ where: { isActive: true } });
+
+    // --- Estatísticas para os gráficos ---
+    let stats = {
+      total: count,
+      totalRevenue: 0,
+      byStatus: {
+        pending: 0,
+        confirmed: 0,
+        in_progress: 0,
+        completed: 0,
+        cancelled: 0,
+        no_show: 0
+      },
+      byBarber: {}
+    };
+
+    rows.forEach(a => {
+      stats.totalRevenue += Number(a.totalPrice) || 0;
+
+      if (stats.byStatus[a.status] !== undefined) {
+        stats.byStatus[a.status]++;
+      }
+
+      const barberName = a.barber?.name || 'Não informado';
+      stats.byBarber[barberName] = (stats.byBarber[barberName] || 0) + 1;
+    });
 
     res.render('admin/reports', {
       title: 'Relatórios',
+      pageTitle: 'Relatórios',
       layout: 'admin',
       user: req.session.user,
-      appointments: formattedAppointments,
+      appointments: formatted, 
       barbers,
-      stats,
-      filters: { startDate, endDate, barberId, status, sort }
-
+      view,
+      stats, 
+      filters: { startDate, endDate, barberId, status, sort, limit },
+      selectedLimit: limit,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+        nextPage,
+        prevPage,
+        pages
+      }
     });
 
   } catch (error) {
-    logError('Erro ao gerar relatórios', error);
+    console.error('[ADMIN][REPORTS] Erro:', error);
     res.render('admin/reports', {
       title: 'Relatórios',
       layout: 'admin',
@@ -573,6 +730,8 @@ router.get('/reports', async (req, res) => {
     });
   }
 });
+
+
 
 // Exportar relatórios (PDF/CSV) - CORRIGIDA
 // Exemplo da rota corrigida
@@ -592,23 +751,51 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     } else if (endDate) {
       where.appointmentDate = { [Op.lte]: endDate };
     }
-    
+
     if (typeof status === 'string' && status.trim() !== '') {
       where.status = status;
     }
-    
-    if (typeof barberId === 'string' && barberId.trim() !== '') {
-      where.barberId = barberId;
-    }
-    
 
-    // Ordenação
-    let order = [['appointmentDate', 'DESC']];
-    if (sort === 'date_asc') order = [['appointmentDate', 'ASC']];
-    else if (sort === 'value_desc') order = [['totalPrice', 'DESC']];
-    else if (sort === 'value_asc') order = [['totalPrice', 'ASC']];
-    else if (sort === 'barber_asc') order = [[{ model: Barber }, 'name', 'ASC']];
-    else if (sort === 'barber_desc') order = [[{ model: Barber }, 'name', 'DESC']];
+    if (typeof barberId === 'string' && barberId.trim() !== '') {
+      where.barberId = Number(barberId);
+    }
+
+
+    // ---- ORDENAR COMO /appointments ----
+const statusOrder = `CASE "Appointment"."status"
+                       WHEN 'in_progress' THEN 1
+                       WHEN 'confirmed'   THEN 2
+                       WHEN 'completed'   THEN 3
+                       ELSE 99
+                     END`;
+
+let order = [
+  ['appointmentDate', 'ASC'],
+  ['appointmentTime', 'ASC'],
+  [literal(statusOrder), 'ASC']
+];
+
+if (sort === 'date_asc') {
+  order = [
+    ['appointmentDate', 'ASC'],
+    ['appointmentTime', 'ASC'],
+    [literal(statusOrder), 'ASC']
+  ];
+} else if (sort === 'date_desc') {
+  order = [
+    ['appointmentDate', 'DESC'],
+    ['appointmentTime', 'DESC'],
+    [literal(statusOrder), 'ASC']
+  ];
+} else if (sort === 'value_desc') {
+  order = [['totalPrice', 'DESC']];
+} else if (sort === 'value_asc') {
+  order = [['totalPrice', 'ASC']];
+} else if (sort === 'barber_asc') {
+  order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];  // 👈 alias correto
+} else if (sort === 'barber_desc') {
+  order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
+}
 
     // Buscar dados com Sequelize
     const appointments = await Appointment.findAll({
@@ -630,15 +817,33 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     const filename = `relatorio-${Date.now()}.${format}`;
     const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
 
+    
+
+
     if (format === 'pdf') {
       const filePath = await generatePDF(appointments, reportInfo, filename);
-      return res.download(filePath);
-    } else if (format === 'csv') {
-      const filePath = await generateCSV(appointments, filename);
-      return res.download(filePath);
-    } else {
-      return res.status(400).json({ error: 'Formato inválido.' });
-    }
+      return res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Erro ao enviar PDF:', err);
+        }
+        fs.unlink(filePath, (err) => {
+          if (err) console.error('Erro ao excluir PDF temporário:', err);
+          else console.log(`Arquivo PDF excluído: ${filename}`);
+        });
+      });
+} else if (format === 'csv') {
+  const filePath = await generateCSV(appointments, filename);
+  return res.download(filePath, filename, (err) => {
+    if (err) console.error('Erro ao enviar CSV:', err);
+    fs.unlink(filePath, (err) => {
+      if (err) console.error('Erro ao excluir CSV temporário:', err);
+      else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
+    });
+  });
+} else {
+  return res.status(400).json({ error: 'Formato inválido.' });
+}
+
   } catch (error) {
     console.error('[EXPORT ERROR]', error);
     res.status(500).json({ error: 'Erro ao gerar relatório.' });
@@ -648,18 +853,18 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
 
 
 router.get('/appointments/:id', async (req, res) => {
-    // const { id } = req.params;
+  // const { id } = req.params;
 
   try {
     const id = parseInt(req.params.id, 10);
-    
+
     if (isNaN(id)) {
       log('ID inválido fornecido', { id: req.params.id });
       return res.status(400).json({ success: false, error: 'ID inválido' });
     }
 
     log('Buscando agendamento por ID', { id });
-    
+
     const appointment = await Appointment.findByPk(id, {
       include: [
         { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
@@ -674,7 +879,7 @@ router.get('/appointments/:id', async (req, res) => {
     }
 
     log('Agendamento encontrado', { id, client: `${appointment.client.firstName} ${appointment.client.lastName}` });
-    
+
     res.json({ success: true, appointment });
 
   } catch (error) {
@@ -688,47 +893,49 @@ router.patch('/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     log('Atualizando status do agendamento', { id, status });
-    
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
-    
+
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show'];
+
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: 'Status inválido',
         validStatuses
       });
     }
-    
+
     const appointment = await Appointment.findByPk(id);
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Agendamento não encontrado'
       });
     }
-    
+
     await appointment.update({ status });
-    
-    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: status });
-    
+    const updatedAppointment = await Appointment.findByPk(id); // recarrega
+
+    log('Status atualizado com sucesso', { id, oldStatus: appointment.status, newStatus: updatedAppointment.status });
+
     res.json({
       success: true,
       message: 'Status atualizado com sucesso',
       appointment: {
-        id: appointment.id,
-        status: appointment.status
+        id: updatedAppointment.id,
+        status: updatedAppointment.status
       }
     });
-    
+
+
   } catch (error) {
     logError('Erro ao atualizar status', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
     });
   }
 });
@@ -737,33 +944,33 @@ router.patch('/appointments/:id/status', async (req, res) => {
 router.delete('/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     log('Cancelando agendamento', { id });
-    
+
     const appointment = await Appointment.findByPk(id);
-    
+
     if (!appointment) {
       log('Agendamento não encontrado', { id });
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Agendamento não encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Agendamento não encontrado'
       });
     }
-    
+
     await appointment.update({ status: 'cancelled' });
-    
+
     log('Agendamento cancelado com sucesso', { id });
-    
+
     res.json({
       success: true,
       message: 'Agendamento cancelado com sucesso'
     });
-    
+
   } catch (error) {
     logError('Erro ao cancelar agendamento', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Erro interno do servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor'
     });
   }
 });
@@ -889,22 +1096,22 @@ router.put('/appointments/:id', async (req, res) => {
   }
 });
 
- // ===== ROTAS DE BARBEIROS =====
-    router.use('/barbers', require('./barbers'));
-  
-    
-    // ===== ROTAS DE SERVIÇOS =====
-    router.use('/services', require('./services'));
+// ===== ROTAS DE BARBEIROS =====
+router.use('/barbers', require('./barbers'));
+
+
+// ===== ROTAS DE SERVIÇOS =====
+router.use('/services', require('./services'));
 
 // ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
-    router.use('/config', require('./admin-config'));
+router.use('/config', require('./admin-config'));
 
-   router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+router.get('/whatsapp/status', isAuthenticatedApi, (req, res) => {
   const status = getWhatsAppStatus();
   res.json(status);
-    });
+});
 
-router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
+router.get('/whatsapp/qr', isAuthenticatedApi, (req, res) => {
   try {
     const qr = getLastQRCode();
     if (!qr) return res.status(204).json({ message: 'QR ainda não gerado' });
@@ -920,7 +1127,7 @@ router.post('/whatsapp/disconnect', async (req, res) => {
     await disconnectWhatsApp();
 
     // Força uma nova sessão após desconexão
-    await initializeWhatsApp(); 
+    await initializeWhatsApp();
 
     req.session.message = 'WhatsApp desconectado e reinicializado';
     res.redirect('/admin/config');
@@ -929,6 +1136,9 @@ router.post('/whatsapp/disconnect', async (req, res) => {
     res.redirect('/admin/config?error=Erro ao desconectar WhatsApp');
   }
 });
+
+
+
 
 module.exports = router;
 

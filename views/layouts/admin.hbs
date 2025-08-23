@@ -1,263 +1,252 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if title}}{{title}} - {{/if}}Admin - Champions Barbearia</title>
-    
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"></noscript>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{#if title}}{{title}} - {{/if}}Admin - {{barbershopName}}</title>
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- CSS Customizado -->
-    <link rel="stylesheet" href="/css/style.css">
-    
-    <!-- Meta tags -->
-    <meta name="description" content="Painel Administrativo - BarberShop">
-    <meta name="robots" content="noindex, nofollow">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo.png">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    as="style" onload="this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  </noscript>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS Customizado -->
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Meta tags -->
+  <meta name="description" content="Painel Administrativo - BarberShop">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Favicon -->
+<link rel="icon" type="image/jpg" href="{{barbershopLogo}}">
 </head>
-<body class="admin-body" style="opacity: 0; transition: opacity 0.3s ease;" >
 
-    <!-- Navbar Administrativa -->
-    {{#unless hideNavbar}}
-   
+<body class="admin-body" style="opacity: 0; transition: opacity 0.3s ease;">
 
-     <nav class="navbar navbar-expand-lg navbar-dark admin-navbar" style="background-color: #19191c !important;">
-        <div class="container-fluid">
-            <!-- Logo -->
-            <a class="navbar-brand d-flex align-items-center" href="/admin/dashboard">
-            <div class="logo-icon imagem">
-                <img src="/images/logo.png"  loading="lazy">
-            </div>
-                <span class="fw-bold">  Champions Barbearia</span>
-            </a>
-            
-            <!-- Toggle para mobile -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <!-- Menu de navegação -->
-            <div class="collapse navbar-collapse" id="adminNavbar">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {{#eq currentPage 'dashboard'}}active{{/eq}}" href="/admin/dashboard">
-                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{#eq currentPage 'appointments'}}active{{/eq}}" href="/admin/appointments">
-                            <i class="fas fa-calendar-alt me-1"></i> Agendamentos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{#eq currentPage 'reports'}}active{{/eq}}" href="/admin/reports">
-                            <i class="fas fa-chart-bar me-1"></i> Relatórios
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-cogs me-1"></i> Gerenciar
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/admin/barbers">
-                                <i class="fas fa-user-tie me-2"></i> Barbeiros
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/services">
-                                <i class="fas fa-cut me-2"></i> Serviços
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/clients">
-                                <i class="fas fa-users me-2"></i> Clientes
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/admin/config">
-                                <i class="fas fa-cog me-2"></i> Configurações
-                            </a></li>
+  {{#unless hideNavbar}}
+  <header class="navbar navbar-dark fixed-top admin-navbar">
+    <div class="container-fluid">
+      <!-- Hambúrguer à esquerda -->
+      <button id="sidebarToggle" class="navbar-toggler me-2" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Abrir menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-                        </ul>
-                    </li>
-                </ul>
-                
-                <!-- Menu do usuário -->
-                <ul class="navbar-nav">
-                     <li class="nav-item d-none d-lg-block me-2" id="whatsapp-status-container">
-                    <div id="whatsapp-status-toast" class="d-none">
-                    <i class="fab fa-whatsapp me-2"></i>
-                    <span id="whatsapp-status-text">...</span>
-                    </div>
-                </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/" target="_blank">
-                            <i class="fas fa-external-link-alt me-1"></i> Ver Site
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <div class="user-avatar me-2">
-                                {{#if user.username}}{{substring user.username 0 1}}{{else}}A{{/if}}
-                            </div>
-                            <span>{{#if user.username}}{{user.username}}{{else}}Admin{{/if}}</span>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/admin/profile">
-                                <i class="fas fa-user me-2"></i> Meu Perfil
-                            </a></li>
-                            <li><a class="dropdown-item" href="/admin/settings">
-                                <i class="fas fa-cog me-2"></i> Configurações
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/admin/logout">
-                                <i class="fas fa-sign-out-alt me-2"></i> Sair
-                            </a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+      <!-- Logo Título Subtítulo -->
+      <div class="brand-compact d-flex align-items-center gap-2">
+        <img src="/images/logo.jpg" alt="Logo" class="navbar-logo" loading="lazy">
+        <div class="title-stack">
+          <div class="navbar-title">
+            {{#if pageTitle}}{{pageTitle}}{{else}}{{title}}{{/if}}
+          </div>
+          {{#if pageSubtitle}}
+          <small class="navbar-subtitle">{{{pageSubtitle}}}</small>
+          {{/if}}
         </div>
-    </nav>
-    {{/unless}}
-    
-    <!-- Conteúdo principal -->
-    <main class="admin-main">
-        {{{body}}}
-    </main>
-    
-    <!-- Footer administrativo -->
-    {{#unless hideFooter}}
-    <footer class="admin-footer">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <small class="text-muted">
-                        © 2024 BarberShop. Todos os direitos reservados.
-                    </small>
-                </div>
-                <div class="col-md-6 text-end">
-                    <small class="text-muted">
-                        Versão 1.0.0 | 
-                        <span id="currentTime"></span>
-                    </small>
-                </div>
-            </div>
+      </div>
+      <!-- Lado direito (status / ações) -->
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <div id="whatsapp-status-toast" class="d-none">
+          <span id="whatsapp-status-text"></span>
         </div>
-    </footer>
-    {{/unless}}
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Font Awesome JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    
-    <!-- Chart.js (para gráficos) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Scripts administrativos -->
-    <script src="/js/admin.js"></script>
-    
-    <!-- Script para atualizar horário -->
-    <script>
-        setTimeout(() => {
-    const alert = document.querySelector('.alert-success');
-    if (alert) alert.remove();
-  }, 4000);
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('pt-BR');
-            const timeElement = document.getElementById('currentTime');
-            if (timeElement) {
-                timeElement.textContent = timeString;
-            }
+        {{#if lastUpdate}}
+        <small class="text-muted d-none d-md-inline">{{lastUpdate}}</small>
+        {{/if}}
+      </div>
+            
+       
+      
+    </div>
+  </header>
+
+ {{!-- Só renderiza a fixa se for desktop --}}
+  <div class="d-none d-lg-block">
+    {{> adminSideDock user=user isBarber=isBarber}}
+  </div>
+
+  {{!-- Só renderiza a offcanvas se for mobile --}}
+  <div class="d-lg-none">
+    {{> adminSidebar sidebarTitle=title user=user isBarber=isBarber}}
+  </div>
+{{/unless}}
+
+
+
+  <!-- Conteúdo principal -->
+  <main class="admin-main">
+    {{{body}}}
+  </main>
+
+  <!-- Footer administrativo -->
+  {{#unless hideFooter}}
+  <footer class="admin-footer">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <small class="text-muted">
+            © 2024 BarberShop. Todos os direitos reservados.
+          </small>
+        </div>
+        <div class="col-md-6 text-end">
+          <small class="text-muted">
+            Versão 1.0.0 |
+            <span id="currentTime"></span>
+          </small>
+        </div>
+      </div>
+    </div>
+  </footer>
+  {{/unless}}
+  <!-- Stack de Toasts (notificações) -->
+  <div id="toastStack" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;"></div>
+
+  <!-- Modal de Confirmação (reutilizável) -->
+  <div class="modal fade" id="confirmDialogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmDialogLabel">Confirmar ação</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body" id="confirmDialogMessage">Tem certeza?</div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-dark" id="confirmDialogCancel" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="confirmDialogOk">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Font Awesome JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+  <!-- Chart.js (para gráficos) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Scripts administrativos -->
+  <script src="/js/admin.js"></script>
+
+  <!-- Script para atualizar horário -->
+  {{#if isAuthenticated}}
+  <script>
+    // Remove alert de sucesso após 4s
+    setTimeout(() => {
+      const alert = document.querySelector('.alert-success');
+      if (alert) alert.remove();
+    }, 4000);
+
+    // Atualiza relógio do rodapé
+    function updateTime() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('pt-BR');
+      const timeElement = document.getElementById('currentTime');
+      if (timeElement) timeElement.textContent = timeString;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Marca link ativo na sidebar
+    document.addEventListener('DOMContentLoaded', function () {
+      // se existir fade-in global, garanta que o body apareça
+      requestAnimationFrame(() => document.body.style.opacity = '1');
+
+      checkWhatsAppStatus();
+
+      const currentPath = window.location.pathname;
+      const links = document.querySelectorAll('.admin-menu .list-group-item');
+
+      links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href) return;
+        if (currentPath === href || currentPath.startsWith(href '/')) {
+          link.classList.add('active');
         }
-        
-        // Atualizar horário a cada segundo
-        setInterval(updateTime, 1000);
-        updateTime(); // Atualizar imediatamente
-        
-        // Marcar link ativo na navegação
-      document.addEventListener('DOMContentLoaded', function() {
-  checkWhatsAppStatus();
-  const currentPath = window.location.pathname;
-  const links = document.querySelectorAll('.navbar-nav .nav-link, .dropdown-menu .dropdown-item');
+      });
+    });
 
-  links.forEach(link => {
-    const href = link.getAttribute('href');
-    if (href && currentPath.startsWith(href)) {
-      link.classList.add('active');
+    // Fecha a Offcanvas e navega (sem duplicar handlers)
+    document.addEventListener('DOMContentLoaded', () => {
+      const sidebarEl = document.getElementById('adminSidebar');
+      if (!sidebarEl || typeof bootstrap === 'undefined') return;
+       if (window.innerWidth >= 992) return;
+      const sidebar = bootstrap.Offcanvas.getOrCreateInstance(sidebarEl);
 
-      // Ativa dropdown do menu "Gerenciar" se filho estiver ativo
-      const parentDropdown = link.closest('.dropdown');
-      if (parentDropdown) {
-        const toggle = parentDropdown.querySelector('.nav-link.dropdown-toggle');
-        if (toggle) toggle.classList.add('active');
+      sidebarEl.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href');
+        const target = a.getAttribute('target');
+
+        // 1) pula links externos/âncoras e os que abrem em nova aba
+        if (!href || href.startsWith('http') || href.includes('#') || target === '_blank') return;
+
+        a.addEventListener('click', (e) => {
+          // 2) evita que outro listener global também intercepte
+          e.preventDefault();
+          e.stopImmediatePropagation();
+
+          sidebar.hide();
+
+          // pequeno delay para o offcanvas fechar sem travar o foco
+          setTimeout(() => {
+            if (typeof navigateWithFade === 'function') {
+              navigateWithFade(href);
+            } else {
+              window.location.href = href;
+            }
+          }, 180);
+        });
+      });
+    });
+
+    // Status do WhatsApp (mantém os mesmos IDs que você já usa)
+    async function checkWhatsAppStatus() {
+      try {
+        const res = await fetch('/admin/whatsapp/status');
+        const data = await res.json();
+
+        const toast = document.getElementById('whatsapp-status-toast');
+        const text = document.getElementById('whatsapp-status-text');
+        if (!toast || !text) return;
+
+        toast.classList.remove('success', 'error', 'd-none', 'show');
+
+        if (data.isConnected) {
+          toast.classList.add('success', 'show');
+          text.innerText = 'WhatsApp está conectado ✅';
+          setTimeout(() => toast.classList.remove('show'), 7000);
+        } else {
+          toast.classList.add('error', 'show');
+          text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
+        }
+      } catch (err) {
+        console.error('[WHATSAPP STATUS ERROR]', err);
       }
     }
-  });
-});
-
-        async function checkWhatsAppStatus() {
-            try {
-            const res = await fetch('/admin/whatsapp/status');
-            const data = await res.json();
-
-            const toast = document.getElementById('whatsapp-status-toast');
-            const text = document.getElementById('whatsapp-status-text');
-
-            if (!toast || !text) return;
-
-            toast.classList.remove('success', 'error', 'd-none', 'show');
-
-            if (data.isConnected) {
-            toast.classList.add('success', 'show');
-            text.innerText = 'WhatsApp está conectado ✅';
-
-            // Esconde depois de 7 segundos
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 7000);
-            } else {
-            toast.classList.add('error', 'show');
-            text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
-            }
-            } catch (err) {
-            console.error('[WHATSAPP STATUS ERROR]', err);
-            }
-        }
-        document.addEventListener('click', function (e) {
-  const dropdownToggle = document.getElementById('managementDropdown');
-  const dropdownMenu = dropdownToggle?.nextElementSibling;
-
-  if (dropdownToggle && dropdownMenu && dropdownMenu.classList.contains('show')) {
-    return;
-  }
-
-  if (e.target.closest('#managementDropdown')) {
-    e.preventDefault();
-    const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
-    bsDropdown.toggle();
-  }
-});
-
-</script>
+  </script>
+  {{/if}}
 </body>
+
 </html>
 
 <style>
-/* ===== ESTILOS ADMINISTRATIVOS PADRONIZADOS ===== */
+  /* ===== ESTILOS ADMINISTRATIVOS PADRONIZADOS ===== */
 
- /* Wrapper que segura o toast fixo no topo */
-.whatsapp-status-wrapper {
+  /* Wrapper que segura o toast fixo no topo */
+  .whatsapp-status-wrapper {
     position: fixed;
     top: 0;
     left: 0;
@@ -266,33 +255,28 @@
     display: flex;
     justify-content: center;
     padding: 10px 16px;
-    pointer-events: none; /* permite clicar no navbar abaixo */
-}
+    pointer-events: none;
+    /* permite clicar no navbar abaixo */
+  }
 
-/* Layout administrativo */
-.admin-body {
-   
+  /* Layout administrativo */
+  .admin-body {
+
     background: var(--bg-light);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+  }
 
-.admin-main {
+  .admin-main {
     flex: 1;
     padding: 0;
-}
+  }
 
-/* Navbar administrativa */
-.admin-navbar {
-    background: var(--primary-color) !important;
-    border-bottom: 2px solid var(--secondary-color);
-    box-shadow: var(--shadow);
-    padding: 1rem 0;
-}
-
-.admin-navbar .navbar-brand .logo-icon {
+  /* Navbar administrativa */
+ 
+  .admin-navbar .navbar-brand .logo-icon {
     width: 35px;
     height: 35px;
     background: var(--text-light);
@@ -303,30 +287,30 @@
     justify-content: center;
     font-size: 1.2rem;
     font-weight: bold;
-}
+  }
 
-.admin-navbar .nav-link {
+  .admin-navbar .nav-link {
     color: var(--text-light) !important;
     font-weight: 500;
     padding: 0.75rem 1rem !important;
     border-radius: 6px;
     margin: 0 0.25rem;
     transition: all 0.3s ease;
-}
+  }
 
-.admin-navbar .nav-link:hover,
-.admin-navbar .nav-link.active {
+  .admin-navbar .nav-link:hover,
+  .admin-navbar .nav-link.active {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-light) !important;
-}
+  }
 
-.admin-navbar .nav-link.active {
+  .admin-navbar .nav-link.active {
     font-weight: 600;
     background: rgba(255, 255, 255, 0.15);
-}
+  }
 
-/* User avatar */
-.user-avatar {
+  /* User avatar */
+  .user-avatar {
     width: 32px;
     height: 32px;
     background: var(--text-light);
@@ -337,46 +321,46 @@
     justify-content: center;
     font-weight: bold;
     font-size: 0.9rem;
-}
+  }
 
-/* Dropdown menus */
-.admin-navbar .dropdown-menu {
+  /* Dropdown menus */
+  .admin-navbar .dropdown-menu {
     background: var(--bg-light) !important;
     border: 2px solid var(--border-color) !important;
     border-radius: 8px !important;
     box-shadow: var(--shadow) !important;
     margin-top: 0.5rem;
-}
+  }
 
-.admin-navbar .dropdown-item {
+  .admin-navbar .dropdown-item {
     color: var(--text-dark) !important;
     padding: 0.75rem 1rem !important;
     transition: all 0.3s ease !important;
     border-radius: 4px;
     margin: 0.25rem;
-}
+  }
 
-.admin-navbar .dropdown-item:hover,
-.admin-navbar .dropdown-item:focus {
+  .admin-navbar .dropdown-item:hover,
+  .admin-navbar .dropdown-item:focus {
     background: var(--primary-color) !important;
     color: var(--text-light) !important;
-}
+  }
 
-.admin-navbar .dropdown-divider {
+  .admin-navbar .dropdown-divider {
     border-color: var(--border-color) !important;
     margin: 0.5rem 0;
-}
+  }
 
-/* Footer administrativo */
-.admin-footer {
+  /* Footer administrativo */
+  .admin-footer {
     background: var(--bg-light);
     border-top: 1px solid var(--border-color);
     padding: 1rem 0;
     margin-top: auto;
-}
+  }
 
-/* Cards administrativos */
-.admin-card {
+  /* Cards administrativos */
+  .admin-card {
     background: var(--bg-light);
     border: 2px solid var(--border-color);
     border-radius: 12px;
@@ -384,120 +368,127 @@
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
-}
+  }
 
-.admin-card:hover {
+  .admin-card:hover {
     border-color: var(--primary-color);
     box-shadow: var(--shadow-hover);
-}
+  }
 
-/* Dashboard específico */
-.admin-dashboard {
+  /* Dashboard específico */
+  .admin-dashboard {
     background: var(--bg-light);
     min-height: calc(100vh - 140px);
     padding: 2rem 0;
-}
+  }
 
-/* Tabelas administrativas */
-.admin-table {
+  /* Tabelas administrativas */
+  .admin-table {
     background: var(--bg-light);
     border-radius: 12px;
     overflow: hidden;
     border: 2px solid var(--border-color);
-}
+  }
 
-.admin-table .table {
+  .admin-table .table {
     margin-bottom: 0;
     color: var(--text-dark);
-}
+  }
 
-.admin-table .table thead th {
+  .admin-table .table thead th {
     background: var(--bg-gray);
     border-color: var(--border-color);
     color: var(--text-dark);
     font-weight: 600;
     padding: 1rem;
     border-bottom: 2px solid var(--border-color);
-}
+  }
 
-.admin-table .table tbody td {
+  .admin-table .table tbody td {
     background: var(--bg-light);
     border-color: var(--border-color);
     color: var(--text-dark);
     padding: 1rem;
     vertical-align: middle;
-}
+  }
 
-.admin-table .table tbody tr:hover td {
+  .admin-table .table tbody tr:hover td {
     background: var(--bg-gray);
-}
+  }
 
-/* Filtros administrativos */
-.admin-filters {
+  /* Filtros administrativos */
+  .admin-filters {
     background: var(--bg-light);
     border: 2px solid var(--border-color);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: var(--shadow);
-}
+  }
 
-.admin-filters .filter-group {
+  .admin-filters .filter-group {
     margin-bottom: 1rem;
-}
+  }
 
-.admin-filters .form-label {
+  .admin-filters .form-label {
     color: var(--text-dark);
     font-weight: 500;
     margin-bottom: 0.5rem;
-}
+  }
 
-.admin-filters .form-control,
-.admin-filters .form-select {
+  .admin-filters .form-control,
+  .admin-filters .form-select {
     border: 2px solid var(--border-color);
     border-radius: 8px;
     padding: 0.75rem;
     color: var(--text-dark);
     background: var(--bg-light);
-}
+  }
 
-.admin-filters .form-control:focus,
-.admin-filters .form-select:focus {
+  .admin-filters .form-control:focus,
+  .admin-filters .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
-}
+  }
 
-/* Status badges */
-.status-badge {
-    padding: 0.25rem 0.75rem;
+  /* Status badges */
+  .status-badge {
+    width: 140px;
+    /* 👈 largura fixa */
+    display: inline-block;
+    text-align: center;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
-}
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* para evitar quebras se o texto for muito grande */
+  }
 
-.status-confirmed {
-    background: var(--success-color);
+  .status-confirmed {
+    background: #007bff;
     color: white;
-}
+  }
 
-.status-pending {
+  .status-pending {
     background: var(--warning-color);
     color: var(--text-dark);
-}
+  }
 
-.status-cancelled {
+  .status-cancelled {
     background: var(--danger-color);
     color: white;
-}
+  }
 
-.status-completed {
-    background: var(--info-color);
+  .status-completed {
+    background: #28a745;
     color: white;
-}
+  }
 
-/* Avatars */
-.avatar-sm {
+  /* Avatars */
+  .avatar-sm {
     width: 35px;
     height: 35px;
     background: var(--primary-color);
@@ -508,143 +499,149 @@
     font-weight: bold;
     color: var(--text-light);
     font-size: 0.8rem;
-}
+  }
 
-/* Botões */
-.admin-card .btn,
-.admin-filters .btn {
+  /* Botões */
+  .admin-card .btn,
+  .admin-filters .btn {
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
     font-weight: 500;
     transition: all 0.3s ease;
-}
+  }
 
-.admin-card .btn-primary,
-.admin-filters .btn-primary {
+  .admin-card .btn-primary,
+  .admin-filters .btn-primary {
     background: var(--primary-color);
     border-color: var(--primary-color);
     color: var(--text-light);
-}
+  }
 
-.admin-card .btn-primary:hover,
-.admin-filters .btn-primary:hover {
+  .admin-card .btn-primary:hover,
+  .admin-filters .btn-primary:hover {
     background: var(--secondary-color);
     border-color: var(--secondary-color);
     transform: translateY(-1px);
-}
+  }
 
-.admin-card .btn-secondary,
-.admin-filters .btn-secondary {
+  .admin-card .btn-secondary,
+  .admin-filters .btn-secondary {
     background: var(--bg-light);
     border: 2px solid var(--border-color);
     color: var(--text-dark);
-}
+  }
 
-.admin-card .btn-secondary:hover,
-.admin-filters .btn-secondary:hover {
+  .admin-card .btn-secondary:hover,
+  .admin-filters .btn-secondary:hover {
     border-color: var(--primary-color);
     background: var(--bg-gray);
-}
-/* Responsivo: centralizar em mobile */
-#whatsapp-status-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 1rem;
-}
+  }
 
-#whatsapp-status-toast {
-  height: 48px;
-  padding: 0 1rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  border-radius: 8px;
-  background: #ffffff !important;
-  color: #212529;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  opacity: 0;
-  transform: translateY(-100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  max-width: 420px;
-  width: auto;
-}
-
-#whatsapp-status-toast.success {
-  border-color: #28a745;
-}
-#whatsapp-status-toast.error {
-  border-color: #dc3545;
-}
-#whatsapp-status-toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-/* Responsividade */
-@media (max-width: 768px) {
-     #whatsapp-status-container {
-    display: block !important;
-    width: 100%;
-    text-align: center;
-    margin-top: 10px;
+  /* Responsivo: centralizar em mobile */
+  #whatsapp-status-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
   }
 
   #whatsapp-status-toast {
-    display: inline-block;
-    max-width: 90%;
-    white-space: normal;
+    height: 48px;
+    padding: 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 8px;
+    background: #ffffff !important;
+    color: #212529;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+    transform: translateY(-100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    max-width: 420px;
+    width: auto;
   }
+
+  #whatsapp-status-toast.success {
+    border-color: #28a745;
+  }
+
+  #whatsapp-status-toast.error {
+    border-color: #dc3545;
+  }
+
+  #whatsapp-status-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    #whatsapp-status-container {
+      display: block !important;
+      width: 100%;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #whatsapp-status-toast {
+      display: inline-block;
+      max-width: 90%;
+      white-space: normal;
+    }
+
     .admin-navbar .navbar-brand span {
-        display: none;
+      display: none;
     }
-    
+
     .admin-footer .col-md-6:last-child {
-        text-align: start !important;
-        margin-top: 0.5rem;
+      text-align: start !important;
+      margin-top: 0.5rem;
     }
-    
+
     .admin-card {
-        padding: 1.5rem;
-        margin-bottom: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
     }
-    
+
     .admin-dashboard {
-        padding: 1rem 0;
+      padding: 1rem 0;
     }
-    
+
     .admin-filters {
-        padding: 1rem;
+      padding: 1rem;
     }
-    
+
     .admin-table .table thead th,
     .admin-table .table tbody td {
-        padding: 0.75rem 0.5rem;
-        font-size: 0.9rem;
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9rem;
     }
-}
+  }
 
-/* Animações */
-.fade-in {
+  /* Animações */
+  .fade-in {
     animation: fadeIn 0.5s ease-in;
-}
+  }
 
-@keyframes fadeIn {
+  @keyframes fadeIn {
     from {
-        opacity: 0;
-        transform: translateY(20px);
+      opacity: 0;
+      transform: translateY(20px);
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-/* Notificações */
-.admin-notification {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Notificações */
+  .admin-notification {
     background: #fff;
     border: 3px solid transparent;
     border-radius: 12px;
@@ -652,7 +649,7 @@
     font-size: 1rem;
     min-height: 64px;
     color: #212529;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     max-width: 480px;
     width: 100%;
     text-align: center;
@@ -660,33 +657,34 @@
     transition: transform 0.3s ease, opacity 0.3s ease;
     opacity: 0;
     transform: translateY(-100%);
-}
+  }
 
-/* Visível */
-.admin-notification.show {
+  /* Visível */
+  .admin-notification.show {
     opacity: 1;
     transform: translateY(0);
-}
+  }
 
-.admin-notification.success {
-     border-color: #28a745;
+  .admin-notification.success {
+    border-color: #28a745;
     background: #ffffff;
-    border: 2px solid #28a745; /* verde */
+    border: 2px solid #28a745;
+    /* verde */
     color: #212529;
-}
+  }
 
 
-.admin-notification.error {
+  .admin-notification.error {
     background: #ffffff;
-    border: 2px solid #dc3545; /* vermelho */
+    border: 2px solid #dc3545;
+    /* vermelho */
     color: #212529;
     border-color: #dc3545;
-}
+  }
 
-.admin-notification.warning {
+  .admin-notification.warning {
     border-color: var(--warning-color);
     background: #fff3cd;
     color: #664d03;
-}
+  }
 </style>
-

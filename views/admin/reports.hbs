@@ -2,26 +2,7 @@
 <div class="admin-dashboard fade-in-soft">
   <div class="container-fluid">
     <!-- Header -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="admin-card ">
-          <div class="d-flex justify-content-between align-items-center flex-wrap">
-            <div>
-              <h2 class="fw-bold mb-1">Relatórios</h2>
-              <p class="text-muted mb-0">Visualize os dados dos agendamentos com base nos filtros</p>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-              <a href="/admin/dashboard" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left me-1"></i> Voltar
-              </a>
-              <button type="button" class="btn btn-primary" onclick="submitExport('pdf')">
-                <i class="fas fa-download me-1"></i> Exportar PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     {{#if error}}
     <div class="row mb-4">
@@ -34,43 +15,46 @@
     {{/if}}
 
     <!-- Filtros -->
-    <div class="row mb-4">
+    <div class="row mb-4 mt-5">
       <div class="col-12">
         <div class="admin-card">
           <form method="GET" action="/admin/reports" id="filterForm">
             <div class="row">
               <div class="col-md-3">
                 <label class="form-label">Data Inicial</label>
-                <input type="date" class="form-control" name="startDate" value="{{filters.startDate}}">
+                <input type="date" class="form-control" name="startDate" id="startDate" value="{{filters.startDate}}">
               </div>
               <div class="col-md-3">
                 <label class="form-label">Data Final</label>
-                <input type="date" class="form-control" name="endDate" value="{{filters.endDate}}">
+                <input type="date" class="form-control" name="endDate" id="endDate" value="{{filters.endDate}}">
               </div>
               <div class="col-md-3">
                 <label class="form-label">Barbeiro</label>
-                <select name="barberId" class="form-control">
+                <select name="barberId" id="barberId"  class="form-control">
                   <option value="">Todos os barbeiros</option>
                   {{#each barbers}}
                   <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
                   {{/each}}
                 </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-control">
-                  <option value="">Todos os status</option>
-                  
-                  <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
-              
-                  <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
-                </select>
-              </div>
+                <div class="col-md-3">
+                  <label class="form-label">Status</label>
+                  <select name="status" id="status"  class="form-control">
+                    <option value="">Todos os status</option>
+                    <option value="pending" {{#eq filters.status 'pending'}}selected{{/eq}}>Pendente</option>
+                    <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
+                    <option value="in_progress" {{#eq filters.status 'in_progress'}}selected{{/eq}}>Em andamento</option>
+                    <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
+                    <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                    <option value="no_show" {{#eq filters.status 'no_show'}}selected{{/eq}}>Não compareceu</option>
+                  </select>
+                </div>
+
             </div>
 
             <div class="row mt-3">
               <div class="col-md-3">
-                <select name="sort" class="form-control">
+                <select name="sort"  id="sort"  class="form-control">
                   <option value="">Ordenar por</option>
                   <option value="date_desc" {{#eq filters.sort 'date_desc'}}selected{{/eq}}>Data (Mais recente)</option>
                   <option value="date_asc" {{#eq filters.sort 'date_asc'}}selected{{/eq}}>Data (Mais antigo)</option>
@@ -121,8 +105,8 @@
       <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
         <div class="admin-card text-center w-100">
           <div class="fs-3 mb-1"><i class="fas fa-check-circle"></i></div>
-          <h3 class="fw-bold">{{stats.byStatus.confirmed}}</h3>
-          <p class="text-muted mb-0">Confirmados</p>
+          <h3 class="fw-bold">{{stats.byStatus.completed}}</h3>
+          <p class="text-muted mb-0">Concluídos</p>
         </div>
       </div>
       <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3 d-flex">
@@ -160,6 +144,48 @@
           <div class="card-header"><h5 class="card-title mb-0">Detalhamento dos Agendamentos</h5></div>
           <div class="card-body">
             <div class="table-responsive">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="d-flex align-items-center gap-2">
+    <label class="form-label m-0 small opacity-75">Itens por página</label>
+    <select id="itemsPerPage" class="form-select form-select-sm" style="width: 90px;">
+      {{#each (array 5 10 20 50 100)}}
+        <option value="{{this}}" {{#ifEquals ../selectedLimit this}}selected{{/ifEquals}}>{{this}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{#if (gt pagination.totalPages 1)}}
+<ul class="pagination mb-0">
+  <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
+    <a class="page-link"
+       href="?page={{pagination.prevPage}}&limit={{selectedLimit}}&startDate={{filters.startDate}}&endDate={{filters.endDate}}&barberId={{filters.barberId}}&status={{filters.status}}&sort={{filters.sort}}&view={{view}}">
+       &laquo;
+    </a>
+  </li>
+
+  {{#each pagination.pages}}
+    {{#if (eq this "...")}}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+    {{else}}
+      <li class="page-item {{#ifEquals ../pagination.currentPage this}}active{{/ifEquals}}">
+        <a class="page-link"
+           href="?page={{this}}&limit={{../selectedLimit}}&startDate={{../filters.startDate}}&endDate={{../filters.endDate}}&barberId={{../filters.barberId}}&status={{../filters.status}}&sort={{../filters.sort}}&view={{../view}}">
+           {{this}}
+        </a>
+      </li>
+    {{/if}}
+  {{/each}}
+
+  <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
+    <a class="page-link"
+       href="?page={{pagination.nextPage}}&limit={{selectedLimit}}&startDate={{filters.startDate}}&endDate={{filters.endDate}}&barberId={{filters.barberId}}&status={{filters.status}}&sort={{filters.sort}}&view={{view}}">
+       &raquo;
+    </a>
+  </li>
+</ul>
+{{/if}}
+
+</div>
+
               <table class="table table-hover" id="appointmentsTable">
                 <thead>
                   <tr>
@@ -184,13 +210,16 @@
                     <td>{{serviceType.name}}</td>
                     <td>R$ {{totalPrice}}</td>
                     <td>
-                      <span class="status-badge status-{{status}}">
-                        {{#if (eq status 'confirmed')}}Confirmado
-                        {{else if (eq status 'pending')}}Pendente
-                        {{else if (eq status 'cancelled')}}Cancelado
-                        {{else if (eq status 'completed')}}Concluído
-                        {{else}}Desconhecido{{/if}}
-                      </span>
+                 <span class="status-badge status-{{status}}">
+                {{#if (eq status 'pending')}}<i class="fas fa-clock text-secondary me-1"></i> Pendente
+                {{else if (eq status 'confirmed')}}<i class="fas fa-check text-primary me-1"></i> Confirmado
+                {{else if (eq status 'in_progress')}}<i class="fas fa-spinner fa-spin text-info me-1"></i> Em Atendimento
+                {{else if (eq status 'completed')}}<i class="fas fa-check-circle text-success me-1"></i> Concluído
+                {{else if (eq status 'cancelled')}}<i class="fas fa-times-circle text-muted me-1"></i> Cancelado
+                {{else}}Desconhecido{{/if}}
+              </span>
+
+
                     </td>
                   </tr>
                   {{/each}}

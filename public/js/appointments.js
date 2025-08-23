@@ -1,54 +1,355 @@
 
- // Variáveis globais
+// Variáveis globais
 let selectedBarberId = '';
 let openMenuId = null;
-// No topo do seu <script>, junto com as outras variáveis
 let viewAppointmentModal = null;
 let editModal;
-document.addEventListener('DOMContentLoaded', function () {
-  console.log('[ADMIN] Página de agendamentos carregada');
+const FILTER_KEY = `adminFilters:${window.location.pathname}`;
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-  initModals();
-  initFilterForm();
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('[ADMIN] Página de agendamentos carregada');
+    restoreSavedView();
+
+ 
+    // 2. Configura alternância da visualização
+  const toggleBtn = document.getElementById('toggleView');
+  if (!toggleBtn) {
+    console.warn('[ERRO] Botão de alternância não encontrado');
+  } else {
+    toggleBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      console.log('[DEBUG] Toggle button clicked');
+
+      const tableView = document.getElementById('appointmentsTableView');
+      const cardView = document.getElementById('appointmentsCardView');
+
+      if (!tableView || !cardView) {
+        console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
+        tableView?.classList.remove('hidden');
+        cardView?.classList.add('hidden');
+        return;
+      }
+
+      const isTableVisible = !tableView.classList.contains('hidden');
+      console.log('[DEBUG] Current state - Table visible:', isTableVisible);
+        // Inicializar modal de encaixe
+
+      // Adicionar evento ao botão de encaixe
+
+      if (isTableVisible) {
+        tableView.classList.add('hidden');
+        cardView.classList.remove('hidden');
+        localStorage.setItem('appointmentsView', 'cards');
+          // 🔧 Reaplica listeners para expansão
+       initCardExpandables();
+        console.log('[DEBUG] Switched to cards view');
+      } else {
+        cardView.classList.add('hidden');
+        tableView.classList.remove('hidden');
+        localStorage.setItem('appointmentsView', 'table');
+          // 🔧 Reanexa os eventos da tabela
   initTableListeners();
-  initJQueryHandlers();
-  // Executa tarefas mais leves logo
-  requestIdleCallback(() => {
+  attachActionPanelListeners()
+        console.log('[DEBUG] Switched to table view');
+      }
+    });
+  }
+    
+    const fitInForm = document.getElementById('fitInForm');
+    if (fitInForm) {
+      fitInForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+      const firstName = document.getElementById('fitInFirstName').value.trim();
+      const lastName = document.getElementById('fitInLastName').value.trim();
+      const phone = document.getElementById('fitInPhone').value.trim();
+      const serviceId = document.getElementById('fitInService').value;
+      const barberId = document.getElementById('fitInBarber').value;
+      const appointmentDate = document.getElementById('fitInDate').value;
+      const appointmentTime = document.getElementById('fitInTime').value;
+      const notes = document.getElementById('fitInNote').value;
+
+      if (!firstName || !lastName || !phone || !serviceId || !barberId || !appointmentDate || !appointmentTime) {
+        notify({ type: 'error', message: 'Preencha todos os campos obrigatórios.' });
+        return;
+      }
+
+    const payload = {
+      serviceId,
+      barberId,
+      appointmentDate,
+      appointmentTime,
+      isEncaixe: true,
+      fitInNote: notes, 
+      clientData: {
+        firstName,
+        lastName,
+        phone
+      }
+    };
+
+      try {
+      const res = await fetch('/api/appointments', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' ,
+              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
+          
+          setTimeout(() => location.reload(), 800);
+        } else {
+            
+          
+          notify({ type: 'error', message: data.error || 'Erro ao criar encaixe.' });
+        }
+      } catch (err) {
+        console.error('[ERRO] Criando encaixe:', err);
+       
+        notify({ type: 'error', message: 'Erro ao criar encaixe.' });
+      }
+    });
+}
+
+
+    initModals();
+    initFilterForm();
+    initTableListeners();
+    // attachActionPanelListeners();
+
+    
+    // Executa tarefas mais leves logo
+    requestIdleCallback(() => {
+    initCardExpandables();
     setDefaultDates();
     restoreFilters();
+
+    // fase visual 1: alternar view (tabela ou cards)
+  
+      
+
+
+    // fase visual 2: limitar tabela
+      // setTimeout(() => {
+      // requestAnimationFrame(() => {
+      //   limitarLinhasDaTabela(10);
+      //     });
+      // }, 50);
+
+    // fase visual 3: limitar cards
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+        limitarCardsPorBarbeiro(10);
+        });
+        },100);
+
+    setTimeout(() => {
+    attachActionPanelListeners();
+    }, 200);
+
+    });
+
+    // Restaura a visualização salva
+
+
+
+
+
+function initFitInTimePicker() {
+  if (!window.tempusDominus) {
+    console.warn('[FITIN] Tempus Dominus não encontrado — fallback para <input type="time">');
+    const inp = document.getElementById('fitInTime');
+    if (inp) inp.type = 'time'; // fallback seguro
+    return;
+  }
+
+  const pickerEl = document.getElementById('fitInTimePicker');
+  if (!pickerEl) return;
+
+  // Evita montar 2x
+  if (pickerEl._tdInstance) return;
+
+  const instance = new tempusDominus.TempusDominus(pickerEl, {
+    useCurrent: false,
+    display: {
+      viewMode: 'clock',
+      components: {
+        decades: false,
+        year: false,
+        month: false,
+        date: false,
+        hours: true,
+        minutes: true,
+        seconds: false
+      }
+    },
+    localization: { hourCycle: 'h23' }
   });
+
+  pickerEl._tdInstance = instance;
+}
+
+  // Socket.IO - Atualização em tempo real
+  document.querySelectorAll('.js-no-show-appointment').forEach(button => {
+    button.addEventListener('click', async () => {
+      const id = button.dataset.id;
+      const ok = await confirmDialog({
+      title: 'Marcar como Não Compareceu',
+      message: 'Confirmar marcação de não comparecimento?',
+      confirmText: 'Marcar NC',
+      variant: 'warning'
+    });
+    if (!ok) return;
+
+      try {
+        const res = await fetch(`/admin/appointments/${id}/status`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' ,
+          
+    ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
+          body: JSON.stringify({ status: 'no_show' })
+        });
+
+        let result = {};
+        try {
+          result = await res.json();
+        } catch (e) {
+          console.warn('[WARN] Não foi possível parsear JSON da resposta');
+        }
+
+        if (res.ok && result.success !== false) {
+          notify({ type: 'warning', message: 'Agendamento marcado como não compareceu.' });
+          
+          // await refreshAppointmentsTable(); 
+          requestIdleCallback(() => refreshAppointmentsTable());
+        } else {
+          notify({ type: 'error', message:  result.error || 'Erro ao atualizar status.' });
+         
+        }
+
+      } catch (err) {
+        console.error(err);
+      
+        notify({ type: 'error', message: 'Erro ao marcar como não compareceu.' });
+      }
+    });
+  });
+
+
+
+  if (typeof io !== 'undefined') {
+    const socket = io();
+
+    socket.on('new_appointment', async (data) => {
+      notify({ type: 'success', message: `Novo agendamento: <strong>${data.client}</strong> (${data.time})`  });
+      
+      requestIdleCallback(() => refreshAppointmentsTable());
+    });
+
+    socket.on('appointment_cancelled', async (data) => {
+      console.log('[SOCKET] Agendamento cancelado:', data);
+      notify({ type: 'error', message: `Agendamento cancelado: <strong>${data.client}</strong> (${data.time})` });
+      
+      requestIdleCallback(() => refreshAppointmentsTable());
+    });
+
+
+  }
+
+
 });
 
+  function populateFitInSelects() {
+  loadSelectOptions('fitInService', '/api/services');
+  loadSelectOptions('fitInBarber', '/api/barbers');
+}
 function initModals() {
   const modalElement = document.getElementById('viewModal');
   viewAppointmentModal = modalElement ? new bootstrap.Modal(modalElement) : null;
-
+  
   const editModalElement = document.getElementById('editModal');
   editModal = editModalElement ? new bootstrap.Modal(editModalElement) : null;
-
+  
   modalElement?.querySelector('.btn-close')?.addEventListener('click', () => viewAppointmentModal.hide());
-
   modalElement?.addEventListener('click', (e) => {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
-}
-function initJQueryHandlers() {
-  $('.js-toggle-actions').on('click', function (e) {
-    e.preventDefault();
-    const id = $(this).data('id');
-    const menu = $('#actions-' + id);
-    const parent = $(this).closest('.actions-menu');
 
-    $('.actions-menu').not(parent).removeClass('show');
-    parent.toggleClass('show');
+  // Inicializar modal de encaixe corretamente (DENTRO DA FUNÇÃO - CORRETO!)
+  // --- colocar dentro de initModals(), substituindo a lógica atual do fitInModal ---
+const fitInModalEl = document.getElementById('fitInModal');
+if (fitInModalEl) {
+  // move modal para o body se estiver aninhado (resolve problemas de stacking/context)
+  if (fitInModalEl.parentElement !== document.body) {
+    document.body.appendChild(fitInModalEl);
+    console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
+  }
+
+  // cria modal bootstrap e listeners (mantém populateFill etc)
+  const fitInModal = new bootstrap.Modal(fitInModalEl);
+  fitInModalEl.addEventListener('show.bs.modal', () => {
+    populateFitInSelects();
+ const timeInput = document.getElementById('fitInTime');
+ timeInput.addEventListener('click', () => {
+  timeInput.showPicker?.(); // Método nativo moderno
+});
+  const agora = new Date();
+  
+  const horas = String(agora.getHours()).padStart(2, '0');
+  const minutos = String(agora.getMinutes()).padStart(2, '0');
+
+  timeInput.min = `${horas}:${minutos}`;
   });
 
-  $(document).on('click', function (e) {
-    if (!$(e.target).closest('.actions-menu').length) {
-      $('.actions-menu').removeClass('show');
+  const openFitInBtn = document.getElementById('openFitInBtn');
+  if (openFitInBtn) {
+    openFitInBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        fitInModal.show();
+      } catch (err) {
+        console.error('[DEBUG] Erro ao abrir fitInModal:', err);
+      }
+    });
+  }
+}
+
+
+  if (window.Inputmask) {
+    Inputmask({ mask: "(99) 99999-9999" }).mask("#fitInPhone");
+  }
+}
+
+function gerarSlotsHorarios(intervaloMinutos = 30) {
+  const agora = new Date();
+  const inicioHora = agora.getHours();
+  const inicioMin = Math.ceil(agora.getMinutes() / intervaloMinutos) * intervaloMinutos;
+  
+  const slots = [];
+  const fimDia = 20; // horário final do expediente, pode pegar do banco
+
+  for (let hora = inicioHora; hora <= fimDia; hora++) {
+    for (let minuto = (hora === inicioHora ? inicioMin : 0); minuto < 60; minuto += intervaloMinutos) {
+      if (hora < fimDia || (hora === fimDia && minuto === 0)) {
+        slots.push(
+          `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+        );
+      }
     }
-  });
+  }
+  return slots;
 }
+
+
 
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
@@ -67,15 +368,18 @@ function initFilterForm() {
       }
     }
 
-    localStorage.setItem('adminFilters', JSON.stringify(filtersToSave));
-    window.location.href = `/admin/appointments?${params.toString()}`;
+    localStorage.setItem(FILTER_KEY, JSON.stringify(filtersToSave));
+    requestAnimationFrame(() => {
+  window.location.href = `/admin/appointments?${params.toString()}`;
+});
   });
 }
 
 function restoreFilters() {
   const filterForm = document.getElementById('filterForm');
-  const savedFilters = JSON.parse(localStorage.getItem('adminFilters') || '{}');
-
+  const savedFilters = JSON.parse(
+     localStorage.getItem(FILTER_KEY) ||
+      localStorage.getItem('adminFilters') ||'{}');
   for (const [key, value] of Object.entries(savedFilters)) {
     const el = filterForm.elements[key];
     if (el) el.value = value;
@@ -83,15 +387,15 @@ function restoreFilters() {
 }
 
 function initTableListeners() {
-  const tableBody = document.querySelector('.admin-table tbody');
-  if (!tableBody) return;
-
-  tableBody.addEventListener('click', async function (event) {
+  document.addEventListener('click', async function (event) {
     const button = event.target.closest('button');
-    if (!button) return;
+    if (!button || !button.classList.contains('action-item')) return;
 
     const appointmentId = button.dataset.id;
-    if (!appointmentId) return;
+    if (!appointmentId || isNaN(Number(appointmentId))) {
+      console.error('[ADMIN] ID inválido:', appointmentId);
+      return;
+    }
 
     closeAllMenus();
 
@@ -102,41 +406,51 @@ function initTableListeners() {
     else if (button.classList.contains('js-confirm-appointment')) confirmAppointment(appointmentId);
     else if (button.classList.contains('js-complete-appointment')) completeAppointment(appointmentId);
     else if (button.classList.contains('js-cancel-appointment')) cancelAppointment(appointmentId);
-    // else if (button.classList.contains('js-delete-appointment')) deleteAppointment(appointmentId);
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.actions-menu')) closeAllMenus();
   });
 }
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.actions-menu')) {
+    closeAllMenus();
+  }
+});
 
- window.clearFilters = function () {
-    localStorage.removeItem('adminFilters');
-    window.location.href = window.location.pathname;
-  };
-
+function clearFilters() {
+  // remove o novo e o legado
+  localStorage.removeItem(FILTER_KEY);
+  localStorage.removeItem('adminFilters');
+  // recarrega sem querystring
+  window.location.href = window.location.pathname;
+}
+// garante acessível ao onclick inline do HBS, mesmo se mudar p/ type="module"
+window.clearFilters = clearFilters;
 
 
 // Configurar datas padrão
+function toLocalYMD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function setDefaultDates() {
   const today = new Date();
   const startDate = document.getElementById('startDate');
   const endDate = document.getElementById('endDate');
-  
-  if (startDate && !startDate.value) {
-    startDate.value = today.toISOString().split('T')[0];
-  }
-  
+
+  if (startDate && !startDate.value) startDate.value = toLocalYMD(today);
+
   if (endDate && !endDate.value) {
     const nextMonth = new Date(today);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
-    endDate.value = nextMonth.toISOString().split('T')[0];
+    endDate.value = toLocalYMD(nextMonth);
   }
 }
 
+
 // Selecionar barbeiro no filtro
 function selectBarber(barberId, barberName) {
-  console.log('[ADMIN] Barbeiro selecionado:', barberName);
+  // console.log('[ADMIN] Barbeiro selecionado:', barberName);
   selectedBarberId = barberId;
   document.getElementById('selectedBarber').textContent = barberName;
 }
@@ -145,17 +459,17 @@ function selectBarber(barberId, barberName) {
 
 // Toggle menu de ações
 function toggleActionsMenu(appointmentId) {
-  console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
-  
+  // console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
+
   // Fechar outros menus
   if (openMenuId && openMenuId !== appointmentId) {
     closeMenu(openMenuId);
   }
-  
+
   const menu = document.getElementById(`actions-${appointmentId}`);
   if (menu) {
     const isOpen = menu.classList.contains('show');
-    
+
     if (isOpen) {
       closeMenu(appointmentId);
     } else {
@@ -200,7 +514,7 @@ function createParagraph(label, value) {
 }
 
 async function viewAppointment(appointmentId) {
-  console.log('[ADMIN] Visualizando agendamento:', appointmentId);
+  // console.log('[ADMIN] Visualizando agendamento:', appointmentId);
   closeAllMenus();
 
   try {
@@ -214,8 +528,8 @@ async function viewAppointment(appointmentId) {
     const service = appointment.serviceType || {};
     const barber = appointment.barber || {};
     const appointmentDate = appointment.appointmentDate
-      ? new Date(appointment.appointmentDate).toLocaleDateString('pt-BR')
-      : '—';
+  ? new Date(`${appointment.appointmentDate}T00:00:00`).toLocaleDateString('pt-BR') // sem 'Z'!
+  : '—';
     const appointmentTime = appointment.appointmentTime || '—';
     const totalPrice = appointment.totalPrice
       ? Number(appointment.totalPrice).toFixed(2)
@@ -258,8 +572,9 @@ async function viewAppointment(appointmentId) {
 
     viewAppointmentModal?.show();
   } catch (error) {
-    console.error('[ADMIN ERROR] Erro ao carregar agendamento:', error);
-    showNotification('Erro ao carregar detalhes do agendamento', 'error');
+    // console.error('[ADMIN ERROR] Erro ao carregar agendamento:', error);
+    
+    notify({ type:'error', message:'Erro ao carregar detalhes do agendamento' });
   }
 }
 
@@ -292,182 +607,207 @@ async function editAppointment(appointmentId) {
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);
-    showNotification('Erro ao carregar dados do agendamento', 'error');
+    notify({ type:'error', message:'Erro ao carregar dados do agendamento' });
+
   } finally {
     globalLoader.classList.add('d-none');
   }
 }
 
 
-
-
-
-
 async function confirmAppointment(appointmentId) {
-  console.log('[ADMIN] Confirmando agendamento:', appointmentId);
+  // console.log('[ADMIN] Confirmando agendamento:', appointmentId);
   closeAllMenus();
-  
-  if (confirm('Confirmar este agendamento?')) {
+
+     const ok = await confirmDialog({
+    title: 'Confirmar agendamento',
+    message: 'Confirmar este agendamento?',
+    confirmText: 'Confirmar',
+    variant: 'primary'
+  });
+  if (!ok) return;
     try {
       const response = await fetch(`/admin/appointments/${appointmentId}/confirm`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
       });
-      
+
       if (response.ok) {
-        showNotification('Agendamento confirmado com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
+       
+        notify({ type:'success', message:'Agendamento confirmado com sucesso!',});
+        setTimeout(() => refreshAppointmentsTable(), 300);
       } else {
         throw new Error('Erro ao confirmar agendamento');
       }
     } catch (error) {
       console.error('[ADMIN ERROR] Erro ao confirmar:', error);
-      showNotification('Erro ao confirmar agendamento', 'error');
+      notify({ type:'error', message:'Erro ao confirmar agendamento' });
+      
     }
-  }
+  
 }
 
+
 async function completeAppointment(appointmentId) {
-  console.log('[ADMIN] Concluindo agendamento:', appointmentId);
+  // console.log('[ADMIN] Concluindo agendamento:', appointmentId);
   closeAllMenus();
-  
-  if (confirm('Marcar este agendamento como concluído?')) {
+
+   const ok = await confirmDialog({
+    title: 'Concluir agendamento',
+    message: 'Marcar este agendamento como concluído?',
+    confirmText: 'Concluir',
+    variant: 'success'
+  });
+  if (!ok) return;
     try {
       const response = await fetch(`/admin/appointments/${appointmentId}/complete`, {
-        method: 'POST'
+        method: 'POST',
+        credentials: 'include', 
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
       });
-      
+
       if (response.ok) {
-        showNotification('Agendamento concluído com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
+        notify({ type:'success', message:'Agendamento concluído com sucesso!' });
+       
+       setTimeout(() => refreshAppointmentsTable(), 300);
       } else {
         throw new Error('Erro ao concluir agendamento');
       }
     } catch (error) {
       console.error('[ADMIN ERROR] Erro ao concluir:', error);
-      showNotification('Erro ao concluir agendamento', 'error');
+      notify({ type:'error', message:'Erro ao concluir agendamento' });
+     
     }
   }
-}
+
 
 async function cancelAppointment(appointmentId) {
-  console.log('[ADMIN] Cancelando agendamento:', appointmentId);
   closeAllMenus();
-  
-  const reason = prompt('Motivo do cancelamento (opcional):');
-  if (reason !== null) {
-    try {
-      const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-      });
-      
-      if (response.ok) {
-        showNotification('Agendamento cancelado com sucesso!', 'success');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        throw new Error('Erro ao cancelar agendamento');
-      }
-    } catch (error) {
-      console.error('[ADMIN ERROR] Erro ao cancelar:', error);
-      showNotification('Erro ao cancelar agendamento', 'error');
+
+  const textareaId = 'cancel-reason-input';
+  const ok = await confirmDialog({
+    title: 'Cancelar agendamento',
+    message: `
+      <label class="form-label">Motivo do cancelamento (opcional):</label>
+      <textarea id="${textareaId}" class="form-control" rows="3" placeholder="Ex.: cliente solicitou"></textarea>
+    `,
+    confirmText: 'Cancelar',
+    variant: 'danger'
+  });
+  if (!ok) return;
+
+  const reason = document.getElementById(textareaId)?.value || '';
+
+  try {
+    const response = await fetch(`/admin/api/appointments/${appointmentId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+      credentials: 'include',
+      body: JSON.stringify({ reason })
+    });
+
+    if (response.ok) {
+      notify({ type:'success', message:'Agendamento cancelado com sucesso!' });
+      setTimeout(refreshAppointmentsTable, 300);
+    } else {
+      notify({ type:'error', message:'Erro ao cancelar agendamento' });
     }
+  } catch (err) {
+    console.error(err);
+    notify({ type:'error', message:'Erro ao cancelar agendamento' });
   }
 }
 
-// async function deleteAppointment(appointmentId) {
-//   console.log('[ADMIN] Excluindo agendamento:', appointmentId);
-//   closeAllMenus();
-  
-//   if (confirm('ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?')) {
-//     try {
-//       const response = await fetch(`/admin/appointments/${appointmentId}`, {
-//         method: 'DELETE'
-//       });
-      
-//       if (response.ok) {
-//         showNotification('Agendamento excluído com sucesso!', 'success');
-//         setTimeout(() => location.reload(), 1500);
-//       } else {
-//         throw new Error('Erro ao excluir agendamento');
-//       }
-//     } catch (error) {
-//       console.error('[ADMIN ERROR] Erro ao excluir:', error);
-//       showNotification('Erro ao excluir agendamento', 'error');
-//     }
-//   }
-// }
+async function deleteAppointment(appointmentId) {
+  // console.log('[ADMIN] Excluindo agendamento:', appointmentId);
+  closeAllMenus();
+
+const ok = await confirmDialog({
+    title: 'Excluir agendamento',
+    message: 'ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?',
+    confirmText: 'Excluir',
+    variant: 'danger'
+  });
+  if (!ok) return;
+    try {
+      const response = await fetch(`/admin/appointments/${appointmentId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        notify({ type:'success', message:'Agendamento excluído com sucesso!' });
+       setTimeout(() => refreshAppointmentsTable(), 300);
+      } else {
+        throw new Error('Erro ao excluir agendamento');
+      }
+    } catch (error) {
+      console.error('[ADMIN ERROR] Erro ao excluir:', error);
+      notify({ type:'error', message:'Erro ao excluir agendamento' });
+    }
+  }
+
 
 async function sendWhatsApp(appointmentId) {
   console.log('[ADMIN] Enviando WhatsApp para agendamento:', appointmentId);
   closeAllMenus();
-  
+
   try {
     const response = await fetch(`/admin/appointments/${appointmentId}/whatsapp`, {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+      credentials: 'include'
     });
-    
+
     if (response.ok) {
-      showNotification('Mensagem WhatsApp enviada com sucesso!', 'success');
-      setTimeout(() => location.reload(), 1500);
+
+       notify({ type:'success', message:'Mensagem WhatsApp enviada com sucesso!' });      
+     setTimeout(() => refreshAppointmentsTable(), 300);
     } else {
       throw new Error('Erro ao enviar WhatsApp');
     }
   } catch (error) {
     console.error('[ADMIN ERROR] Erro ao enviar WhatsApp:', error);
-    showNotification('Erro ao enviar mensagem WhatsApp', 'error');
+    notify({ type:'error', message:'Erro ao enviar mensagem WhatsApp' });
   }
 }
 
-function exportAppointments() {
-  console.log('[ADMIN] Exportando agendamentos');
 
-  const startDate = document.getElementById('startDate')?.value;
-  const endDate = document.getElementById('endDate')?.value;
-  const status = document.getElementById('statusFilter')?.value;
-  const barberId = document.getElementById('barberId')?.value;
-
-  const params = new URLSearchParams();
-  if (startDate) params.append('startDate', startDate);
-  if (endDate) params.append('endDate', endDate);
-  if (barberId) params.append('barberId', barberId);
-  if (status) params.append('status', status);
-  params.append('export', 'csv');
-
-  window.open(`/admin/appointments?${params.toString()}`, '_blank');
-}
 
 
 // Utilitários
 function getStatusText(status) {
   const statusMap = {
-    'pending': 'Pendente',
-    'confirmed': 'Confirmado',
-    'completed': 'Concluído',
-    'cancelled': 'Cancelado'
+    pending: 'Pendente',
+    confirmed: 'Confirmado',
+    in_progress: 'Em atendimento',
+    completed: 'Concluído',
+    cancelled: 'Cancelado',
+    no_show: 'Não compareceu'
   };
   return statusMap[status] || status;
 }
 
-function showNotification(message, type = 'info') {
 
-    const notification = document.createElement('div');
-    notification.className = `notification ${type} show`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.classList.remove('show');
-      setTimeout(() => {
-        if (document.body.contains(notification)) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }, 3000);
-}
+// function showNotification(message, type = 'info') {
+
+//   const notification = document.createElement('div');
+//   notification.className = `notification ${type} show`;
+//   notification.textContent = message;
+
+//   document.body.appendChild(notification);
+
+//   setTimeout(() => {
+//     notification.classList.remove('show');
+//     setTimeout(() => {
+//       if (document.body.contains(notification)) {
+//         document.body.removeChild(notification);
+//       }
+//     }, 300);
+//   }, 3000);
+// }
 
 
 async function loadSelectOptions(selectId, endpoint, selectedId) {
@@ -487,17 +827,22 @@ async function loadSelectOptions(selectId, endpoint, selectedId) {
       if (item.id === selectedId) option.selected = true;
       select.appendChild(option);
     });
-    if (selectId === 'edit-service' || selectId === 'edit-barber') {
-  $(select).select2({
-    dropdownParent: $('#editModal'),
-    width: '100%',
-    placeholder: 'Selecione',
-    theme: 'bootstrap-5'
-  });
+    if (['edit-service', 'edit-barber'].includes(selectId)) {
+    if (window.$ && $.fn && $.fn.select2) {
+    $(select).select2({
+      dropdownParent: $('#editModal'),
+      width: '100%',
+      placeholder: 'Selecione',
+      theme: 'bootstrap-5'
+    });
+  } 
+  else {
+    console.warn('[WARN] select2/jQuery indisponível — seguindo sem aprimoramento.');
+  }
 }
   } catch (err) {
     console.error(`Erro ao carregar ${selectId}:`, err);
-    showNotification(`Erro ao carregar ${selectId}`, 'error');
+    notify({ type:'error', message:`Erro ao carregar opções para ${selectId}` });
   }
 }
 
@@ -551,15 +896,357 @@ if (editForm) {
       });
 
       if (!response.ok) throw new Error('Erro ao atualizar');
+      notify({ type:'success', message:'Agendamento atualizado com sucesso'});
 
-      showNotification('Agendamento atualizado com sucesso', 'success');
       setTimeout(() => location.reload(), 1000);
     } catch (err) {
       console.error('[ADMIN ERROR] Falha ao atualizar agendamento:', err);
-      showNotification('Erro ao atualizar agendamento', 'error');
+      notify({ type:'error', message:'Erro ao atualizar agendamento' });
+      
     }
   });
 }
 
 
 
+// function showToast(message, type = 'success') {
+//   const toast = document.createElement('div');
+//   toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
+//   toast.setAttribute('role', 'alert');
+//   toast.setAttribute('aria-live', 'assertive');
+//   toast.setAttribute('aria-atomic', 'true');
+//   toast.style.position = 'fixed';
+//   toast.style.top = '20px';
+//   toast.style.right = '20px';
+//   toast.style.zIndex = '9999';
+//   toast.style.transition = 'opacity 0.5s ease-in-out';
+
+//   toast.innerHTML = `
+//     <div class="d-flex">
+//       <div class="toast-body">${message}</div>
+//       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+//     </div>
+//   `;
+
+//   document.body.appendChild(toast);
+
+//   setTimeout(() => {
+//     toast.classList.remove('show');
+//     toast.style.opacity = 0;
+//     setTimeout(() => toast.remove(), 500);
+//   }, 4000);
+// }
+
+
+
+function initCardExpandables() {
+  document.querySelectorAll('.card-collapsible').forEach(card => {
+    // Evita adicionar múltiplos listeners
+    if (card.dataset.expandableAttached === 'true') return;
+
+    card.addEventListener('click', function (e) {
+      if (e.target.closest('.action-item')) return;
+      card.classList.toggle('expanded');
+    });
+
+    card.dataset.expandableAttached = 'true';
+  });
+}
+
+async function refreshAppointmentsTable() {
+  const params = new URLSearchParams(window.location.search);
+
+  // Atualiza a tabela
+  const tableBody = document.querySelector('.admin-table tbody');
+  if (tableBody) {
+    try {
+      const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
+      const data = await response.json();
+      tableBody.innerHTML = data;
+      
+    } catch (err) {
+      console.error('[ADMIN] Erro ao atualizar a TABELA:', err);
+    }
+  }
+
+  // Atualiza os cards
+  const cardContainer = document.getElementById('appointmentsCardView');
+  if (cardContainer) {
+    try {
+      const response = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
+      const data = await response.json();
+      cardContainer.innerHTML = data;
+      
+      requestAnimationFrame(() => {
+        initCardExpandables();
+        limitarCardsPorBarbeiro(10);
+      });
+
+    } catch (err) {
+      console.error('[ADMIN] Erro ao atualizar os CARDS:', err);
+    }
+  }
+
+  initTableListeners(); // reanexar eventos
+   attachActionPanelListeners();
+}
+
+ function restoreSavedView() {
+  const savedView = localStorage.getItem('appointmentsView');
+  const tableView = document.getElementById('appointmentsTableView');
+  const cardView = document.getElementById('appointmentsCardView');
+  
+  console.log('[DEBUG] Restoring saved view:', savedView);
+  console.log('[DEBUG] Elements found:', { tableView: !!tableView, cardView: !!cardView });
+
+ if (!tableView || !cardView) {
+  console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
+  document.getElementById('appointmentsTableView')?.classList.remove('hidden');
+  document.getElementById('appointmentsCardView')?.classList.add('hidden');
+  return;
+}
+
+  if (savedView === 'cards') {
+    tableView.classList.add('hidden');
+    cardView.classList.remove('hidden');
+    initCardExpandables();
+    console.log('[DEBUG] Restored to cards view');
+  } else {
+    cardView.classList.add('hidden');
+    tableView.classList.remove('hidden');
+      // reaplica eventos
+  initTableListeners();
+  attachActionPanelListeners();
+    console.log('[DEBUG] Restored to table view');
+  }
+}
+function limitarLinhasDaTabela(qtd = 10) {
+  const linhas = document.querySelectorAll('#appointmentsTableBody tr');
+  if (linhas.length > qtd) {
+    linhas.forEach((tr, index) => {
+      if (index >= qtd) tr.classList.add('d-none');
+    });
+
+    // DEPOIS (com fallbacks)
+    const container =
+      document.querySelector('#appointmentsTableView .admin-card') ||
+      document.querySelector('#appointmentsTableView .admin-table') ||
+      document.getElementById('appointmentsTableView');
+    if (!container) return; // segurança
+
+    // Remover botões antigos
+    container.querySelectorAll('.btn-ver-mais, .btn-ver-menos').forEach(btn => btn.remove());
+
+    // Criar botão "Ver mais"
+    const btnVerMais = document.createElement('button');
+    btnVerMais.className = 'btn btn-outline-light d-block mx-auto mt-3 btn-ver-mais';
+    btnVerMais.innerHTML = '<i class="fas fa-angle-down"></i> Ver mais';
+
+    // Criar botão "Ver menos"
+    const btnVerMenos = document.createElement('button');
+    btnVerMenos.className = 'btn btn-outline-light d-block mx-auto mt-3 btn-ver-menos';
+    btnVerMenos.innerHTML = '<i class="fas fa-angle-up"></i> Ver menos';
+
+    // Ação "Ver mais"
+    btnVerMais.addEventListener('click', () => {
+      linhas.forEach(tr => tr.classList.remove('d-none'));
+      btnVerMais.remove();
+      container.appendChild(btnVerMenos);
+    });
+
+    // Ação "Ver menos"
+btnVerMenos.addEventListener('click', () => {
+  requestAnimationFrame(() => {
+    linhas.forEach((tr, index) => {
+      if (index >= qtd) {
+        tr.classList.add('fade-out');
+        setTimeout(() => {
+          tr.classList.add('d-none');
+          tr.classList.remove('fade-out');
+        }, 300);
+      }
+    });
+
+    const table = document.querySelector('#appointmentsTableView');
+    if (table) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    btnVerMenos.remove();
+    container.appendChild(btnVerMais);
+  });
+});
+
+
+    container.appendChild(btnVerMais);
+  }
+}
+
+document.getElementById('pageSize')?.addEventListener('change', (e) => {
+  const limit = e.target.value;
+  const url = new URL(window.location.href);
+  url.searchParams.set('limit', limit);
+  url.searchParams.set('page', '1');
+  window.location.href = url.toString();
+});
+
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('.pagination a[data-page]');
+  if (!a) return;
+  e.preventDefault();
+  const page = a.dataset.page;
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', page);
+  // preserva filtros e limit existentes
+  window.location.href = url.toString();
+});
+
+
+
+
+function limitarCardsPorBarbeiro(qtd = 10) {
+  document.querySelectorAll('.card-group').forEach(group => {
+    const cards = group.querySelectorAll('.card-wrapper');
+    const barber = group.dataset.barber;
+    const btnVerMais = document.querySelector(`.ver-mais-cards[data-barber="${barber}"]`);
+
+    if (cards.length > qtd) {
+      cards.forEach((card, i) => {
+        if (i >= qtd) card.classList.add('d-none');
+      });
+
+      if (btnVerMais) {
+        btnVerMais.classList.remove('d-none');
+        btnVerMais.innerHTML = '<i class="fas fa-angle-down"></i> Ver mais';
+        btnVerMais.addEventListener('click', () => {
+          cards.forEach(card => card.classList.remove('d-none'));
+          btnVerMais.classList.add('d-none');
+
+          const btnVerMenos = document.createElement('button');
+          btnVerMenos.className = 'btn btn-outline-light btn-sm mt-2 ver-menos-cards';
+          btnVerMenos.setAttribute('data-barber', barber);
+          btnVerMenos.innerHTML = '<i class="fas fa-angle-up"></i> Ver menos';
+
+btnVerMenos.addEventListener('click', () => {
+  requestAnimationFrame(() => {
+    cards.forEach((card, i) => {
+      if (i >= qtd) {
+        card.classList.add('fade-out');
+        setTimeout(() => {
+          card.classList.add('d-none');
+          card.classList.remove('fade-out');
+        }, 300);
+      }
+    });
+
+    const column = group.closest('.barber-column');
+    if (column) column.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    btnVerMenos.remove();
+    btnVerMais.classList.remove('d-none');
+  });
+});
+
+          btnVerMais.parentElement.appendChild(btnVerMenos);
+        });
+      }
+    }
+  });
+}
+
+
+function attachActionPanelListeners() {
+  document.querySelectorAll('.js-open-action-panel').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const id = this.dataset.id;
+      console.log('[PAINEL] Clique detectado:', id);
+      openActionPanel(id);
+    });
+  });
+}
+
+
+
+// Função para abrir o painel lateral
+async function openActionPanel(id) {
+  const panel = document.getElementById('actionPanel');
+  const body = document.getElementById('actionPanelBody');
+  if (!panel || !body) return;
+
+  console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
+
+  try {
+    const res = await fetch(`/admin/appointments/${id}`);
+    const { appointment } = await res.json();
+    const status = appointment.status;
+
+    // Funções comuns sempre visíveis
+    let html = `
+      <button class="btn btn-outline-light w-100 mb-2 js-view-appointment" onclick="viewAppointment(${id})">
+        <i class="fas fa-eye me-2"></i> Ver Detalhes
+      </button>
+      <button class="btn btn-outline-primary w-100 mb-2 js-edit-appointment" onclick="editAppointment(${id})">
+        <i class="fas fa-pen me-2"></i> Editar
+      </button>
+    `;
+
+    // Regras específicas por status
+    if (status === 'pending') {
+      html += `
+        <button class="btn btn-outline-success w-100 mb-2 js-confirm-appointment" onclick="confirmAppointment(${id})">
+          <i class="fas fa-check-circle me-2"></i> Confirmar
+        </button>
+      `;
+    }
+
+    if (status === 'confirmed' || status === 'in_progress') {
+      html += `
+        <button class="btn btn-outline-warning w-100 mb-2 js-complete-appointment" onclick="completeAppointment(${id})">
+          <i class="fas fa-check me-2"></i> Concluir
+        </button>
+      `;
+    }
+
+    if (status !== 'cancelled' && status !== 'completed') {
+      html += `
+        <button class="btn btn-outline-danger w-100 mb-2 js-cancel-appointment" onclick="cancelAppointment(${id})">
+          <i class="fas fa-times-circle me-2"></i> Cancelar
+        </button>
+      `;
+    }
+
+    // WhatsApp é sempre visível
+    html += `
+      <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
+        <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
+      </button>
+    `;
+
+    body.innerHTML = html;
+    panel.classList.add('show');
+  } catch (err) {
+    console.error('[PAINEL] Erro ao carregar agendamento:', err);
+    notify({ type:'error', message:'Erro ao carregar detalhes do agendamento' });
+  }
+}
+
+
+
+// Função para fechar
+function closeActionPanel() {
+  const panel = document.getElementById('actionPanel');
+  panel.classList.remove('show');
+}
+
+
+
+
+// Tornando acessível globalmente
+window.openActionPanel = openActionPanel;
+window.closeActionPanel = closeActionPanel;
+
+document.addEventListener('click', function (e) {
+  const panel = document.getElementById('actionPanel');
+  if (panel?.classList.contains('show') && !panel.contains(e.target) && !e.target.closest('.js-open-action-panel')) {
+    closeActionPanel();
+  }
+});

@@ -1,73 +1,173 @@
 const cron = require('node-cron');
 require('dotenv').config();
-const moment = require('moment');
+const moment = require('moment-timezone'); // <-- trocar para moment-timezone
+const { Op } = require('sequelize');
 const { Appointment, Client, Barber, ServiceType, SystemConfig } = require('../models');
-const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const cleanupExpiredCodes = require('../utils/cleanUpCodes');
+
+const {
+  sendWhatsAppMessage,
+  isWhatsAppReady,
+  waitWhatsAppReady
+} = require('../utils/whatsapp');
 
 // Variáveis da barbearia via .env
 const BARBERSHOP_NAME = process.env.BARBERSHOP_NAME || 'Barbearia';
 const BARBERSHOP_ADDRESS = process.env.BARBERSHOP_ADDRESS || 'Endereço não definido';
 const BARBERSHOP_MAPS_LINK = process.env.BARBERSHOP_MAPS_LINK || '';
 
+// TZ único para todo o arquivo
+const TZ = process.env.TZ || 'America/Sao_Paulo';
+
+// Evita iniciar duas vezes se importado em loop
+if (global.__CRON_SCHEDULED__) {
+  console.log('[CRON] Já iniciado. Ignorando segundo start.');
+  return;
+}
+global.__CRON_SCHEDULED__ = true;
+
+// (opcional) Se alguém executar diretamente: alerta e encerra
+if (require.main === module) {
+  console.warn('[CRON] Este arquivo não deve ser executado diretamente. Inicie o servidor (server.js/app.js).');
+  process.exit(1);
+}
+
 async function getConfig(key) {
   const config = await SystemConfig.findByPk(key);
   return config?.value || null;
 }
+async function getIntConfig(key, fallback) {
+  const val = parseInt(await getConfig(key), 10);
+  return Number.isFinite(val) ? val : fallback;
+}
 
 cron.schedule('*/5 * * * *', async () => {
-  const now = moment();
-  const reminderHours = parseInt(await getConfig('reminderHoursBefore'), 10);
-  const followUpHours = parseInt(await getConfig('followUpHoursAfter'), 10);
+  // Garante sessão WhatsApp
+  if (!isWhatsAppReady()) {
+    console.log('⏳ WhatsApp ainda não conectado; aguardando até 15s...');
+    const ok = await waitWhatsAppReady(15000);
+    if (!ok) {
+      console.log('⏭️ WhatsApp não conectou a tempo; pulando este ciclo.');
+      return;
+    }
+  }
 
-  console.log(`\n🔁 [CRON] Executando verificação - ${now.format('YYYY-MM-DD HH:mm:ss')}`);
+  // Usa TZ único
+  const now = moment.tz(TZ);
+  const reminderHours = await getIntConfig('reminderHoursBefore', 5); // default 5h antes
+  const followUpHours = await getIntConfig('followUpHoursAfter', 2);  // default 2h depois
+  const WINDOW_MIN = 5;
+
+  console.log(`\n🔁 [CRON] Executando verificação - ${now.format('YYYY-MM-DD HH:mm:ss')} (TZ=${TZ})`);
   console.log(`⏰ Lembrete: ${reminderHours}h antes | 📬 Acompanhamento: ${followUpHours}h depois`);
 
   const appointments = await Appointment.findAll({
-    where: { status: 'confirmed' },
-    include: ['client', 'barber', 'serviceType']
+    where: {
+      status: { [Op.in]: ['confirmed', 'in_progress'] },
+      clientId: { [Op.ne]: null },
+      barberId: { [Op.ne]: null }
+    },
+    attributes: [
+      'id', 'appointmentDate', 'appointmentTime', 'status',
+      'whatsappSent', 'reminderSent', 'followUpSent', 'serviceDuration'
+    ],
+    include: [
+      { model: Client, as: 'client', attributes: ['firstName', 'phone'] },
+      { model: Barber, as: 'barber', attributes: ['name'] },
+      { model: ServiceType, as: 'serviceType', attributes: ['duration'] }
+    ]
   });
 
+  // Processar sequencialmente evita burst e limita bloqueios do WhatsApp
   for (const apt of appointments) {
-    const datetime = moment(`${apt.appointmentDate}T${apt.appointmentTime}`);
-    const diffInHours = datetime.diff(now, 'hours', true);
-    const hoursSince = now.diff(datetime, 'hours', true);
+    try {
+      // Monta o datetime do agendamento com TZ fixo
+      const datetime = moment.tz(
+        `${apt.appointmentDate} ${apt.appointmentTime}`,
+        ['YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD HH:mm'],
+        TZ
+      );
 
-    // === ENVIO DE LEMBRETE ===
-    if (!apt.whatsappSent && diffInHours <= reminderHours && diffInHours > reminderHours - 1) {
-      const msg = `Olá, ${apt.client.firstName}! 👋
-      Seu agendamento é hoje às ${apt.appointmentTime?.slice(0, 5)} com ${apt.barber.name}. ✂️
-
-      📍 ${BARBERSHOP_NAME}
-      🗺 ${BARBERSHOP_MAPS_LINK}`;
-      console.log(`📱 Enviando lembrete para ${apt.client.firstName} (${apt.client.phone})`);    
-      const sent = await sendWhatsAppMessage(apt.client.phone, msg);
-
-      if (sent) {
-        await apt.update({ whatsappSent: true });
-        console.log(`✅ Lembrete enviado para ${apt.client.firstName} (${apt.client.phone})`);
-      } else {
-        console.warn(`⚠️ Falha ao enviar lembrete para ${apt.client.firstName} (${apt.client.phone})`);
+      if (!datetime.isValid()) {
+        console.warn(`⚠️ Datetime inválido para apt ${apt.id}:`, apt.appointmentDate, apt.appointmentTime);
+        continue;
       }
-    }
 
-    // === ENVIO DE ACOMPANHAMENTO ===
-    if (!apt.followUpSent && hoursSince >= followUpHours && hoursSince < followUpHours + 0.1) {
-      const msg = `Olá, ${apt.client.firstName}! Esperamos que tenha gostado do serviço. Deixe seu feedback!`;
-      const sent = await sendWhatsAppMessage(apt.client.phone, msg);
+      const diffMin = datetime.diff(now, 'minutes');           // minutos até começar (pode ser negativo)
+      const sinceStartMin = now.diff(datetime, 'minutes');     // minutos desde o início
+      const duration = parseInt(apt.serviceType?.duration ?? apt.serviceDuration ?? 0, 10);
+      const endTime = datetime.clone().add(Number.isFinite(duration) ? duration : 0, 'minutes');
+      const sinceEndMin = now.diff(endTime, 'minutes');
 
-      if (sent) {
-        await apt.update({ followUpSent: true });
-        console.log(`📬 Acompanhamento enviado para ${apt.client.firstName} (${apt.client.phone})`);
-      } else {
-        console.warn(`⚠️ Falha ao enviar acompanhamento para ${apt.client.firstName} (${apt.client.phone})`);
+      // === LEMBRETE (usa reminderSent, NÃO whatsappSent) ===
+      const reminderTargetMin = reminderHours * 60;
+      if (!apt.reminderSent &&
+          diffMin <= reminderTargetMin &&
+          diffMin >= (reminderTargetMin - WINDOW_MIN)) {
+
+        const firstName = (apt.client?.firstName || '').trim() || 'cliente';
+        const barberName = (apt.barber?.name || '').trim() || 'nosso profissional';
+        const hhmm = (apt.appointmentTime || '').slice(0, 5);
+
+        const msg = `Olá, ${firstName}! 👋
+Seu agendamento é hoje às ${hhmm} com ${barberName}. ✂️
+
+📍 ${BARBERSHOP_NAME}
+🗺 ${BARBERSHOP_MAPS_LINK}`.trim();
+
+        const result = await sendWhatsAppMessage(apt.client.phone, msg);
+        const delivered = (typeof result === 'object') ? !!result.delivered : !!result; // compatível com retorno antigo
+
+        if (delivered) {
+          await apt.update({ reminderSent: true });
+          const ack = (typeof result === 'object') ? result.ack : undefined;
+          console.log(`✅ Lembrete ENTREGUE${ack != null ? ` (ack=${ack})` : ''} para ${firstName}`);
+        } else {
+          console.warn(`⚠️ Lembrete NÃO entregue para ${firstName}`, result);
+        }
       }
+
+      // === ENTRANDO EM ATENDIMENTO ===
+      if (apt.status === 'confirmed' &&
+          diffMin <= 0 && diffMin > -WINDOW_MIN) {
+        await apt.update({ status: 'in_progress' });
+        console.log(`🚀 Iniciado: ${apt.id} (${apt.client?.firstName || ''})`);
+      }
+
+      // === MARCAR COMO CONCLUÍDO ===
+      if (apt.status === 'in_progress' &&
+          sinceEndMin >= 0 && sinceEndMin < WINDOW_MIN) {
+        await apt.update({ status: 'completed' });
+        console.log(`✅ Concluído: ${apt.id} (${apt.client?.firstName || ''})`);
+      }
+
+      // === ACOMPANHAMENTO ===
+      const followUpTargetMin = followUpHours * 60;
+      if (!apt.followUpSent &&
+          sinceStartMin >= followUpTargetMin &&
+          sinceStartMin < (followUpTargetMin + WINDOW_MIN)) {
+
+        const firstName = (apt.client?.firstName || '').trim() || 'cliente';
+        const msg = `Olá, ${firstName}! Esperamos que tenha gostado do serviço. Pode nos enviar seu feedback?`;
+
+        const result = await sendWhatsAppMessage(apt.client.phone, msg);
+        const delivered = (typeof result === 'object') ? !!result.delivered : !!result;
+
+        if (delivered) {
+          await apt.update({ followUpSent: true });
+          const ack = (typeof result === 'object') ? result.ack : undefined;
+          console.log(`📬 Acompanhamento ENTREGUE${ack != null ? ` (ack=${ack})` : ''} para ${firstName}`);
+        } else {
+          console.warn(`⚠️ Acompanhamento NÃO entregue para ${firstName}`, result);
+        }
+      }
+    } catch (err) {
+      console.error(`❌ Erro ao processar agendamento ID ${apt.id}`, err);
     }
   }
-  // Também buscar agendamentos cancelados nas últimas 24h
 
-
-
+  await cleanupExpiredCodes();
   console.log(`✅ [CRON] Ciclo concluído com ${appointments.length} agendamentos verificados.`);
-});
+}, { timezone: TZ });
 
 console.log('[🕒 CRON] Agendado para rodar a cada 5 minutos.');

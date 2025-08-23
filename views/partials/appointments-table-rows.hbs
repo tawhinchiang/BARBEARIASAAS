@@ -1,0 +1,61 @@
+{{#each appointments}}
+
+<tr class="table-row-transition">
+  <td class="d-none">
+    <span class="fw-bold">#{{id}}</span>
+  </td>
+  
+  <td>
+      <div class="d-flex align-items-center">
+      <div class="avatar-sm me-2">
+         <img src="{{barber.photo}}" alt="Foto de {{barber.name}}" class="avatar-img">
+
+      </div>
+      <div class="fw-semibold">{{barber.name}}</div>
+      
+      </div>
+  </td>
+
+  <td class="text-center">
+    <div class="fw-semibold">{{appointmentDateFormatted}}</div>
+    <small class="text-muted">{{appointmentTimeFormatted}}</small>
+  </td>
+
+
+    <td class="text-left">
+    
+      <div>
+        <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+        {{!-- <small class="text-muted">{{client.phone}}</small> --}}
+      </div>
+    
+    </td>
+
+ <td>
+ <div class="fw-semibold">{{serviceType.name}}</div>
+ <small class="text-muted">{{serviceType.duration}} min </small>
+
+  </td>
+<td class="text-center">
+    <div class="fw-bold"> {{formatCurrency totalPrice}}</div>
+  </td>
+ <td class="text-center">
+  <span class="status-badge status-{{status}}">
+    {{statusText status}}
+  </span>
+</td>
+
+<td class="text-center">
+  <button type="button" class="js-open-action-panel btn btn-sm btn-dark" data-id="{{id}}">
+    <i class="fas fa-ellipsis-v"></i>
+  </button>
+</td>
+
+
+
+
+
+
+
+</tr>
+{{/each}}

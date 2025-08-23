@@ -124,8 +124,10 @@ async function loadServices() {
     spinner.classList.remove('show');
     
     // Garantir que o container seja visível
-    container.style.display = 'grid';
-    container.classList.add('show');
+   container.style.removeProperty("display");
+    container.classList.remove("d-none");
+
+    // container.classList.add('show');
     container.classList.add('fade-in-soft');
     
     log(`${services.length} serviços carregados e exibidos`);
@@ -147,52 +149,49 @@ async function loadServices() {
 // Renderizar cards de serviços dinamicamente
 function renderServices(services) {
   const container = document.getElementById('servicesContainer');
-  if (!container) {
-    logError('Container de serviços não encontrado');
-    return;
-  }
-  
+  if (!container) return;
+
   container.innerHTML = '';
-  
+
   services.forEach(svc => {
     const priceNum = Number(svc.price);
-    const card = document.createElement('div');
-    card.className = 'service-card';
-    card.dataset.serviceId = svc.id;
-    card.innerHTML = `
-      <div class="service-header">
+
+    const item = document.createElement('div');
+    item.className = 'service-card bg-dark text-light border-secondary rounded-3 mb-2 px-3 py-2 d-flex align-items-center justify-content-between w-100';
+    item.dataset.serviceId = svc.id;
+
+    item.innerHTML = `
+      <div class="d-flex align-items-center gap-3">
+        <img src="${svc.photo || '/images/logo.jpg'}" alt="${svc.name}" 
+             class="rounded-circle" style="width:40px; height:40px; object-fit:cover;">
         <div>
-          <div class="service-name">${svc.name}</div>
-          <div class="service-duration">${svc.duration}min</div>
+          <h6 class="mb-0 fw-bold service-name">${svc.name}</h6>
+          <small class="text-muted">
+            <i class="far fa-clock me-1"></i> ${svc.duration} min
+          </small>
         </div>
-        <div class="service-price">R$ ${Number.isNaN(priceNum) ? '0.00' : priceNum.toFixed(2)}</div>
+      </div>
+      <div class="text-end">
+<span class="text-success fw-bold d-block">R$ ${Number.isNaN(priceNum) ? '0,00' : priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>        <button class="btn btn-primary btn-sm mt-1">Agendar</button>
       </div>
     `;
-    card.addEventListener('click', () => selectService(svc));
-    container.appendChild(card);
+
+    item.querySelector('button').addEventListener('click', () => selectService(svc));
+    container.appendChild(item);
   });
-  
-  log('Cards de serviços renderizados');
+
+  log('Serviços renderizados no formato slim 100% width');
 }
+
+
+
+
 
 // Selecionar serviço
 function selectService(service) {
   log('Serviço selecionado', service);
-  
-  document.querySelectorAll('.service-card').forEach(card => card.classList.remove('selected'));
-  const selectedCard = document.querySelector(`[data-service-id="${service.id}"]`);
-  if (selectedCard) selectedCard.classList.add('selected');
-  
   appState.selectedService = service;
-  
-  const continueBtn = document.getElementById('continueToBarber');
-  if (continueBtn) {
-    continueBtn.disabled = false;
-    continueBtn.classList.remove('disabled');
-  }
-  
-  goToStep(2);
-  log('Botão continuar ativado');
+  goToStep(2); // vai para barbeiros
 }
 
 // Ir para etapa - CORRIGIDO
@@ -200,15 +199,14 @@ function goToStep(step) {
   log(`Avançando para etapa ${step}`);
 
   // Esconder todas as etapas
-  document.querySelectorAll('.step').forEach(s => {
-    s.classList.remove('active');
-    s.style.display = 'none';
-  });
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById(`step${i}`);
+    if (el) el.style.display = 'none';
+  }
 
   // Mostrar etapa atual
   const targetStep = document.getElementById(`step${step}`);
   if (targetStep) {
-    targetStep.classList.add('active');
     targetStep.style.display = 'block';
     targetStep.classList.add('fade-in-up');
   } else {
@@ -216,32 +214,11 @@ function goToStep(step) {
     return;
   }
 
-  // Ações específicas por etapa
-  if (step === 2) {
-    loadBarbers();
-  }
-  if (step === 3) {
-    // Limpar estado de horários
-    appState.availableTimes = [];
-    const timesContainer = document.getElementById('timesContainer');
-    const slotsContainer = document.getElementById('timeSlotsContainer');
-    
-    if (timesContainer) {
-      timesContainer.style.display = 'none';
-      timesContainer.classList.remove('show');
-    }
-    if (slotsContainer) {
-      slotsContainer.innerHTML = '';
-    }
-    
-    generateCalendar();
-  }
-  if (step === 4) {
-    updateBookingSummary();
-  }
+  // Ações específicas
+  if (step === 2) loadBarbers();
+  if (step === 3) generateCalendar();
+  if (step === 4) updateBookingSummary();
 
-  // Atualizar indicadores
-  updateStepIndicators(step);
   appState.currentStep = step;
 }
 
@@ -311,71 +288,44 @@ function generateAvatarUrl(name) {
   return `/images/barbers/${fileName}.png`;
 }
 
-// Criar card de barbeiro
+
+// Criar card de barbeiro (formato AppBarber)
 function createBarberCard(barber) {
-  const card = document.createElement('div');
-  card.className = 'barber-card';
-  card.dataset.barberId = barber.id;
+  const item = document.createElement('div');
+  item.className = 'list-group-item d-flex justify-content-between align-items-center bg-dark text-light border-secondary rounded-3 mb-2 p-3';
+  item.dataset.barberId = barber.id;
 
   const avatarContent = barber.photo
-  ? `<img class="barber-avatar-img" src="${barber.photo}" alt="${barber.name}" />`
-  : `<div class="barber-avatar-text">${barber.name.split(' ').map(n => n[0]).join('').substring(0, 2)}</div>`;
+    ? `<img src="${barber.photo}" alt="${barber.name}" class="rounded-circle me-3" style="width:50px; height:50px; object-fit:cover;">`
+    : `<div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px;">${barber.name.charAt(0)}</div>`;
 
-  card.innerHTML = `
-    <div class="barber-avatar">${avatarContent}</div>
-    <div class="barber-name">${barber.name}</div>
-    <div class="barber-specialty">${barber.specialties || 'Especialidades não informadas'}</div>
+  item.innerHTML = `
+    <div class="d-flex align-items-center">
+      ${avatarContent}
+      <div>
+        <h6 class="mb-0 fw-bold">${barber.name}</h6>
+        
+      </div>
+    </div>
+    <button class="btn btn-outline-light btn-sm">Selecionar</button>
   `;
 
-  card.addEventListener('click', () => {
-    selectBarber(barber);
-  });
+  // Seleção do barbeiro
+  item.querySelector('button').addEventListener('click', () => selectBarber(barber));
 
-  return card;
+  return item;
 }
 
-// function createBarberCard(barber) {
-//   const card = document.createElement('div');
-//   card.className = 'barber-card';
-//   card.dataset.barberId = barber.id;
-
-//   const avatarUrl = barber.avatarUrl || generateAvatarUrl(barber.name);
-//   const avatarContent = `<img class="barber-avatar-img" src="${avatarUrl}" alt="${barber.name}" onerror="this.onerror=null;this.style.display='none';" />`;
-
-//   card.innerHTML = `
-//     <div class="barber-avatar">${avatarContent}</div>
-//     <div class="barber-name">${barber.name}</div>
-//     <div class="barber-specialty">${barber.specialties || 'Especialista'}</div>
-//   `;
-
-//   card.addEventListener('click', () => selectBarber(barber));
-//   return card;
-// }
 
 // Selecionar barbeiro
+
 function selectBarber(barber) {
   log('Barbeiro selecionado', barber);
-  
-  document.querySelectorAll('.barber-card').forEach(card => {
-    card.classList.remove('selected');
-  });
-  
-  const selectedCard = document.querySelector(`[data-barber-id="${barber.id}"]`);
-  if (selectedCard) {
-    selectedCard.classList.add('selected');
-  }
-  
   appState.selectedBarber = barber;
-  
-  const continueBtn = document.getElementById('continueToDate');
-  if (continueBtn) {
-    continueBtn.disabled = false;
-    continueBtn.classList.remove('disabled');
-  }
-  
-  log('Botão continuar ativado');
-  goToStep(3);
+  goToStep(3); // vai para calendário
 }
+
+
 
 // Inicializar calendário
 function initializeCalendar() {
@@ -452,20 +402,11 @@ function generateCalendar() {
 // Selecionar data
 function selectDate(date) {
   log('Data selecionada', date);
-  
-  // Remover seleção anterior
-  document.querySelectorAll('.calendar-day').forEach(day => {
-    day.classList.remove('selected');
-  });
-  
-  // Selecionar nova data
-  event.target.classList.add('selected');
-  
   appState.selectedDate = date;
-  
-  // Carregar horários disponíveis
-  loadAvailableTimes(date);
+
+  // Abrir modal de horários
   abrirModal();
+  loadAvailableTimes(date);
 }
 
 // ===== CARREGAR HORÁRIOS - CORRIGIDO =====
@@ -583,31 +524,11 @@ function createTimeSlot(time) {
 // Selecionar horário
 function selectTime(time) {
   log('Horário selecionado', time);
-  
-  // Remover seleção anterior
-  document.querySelectorAll('.time-slot').forEach(slot => {
-    slot.classList.remove('selected');
-  });
-  
-  // Selecionar novo horário
-  const selectedSlot = document.querySelector(`[data-time="${time}"]`);
-  if (selectedSlot) {
-    selectedSlot.classList.add('selected');
-  }
-  
   appState.selectedTime = time;
-  
-  // Ativar botão continuar
-  const continueBtn = document.getElementById('continueToConfirm');
-  if (continueBtn) {
-    continueBtn.disabled = false;
-    continueBtn.classList.remove('disabled');
-  }
-  
-  log('Botão continuar ativado');
   fecharModal();
-  goToStep(4);
+  goToStep(4); // vai para cliente + resumo
 }
+
 
 // Mudar mês
 function changeMonth(direction) {
@@ -688,22 +609,30 @@ function setupPhoneMask() {
   phoneInput.addEventListener('blur', () => {
     validateClientForm(); // força validação após sair do campo
   });
+phoneInput.addEventListener('input', function (e) {
+  let value = e.target.value.replace(/\D/g, '');
 
-  phoneInput.addEventListener('input', function (e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
+  // Se apagar tudo, não força nada
+  if (value.length === 0) {
+    e.target.value = '';
+    return;
+  }
 
-    if (value.length >= 2) {
-      if (value.length <= 10) {
-        value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-      } else {
-        value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-      }
-    }
+  if (value.length > 11) value = value.slice(0, 11);
 
-    e.target.value = value;
-    setTimeout(validateClientForm, 0);
-  });
+  if (value.length <= 2) {
+    value = value.replace(/(\d{0,2})/, '($1');
+  } else if (value.length <= 6) {
+    value = value.replace(/(\d{2})(\d{0,4})/, '($1) $2');
+  } else if (value.length <= 10) {
+    value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  } else {
+    value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  }
+
+  e.target.value = value;
+  setTimeout(validateClientForm, 0);
+});
 
 }
 
@@ -752,9 +681,8 @@ function validateClientForm() {
 }
 
 // Confirmar agendamento
+// Confirmar agendamento
 async function confirmBooking() {
-  console.log('Iniciando confirmação de agendamento...');
-  
   if (!validateClientForm()) {
     showNotification('Preencha todos os campos corretamente', 'error');
     return;
@@ -762,11 +690,6 @@ async function confirmBooking() {
 
   const phoneInput = document.getElementById('clientPhone');
   const formattedPhone = formatPhoneForWhatsApp(phoneInput.value);
-
-  if (!formattedPhone) {
-    showNotification('Telefone inválido para WhatsApp', 'error');
-    return;
-  }
 
   const bookingData = {
     serviceId: appState.selectedService.id,
@@ -781,10 +704,6 @@ async function confirmBooking() {
     }
   };
 
-  const btn = document.getElementById('confirmBooking');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirmando...';
-
   try {
     const res = await fetch('/api/appointments', {
       method: 'POST',
@@ -795,15 +714,16 @@ async function confirmBooking() {
     if (!res.ok) throw new Error((await res.json()).message || res.statusText);
 
     updateFinalConfirmation(bookingData);
-    goToStep(5);
+    goToStep(5); 
+    // Esconde form do cliente e mostra confirmação final
+    document.getElementById('clientSection').style.display = 'none';
+    document.getElementById('finalSection').style.display = 'block';
+
     showNotification('Agendamento confirmado!', 'success');
 
   } catch (err) {
     logError('Erro ao confirmar agendamento', err);
-    showNotification(err.message || 'Erro ao confirmar', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmar Agendamento';
+    showNotification('Erro ao confirmar agendamento', 'error');
   }
 }
 
@@ -894,39 +814,54 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
-// Filtrar serviços
-function filterServices() {
-  const input = document.getElementById('searchInput').value.toLowerCase();
-  const cards = document.querySelectorAll('#servicesContainer .service-card');
-
-  cards.forEach(card => {
-    const serviceName = card.querySelector('.service-name').textContent.toLowerCase();
-    if (serviceName.includes(input)) {
-      card.style.display = '';
-    } else {
-      card.style.display = 'none';
-    }
-  });
+// Função para normalizar textos (remove acentos e padroniza para minúsculo)
+// Normaliza textos (remove acentos e deixa minúsculo)
+function normalizeText(text) {
+  return (text || "")
+    .toLowerCase()
+    .normalize("NFD")                  // separa acentos
+    .replace(/[\u0300-\u036f]/g, "")   // remove acentos
+    .trim();
 }
+
+function filterServices() {
+  const inputEl = document.getElementById('searchInput');
+  if (!inputEl) return;
+
+  const searchTerm = normalizeText(inputEl.value);
+
+  // 🔹 Filtra direto no array original de serviços
+  const filtered = appState.services.filter(svc =>
+    normalizeText(svc.name).includes(searchTerm)
+  );
+
+  // 🔹 Renderiza só os filtrados
+  renderServices(filtered);
+
+  console.log(`[FILTER] "${searchTerm}" => ${filtered.length} resultados`);
+}
+
+
+
+
+
 
 // ===== MODAL - CORRIGIDO =====
 const modal = document.getElementById('meuModal');
 
 function abrirModal() {
-  if (!modal) {
-    logError('Modal não encontrado no DOM');
-    return;
-  }
-  
+  if (!modal) return;
+
   modal.style.display = 'flex';
   modal.classList.add('show');
   
   setTimeout(() => {
     modal.classList.add('fade-in-modal');
+  modal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 10);
   
   document.body.classList.add('modal-open');
-  log('Modal aberto');
+  log('Modal aberto e centralizado');
 }
 
 function fecharModal() {

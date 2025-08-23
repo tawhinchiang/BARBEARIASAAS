@@ -1,36 +1,46 @@
 // Middleware de autenticação para área administrativa - CORRIGIDO
 
+// const log = (message, data = null) => {
+//   const timestamp = new Date().toISOString();
+//   console.log(`[${timestamp}] [AUTH] ${message}`);
+//   if (data) {
+//     console.log(`[${timestamp}] [AUTH] Data:`, JSON.stringify(data, null, 2));
+//   }
+// };
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [AUTH] ${message}`);
-  if (data) {
-    console.log(`[${timestamp}] [AUTH] Data:`, JSON.stringify(data, null, 2));
+  if (data !== null && data !== undefined) {
+    try {
+      console.log(`[${timestamp}] [AUTH] Data:`, JSON.stringify(data, null, 2));
+    } catch (_e) {
+      console.log(`[${timestamp}] [AUTH] Data:`, data);
+    }
   }
 };
 
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
   console.error(`[${timestamp}] [AUTH ERROR] ${message}`);
-  if (error && error.stack) {
-    console.error(`[${timestamp}] [AUTH ERROR] Stack:`, error.stack);
-  }
+  if (error) console.error(error);
 };
+
 
 // Middleware para rotas web (redireciona para login se não autenticado)
 const isAuthenticated = (req, res, next) => {
-  log('Verificando autenticação', { 
-    url: req.url,
-    method: req.method,
-    hasSession: !!req.session,
-    hasUser: !!(req.session && req.session.user),
-    sessionId: req.sessionID
-  });
+  // log('Verificando autenticação', { 
+  //   url: req.url,
+  //   method: req.method,
+  //   hasSession: !!req.session,
+  //   hasUser: !!(req.session && req.session.user),
+  //   sessionId: req.sessionID
+  // });
 
   if (req.session && req.session.user) {
-    log('Usuário autenticado', { 
-      user: req.session.user,
-      sessionId: req.sessionID
-    });
+    // log('Usuário autenticado', { 
+    //   user: req.session.user,
+    //   sessionId: req.sessionID
+    // });
     return next();
   } else {
     log('Usuário não autenticado, redirecionando para login', {

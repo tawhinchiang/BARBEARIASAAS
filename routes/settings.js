@@ -317,7 +317,7 @@ router.post('/admin/profile', async (req, res) => {
       });
     }
     
-    // Buscar usuário admin
+   
     const adminUser = await User.findOne({ where: { username: 'admin' } });
     if (!adminUser) {
       return res.status(404).json({
@@ -326,7 +326,7 @@ router.post('/admin/profile', async (req, res) => {
       });
     }
     
-    // Verificar se novo username já existe (se diferente do atual)
+
     if (username !== adminUser.username) {
       const existingUser = await User.findOne({ where: { username: username.trim() } });
       if (existingUser) {
@@ -337,7 +337,6 @@ router.post('/admin/profile', async (req, res) => {
       }
     }
     
-    // Atualizar dados
     await adminUser.update({
       username: username.trim(),
       email: email ? email.trim() : null,
@@ -359,13 +358,11 @@ router.post('/admin/profile', async (req, res) => {
   }
 });
 
-// ===== TESTAR CONEXÃO WHATSAPP =====
 router.post('/whatsapp/test', async (req, res) => {
   try {
     log('Testando conexão WhatsApp');
     
-    // Aqui você pode implementar um teste real da conexão WhatsApp
-    // Por enquanto, vamos simular um teste
+  
     
     const envConfig = readEnvConfig();
     const businessNumber = envConfig.WHATSAPP_BUSINESS_NUMBER;
@@ -428,7 +425,7 @@ router.get('/backup', async (req, res) => {
         admin: {
           username: adminUser ? adminUser.username : '',
           email: adminUser ? adminUser.email : ''
-          // Senha não incluída por segurança
+          
         }
       }
     };

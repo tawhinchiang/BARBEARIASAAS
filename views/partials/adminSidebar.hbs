@@ -1,0 +1,90 @@
+<div class="offcanvas offcanvas-start admin-offcanvas" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarLabel">
+  <!-- HEADER DA SIDEBAR -->
+  <div class="sidebar-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <i class="fa-solid fa-screwdriver-wrench"></i>
+      <h5 class="m-0" id="adminSidebarLabel">
+        {{#if sidebarTitle}}{{sidebarTitle}}{{else}}Administração{{/if}}
+      </h5>
+    </div>
+    <button type="button" class="btn btn-sm btn-link text-white p-0" data-bs-dismiss="offcanvas" aria-label="Fechar">
+      <i class="fa-solid fa-xmark fs-5"></i>
+    </button>
+  </div>
+
+  <!-- BUSCA (STICKY) -->
+  <div class="sidebar-search p-3 border-bottom">
+    <div class="input-group">
+      <input id="sidebarSearch" type="text" class="form-control" placeholder="Informe uma tela do menu..." aria-label="Buscar no menu">
+      <button class="btn btn-outline-secondary" type="button" id="sidebarSearchBtn" aria-label="Buscar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- CORPO SCROLLÁVEL -->
+  <div class="offcanvas-body p-0 d-flex flex-column">
+    <nav class="list-group list-group-flush admin-menu" id="adminMenuList">
+      <!-- Favoritos (implementação futura/localStorage) -->
+      <a class="list-group-item list-group-item-action" href="#" data-section="favoritos" data-label="Meus favoritos">
+        <i class="fa-solid fa-star me-2 text-warning"></i> Meus favoritos
+      </a>
+
+      <!-- ITENS COM ÍCONES (AJUSTE CONFORME SUAS ROTAS) -->
+      <a class="list-group-item list-group-item-action" href="/admin/dashboard" data-section="principal" data-label="Painel de controle">
+        <i class="fa-solid fa-gauge-high me-2"></i> Painel de controle
+      </a>
+
+      <a class="list-group-item list-group-item-action" href="/admin/appointments" data-section="agenda" data-label="Agendamentos">
+        <i class="fa-regular fa-calendar-check me-2"></i> Agendamentos
+      </a>
+
+      <a class="list-group-item list-group-item-action" href="/admin/reports" data-section="relatorios" data-label="Relatórios">
+        <i class="fa-solid fa-chart-line me-2"></i> Relatórios
+      </a>
+
+      <a class="list-group-item list-group-item-action" href="/admin/barbers" data-section="cadastros" data-label="Barbeiros">
+        <i class="fa-solid fa-user-tie me-2"></i> Barbeiros
+      </a>
+
+      <a class="list-group-item list-group-item-action" href="/admin/services" data-section="cadastros" data-label="Serviços">
+        <i class="fa-solid fa-scissors me-2"></i> Serviços
+      </a>
+
+      <a class="list-group-item list-group-item-action" href="/admin/config" data-section="configuracoes" data-label="Configurações">
+        <i class="fa-solid fa-gear me-2"></i> Configurações
+      </a>
+
+      <a class="list-group-item list-group-item-action" href="/" target="_blank" data-section="externo" data-label="Ver site">
+        <i class="fa-solid fa-up-right-from-square me-2"></i> Ver site
+      </a>
+
+      {{!-- Exemplo de menu diferente para barbeiro logado --}}
+      {{#if isBarber}}
+        <a class="list-group-item list-group-item-action" href="/barber/appointments" data-section="barbeiro" data-label="Minha Agenda">
+          <i class="fa-regular fa-calendar me-2"></i> Minha Agenda
+        </a>
+      {{/if}}
+    </nav>
+
+    <!-- RODAPÉ: STATUS + USUÁRIO -->
+    <div class="mt-auto border-top p-3 sidebar-footer">
+      <div id="whatsapp-status-toast" class="mb-3 d-none">
+        <i class="fab fa-whatsapp me-2"></i>
+        <span id="whatsapp-status-text">...</span>
+      </div>
+
+      <div class="d-flex align-items-center mb-2">
+        <div class="user-avatar me-2">
+          {{#if user.username}}{{substring user.username 0 1}}{{else}}A{{/if}}
+        </div>
+        <div>
+          <div class="fw-semibold">{{#if user.username}}{{user.username}}{{else}}Admin{{/if}}</div>
+          <small class="text-muted">Conectado</small>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+</div>

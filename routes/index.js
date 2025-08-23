@@ -17,20 +17,69 @@ const logError = (message, error) => {
 };
 
 // Página inicial - Agendamento para clientes
+// routes/index.js
+
 router.get('/', (req, res) => {
-  log('Acessando página inicial do cliente');
-  
-  const pageData = {
-    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA'),
-    barbershopName: process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA',
-    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png',
-    isClientPage: true
+  const parseList = (s) => (s || '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean);
+
+  const paymentMethods = parseList(process.env.PAYMENT_METHODS);
+  const whatsappNumber =
+    process.env.WHATSAPP_BUSINESS_NUMBER ||
+    process.env.WHATSAPP_NUMBER || ''; // fallback se existir
+
+  const instagramUrl =
+    process.env.INSTAGRAM_URL ||
+    (process.env.INSTAGRAM_USERNAME
+      ? `https://instagram.com/${process.env.INSTAGRAM_USERNAME}`
+      : '');
+
+  const frontendConfig = {
+    WHATSAPP_NUMBER: whatsappNumber,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || 'SEU_GOOGLE_CLIENT_ID_AQUI'
   };
-  
-  log('Renderizando página inicial', pageData);
-  
+
+  const pageData = {
+    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'Barbearia'),
+
+    // Cabeçalho
+    barbershopName: process.env.BARBERSHOP_NAME || '',
+    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png',
+    tagline: process.env.BARBERSHOP_TAGLINE || '',
+
+    // Detalhes do Estabelecimento
+    barbershopAddress: process.env.BARBERSHOP_ADDRESS || '',
+    barbershopHours: process.env.BARBERSHOP_HOURS || '',
+    barbershopMapsLink: process.env.BARBERSHOP_MAPS_LINK || '',
+
+    // Pagamentos
+    paymentMethods,
+
+    // Redes sociais
+    whatsappNumber,
+    instagramUrl,
+    facebookUrl: process.env.FACEBOOK_URL || '',
+
+    // Contato
+    contactPhone: process.env.CONTACT_PHONE || whatsappNumber || '',
+    contactEmail: process.env.CONTACT_EMAIL || '',
+
+    // Termos/Políticas
+    termsUrl: process.env.TERMS_URL || '',
+    cookiesUrl: process.env.COOKIES_URL || '',
+
+    // Flag de página do cliente (se usada no layout)
+    isClientPage: true,
+
+    // Config para o front (será injetado no layout)
+    frontendConfigJson: JSON.stringify(frontendConfig)
+  };
+
   res.render('index', pageData);
 });
+
 
 // Página de sucesso do agendamento
 router.get('/agendamento-confirmado', (req, res) => {
@@ -38,15 +87,15 @@ router.get('/agendamento-confirmado', (req, res) => {
   
   res.render('success', {
     title: 'Agendamento Confirmado',
-    barbershopName: process.env.BARBERSHOP_NAME || 'CHAMPIONS BARBEARIA'
+    barbershopName: process.env.BARBERSHOP_NAME
   });
 });
 
 // Rota de teste para login (remover se não necessária)
-router.get('/login', (req, res) => {
-  log('Acessando rota de login via cliente (redirecionando para admin)');
-  res.redirect('/admin/login');
-});
+// router.get('/login', (req, res) => {
+//   log('Acessando rota de login via cliente (redirecionando para admin)');
+//   res.redirect('/admin/login');
+// });
 
 // API para listar serviços disponíveis
 router.get('/api/services', async (req, res) => {
@@ -56,7 +105,7 @@ router.get('/api/services', async (req, res) => {
     const { ServiceType } = require('../models');
     const services = await ServiceType.findAll({
       where: { isActive: true },
-      attributes: ['id', 'name', 'price', 'duration'],    // ← inclui duration
+      attributes: ['id', 'name', 'price', 'duration','photo'],    // ← inclui duration
       order: [['name', 'ASC']]
     });
     
@@ -66,7 +115,8 @@ router.get('/api/services', async (req, res) => {
         id: s.id,
         name: s.name,
         price: s.price,
-        duration: s.duration    // ← loga também a duração
+        duration: s.duration,
+        photo: s.photo   // ← loga também a duração
       }))
     });
     
@@ -78,54 +128,11 @@ router.get('/api/services', async (req, res) => {
 });
 
 
-// API para listar barbeiros disponíveis - CORRIGIDA
-// router.get('/api/barbers', async (req, res) => {
-//   try {
-//     log('Buscando barbeiros disponíveis');
-//     // Dentro da rota GET /api/barbers
-  
-
-//     const { Barber } = require('../models');
-//     const barbers = await Barber.findAll({
-//       where: { isActive: true },
-//       order: [['name', 'ASC']]
-//     });
-//       log('Horários de trabalho:', {
-//       barbers: barbers.map(b => ({
-//         name: b.name,
-//         workingHours: b.workingHours
-//       }))
-//     });
-//     log('Barbeiros encontrados', { count: barbers.length, barbers: barbers.map(b => ({ id: b.id, name: b.name })) });
-    
-//     // Retornar no formato esperado pelo frontend
-//       res.json({ 
-//       count: barbers.length,
-//       barbers: barbers.map(b => ({
-//         id: b.id,
-//         name: b.name,
-//         photo: b.photo || null, // ESSENCIAL PARA EXIBIÇÃO
-//         specialties: b.specialties || 'Especialista',
-//         workingHours: b.workingHours,
-//         isActive: b.isActive
-//       }))
-//     });
-
-//     log('Barbeiros encontrados', {
-//       count: barbers.length,
-//       barbers: barbers.map(b => ({
-//         id: b.id,
-//         name: b.name,
-//         photo: b.photo
-//       }))
-//     });
+//rota para validar o código
 
 
-//   } catch (error) {
-//     logError('Erro ao buscar barbeiros', error);
-//     res.status(500).json({ error: 'Erro interno do servidor' });
-//   }
-// });
+
+
 
 // API para obter horários disponíveis - CORRIGIDA
 router.get('/api/available-times', async (req, res) => {
@@ -173,10 +180,10 @@ router.get('/api/available-times', async (req, res) => {
     // Definir horário de trabalho para o dia da semana
     const selectedDate = new Date(date + 'T00:00:00');
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
-    let workingHours = '09:00-19:40';
-
+    let workingPeriods = [];
+    let parsed = {};
     if (barber.workingHours) {
-      let parsed = {};
+      
       try {
         parsed = typeof barber.workingHours === 'string'
           ? JSON.parse(barber.workingHours)
@@ -187,37 +194,51 @@ router.get('/api/available-times', async (req, res) => {
       }
       log('workingHours recebido do banco', { raw: barber.workingHours });
 
-      if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
-  workingHours = parsed[dayOfWeek];
+if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
+  const dayConfig = parsed[dayOfWeek];
+  if (dayConfig.morning && dayConfig.morning !== 'closed') {
+    workingPeriods.push(dayConfig.morning);
+  }
+  if (dayConfig.afternoon && dayConfig.afternoon !== 'closed') {
+    workingPeriods.push(dayConfig.afternoon);
+  }
 }
     }
 
 
-    if (workingHours === 'closed') {
-      return res.json({ availableTimes: [] });
-    }
-
-    const [startTime, endTime] = workingHours.split('-');
-
-    // Buscar agendamentos existentes do barbeiro na data
+    if (workingPeriods.length === 0) {
+  return res.json({ availableTimes: [] });
+}
+ // Buscar agendamentos existentes do barbeiro na data
     const existingAppointments = await Appointment.findAll({
       where: { barberId, appointmentDate: date },
       attributes: ['appointmentTime', 'serviceDuration'] // ajuste o nome da coluna se necessário
     });
 
-    // Obter tempos bloqueados
+  // Obter tempos bloqueados
     const bookedTimes = getBlockedTimesWithDuration(existingAppointments);
+    // Gerar slots disponíveis a partir de todos os turnos (manhã e tarde)
+let availableTimes = [];
+workingPeriods.forEach(period => {
+  const [start, end] = period.split('-');
+  const slots = generateTimeSlots(start, end, bookedTimes, date, requiredDuration);
+  availableTimes = availableTimes.concat(slots);
+});
+
+   
+  
 
     // Gerar slots disponíveis
-    const availableTimes = generateTimeSlots(startTime, endTime, bookedTimes, date, requiredDuration);
 
-    return res.json({
-      availableTimes,
-      date,
-      barberId,
-      barberName: barber.name,
-      workingHours
-    });
+
+return res.json({
+  availableTimes,
+  date,
+  barberId,
+  barberName: barber.name,
+  workingHours: parsed[dayOfWeek] || {}
+});
+
 
   } catch (error) {
     logError('Erro ao buscar horários', error);
@@ -231,21 +252,21 @@ router.get('/api/available-times', async (req, res) => {
 function getBlockedTimesWithDuration(appointments) {
   const blocked = new Set();
 
-  appointments.forEach(({ appointmentTime, serviceDuration }) => {
-    const start = timeToMinutes(appointmentTime.slice(0, 5));
-    const duration = parseInt(serviceDuration, 10) || 20;
-    const end = start + duration;
+    appointments.forEach(({ appointmentTime, serviceDuration }) => {
+      const start = timeToMinutes(appointmentTime.slice(0, 5));
+      const duration = parseInt(serviceDuration, 10) || 20;
+      const end = start + duration;
 
-    // Marca cada slot de 10 minutos dentro do intervalo como bloqueado
-   for (let t = start; t < end; t += 10) {
-  blocked.add(minutesToTime(t));
-} 
-//ou 
-// for (let t = start; t < end; t += 10) {
-//   blocked.add(minutesToTime(t));
-// }
+      // Marca cada slot de 10 minutos dentro do intervalo como bloqueado
+        for (let t = start; t < end; t += 10) {
+        blocked.add(minutesToTime(t));
+        } 
+        //ou 
+        // for (let t = start; t < end; t += 10) {
+        //   blocked.add(minutesToTime(t));
+        // }
 
-  });
+    });
 
   return Array.from(blocked);
 }

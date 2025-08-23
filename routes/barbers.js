@@ -38,14 +38,14 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: function (req, file, cb) {
     const allowedTypes = /jpeg|jpg|png|gif/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -66,7 +66,7 @@ router.use((req, res, next) => {
 router.get('/', async (req, res) => {
   try {
     log('Carregando página de barbeiros');
-    
+
     const barbers = await Barber.findAll({
       order: [['name', 'ASC']],
       include: [
@@ -83,7 +83,7 @@ router.get('/', async (req, res) => {
         }
       ]
     });
-    
+
     // Calcular estatísticas para cada barbeiro
     const barbersWithStats = barbers.map(barber => {
       const appointmentsCount = barber.appointments ? barber.appointments.length : 0;
@@ -92,13 +92,14 @@ router.get('/', async (req, res) => {
         appointmentsThisMonth: appointmentsCount
       };
     });
-    
+
     log(`${barbers.length} barbeiros carregados`);
-    const weekdays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+    const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     res.render('admin/barbers', {
-      
+
       title: 'Gerenciar Barbeiros',
+      pageTitle: 'Gerenciar Barbeiros',
       barbers: barbersWithStats,
       layout: 'admin'
     });
@@ -117,9 +118,9 @@ router.get('/', async (req, res) => {
 router.post('/create', upload.single('photo'), async (req, res) => {
   try {
     log('Criando novo barbeiro', req.body);
-    
+
     const { name, phone, email, cpf, specialties, workingHours, isActive } = req.body;
-    
+
     // Validações
     if (!name || !phone || !cpf) {
       return res.status(400).json({
@@ -127,7 +128,7 @@ router.post('/create', upload.single('photo'), async (req, res) => {
         error: 'Nome, telefone e CPF são obrigatórios'
       });
     }
-    
+
     // Verificar se CPF já existe
     let existingBarber = null;
     try {
@@ -147,40 +148,28 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       });
     }
 
-    
+
     const barberData = {
       name: name.trim(),
       phone: phone.trim(),
       email: email ? email.trim() : null,
       cpf: cpf.trim(),
       specialties: specialties ? specialties.trim() : null,
-      workingHours: (() => {
-  if (!workingHours || typeof workingHours !== 'object') return null;
-
-  return {
-    monday: workingHours.monday || 'closed',
-    tuesday: workingHours.tuesday || 'closed',
-    wednesday: workingHours.wednesday || 'closed',
-    thursday: workingHours.thursday || 'closed',
-    friday: workingHours.friday || 'closed',
-    saturday: workingHours.saturday || 'closed',
-    sunday: 'closed'
-  };
-})(),
-     isActive: isActive === 'true' || isActive === true || isActive === 'on',
+      workingHours: typeof workingHours === 'object' ? workingHours : barber.workingHours,
+      isActive: isActive === 'true' || isActive === true || isActive === 'on',
       photo: req.file ? `/uploads/barbers/${req.file.filename}` : null
     };
-    
+
     const barber = await Barber.create(barberData);
-   
-    log('Barbeiro criado com sucesso', { id: barber.id, name: barber.name, photo:barber.photo});
+
+    log('Barbeiro criado com sucesso', { id: barber.id, name: barber.name, photo: barber.photo });
     console.log('Barbeiro criado:', barber.toJSON()); // <-- Adicione isso
     res.json({
       success: true,
       message: 'Barbeiro criado com sucesso',
       barber: barber
     });
-     
+
   } catch (error) {
     logError('Erro ao criar barbeiro', error);
     res.status(500).json({
@@ -195,7 +184,7 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     log(`Buscando barbeiro ID: ${id}`);
-    
+
     const barber = await Barber.findByPk(id, {
       include: [
         {
@@ -209,16 +198,16 @@ router.get('/:id', async (req, res) => {
         }
       ]
     });
-    
+
     if (!barber) {
       return res.status(404).json({
         success: false,
         error: 'Barbeiro não encontrado'
       });
     }
-    
+
     log('Barbeiro encontrado', { id: barber.id, name: barber.name });
-    
+
     res.json({
       success: true,
       barber: barber
@@ -237,7 +226,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
     const { id } = req.params;
     log(`Atualizando barbeiro ID: ${id}`, req.body);
-    
+
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
@@ -245,13 +234,13 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
         error: 'Barbeiro não encontrado'
       });
     }
-    
+
     const { name, phone, email, cpf, specialties, workingHours, isActive } = req.body;
-    
+
     // Verificar se CPF já existe em outro barbeiro
     if (cpf && cpf !== barber.cpf) {
-      const existingBarber = await Barber.findOne({ 
-        where: { 
+      const existingBarber = await Barber.findOne({
+        where: {
           cpf,
           id: { [Op.ne]: id }
         }
@@ -263,29 +252,17 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
         });
       }
     }
-    
+
     const updateData = {
       name: name ? name.trim() : barber.name,
       phone: phone ? phone.trim() : barber.phone,
       email: email ? email.trim() : barber.email,
       cpf: cpf ? cpf.trim() : barber.cpf,
       specialties: specialties ? specialties.trim() : barber.specialties,
-      workingHours: (() => {
-      if (!workingHours || typeof workingHours !== 'object') return null;
-
-      return {
-        monday: workingHours.monday || 'closed',
-        tuesday: workingHours.tuesday || 'closed',
-        wednesday: workingHours.wednesday || 'closed',
-        thursday: workingHours.thursday || 'closed',
-        friday: workingHours.friday || 'closed',
-        saturday: workingHours.saturday || 'closed',
-        sunday: 'closed'
-      };
-    })(),
+      workingHours: typeof workingHours === 'object' ? workingHours : null,
       isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : barber.isActive
     };
-    
+
     // Se nova foto foi enviada
     if (req.file) {
       // Remover foto antiga se existir
@@ -297,11 +274,11 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       }
       updateData.photo = `/uploads/barbers/${req.file.filename}`;
     }
-    
+
     await barber.update(updateData);
-    
+
     log('Barbeiro atualizado com sucesso', { id: barber.id, name: barber.name });
-    
+
     res.json({
       success: true,
       message: 'Barbeiro atualizado com sucesso',
@@ -321,7 +298,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     log(`Deletando barbeiro ID: ${id}`);
-    
+
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
@@ -329,7 +306,7 @@ router.delete('/:id', async (req, res) => {
         error: 'Barbeiro não encontrado'
       });
     }
-    
+
     // Verificar se tem agendamentos futuros
     const futureAppointments = await Appointment.count({
       where: {
@@ -342,14 +319,14 @@ router.delete('/:id', async (req, res) => {
         }
       }
     });
-    
+
     if (futureAppointments > 0) {
       return res.status(400).json({
         success: false,
         error: `Não é possível deletar. Barbeiro tem ${futureAppointments} agendamento(s) futuro(s).`
       });
     }
-    
+
     // Remover foto se existir
     if (barber.photo) {
       const photoPath = path.join(__dirname, '../public', barber.photo);
@@ -357,11 +334,11 @@ router.delete('/:id', async (req, res) => {
         fs.unlinkSync(photoPath);
       }
     }
-    
+
     await barber.destroy();
-    
+
     log('Barbeiro deletado com sucesso', { id, name: barber.name });
-    
+
     res.json({
       success: true,
       message: 'Barbeiro deletado com sucesso'
@@ -380,9 +357,9 @@ router.get('/:id/report', async (req, res) => {
   try {
     const { id } = req.params;
     const { startDate, endDate } = req.query;
-    
+
     log(`Gerando relatório para barbeiro ID: ${id}`, { startDate, endDate });
-    
+
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
@@ -390,11 +367,11 @@ router.get('/:id/report', async (req, res) => {
         error: 'Barbeiro não encontrado'
       });
     }
-    
+
     // Definir período (padrão: último mês)
     const end = endDate ? new Date(endDate) : new Date();
     const start = startDate ? new Date(startDate) : new Date(end.getFullYear(), end.getMonth() - 1, 1);
-    
+
     const appointments = await Appointment.findAll({
       where: { barberId: id, appointmentDate: { [Op.between]: [start, end] } },
       include: [
@@ -403,7 +380,7 @@ router.get('/:id/report', async (req, res) => {
       ],
       order: [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC']]
     });
-    
+
     // Calcular estatísticas
     const totalAppointments = appointments.length;
     const completedAppointments = appointments.filter(apt => apt.status === 'completed').length;
@@ -411,7 +388,7 @@ router.get('/:id/report', async (req, res) => {
     const totalRevenue = appointments
       .filter(apt => apt.status === 'completed')
       .reduce((sum, apt) => sum + parseFloat(apt.totalPrice || 0), 0);
-    
+
     // Agrupar por serviço
     const serviceStats = {};
     appointments.forEach(apt => {
@@ -426,7 +403,7 @@ router.get('/:id/report', async (req, res) => {
         }
       }
     });
-    
+
     const report = {
       barber: {
         id: barber.id,
@@ -457,15 +434,15 @@ router.get('/:id/report', async (req, res) => {
         status: apt.status,
         price: apt.totalPrice
       }))
-      
+
     };
-    
-    log('Relatório gerado com sucesso', { 
-      barberId: id, 
-      totalAppointments, 
-      totalRevenue 
+
+    log('Relatório gerado com sucesso', {
+      barberId: id,
+      totalAppointments,
+      totalRevenue
     });
-    
+
     res.json({
       success: true,
       report: report
@@ -484,7 +461,7 @@ router.patch('/:id/toggle', async (req, res) => {
   try {
     const { id } = req.params;
     log(`Alterando status do barbeiro ID: ${id}`);
-    
+
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
@@ -492,14 +469,14 @@ router.patch('/:id/toggle', async (req, res) => {
         error: 'Barbeiro não encontrado'
       });
     }
-    
+
     await barber.update({ isActive: !barber.isActive });
-    
-    log(`Status alterado para ${barber.isActive ? 'ativo' : 'inativo'}`, { 
-      id: barber.id, 
-      name: barber.name 
+
+    log(`Status alterado para ${barber.isActive ? 'ativo' : 'inativo'}`, {
+      id: barber.id,
+      name: barber.name
     });
-    
+
     res.json({
       success: true,
       message: `Barbeiro ${barber.isActive ? 'ativado' : 'desativado'} com sucesso`,

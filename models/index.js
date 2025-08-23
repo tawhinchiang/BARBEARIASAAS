@@ -5,6 +5,7 @@ const Barber = require('./Barber');
 const ServiceType = require('./ServiceType');
 const Appointment = require('./Appointment');
 const SystemConfig = require('./SystemConfig');
+const VerificationCode = require('./VerificationCode');
 // Definir associações entre os modelos
 Client.hasMany(Appointment, { foreignKey: 'clientId', as: 'appointments' });
 Appointment.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
@@ -39,6 +40,7 @@ module.exports = {
   ServiceType,
   Appointment,
   SystemConfig,
-  syncDatabase
+  syncDatabase,
+  VerificationCode
 };
 

@@ -204,7 +204,10 @@ async function generatePDF(appointments, reportInfo, filename) {
 
 
 
-
+function escapeCSV(text) {
+  if (typeof text !== 'string') text = String(text || '');
+  return `"${text.replace(/"/g, '""')}"`; // escapa aspas duplas
+}
 // Gerar relatório em CSV
 function generateCSV(appointments, filename) {
   try {
@@ -219,24 +222,24 @@ function generateCSV(appointments, filename) {
       'Status', 'Valor', 'WhatsApp Enviado', 'Criado em', 'Status Code', 'Barbeiro ID'
     ];
 
-    const csvData = appointments.map(apt => [
-      new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
-      apt.appointmentTime,
-      `"${apt.client.firstName} ${apt.client.lastName}"`,
-      apt.client.phone,
-      `"${apt.barber.name}"`,
-      `"${apt.serviceType.name}"`,
-      getStatusText(apt.status),
-      parseFloat(apt.totalPrice || 0).toFixed(2),
-      apt.whatsappSent ? 'Sim' : 'Não',
-      new Date(apt.createdAt).toLocaleString('pt-BR'),
-      apt.status,
-      apt.barber.id
-    ]);
+ const csvData = appointments.map(apt => [
+  new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
+  apt.appointmentTime || '',
+  escapeCSV(`${apt.client?.firstName || ''} ${apt.client?.lastName || ''}`),
+  escapeCSV(apt.client?.phone || ''),
+  escapeCSV(apt.barber?.name || ''),
+  escapeCSV(apt.serviceType?.name || ''),
+  getStatusText(apt.status),
+  parseFloat(apt.totalPrice || 0).toFixed(2),
+  apt.whatsappSent ? 'Sim' : 'Não',
+  new Date(apt.createdAt).toLocaleString('pt-BR'),
+  apt.status || '',
+  apt.barber?.id || ''
+]);
 
     const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.join(','))
+     headers.join(';'),                   // <-- agora usa ponto e vírgula
+      ...csvData.map(row => row.join(';')) 
     ].join('\n');
 
     fs.writeFileSync(filePath, csvContent, 'utf8');
@@ -295,17 +298,18 @@ function gerarResumoDoRelatorio(appointments, startDate, endDate, barberId) {
 
 
 // Função auxiliar para traduzir status
+// Função auxiliar para traduzir status
 function getStatusText(status) {
   const statusMap = {
-    'scheduled': 'Agendado',
+    'pending': 'Pendente',
     'confirmed': 'Confirmado',
+    'in_progress': 'Em atendimento',
     'completed': 'Concluído',
     'cancelled': 'Cancelado',
     'no_show': 'Não compareceu'
   };
   return statusMap[status] || status;
 }
-
 module.exports = {
   generatePDF,
   generateCSV,
