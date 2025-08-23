@@ -4,7 +4,7 @@
 <div class="modal fade" id="serviceModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="serviceForm">
+      <form id="serviceForm" enctype="multipart/form-data">
         <div class="modal-header">
           <h5 class="modal-title" id="serviceModalTitle">Novo Serviço</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -45,6 +45,14 @@
             <input class="form-check-input" type="checkbox" id="servicePromo" name="isPromo">
             <label class="form-check-label" for="servicePromo">Promoção ativa</label>
           </div>
+          <div class="mb-3">
+            <label for="servicePhoto" class="form-label">Foto do Serviço</label>
+            <input type="file" class="form-control" id="servicePhoto" name="photo" accept="image/*">
+          </div>
+          <!-- opcional: preview -->
+        <div id="photoPreview" class="mt-2 text-center" style="display:none;">
+          <img src="" alt="Pré-visualização" class="img-fluid rounded shadow" style="max-height:150px;">
+        </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

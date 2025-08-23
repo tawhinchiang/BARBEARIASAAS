@@ -1,5 +1,12 @@
 <div class="col" data-service-id="{{id}}">
   <div class="card h-100 shadow-sm admin-card">
+    
+    <img 
+      src="{{#if photo}}{{photo}}{{else}}/images/logo.jpg{{/if}}" 
+      alt="{{name}}" 
+      class="card-img-top" 
+      style="height: 160px; object-fit: cover; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+
     <div class="card-body">
       <h5 class="card-title">{{name}}</h5>
       <p class="text-muted small">{{description}}</p>
@@ -24,7 +31,7 @@
         <strong class="text-success">R$ {{revenueThisMonth}}</strong>
       </div>
     </div>
-
+  
     <div class="card-footer d-flex justify-content-between flex-wrap gap-2 bg-transparent border-top">
       <button class="btn btn-sm btn-outline-primary" onclick="editService({{id}})">
         <i class="fas fa-edit me-1"></i> Editar

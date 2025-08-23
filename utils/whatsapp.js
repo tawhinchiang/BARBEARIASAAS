@@ -3,50 +3,78 @@ const qrcode = require('qrcode-terminal');
 const SafeLocalAuth = require('../utils/CustomLocalAuth');
 const { formatBrazilianPhoneForWhatsApp } = require('./smartphoneformatter');
 const { generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
+const deleteSession = require('../utils/deleteSession');
+const { exec } = require('child_process');
+const fs = require('fs');
+const puppeteer = require('puppeteer');
+const chromiumPath = puppeteer.executablePath();
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
-  send: 10000,       // 10s para envio
-  ack: 20000,        // 20s para ACK
-  retryBase: 1000,   // 1s, 2s, 3s... progressivo
-  debugDelay: 10000  // 10s no modo debug
+  send: 10000,
+  ack: 45000,
+  retryBase: 1000,
+  debugDelay: 10000
 };
+function ackLabel(ack) {
+  return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[ack] ?? String(ack);
+}
+
 let client = null;
 let isReady = false;
 let latestQrCode = null;
+let initializing = false; // trava para não inicializar múltiplas vezes
 
-// Função de timeout para evitar travamentos
-function timeout(ms) {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('⏱ Timeout ao inicializar WhatsApp')), ms);
-  });
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Inicializar cliente WhatsApp
 async function initializeWhatsApp() {
+  if (initializing || client) {
+    console.log('[WHATSAPP] Ignorado: já existe uma instância ativa ou em inicialização');
+    return;
+  }
+
+  initializing = true;
   try {
     console.log('[WHATSAPP] Criando instância do cliente...');
+  
+   
 
-    client = new whatsapp.Client({
-      authStrategy: new SafeLocalAuth({
-        clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
-      }),
-      puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu'
-        ]
-      }
-    });
+client = new whatsapp.Client({
+  authStrategy: new SafeLocalAuth({
+    clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
+  }),
+puppeteer: {
+headless: 'new',
+protocolTimeout: 120000,
+ timeout: 60000,
+  executablePath: chromiumPath,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-gpu',
+    '--disable-extensions',
+    '--disable-software-rasterizer',
+    '--lang=pt-BR',
+    '--mute-audio',
+    '--window-size=800,600'
+  ]
+},
+ qrTimeoutMs: 0
+});
+
 
     console.log('[WHATSAPP] Registrando eventos...');
-
+      client.on('loading_screen', (percent, message) => {
+        console.log(`[WA] loading_screen: ${percent}% - ${message}`);
+      });
+      client.on('change_state', (state) => {
+        console.log(`[WA] change_state: ${state}`);
+      });
     client.on('qr', (qr) => {
       latestQrCode = qr;
       console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
@@ -60,56 +88,128 @@ async function initializeWhatsApp() {
     client.on('ready', () => {
       console.log('🚀 WhatsApp conectado e pronto para uso!');
       isReady = true;
+       latestQrCode = null;
+      initializing = false; // libera lock só quando estiver pronto
     });
 
-    client.on('disconnected', (reason) => {
-    console.log('❌ WhatsApp desconectado:', reason);
-    isReady = false;
-    console.log('🔄 Tentando reinicializar em 5s...');
-    setTimeout(() => initializeWhatsApp(), 5000);
-  });
+    // Usar ONCE para não acumular listeners
+    client.once('disconnected', async (reason) => {
 
-    client.on('auth_failure', (msg) => {
-      console.error('❌ Falha na autenticação WhatsApp:', msg);
+      console.log('❌ WhatsApp desconectado:', reason);
+      isReady = false;
+      console.log('🔄 Reinicializando em 5s...');
+
+      await disconnectWhatsApp({ keepSession: true });
+
+      setTimeout(async () => {
+        await initializeWhatsApp();
+      }, 5000);
     });
+
+   client.on('auth_failure', async (msg) => {
+  console.error('❌ Falha na autenticação WhatsApp:', msg);
+  try {
+    const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+    await deleteSession(sessionId);
+    console.log('🧹 Sessão WhatsApp apagada após auth_failure');
+  } catch (e) {
+    console.error('⚠️ Erro ao limpar sessão após auth_failure:', e.message);
+  }
+try { await disconnectWhatsApp({ keepSession: false }); } catch {}
+  setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
+});
 
     console.log('🔄 Inicializando WhatsApp...');
-    client.initialize();
+    await client.initialize();
     console.log('✅ Inicialização do WhatsApp finalizada.');
 
   } catch (error) {
-    console.error('❌ Erro ao inicializar WhatsApp:', error);
+  +  console.error('❌ Erro ao inicializar WhatsApp:', error);
+ try { await client?.destroy(); } catch (_) {}
+ client = null;
+ isReady = false;
+ initializing = false;
+ // Backoff curto para context destroyed / navegação
+ setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
+  }
+}
+// Aguarda confirmação de entrega (ACK) da mensagem específica.
+// ack: 0=pending, 1=servidor, 2=entregue no aparelho, 3=lido, 4=áudio reproduzido
+function waitForAck(msg, { minAck = 1, timeoutMs = TIMEOUTS.ack } = {}) {
+  return new Promise((resolve) => {
+    let done = false;
+
+    const timer = setTimeout(() => {
+      if (!done) {
+        done = true;
+        try { client.removeListener('message_ack', onAck); } catch (_) {}
+        resolve({ delivered: false, ack: 0, reason: 'timeout' });
+      }
+    }, timeoutMs);
+
+    const onAck = (ackMsg, ack) => {
+      try {
+        // Garante que é o mesmo messageId
+        const same = ackMsg?.id?.id && msg?.id?.id && (ackMsg.id.id === msg.id.id);
+        if (same && ack >= minAck && !done) {
+          done = true;
+          clearTimeout(timer);
+          client.removeListener('message_ack', onAck);
+          resolve({ delivered: true, ack });
+        }
+      } catch (_) { /* ignora */ }
+    };
+
+    client.on('message_ack', onAck);
+  });
+}
+
+// Desconectar WhatsApp corretamente
+async function disconnectWhatsApp(options = { keepSession: false }) {
+  try {
+    if (client) {
+      console.log('🔌 Desconectando WhatsApp...');
+           try {
+       const browser = client.pupBrowser;
+        const proc = browser && browser.process ? browser.process() : null;
+        if (proc?.pid) {
+         console.log(`🧹 Encerrando navegador PID=${proc.pid}...`);
+         proc.kill('SIGKILL');
+    }
+      } catch (_) {}
+      await client.destroy();
+      
+      await delay(2000);
+      client = null;
+      isReady = false;
+
+
+      // Força matar processos Chrome/Chromium que ficarem abertos
+      exec("pkill -f '(chrome|chromium)'", (err) => {
+        if (err) {
+          console.error('⚠️ Erro ao matar processos chrome:', err.message);
+        } else {
+          console.log('🧹 Processos Chrome/Chromium encerrados.');
+        }
+      });
+ if (!options.keepSession) {
+    const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+        await deleteSession(sessionId);
+        console.log('📱 Sessão WhatsApp removida (keepSession = false)');
+    } else {
+      console.log('ℹ️ Sessão preservada (keepSession = true)');
+     }
+    }
+  } catch (error) {
+    console.error('❌ Erro ao desconectar WhatsApp:', error);
   }
 }
 
-/**
- * Função auxiliar para aguardar um tempo específico
- */
-function delay(ms) {
-
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-async function sendMessageWithTimeout(numberId, message, timeoutMs = 10000) {
-  return Promise.race([
-    client.sendMessage(numberId, message),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("⏱ Timeout no envio da mensagem")), timeoutMs)
-    )
-  ]);
-}
-/**
- * Verifica se o cliente está realmente pronto para envio
- */
+// === Funções de envio === //
 async function ensureClientReady() {
-  if (!client) {
-    throw new Error('Cliente WhatsApp não inicializado');
-  }
-  
-  if (!isReady) {
-    throw new Error('Cliente WhatsApp não está pronto');
-  }
-  
-  // Verificação adicional do estado interno
+  if (!client) throw new Error('Cliente WhatsApp não inicializado');
+  if (!isReady) throw new Error('Cliente WhatsApp não está pronto');
+
   try {
     const state = await client.getState();
     if (state !== 'CONNECTED') {
@@ -118,23 +218,36 @@ async function ensureClientReady() {
   } catch (error) {
     throw new Error(`Erro ao verificar estado do cliente: ${error.message}`);
   }
-  
   return true;
 }
 
-/**
- * Envio normal e rápido (sem delay fixo)
- */
+async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.send) {
+ return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {      reject(new Error('⏱ Timeout no envio da mensagem'));    }, timeoutMs);  client.sendMessage(numberId, message)
+     .then(res => {
+       clearTimeout(timer);
+       resolve(res);
+      })     .catch(err => {
+       clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   console.log(`[WHATSAPP] 🚀 Enviando para: ${phone}`);
-
   await ensureClientReady();
-
+  await waitWhatsAppReady(30000);
+  // 1) Base format + variações (inclui versões com '+' para E.164)
   const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
-  const variations = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))];
+  const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
+
+  // Inclui a mesma variação com e sem '+' e remove duplicadas
+  const variations = Array.from(new Set(
+    rawVars.flatMap(v => (v.startsWith('+') ? [v, v.slice(1)] : [v, `+${v}`]))
+  ));
 
   for (const variation of variations) {
-    if (!variation) continue;
     console.log(`[WHATSAPP] 🔍 Testando variação: ${variation}`);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -142,21 +255,24 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         const numberId = await client.getNumberId(variation);
         if (!numberId) throw new Error(`Número inválido no WhatsApp: ${variation}`);
 
+        // 2) Envia com timeout
         const msg = await sendMessageWithTimeout(numberId._serialized, message, TIMEOUTS.send);
-        console.log(`[WHATSAPP] ✅ Envio aceito pelo WhatsApp (tentativa ${attempt})`);
+        console.log(`[WHATSAPP] ✅ Envio ACEITO (tentativa ${attempt})`);
 
-        // --- Marca como sucesso IMEDIATAMENTE ---
-        // O ACK fica só como log
-        client.on("message_ack", (ackMsg, ack) => {
-          if (ackMsg.id.id === msg.id.id) {
-            console.log(`[WHATSAPP] 📬 ACK recebido (${ack}) para ${variation}`);
-          }
-        });
+        // 3) Aguarda ACK ≥ 2 (entregue no aparelho)
+        const ackInfo = await waitForAck(msg, { minAck: 1, timeoutMs: TIMEOUTS.ack });
 
-        return true; // considera sucesso aqui
-
+        if (ackInfo.delivered) {
+          console.log(`[WHATSAPP] 📬 ENTREGUE (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}`);
+          // Retorno "rico" (retrocompatível: será truthy onde esperam boolean)
+          return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
+        } else {
+  console.warn(`[WHATSAPP] ⚠️ Enviado, mas sem confirmação (timeout/ack=0).`);
+  return { ok: true, delivered: false, ack: 0, used: variation };
+   // Considere retorno "ok" (aceito pelo servidor), apenas sem confirmação:+    return { ok: true, delivered: false, ack: 0, used: variation };
+        }
       } catch (err) {
-        console.error(`[WHATSAPP] ❌ Falha com ${variation} (tentativa ${attempt}): ${err.message}`);
+        console.error(`[WHATSAPP] ❌ Falha ${variation} (tentativa ${attempt}): ${err.message}`);
         if (attempt < maxRetries) {
           const waitTime = attempt * TIMEOUTS.retryBase;
           console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
@@ -167,31 +283,34 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   }
 
   console.error(`[WHATSAPP] 💥 Todas as variações falharam para ${phone}`);
-  return false;
+  return { ok: false, delivered: false };
 }
 
-
-/**
- * Versão debug (testa variações do número, com delay maior)
- */
 async function sendWhatsAppMessageDebug(phone, message) {
   console.log(`[DEBUG] 🔬 Debug ativado para: ${phone}`);
-
   try {
     await ensureClientReady();
-    
-    const variations = generatePhoneVariations(cleanPhone(phone));
-    if (DEBUG) console.log(`[DEBUG] Variações geradas:`, variations);
+    await waitWhatsAppReady(30000);
+    const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
+    const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
+    const variations = Array.from(new Set(
+      rawVars.flatMap(v => (v.startsWith('+') ? [v, v.slice(1)] : [v, `+${v}`]))
+    ));
 
+    if (DEBUG) console.log(`[DEBUG] Variações geradas:`, variations);
 
     for (const variation of variations) {
       try {
         const contactId = await client.getNumberId(variation);
         if (contactId) {
-          await sendMessageWithTimeout(contactId._serialized, message);
-          console.log(`[DEBUG] ✅ Sucesso com ${variation}`);
-          await delay(10000); // mais longo no debug
-          return true;
+          const msg = await sendMessageWithTimeout(contactId._serialized, message, TIMEOUTS.send);
+          const ackInfo = await waitForAck(msg, { minAck: 2, timeoutMs: TIMEOUTS.ack });
+          if (ackInfo.delivered) {
+            console.log(`[DEBUG] ✅ ENTREGUE (ack=${ackInfo.ack}) com ${variation}`);
+            return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
+          } else {
+            console.warn(`[DEBUG] ⚠️ Sem ACK de entrega (ack=${ackInfo.ack}) com ${variation}`);
+          }
         }
       } catch (err) {
         console.log(`[DEBUG] ❌ Falhou com ${variation}: ${err.message}`);
@@ -199,15 +318,15 @@ async function sendWhatsAppMessageDebug(phone, message) {
     }
 
     console.log(`[DEBUG] 💥 Nenhuma variação funcionou`);
-    return false;
+    return { ok: false, delivered: false };
   } catch (err) {
     console.error(`[DEBUG] 💥 Erro geral:`, err.message);
-    return false;
+    return { ok: false, delivered: false };
   }
 }
 
 
-// Verificar status da conexão
+
 function getWhatsAppStatus() {
   return {
     isConnected: isReady,
@@ -232,39 +351,26 @@ async function waitWhatsAppReady(timeoutMs = 20000) {
   });
 }
 
-// Desconectar WhatsApp
-const deleteSession = require('../utils/deleteSession');
-
-async function disconnectWhatsApp() {
-  try {
-    if (client) {
-      console.log('🔌 Desconectando WhatsApp...');
-      await client.destroy();
-      await delay(3000);
-      client = null;
-      isReady = false;
-      latestQrCode = null;
-      const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
-      await deleteSession(sessionId);
-      console.log('📱 WhatsApp desconectado e sessão removida com segurança');
-    }
-  } catch (error) {
-    console.error('❌ Erro ao desconectar WhatsApp:', error);
-  }
-}
-
 function getLastQRCode() {
   return latestQrCode;
 }
+const isPM2 = !!process.env.pm_id;
+['SIGINT','SIGTERM','SIGHUP'].forEach(sig => {
+  process.on(sig, async () => {
+    console.log(`[WHATSAPP] Sinal ${sig} recebido, encerrando sessão com keepSession=true`);
+    try { await disconnectWhatsApp({ keepSession: true }); } catch {}
+    // Sob PM2, NÃO finalize manualmente; deixe o PM2 orquestrar.
+    if (!isPM2) process.exit(0);
+  });
+});
 
 module.exports = {
   initializeWhatsApp,
   sendWhatsAppMessage,
-  sendWhatsAppMessageDebug, // Função específica para debugging
+  sendWhatsAppMessageDebug,
   getWhatsAppStatus,
   getLastQRCode,
   disconnectWhatsApp,
-  isWhatsAppReady,      
+  isWhatsAppReady,
   waitWhatsAppReady
 };
-

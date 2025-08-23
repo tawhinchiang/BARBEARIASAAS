@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-
+const multer = require('multer');
+const upload = multer();
 const { Appointment, Client, Barber, ServiceType } = require('../models');
 const { isAuthenticatedApi } = require('../middleware/auth');
 

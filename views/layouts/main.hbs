@@ -25,14 +25,16 @@
     
     <!-- CSS Customizado -->
     <link rel="stylesheet" href="/css/style.css">
-    
+    {{#if isHistoryPage}}
+    <script src="/js/history.js"></script>
+    {{/if}}
     <!-- Meta tags para SEO -->
     <meta name="description" content="Sistema de agendamento para barbearias - Agende seu corte online">
     <meta name="keywords" content="barbearia, agendamento, corte de cabelo, barba">
     <meta name="author" content="BarberShop">
     
     <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/images/logo.png">
+  <link rel="icon" type="image/jpg" href="{{barbershopLogo}}">
     
     <!-- Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -45,7 +47,12 @@
     
     <!-- Font Awesome JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    
+    {{#if frontendConfigJson}}
+  <script>
+    // Disponível para todos os scripts da página
+    window.BARBERSHOP_CONFIG = {{{frontendConfigJson}}};
+  </script>
+{{/if}}
     <!-- Scripts customizados -->
     {{#if isClientPage}}
     <script src="/js/app.js"></script>
@@ -74,6 +81,27 @@
 <script src="/js/ui.js"></script>
 
 </body>
+<!-- 🔹 Barra de Navegação Inferior -->
+<nav class="navbar navbar-dark bg-dark fixed-bottom border-top border-secondary">
+  <div class="container d-flex justify-content-around">
+    <a href="/" class="nav-link text-light text-center">
+      <i class="fas fa-home fa-lg"></i><br>
+      <small>Início</small>
+    </a>
+    <a href="/history" class="nav-link text-light text-center">
+      <i class="fas fa-calendar-alt fa-lg"></i><br>
+      <small>Historico</small>
+    </a>
+    {{!-- <a href="#" class="nav-link text-light text-center">
+      <i class="fas fa-star fa-lg"></i><br>
+      <small>Favoritos</small>
+    </a> --}}
+  </div>
+</nav>
+
+<!-- Espaço extra para não esconder o conteúdo atrás da barra -->
+<div style="margin-bottom: 80px;"></div>
+
 </html>
 
 <style>

@@ -9,7 +9,7 @@ const {
   getLastQRCode,
   sendWhatsAppMessage            
 } = require('../utils/whatsapp');
-const { isAuthenticated } = require('../middleware/auth');
+const { isAuthenticated, isAuthenticatedApi } = require('../middleware/auth');
 const router = express.Router();
 const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
@@ -238,57 +238,80 @@ router.get('/dashboard', async (req, res) => {
       }
     });
 
-    const topBarbersRaw = await Appointment.findAll({
-      attributes: [
-        'barberId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'appointmentCount'],
-        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-      ],
-      where: {
-        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: { [Op.in]: ['completed'] }
-      },
-      include: [{ model: Barber, as: 'barber', attributes: ['name'] }],
-      group: ['barberId', 'barber.id'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('barberId')), 'DESC']],
-      limit: 5,
-      raw: true,
-      nest: true
-    });
+    // Bloco Novo e Corrigido
+// Substitua pelo Bloco Novo e Mais Robusto
+const topBarbersRaw = await Appointment.findAll({
+  attributes: [
+    [require('sequelize').col('barber.id'), 'barberId'], // Seleciona o ID do barbeiro diretamente
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+    status: { [Op.in]: ['completed'] }
+  },
+  include: [{
+    model: Barber,
+    as: 'barber',
+    attributes: ['name'] // Apenas o nome é necessário para o resultado
+  }],
+  group: [
+    require('sequelize').col('barber.id'), // Agrupa pelo ID e nome do barbeiro
+    require('sequelize').col('barber.name')
+  ],
+  order: [
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+  ],
+  limit: 5,
+  raw: true,
+  nest: true
+});
 
-    const topBarbers = topBarbersRaw.map(item => ({
-      name: item.barber.name,
-      appointmentCount: item.appointmentCount,
-      totalRevenue: item.totalRevenue
-    }));
 
-    const topServicesRaw = await Appointment.findAll({
-      attributes: [
-        'serviceTypeId',
-        [require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'appointmentCount'],
-        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-      ],
-      where: {
-        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-        status: 'completed'
-      },
-      include: [{ model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }],
-      group: ['serviceTypeId', 'serviceType.id'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('serviceTypeId')), 'DESC']],
-      limit: 5,
-      raw: true,
-      nest: true
-    });
+  const topBarbers = topBarbersRaw.map(item => ({
+  name: item.barber?.name || 'Barbeiro Desconhecido', // <-- Usa o nome do barbeiro da inclusão
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue
+}));
 
-    const topServices = topServicesRaw.map(item => ({
-      name: item.serviceType.name,
-      duration: item.serviceType.duration,
-      price: item.serviceType.price,
-      appointmentCount: item.appointmentCount,
-      totalRevenue: item.totalRevenue,
-      percentage: 0
-    }));
+   // Substitua pelo Bloco Novo e Mais Robusto
+const topServicesRaw = await Appointment.findAll({
+  attributes: [
+    [require('sequelize').col('serviceType.id'), 'serviceTypeId'], // Seleciona o ID do serviço
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+  ],
+  where: {
+    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+    status: 'completed'
+  },
+  include: [{
+    model: ServiceType,
+    as: 'serviceType',
+    attributes: ['name', 'duration', 'price'] // Atributos necessários
+  }],
+  group: [
+    require('sequelize').col('serviceType.id'), // Agrupa por todas as colunas não agregadas
+    require('sequelize').col('serviceType.name'),
+    require('sequelize').col('serviceType.duration'),
+    require('sequelize').col('serviceType.price')
+  ],
+  order: [
+    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+  ],
+  limit: 5,
+  raw: true,
+  nest: true
+});
 
+const topServices = topServicesRaw.map(item => ({
+  name: item.serviceType?.name || 'Serviço Desconhecido', // <-- Usa o nome do serviço da inclusão
+  duration: item.serviceType?.duration || 0,
+  price: item.serviceType?.price || '0.00',
+  appointmentCount: item.appointmentCount,
+  totalRevenue: item.totalRevenue,
+  percentage: 0
+}));
     const formattedRecentAppointments = todayAppointments.map(app => {
       const [year, month, day] = app.appointmentDate.split('-');
       const localDate = new Date(year, month - 1, day);
@@ -1083,12 +1106,12 @@ router.use('/services', require('./services'));
 // ===== ROTAS DE CONFIGURAÇÃO DO SISTEMA =====
 router.use('/config', require('./admin-config'));
 
-router.get('/whatsapp/status', isAuthenticated, (req, res) => {
+router.get('/whatsapp/status', isAuthenticatedApi, (req, res) => {
   const status = getWhatsAppStatus();
   res.json(status);
 });
 
-router.get('/whatsapp/qr', isAuthenticated, (req, res) => {
+router.get('/whatsapp/qr', isAuthenticatedApi, (req, res) => {
   try {
     const qr = getLastQRCode();
     if (!qr) return res.status(204).json({ message: 'QR ainda não gerado' });

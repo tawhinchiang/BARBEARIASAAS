@@ -10,27 +10,31 @@ const Appointment = sequelize.define('Appointment', {
   clientId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: 'clients',
-      key: 'id'
-    }
+    references: { model: 'clients', key: 'id' },
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
   },
   barberId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'barbers',
-      key: 'id'
-    }
-  },
-  serviceTypeId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'service_types',
-      key: 'id'
-    }
-  },
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  references: { model: 'barbers', key: 'id' },
+  onDelete: 'RESTRICT', 
+  onUpdate: 'CASCADE'
+},
+serviceTypeId: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  references: { model: 'service_types', key: 'id' },
+  onDelete: 'RESTRICT',
+  onUpdate: 'CASCADE'
+},
+reminderSent: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: false,
+  comment: 'Indica se o lembrete prévio foi enviado (ACK ≥ 2)'
+},
+
   appointmentDate: {
     type: DataTypes.DATEONLY,
     allowNull: false
@@ -39,10 +43,14 @@ const Appointment = sequelize.define('Appointment', {
     type: DataTypes.TIME,
     allowNull: false
   },
-  serviceDuration: {
-  type: DataTypes.INTEGER, // duração em minutos
+ serviceDuration: {
+  type: DataTypes.INTEGER,
   allowNull: false,
-  defaultValue: 20
+  defaultValue: 20,
+  validate: {
+    min: 1,           
+    max: 8 * 60       
+  }
 },
 
   status: {
@@ -56,6 +64,7 @@ const Appointment = sequelize.define('Appointment', {
   },
   whatsappSent: {
     type: DataTypes.BOOLEAN,
+    allowNull: false,
     defaultValue: false
   }, 
   followUpSent: {
@@ -83,10 +92,20 @@ isEncaixe: {
   tableName: 'appointments',
   timestamps: true,
   indexes: [
-    {
-      fields: ['appointmentDate', 'appointmentTime', 'barberId'],
-      unique: true
-    }
+  {
+    name: 'uq_appointments_regular_slot',
+    unique: true,
+    fields: ['barberId', 'appointmentDate', 'appointmentTime'],
+    where: { isEncaixe: false }   // ← Postgres: índice único parcial
+  },
+  {
+    name: 'idx_appointments_barber_date',
+    fields: ['barberId', 'appointmentDate']
+  },
+  {
+    name: 'idx_appointments_status',
+    fields: ['status']
+  }
   ]
 });
 

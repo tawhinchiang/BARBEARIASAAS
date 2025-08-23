@@ -17,20 +17,69 @@ const logError = (message, error) => {
 };
 
 // Página inicial - Agendamento para clientes
+// routes/index.js
+
 router.get('/', (req, res) => {
-  log('Acessando página inicial do cliente');
-  
-  const pageData = {
-    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME),
-    barbershopName: process.env.BARBERSHOP_NAME ,
-    barbershopLogo: process.env.BARBERSHOP_LOGO ,
-    isClientPage: true
+  const parseList = (s) => (s || '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean);
+
+  const paymentMethods = parseList(process.env.PAYMENT_METHODS);
+  const whatsappNumber =
+    process.env.WHATSAPP_BUSINESS_NUMBER ||
+    process.env.WHATSAPP_NUMBER || ''; // fallback se existir
+
+  const instagramUrl =
+    process.env.INSTAGRAM_URL ||
+    (process.env.INSTAGRAM_USERNAME
+      ? `https://instagram.com/${process.env.INSTAGRAM_USERNAME}`
+      : '');
+
+  const frontendConfig = {
+    WHATSAPP_NUMBER: whatsappNumber,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || 'SEU_GOOGLE_CLIENT_ID_AQUI'
   };
-  
-  log('Renderizando página inicial', pageData);
-  
+
+  const pageData = {
+    title: 'Agendamento - ' + (process.env.BARBERSHOP_NAME || 'Barbearia'),
+
+    // Cabeçalho
+    barbershopName: process.env.BARBERSHOP_NAME || '',
+    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png',
+    tagline: process.env.BARBERSHOP_TAGLINE || '',
+
+    // Detalhes do Estabelecimento
+    barbershopAddress: process.env.BARBERSHOP_ADDRESS || '',
+    barbershopHours: process.env.BARBERSHOP_HOURS || '',
+    barbershopMapsLink: process.env.BARBERSHOP_MAPS_LINK || '',
+
+    // Pagamentos
+    paymentMethods,
+
+    // Redes sociais
+    whatsappNumber,
+    instagramUrl,
+    facebookUrl: process.env.FACEBOOK_URL || '',
+
+    // Contato
+    contactPhone: process.env.CONTACT_PHONE || whatsappNumber || '',
+    contactEmail: process.env.CONTACT_EMAIL || '',
+
+    // Termos/Políticas
+    termsUrl: process.env.TERMS_URL || '',
+    cookiesUrl: process.env.COOKIES_URL || '',
+
+    // Flag de página do cliente (se usada no layout)
+    isClientPage: true,
+
+    // Config para o front (será injetado no layout)
+    frontendConfigJson: JSON.stringify(frontendConfig)
+  };
+
   res.render('index', pageData);
 });
+
 
 // Página de sucesso do agendamento
 router.get('/agendamento-confirmado', (req, res) => {
@@ -56,7 +105,7 @@ router.get('/api/services', async (req, res) => {
     const { ServiceType } = require('../models');
     const services = await ServiceType.findAll({
       where: { isActive: true },
-      attributes: ['id', 'name', 'price', 'duration'],    // ← inclui duration
+      attributes: ['id', 'name', 'price', 'duration','photo'],    // ← inclui duration
       order: [['name', 'ASC']]
     });
     
@@ -66,7 +115,8 @@ router.get('/api/services', async (req, res) => {
         id: s.id,
         name: s.name,
         price: s.price,
-        duration: s.duration    // ← loga também a duração
+        duration: s.duration,
+        photo: s.photo   // ← loga também a duração
       }))
     });
     

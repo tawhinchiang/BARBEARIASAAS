@@ -48,53 +48,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-{{!-- <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    await checkWhatsAppStatusConfig();
-    await loadQRCodeIfDisconnected();
-  });
-
-  async function checkWhatsAppStatusConfig() {
-    const statusSpan = document.getElementById('whatsappStatusConfig');
-    try {
-      const statusRes = await fetch('/admin/whatsapp/status');
-      const { isConnected } = await statusRes.json();
-      if (isConnected) {
-        statusSpan.textContent = 'Conectado';
-        statusSpan.classList.replace('bg-secondary', 'bg-success');
-      } else {
-        statusSpan.textContent = 'Desconectado';
-        statusSpan.classList.replace('bg-secondary', 'bg-danger');
-      }
-    } catch (e) {
-      statusSpan.textContent = 'Erro';
-      statusSpan.classList.replace('bg-secondary', 'bg-danger');
-    }
-  }
-
-  async function loadQRCodeIfDisconnected() {
-    try {
-      const qrRes = await fetch('/admin/whatsapp/qr');
-      if (!qrRes.ok) return;
-
-      const { qr } = await qrRes.json();
-      const qrDiv = document.getElementById('qrCode');
-      qrDiv.innerHTML = '';
-
-      new QRCode(qrDiv, {
-        text: qr,
-        width: 200,
-        height: 200
-      });
-
-      const qrSection = document.getElementById('qrCodeSection');
-      qrSection.style.display = 'block';
-      qrSection.classList.add('fade-in-soft');
-    } catch (e) {
-      console.warn('QR Code não disponível.');
-    }
-  }
-</script>  --}}
 
 <style>
   .fade-in-soft {

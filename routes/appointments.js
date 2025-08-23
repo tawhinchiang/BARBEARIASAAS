@@ -1,8 +1,12 @@
 const express = require('express');
 const { sendWhatsAppMessage } = require('../utils/whatsapp'); // Usando versão corrigida
 const normalizePhone = require('../utils/normalizePhone'); // Usando versão corrigida
-const moment = require('moment');
+const moment = require('moment-timezone');
+const TZ = process.env.TZ || 'America/Sao_Paulo';
+const { QueryTypes } = require('sequelize');
 const { Client, Barber, ServiceType, Appointment } = require('../models');
+const sequelize = require('../config/database'); 
+
 const router = express.Router();
 
 // ===== LOGS DETALHADOS =====
@@ -26,11 +30,43 @@ function isTimeInRange(time, range) {
   const [start, end] = range.split('-');
   return time >= start && time < end;
 }
+async function existeConflito({ barberId, appointmentDate, appointmentTime, serviceDuration }) {
+  const rows = await sequelize.query(
+    `
+    WITH novo AS (
+      SELECT
+        (:date::date + :time::time) AS start_at,
+        (:date::date + :time::time) + (:durationMin || ' minutes')::interval AS end_at
+    )
+    SELECT 1
+    FROM appointments a, novo n
+    WHERE a."barberId" = :barberId
+      AND a."status" NOT IN ('cancelled', 'no_show')
+      AND (a."appointmentDate"::timestamp + a."appointmentTime") < n.end_at
+      AND ((a."appointmentDate"::timestamp + a."appointmentTime")
+           + (a."serviceDuration" || ' minutes')::interval) > n.start_at
+    LIMIT 1;
+    `,
+    {
+      type: QueryTypes.SELECT, // use QueryTypes importado do sequelize
+      replacements: {
+        barberId,
+        date: appointmentDate,
+        time: appointmentTime,
+        durationMin: serviceDuration
+      }
+    }
+  );
+  return rows.length > 0;
+}
 
 // API para criar novo agendamento
 router.post('/api/appointments', async (req, res) => {
   try {
     const { isEncaixe = false } = req.body;
+   
+    const encaixe = (isEncaixe === true || isEncaixe === 'true');
+
     const { serviceId, barberId, appointmentDate, appointmentTime, clientData } = req.body;
 
     if (!serviceId || !barberId || !appointmentDate || !appointmentTime || !clientData) {
@@ -59,9 +95,19 @@ router.post('/api/appointments', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Barbeiro inválido ou sem expediente configurado' });
     }
 
-    // Identifica o dia da semana (segunda, terça, etc)
-    const weekday = moment(appointmentDate).format('dddd').toLowerCase(); // ex: monday
-    const daySchedule = barber.workingHours[weekday];
+    const weekdayIndex = moment.tz(appointmentDate, 'YYYY-MM-DD', TZ).isoWeekday();
+    const weekdayNames = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+    const weekday = weekdayNames[weekdayIndex - 1];
+
+    // workingHours pode estar como string JSON no banco — trate os dois casos
+    let workingHours = barber.workingHours;
+    if (typeof workingHours === 'string') {
+      try { workingHours = JSON.parse(workingHours); } catch (e) {
+        return res.status(500).json({ success: false, error: 'Horários do barbeiro inválidos' });
+      }
+    }
+    const daySchedule = workingHours?.[weekday];
+
 
     if (!daySchedule || (daySchedule.morning === 'closed' && daySchedule.afternoon === 'closed')) {
       return res.status(400).json({
@@ -70,17 +116,20 @@ router.post('/api/appointments', async (req, res) => {
       });
     }
 
-    // Verifica se horário solicitado está dentro de algum dos turnos
-    const isValidTime =
-      isTimeInRange(appointmentTime, daySchedule.morning) ||
-      isTimeInRange(appointmentTime, daySchedule.afternoon);
+   
+    
+    const onlyHHmm = (t) => (t || '').slice(0,5); 
+    const timeHHmm = onlyHHmm(appointmentTime);
 
-    if (!isValidTime && !isEncaixe) {
-      return res.status(400).json({
-        success: false,
-        error: 'Horário fora do expediente do barbeiro'
-      });
+    
+    const isValidTime =
+      isTimeInRange(timeHHmm, daySchedule.morning) ||
+      isTimeInRange(timeHHmm, daySchedule.afternoon);
+
+    if (!isValidTime && !encaixe) {
+      return res.status(400).json({ success: false, error: 'Horário fora do expediente do barbeiro' });
     }
+
 
     const serviceType = await ServiceType.findByPk(serviceId);
 
@@ -92,21 +141,19 @@ router.post('/api/appointments', async (req, res) => {
       });
     }
 
-    const existingAppointment = await Appointment.findOne({
-      where: {
-        barberId,
-        appointmentDate,
-        appointmentTime
-      }
-    });
+ if (!encaixe) {
+  const temConflito = await existeConflito({
+    barberId,
+    appointmentDate,
+    appointmentTime: timeHHmm,
+    serviceDuration: serviceType.duration
+  });
+  if (temConflito) {
+    log('Conflito de horário detectado', { barberId, appointmentDate, appointmentTime: timeHHmm, duration: serviceType.duration });
+    return res.status(409).json({ success: false, error: 'Conflito de horário para este barbeiro.' });
+  }
+}
 
-    if (existingAppointment) {
-      log('Horário já ocupado', { barberId, appointmentDate, appointmentTime });
-      return res.status(409).json({
-        success: false,
-        error: 'Horário não disponível'
-      });
-    }
 
     // CORREÇÃO CRÍTICA: Usar a nova função de normalização
     const cleanPhone = normalizePhone(phone);
@@ -139,39 +186,41 @@ router.post('/api/appointments', async (req, res) => {
       barberId,
       serviceTypeId: serviceId,
       appointmentDate,
-      appointmentTime,
+      appointmentTime:timeHHmm,
       serviceDuration: serviceType.duration,
       totalPrice: serviceType.price,
       status: 'confirmed',
-      isEncaixe: isEncaixe === 'true' || isEncaixe === true,
+      isEncaixe: encaixe,
       notes: clientData.notes || null
     });
 
-    const io = req.app.get('io');
+   const io = req.app.get('io');
+   if (io) {
     io.emit('new_appointment', {
       id: appointment.id,
       client: `${client.firstName} ${client.lastName}`,
       time: appointment.appointmentTime,
       date: appointment.appointmentDate
     });
-
+  }
     const fullName = `${client.firstName} ${client.lastName}`;
     const priceNum = Number(serviceType.price);
     const priceFormatted = Number.isNaN(priceNum) ? '0.00' : priceNum.toFixed(2);
 
-    const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:* ${appointmentTime}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
+    const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:*  ${timeHHmm}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
 
-    // CORREÇÃO CRÍTICA: Usar o telefone original (não normalizado) para o WhatsApp
-    // A nova função sendWhatsAppMessage vai fazer a formatação inteligente
-    log(`Tentando enviar WhatsApp para: ${phone} (original)`);
-    const sent = await sendWhatsAppMessage(phone, msg);
+   
+   log(`Tentando enviar WhatsApp para: ${cleanPhone} (normalizado)`);
+   const sent = await sendWhatsAppMessage(cleanPhone, msg);
     
-    if (sent) {
-      log('✅ Mensagem WhatsApp enviada com sucesso');
+     if (sent?.delivered) {
+      await appointment.update({ whatsappSent: true });
+      log(`✅ Mensagem ENTREGUE (ack=${sent.ack ?? 'n/a'})`);
     } else {
       logError('❌ Falha ao enviar mensagem pelo WhatsApp', { 
         originalPhone: phone, 
-        normalizedPhone: cleanPhone 
+        normalizedPhone: cleanPhone ,
+         result: sent || null
       });
     }
 
@@ -181,9 +230,9 @@ router.post('/api/appointments', async (req, res) => {
       barber: barber.name,
       service: serviceType.name,
       date: appointmentDate,
-      time: appointmentTime,
+      time: timeHHmm,
       price: serviceType.price,
-      whatsappSent: sent
+      whatsappSent: !!sent?.delivered
     });
 
     res.status(201).json({
@@ -207,17 +256,28 @@ router.post('/api/appointments', async (req, res) => {
         totalPrice: priceNum,
         status: appointment.status
       },
-      whatsappSent: sent
+      whatsappSent: !!sent?.delivered
     });
 
   } catch (error) {
-    logError('Erro ao criar agendamento', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro interno do servidor',
-      message: error.message
-    });
+  // Se caiu na unique parcial do Postgres, responda 409
+  const isUnique =
+    error?.name === 'SequelizeUniqueConstraintError' ||
+    error?.parent?.constraint === 'uq_appointments_regular_slot' ||
+    (typeof error?.message === 'string' && error.message.includes('uq_appointments_regular_slot'));
+
+  if (isUnique) {
+    logError('Conflito de horário (constraint no banco)', error);
+    return res.status(409).json({ success: false, error: 'Conflito de horário para este barbeiro.' });
   }
+
+  logError('Erro ao criar agendamento', error);
+  return res.status(500).json({
+    success: false,
+    error: 'Erro interno do servidor',
+    message: error.message
+  });
+}
 });
 
 // Redirecionador (exemplo GET ou POST raiz)
