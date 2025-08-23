@@ -37,27 +37,8 @@ async function initializeWhatsApp() {
   initializing = true;
   try {
     console.log('[WHATSAPP] Criando instância do cliente...');
-    function resolveChromePath() {
-  const fromEnv = process.env.WHATSAPP_CHROME_BIN
-               || process.env.CHROMIUM_PATH
-               || process.env.CHROME_BIN
-               || process.env.PUPPETEER_EXECUTABLE_PATH;
-  if (fromEnv && fs.existsSync(fromEnv)) return fromEnv;
-
-  const candidates = [
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/snap/bin/chromium'
-  ];
-  for (const c of candidates) {
-    if (fs.existsSync(c)) return c;
-  }
-  return null; 
-    }
-    const chromePath = resolveChromePath();
-    console.log('[WHATSAPP] Browser detectado em:', chromePath || '(auto/puppeteer)');
+  
+   
 
 client = new whatsapp.Client({
   authStrategy: new SafeLocalAuth({
@@ -65,7 +46,6 @@ client = new whatsapp.Client({
   }),
 puppeteer: {
   headless: true,
-  executablePath: chromePath || process.env.WHATSAPP_CHROME_BIN || '/usr/bin/google-chrome-stable',
   args: [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -144,7 +124,7 @@ try { await disconnectWhatsApp({ keepSession: false }); } catch {}
 }
 // Aguarda confirmação de entrega (ACK) da mensagem específica.
 // ack: 0=pending, 1=servidor, 2=entregue no aparelho, 3=lido, 4=áudio reproduzido
-function waitForAck(msg, { minAck = 2, timeoutMs = TIMEOUTS.ack } = {}) {
+function waitForAck(msg, { minAck = 1, timeoutMs = TIMEOUTS.ack } = {}) {
   return new Promise((resolve) => {
     let done = false;
 
@@ -269,16 +249,15 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         console.log(`[WHATSAPP] ✅ Envio ACEITO (tentativa ${attempt})`);
 
         // 3) Aguarda ACK ≥ 2 (entregue no aparelho)
-        const ackInfo = await waitForAck(msg, { minAck: 2, timeoutMs: TIMEOUTS.ack });
+        const ackInfo = await waitForAck(msg, { minAck: 1, timeoutMs: TIMEOUTS.ack });
 
         if (ackInfo.delivered) {
-console.log(`[WHATSAPP] 📬 ENTREGUE (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}`);
+          console.log(`[WHATSAPP] 📬 ENTREGUE (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}`);
           // Retorno "rico" (retrocompatível: será truthy onde esperam boolean)
           return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
         } else {
-          console.warn(`[WHATSAPP] ⚠️ Sem ACK de entrega (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}.`);
-          // Tenta próxima variação (não adianta re-tentar a mesma sem ACK)
-          break;
+  console.warn(`[WHATSAPP] ⚠️ Enviado, mas sem confirmação (timeout/ack=0).`);
+   // Considere retorno "ok" (aceito pelo servidor), apenas sem confirmação:+    return { ok: true, delivered: false, ack: 0, used: variation };
         }
       } catch (err) {
         console.error(`[WHATSAPP] ❌ Falha ${variation} (tentativa ${attempt}): ${err.message}`);
@@ -299,7 +278,7 @@ async function sendWhatsAppMessageDebug(phone, message) {
   console.log(`[DEBUG] 🔬 Debug ativado para: ${phone}`);
   try {
     await ensureClientReady();
-
+    await waitWhatsAppReady(30000);
     const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
     const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
     const variations = Array.from(new Set(

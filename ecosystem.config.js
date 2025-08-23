@@ -29,9 +29,9 @@ module.exports = {
         LANG: 'pt_BR.UTF-8',
         LC_ALL: 'pt_BR.UTF-8',
         NODE_OPTIONS: '--max-old-space-size=512',
-        WHATSAPP_CHROME_BIN: '/usr/bin/google-chrome-stable',
-        PUPPETEER_EXECUTABLE_PATH: '/usr/bin/google-chrome-stable',
-        PUPPETEER_PRODUCT: 'chrome'
+        PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: '0',
+         PUPPETEER_CACHE_DIR: '/root/.cache/puppeteer',
+        FORCE_PUPPETEER: '1'
       }
     }
   ]
