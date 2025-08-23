@@ -61,7 +61,7 @@ client = new whatsapp.Client({
     clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
   }),
   puppeteer: {
-    headless:'new',                       // (ou 'new' se sua versão suportar)
+    headless:'new',                      
     executablePath: chromePath || undefined,
     args: [
       '--no-sandbox',
@@ -86,7 +86,12 @@ client = new whatsapp.Client({
 
 
     console.log('[WHATSAPP] Registrando eventos...');
-
+      client.on('loading_screen', (percent, message) => {
+        console.log(`[WA] loading_screen: ${percent}% - ${message}`);
+      });
+      client.on('change_state', (state) => {
+        console.log(`[WA] change_state: ${state}`);
+      });
     client.on('qr', (qr) => {
       latestQrCode = qr;
       console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
@@ -100,16 +105,18 @@ client = new whatsapp.Client({
     client.on('ready', () => {
       console.log('🚀 WhatsApp conectado e pronto para uso!');
       isReady = true;
+       latestQrCode = null;
       initializing = false; // libera lock só quando estiver pronto
     });
 
     // Usar ONCE para não acumular listeners
     client.once('disconnected', async (reason) => {
+
       console.log('❌ WhatsApp desconectado:', reason);
       isReady = false;
       console.log('🔄 Reinicializando em 5s...');
 
-      await disconnectWhatsApp();
+      await disconnectWhatsApp({ keepSession: true });
 
       setTimeout(async () => {
         await initializeWhatsApp();
@@ -125,7 +132,7 @@ client = new whatsapp.Client({
   } catch (e) {
     console.error('⚠️ Erro ao limpar sessão após auth_failure:', e.message);
   }
-  try { await disconnectWhatsApp(); } catch {}
+try { await disconnectWhatsApp({ keepSession: false }); } catch {}
   setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
 });
 
@@ -140,7 +147,7 @@ client = new whatsapp.Client({
 }
 
 // Desconectar WhatsApp corretamente
-async function disconnectWhatsApp() {
+async function disconnectWhatsApp(options = { keepSession: false }) {
   try {
     if (client) {
       console.log('🔌 Desconectando WhatsApp...');
@@ -148,7 +155,7 @@ async function disconnectWhatsApp() {
       await delay(2000);
       client = null;
       isReady = false;
-      latestQrCode = null;
+
 
       // Força matar processos Chrome/Chromium que ficarem abertos
       exec("pkill -f '(chrome|chromium)'", (err) => {
@@ -158,10 +165,13 @@ async function disconnectWhatsApp() {
           console.log('🧹 Processos Chrome/Chromium encerrados.');
         }
       });
-
-      const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
-      await deleteSession(sessionId);
-      console.log('📱 WhatsApp desconectado e sessão removida com segurança');
+ if (!options.keepSession) {
+    const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+        await deleteSession(sessionId);
+        console.log('📱 Sessão WhatsApp removida (keepSession = false)');
+    } else {
+      console.log('ℹ️ Sessão preservada (keepSession = true)');
+     }
     }
   } catch (error) {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
