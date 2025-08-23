@@ -4,7 +4,7 @@ module.exports = {
     {
       name: 'barbershop-app',
      
-      script: 'app.js',
+      script: 'server.js',
       instances: 1,
       exec_mode: 'fork',
       watch: false,
