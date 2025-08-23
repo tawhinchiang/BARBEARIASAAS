@@ -41,12 +41,11 @@ const corsConfig = {
   production: {
     // IMPORTANTE: Substitua pelos seus domínios reais de produção
     allowedOrigins: [
-      'https://seu-dominio.com',
-      'https://www.seu-dominio.com',
-      'https://app.seu-dominio.com',
-      // Adicione APENAS os domínios que você controla
+      'https://agendastudios.com.br',   
+      'https://www.agendastudios.com.br',
+      'http://agendastudios.com.br',
+      'http://64.227.83.125:3000',      
     ],
-    
     // Métodos mais restritivos para produção
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'],
     
@@ -67,14 +66,14 @@ const corsConfig = {
 };
 
 // Configuração específica para APIs administrativas (mais restritiva)
+
 const adminApiCorsConfig = {
   development: {
-  allowedOrigins: [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost',
-  'https://optimum-lizard-whole.ngrok-free.app' 
-],
+    allowedOrigins: [
+      'https://agendastudios.com.br',
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000'
+    ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
@@ -87,13 +86,15 @@ const adminApiCorsConfig = {
     credentials: true,
     maxAge: 3600
   },
-  
-  production: {
+
+  production: { 
     allowedOrigins: [
-     'https://optimum-lizard-whole.ngrok-free.app', // Apenas subdomínio admin
-      // NÃO adicione domínios públicos aqui
+      'https://agendastudios.com.br',
+      'http://agendastudios.com.br',
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000'
     ],
-    allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], // Sem DELETE em produção
+    allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], 
     allowedHeaders: [
       'Origin',
       'X-Requested-With',
@@ -103,9 +104,11 @@ const adminApiCorsConfig = {
       'X-CSRF-Token'
     ],
     credentials: true,
-    maxAge: 1800 // 30 minutos
+    maxAge: 1800 
   }
 };
+
+
 
 // Configuração para APIs públicas (menos restritiva, mas ainda segura)
 const publicApiCorsConfig = {
@@ -124,7 +127,10 @@ const publicApiCorsConfig = {
   
   production: {
     allowedOrigins: [
-      'https://optimum-lizard-whole.ngrok-free.app',
+      'https://agendastudios.com.br',
+      'http://agendastudios.com.br',
+      'https://www.agendastudios.com.br',
+      'http://64.227.83.125:3000'
             // Pode incluir mais domínios para APIs públicas
     ],
     allowedMethods: ['GET', 'OPTIONS'],
@@ -202,7 +208,7 @@ function additionalSecurityValidation(req, res, next) {
 
   // Bloquear user-agents suspeitos
   const suspiciousUserAgents = [
-    'curl', 'wget', 'python-requests', 'bot', 'crawler'
+    'curl', 'wget', 'axios','okhttp','libwww','python-requests', 'bot', 'crawler','insomnia', 'aiohttp', 'httpclient', 'postman', 'java'
   ];
 
   if (userAgent && suspiciousUserAgents.some(ua => userAgent.toLowerCase().includes(ua))) {

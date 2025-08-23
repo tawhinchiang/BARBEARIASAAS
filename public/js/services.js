@@ -8,18 +8,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('servicesContainer');
 
   // ================= NOTIFICAÇÃO ================= //
-  function showNotification(message, type = 'success') {
-    const div = document.createElement('div');
-    div.className = `notification ${type}`;
-    div.textContent = message;
-    document.body.appendChild(div);
-    void div.offsetWidth;
-    div.classList.add('show');
-    setTimeout(() => {
-      div.classList.remove('show');
-      setTimeout(() => div.remove(), 300);
-    }, 3000);
+ const servicePhotoInput = document.getElementById('servicePhoto');
+const photoPreviewContainer = document.getElementById('photoPreview');
+const photoPreviewImg = photoPreviewContainer.querySelector('img');
+
+servicePhotoInput.addEventListener('change', () => {
+  const file = servicePhotoInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      photoPreviewImg.src = e.target.result;
+      photoPreviewContainer.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    photoPreviewImg.src = '';
+    photoPreviewContainer.style.display = 'none';
   }
+});
 
   // ================= ENVIO DO FORMULÁRIO ================= //
   form.addEventListener('submit', async (e) => {
@@ -29,21 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const url = id ? `/admin/services/${id}` : '/admin/services/create';
   const method = id ? 'PUT' : 'POST';
 
-  const payload = {
-    name: formData.get('name'),
-    description: formData.get('description'),
-    price: parseFloat(formData.get('price')),
-    duration: parseInt(formData.get('duration')),
-    isActive: formData.get('isActive') === 'on',
-    isPromo: formData.get('isPromo') === 'on'
-  };
-
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+ try {
+  const res = await fetch(url, {
+    method,
+    body: formData // 👈 envia o FormData direto
+  });
 
     if (!res.ok) throw new Error('Erro ao salvar serviço');
 
@@ -94,6 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
       form.duration.value = s.duration;
       form.isActive.checked = s.isActive;
       form.isPromo.checked = s.isPromo;
+      if (s.photo) {
+        photoPreviewImg.src = s.photo;
+        photoPreviewContainer.style.display = 'block';
+      } else {
+        photoPreviewImg.src = '';
+        photoPreviewContainer.style.display = 'none';
+      }
 
       modalTitle.textContent = 'Editar Serviço';
       modal.show();
@@ -150,13 +153,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  modalElement.addEventListener('hidden.bs.modal', () => {
-    form.reset();
-    form.serviceId.value = '';
-    modalTitle.textContent = 'Novo Serviço';
-  });
+modalElement.addEventListener('hidden.bs.modal', () => {
+  form.reset();
+  form.serviceId.value = '';
+  modalTitle.textContent = 'Novo Serviço';
+  photoPreviewImg.src = '';
+  photoPreviewContainer.style.display = 'none';
+});
 });
 
+
+ function showNotification(message, type = 'success') {
+    const div = document.createElement('div');
+    div.className = `notification ${type}`;
+    div.textContent = message;
+    document.body.appendChild(div);
+    void div.offsetWidth;
+    div.classList.add('show');
+    setTimeout(() => {
+      div.classList.remove('show');
+      setTimeout(() => div.remove(), 300);
+    }, 3000);
+  }
 function filterServices() {
   const searchValue = document.getElementById('serviceSearch').value.toLowerCase().trim();
   const statusValue = document.getElementById('serviceStatus').value;

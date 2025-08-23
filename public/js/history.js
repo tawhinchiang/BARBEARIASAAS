@@ -27,23 +27,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // Função para formatar telefone enquanto digita
-document.getElementById('phoneInput').addEventListener('input', function(e) {
-  let value = e.target.value.replace(/\D/g, '');
-  
-  if (value.length <= 11) {
-    if (value.length <= 2) {
-      value = value.replace(/(\d{0,2})/, '($1');
-    } else if (value.length <= 7) {
-      value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-    } else {
-      value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+const phoneInputEl = document.getElementById('phoneInput');
+if (phoneInputEl) {
+  phoneInputEl.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+      if (value.length <= 2) {
+        value = value.replace(/(\d{0,2})/, '($1');
+      } else if (value.length <= 7) {
+        value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+      } else {
+        value = value.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+      }
     }
-  }
-  
-  e.target.value = value;
-});
+    e.target.value = value;
+  });
+}
+
 
 document.getElementById('phoneInput').addEventListener('blur', async function () {
+  
   const phoneInput = document.getElementById('phoneInput');
   const phone = phoneInput.value.trim();
     // Salva no localStorage com timestamp
@@ -140,6 +143,9 @@ async function enviarCodigo() {
 
     showAlert('Código enviado via WhatsApp!', 'success');
     document.getElementById('verificationSection').classList.remove('d-none');
+
+    // Inicializa os campos de código após mostrar a seção
+    initializeCodeInputs();
 
     // === Desativa botão por 50s ===
     sendBtn.disabled = true;
@@ -390,40 +396,38 @@ function renderAppointments(appointments, activeOnly = false) {
     '<h4 class="text-center text-light mb-3"><i class="fas fa-list me-2"></i>Todos os Agendamentos</h4>';
 
   const cards = appointments.map(app => {
-    const statusClass = getStatusClass(app.status);
-    const statusText = getStatusText(app.status);
-    
-    const cancelButton = app.canCancel
-      ? `<button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="cancelarAgendamento(${app.id})">
-          <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
-        </button>`
-      : '';
+  const meta = getStatusMeta(app.status);
 
-    const priceDisplay = app.totalPrice > 0 
-      ? `<p class="mb-1"><i class="fas fa-money-bill-wave me-2"></i> Valor: R$ ${parseFloat(app.totalPrice).toFixed(2)}</p>`
-      : '';
+  const cancelButton = app.canCancel
+    ? `<button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="cancelarAgendamento(${app.id})">
+         <i class="fas fa-times-circle me-1"></i> Cancelar Agendamento
+       </button>`
+    : '';
 
-      return `
-        <div class="col">
-          <div class="card ${statusClass} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
-            <div class="card-body">
-              <h5 class="card-title mb-2">
-                <i class="fas fa-cut me-1"></i> ${app.service}
-              </h5>
-              <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
-              <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
-              <p class="mb-1">
-                <i class="fas fa-info-circle me-2"></i>
-                Status: <span class="fw-bold ${statusClass.replace('card-', 'text-')}">${statusText}</span>
-              </p>
-              ${priceDisplay}
-              ${cancelButton}
-            </div>
-          </div>
+  const priceDisplay = app.totalPrice > 0 
+    ? `<p class="mb-1"><i class="fas fa-money-bill-wave me-2"></i> Valor: R$ ${parseFloat(app.totalPrice).toFixed(2)}</p>`
+    : '';
+
+  return `
+    <div class="col">
+      <div class="card ${meta.card} bg-dark text-white shadow-sm rounded-3 h-100 fade-in-soft">
+        <div class="card-body">
+          <h5 class="card-title mb-2">
+            <i class="fas fa-cut me-1"></i> ${app.service}
+          </h5>
+          <p class="mb-1"><i class="fas fa-calendar-alt me-2"></i> ${app.date} às ${app.time}</p>
+          <p class="mb-1"><i class="fas fa-user-tie me-2"></i> Barbeiro: ${app.barber}</p>
+          <p class="mb-1">
+            <i class="fas fa-info-circle me-2"></i>
+            Status: <span class="${meta.badge}">${meta.text}</span>
+          </p>
+          ${priceDisplay}
+          ${cancelButton}
         </div>
-      `;
-
-  }).join('');
+      </div>
+    </div>
+  `;
+}).join('');
 
   // ✅ CORREÇÃO: Container com posicionamento adequado
   container.innerHTML = `
@@ -443,36 +447,25 @@ function renderAppointments(appointments, activeOnly = false) {
   console.log('[DEBUG] Container revelado com posicionamento corrigido');
 }
 
-function getStatusClass(status) {
+function getStatusMeta(status) {
   switch (status) {
     case 'confirmed':
-    case 'scheduled':
-      return 'card-neon-green';
+      return { card: 'status-card status-confirmed', badge: 'status-badge status-confirmed', text: 'Confirmado' };
+    case 'scheduled': // tratamos como "pendente" visualmente
+      return { card: 'status-card status-pending',   badge: 'status-badge status-pending',   text: 'Agendado' };
     case 'cancelled':
-      return 'card-neon-red';
+      return { card: 'status-card status-cancelled', badge: 'status-badge status-cancelled', text: 'Cancelado' };
     case 'completed':
-      return 'card-neon-blue';
+      return { card: 'status-card status-completed', badge: 'status-badge status-completed', text: 'Concluído' };
+    case 'in_progress':
+      return { card: 'status-card status-in_progress', badge: 'status-badge status-in_progress', text: 'Em andamento' };
+    case 'no_show':
+      return { card: 'status-card status-no_show',   badge: 'status-badge status-no_show',   text: 'Não Compareceu' };
     default:
-      return '';
+      return { card: '', badge: 'status-badge', text: status };
   }
 }
 
-function getStatusText(status) {
-  switch (status) {
-    case 'scheduled':
-      return 'Agendado';
-    case 'confirmed':
-      return 'Confirmado';
-    case 'cancelled':
-      return 'Cancelado';
-    case 'completed':
-      return 'Concluído';
-    case 'no_show':
-      return 'Não Compareceu';
-    default:
-      return status;
-  }
-}
 
 function showAlert(message, type = 'info') {
   // Usa toasts padronizados
@@ -529,41 +522,137 @@ link.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', setupSmoothPageTransition);
 document.addEventListener('DOMContentLoaded', () => {
   const phoneInput = document.getElementById('phoneInput');
-  if (phoneInput.value.trim().length >= 10) {
+  if (phoneInput && phoneInput.value.trim().length >= 10) {
     phoneInput.dispatchEvent(new Event('blur')); // Força verificação no carregamento
   }
 });
 
-document.querySelectorAll('.code-digit').forEach((input, idx, all) => {
-  input.addEventListener('input', (e) => {
-    const val = e.target.value.replace(/\D/g, '');
-    e.target.value = val.slice(0, 1);
+// ✅ FUNCIONALIDADE CORRIGIDA: Campos de código de verificação
+function initializeCodeInputs() {
+  const group = document.getElementById('codeInputGroup');
+  if (!group) return;
 
-    if (val.length === 1 && idx < all.length - 1) {
-      all[idx + 1].focus();
-    }
-
-    // Verificar automaticamente quando todos preenchidos
-    const code = Array.from(all).map(el => el.value).join('');
-    if (code.length === 4) {
-      verificarCodigo(code);
-    }
+  // Remove event listeners anteriores para evitar duplicação
+  const existingInputs = group.querySelectorAll('.code-digit');
+  existingInputs.forEach(input => {
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
   });
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && !e.target.value && idx > 0) {
-      all[idx - 1].focus();
-    }
-  });
-
-  // Suporte a colar os 4 dígitos de uma vez
-  input.addEventListener('paste', (e) => {
-    const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-    if (paste.length === 4) {
+  const inputs = Array.from(group.querySelectorAll('.code-digit'));
+  
+  // Configura cada input
+  inputs.forEach((input, index) => {
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.maxLength = '1';
+    input.autocomplete = 'one-time-code';
+    input.dataset.index = index.toString();
+    
+    // Limpa o valor inicial
+    input.value = '';
+    
+    // Event listener para input (digitação)
+    input.addEventListener('input', function(e) {
+      const value = e.target.value.replace(/[^0-9]/g, '');
+      e.target.value = value;
+      
+      if (value.length === 1) {
+        // Move para o próximo campo
+        const nextIndex = index + 1;
+        if (nextIndex < inputs.length) {
+          inputs[nextIndex].focus();
+          inputs[nextIndex].select();
+        }
+        
+        // Verifica se todos os campos estão preenchidos
+        const allValues = inputs.map(inp => inp.value).join('');
+        if (allValues.length === 4) {
+          verificarCodigo(allValues);
+        }
+      }
+    });
+    
+    // Event listener para keydown (navegação e backspace)
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace') {
+        if (e.target.value === '') {
+          // Campo vazio, volta para o anterior
+          const prevIndex = index - 1;
+          if (prevIndex >= 0) {
+            inputs[prevIndex].focus();
+            inputs[prevIndex].select();
+          }
+        } else {
+          // Campo com valor, limpa o valor
+          e.target.value = '';
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prevIndex = index - 1;
+        if (prevIndex >= 0) {
+          inputs[prevIndex].focus();
+          inputs[prevIndex].select();
+        }
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const nextIndex = index + 1;
+        if (nextIndex < inputs.length) {
+          inputs[nextIndex].focus();
+          inputs[nextIndex].select();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const allValues = inputs.map(inp => inp.value).join('');
+        if (allValues.length === 4) {
+          verificarCodigo(allValues);
+        }
+      }
+    });
+    
+    // Event listener para paste (colar)
+    input.addEventListener('paste', function(e) {
       e.preventDefault();
-      all.forEach((el, i) => el.value = paste[i] || '');
-      verificarCodigo(paste);
-    }
+      const pastedData = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = pastedData.replace(/[^0-9]/g, '').slice(0, 4);
+      
+      if (digits.length > 0) {
+        // Distribui os dígitos pelos campos
+        for (let i = 0; i < inputs.length && i < digits.length; i++) {
+          inputs[i].value = digits[i];
+        }
+        
+        // Foca no próximo campo vazio ou no último campo
+        const nextEmptyIndex = Math.min(digits.length, inputs.length - 1);
+        inputs[nextEmptyIndex].focus();
+        
+        // Se todos os 4 dígitos foram colados, verifica automaticamente
+        if (digits.length === 4) {
+          verificarCodigo(digits);
+        }
+      }
+    });
+    
+    // Event listener para focus (seleciona todo o conteúdo)
+    input.addEventListener('focus', function(e) {
+      e.target.select();
+    });
   });
+  
+  // Foca no primeiro campo
+  if (inputs.length > 0) {
+    inputs[0].focus();
+  }
+}
+
+// Inicializa os campos quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+  // Aguarda um pouco para garantir que todos os elementos estejam prontos
+  setTimeout(() => {
+    const verificationSection = document.getElementById('verificationSection');
+    if (verificationSection && !verificationSection.classList.contains('d-none')) {
+      initializeCodeInputs();
+    }
+  }, 100);
 });
 

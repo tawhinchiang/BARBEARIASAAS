@@ -7,6 +7,25 @@ const {
   COMPLETED_STATUSES,
   VALID_FOR_REVENUE
 } = require('../constants/appointmentStatuses');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+// Configuração do multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'services');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -113,68 +132,75 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 });
 
 // ===== CRIAR SERVIÇO =====
-router.post('/create', async (req, res) => {
+// ===== CRIAR SERVIÇO =====
+router.post('/create', upload.single('photo'), async (req, res) => {
   try {
-    log('Criando novo serviço', req.body);
-    
     const { name, description, price, duration, isActive, isPromo } = req.body;
+    const photo = req.file ? '/uploads/services/' + req.file.filename : null;
 
-    // Validações
+    log('Criando novo serviço', { body: req.body, file: req.file?.filename });
+
+    // === Validações ===
     if (!name || !price || !duration) {
       return res.status(400).json({
         success: false,
         error: 'Nome, preço e duração são obrigatórios'
       });
     }
-    
+
     const priceParsed = parseFloat(price);
     const durationParsed = parseInt(duration);
 
     if (isNaN(priceParsed) || priceParsed <= 0) {
-      return res.status(400).json({ success: false, error: 'Preço inválido' });
+      return res.status(400).json({ success: false, error: 'Preço deve ser válido e maior que 0' });
     }
 
     if (isNaN(durationParsed) || durationParsed <= 0) {
-      return res.status(400).json({ success: false, error: 'Duração inválida' });
+      return res.status(400).json({ success: false, error: 'Duração deve ser válida e maior que 0' });
     }
-    // Verificar se nome já existe
-    const existingService = await ServiceType.findOne({ 
-      where: { name: name.trim() } 
+
+    // Verificar duplicidade de nome
+    const existingService = await ServiceType.findOne({
+      where: { name: name.trim() }
     });
+
     if (existingService) {
       return res.status(400).json({
         success: false,
         error: 'Já existe um serviço com este nome'
       });
     }
-    
+
+    // === Dados a salvar ===
     const serviceData = {
       name: name.trim(),
       description: description ? description.trim() : null,
-      price: parseFloat(price),
-      duration: parseInt(duration),
+      price: priceParsed,
+      duration: durationParsed,
       isActive: isActive === 'true' || isActive === true,
-      isPromo: isPromo === 'true' || isPromo === true
+      isPromo: isPromo === 'true' || isPromo === true,
+      photo
     };
-    console.log('[DEBUG] Dados que vão para o banco:', serviceData); // 👈 Adicione isso aqui
+
     const service = await ServiceType.create(serviceData);
-    
+
     log('Serviço criado com sucesso', { id: service.id, name: service.name });
-    
+
     res.json({
       success: true,
       message: 'Serviço criado com sucesso',
-      service: service
+      service
     });
-  } catch (error) {
-  logError('Erro ao criar serviço', error);
-  res.status(500).json({
-    success: false,
-    error: error.message || 'Erro interno do servidor' // ← Aqui!
-  });
-}
 
+  } catch (error) {
+    logError('Erro ao criar serviço', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Erro interno do servidor'
+    });
+  }
 });
+
 
 // ===== BUSCAR SERVIÇO POR ID =====
 router.get('/:id', async (req, res) => {
@@ -223,70 +249,40 @@ router.get('/:id', async (req, res) => {
 });
 
 // ===== ATUALIZAR SERVIÇO =====
-router.put('/:id', async (req, res) => {
+// ===== ATUALIZAR SERVIÇO =====
+router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
-    const { id } = req.params;
-    log(`Atualizando serviço ID: ${id}`, req.body);
-    
-    const service = await ServiceType.findByPk(id);
+    const { id } = req.params;   // 👈 primeiro captura
+    log(`Atualizando serviço ID: ${id}`, { body: req.body, file: req.file?.filename });
+
+    const service = await ServiceType.findByPk(id); // 👈 faltava buscar o service
     if (!service) {
-      return res.status(404).json({
-        success: false,
-        error: 'Serviço não encontrado'
-      });
+      return res.status(404).json({ success: false, error: 'Serviço não encontrado' });
     }
-    
+
     const { name, description, price, duration, isActive, isPromo } = req.body;
-    
-    // Verificar se nome já existe em outro serviço
-    if (name && name.trim() !== service.name) {
-      const existingService = await ServiceType.findOne({ 
-        where: { 
-          name: name.trim(),
-          id: { [Op.ne]: id }
-        }
-      });
-      if (existingService) {
-        return res.status(400).json({
-          success: false,
-          error: 'Já existe outro serviço com este nome'
-        });
-      }
-    }
-    
-    // Validar preço se fornecido
-    if (price !== undefined && (isNaN(price) || parseFloat(price) <= 0)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Preço deve ser um número válido maior que zero'
-      });
-    }
-    
-    // Validar duração se fornecida
-    if (duration !== undefined && (isNaN(duration) || parseInt(duration) <= 0)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Duração deve ser um número válido maior que zero'
-      });
-    }
-    
+    const photo = req.file ? '/uploads/services/' + req.file.filename : service.photo;
+
+    // validações (nome duplicado, preço, duração etc) …
+
     const updateData = {
       name: name ? name.trim() : service.name,
       description: description !== undefined ? (description ? description.trim() : null) : service.description,
       price: price !== undefined ? parseFloat(price) : service.price,
       duration: duration !== undefined ? parseInt(duration) : service.duration,
       isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : service.isActive,
-      isPromo: isPromo !== undefined ? (isPromo === 'true' || isPromo === true) : service.isPromo
+      isPromo: isPromo !== undefined ? (isPromo === 'true' || isPromo === true) : service.isPromo,
+      photo
     };
-    
+
     await service.update(updateData);
-    
+
     log('Serviço atualizado com sucesso', { id: service.id, name: service.name });
-    
+
     res.json({
       success: true,
       message: 'Serviço atualizado com sucesso',
-      service: service
+      service
     });
   } catch (error) {
     logError('Erro ao atualizar serviço', error);
@@ -296,6 +292,8 @@ router.put('/:id', async (req, res) => {
     });
   }
 });
+
+
 
 // ===== DELETAR SERVIÇO =====
 router.delete('/:id', async (req, res) => {

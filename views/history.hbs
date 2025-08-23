@@ -1,13 +1,14 @@
-<div class="main-container">
-<div class="container fade-in-soft d-flex justify-content-center align-items-center flex-column" style="min-height: 80vh;">
-<div id="authCard" class="card bg-dark text-white shadow rounded-4 p-4" style="max-width: 460px; width: 100%;">
+{{!-- Página de Histórico do Cliente --}}
 
-    <!-- Título -->
+<div class="container fade-in-soft d-flex justify-content-center align-items-center flex-column" style="min-height: 70vh;">
+  <div id="authCard" class="card bg-dark text-white shadow rounded-4 p-4 w-100" style="max-width: 460px;">
+
+    <!-- 🔹 Título -->
     <h4 class="text-center mb-3 text-light">
       <i class="fas fa-history me-2"></i> Verificar Histórico
     </h4>
 
-    <!-- Formulário de busca -->
+    <!-- 🔹 Formulário de busca -->
     <form onsubmit="enviarCodigo(); return false;">
       <div class="input-group mb-3">
         <input type="tel" 
@@ -26,7 +27,7 @@
       </small>
     </form>
 
-    <!-- Campo de verificação de código (inicialmente escondido) -->
+    <!-- 🔹 Campo de verificação de código -->
     <div id="verificationSection" class="text-center d-none">
       <label class="text-light mb-2 d-block">Digite o código de 4 dígitos recebido via WhatsApp</label>
       <div id="codeInputGroup" class="d-flex justify-content-center gap-2 mb-3">
@@ -35,68 +36,28 @@
         <input type="text" class="code-digit form-control text-center bg-dark text-white border-light" maxlength="1" inputmode="numeric" />
         <input type="text" class="code-digit form-control text-center bg-dark text-white border-light" maxlength="1" inputmode="numeric" />
       </div>
-      <button class="btn btn-success" onclick="verificarCodigo()">Verificar</button>
+      <button class="btn btn-success w-100" onclick="verificarCodigo()">
+        <i class="fas fa-check me-1"></i> Verificar
+      </button>
       <p id="expirationTimer" class="text-muted small mt-2">O código expira em 2 minutos.</p>
     </div>
-
   </div>
 </div>
+
+<!-- 🔹 Loading -->
+<div id="loadingIndicator" class="text-center d-none py-4">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Carregando...</span>
+  </div>
+  <p class="text-light mt-2">Buscando agendamentos...</p>
 </div>
 
-  <!-- Loading -->
-  <div id="loadingIndicator" class="text-center d-none">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Carregando...</span>
-    </div>
-    <p class="text-light mt-2">Buscando agendamentos...</p>
-  </div>
-
-  <!-- Histórico de agendamentos -->
+<!-- 🔹 Histórico de agendamentos -->
 <div id="historyContainer" class="container py-4 d-none"></div>
 
-  <!-- Agendamentos ativos -->
-  <div class="text-center mt-4 d-none" id="activeAppointmentsSection">
-    <button class="btn btn-outline-info" onclick="verificarAgendamentosAtivos()">
-      <i class="fas fa-clock me-1"></i> Verificar Agendamentos em Andamento
-    </button>
-  </div>
+<!-- 🔹 Agendamentos ativos -->
+<div class="text-center mt-4 d-none" id="activeAppointmentsSection">
+  <button class="btn btn-outline-info" onclick="verificarAgendamentosAtivos()">
+    <i class="fas fa-clock me-1"></i> Verificar Agendamentos em Andamento
+  </button>
 </div>
-
-<!-- NAVBAR FIXA -->
-<nav class="navbar fixed-bottom bg-dark border-top border-secondary d-flex justify-content-around py-2">
-  <a href="/" class="btn btn-outline-light">
-    <i class="fas fa-calendar-plus me-1"></i> Agendar
-  </a>
-  <a href="/history" class="btn btn-outline-light">
-    <i class="fas fa-history me-1"></i> Histórico
-  </a>
-</nav>
-
-<style>
-.card-neon-green {
-  border: 3px solid #00ff88 !important;
-  border-left-width: 6px !important;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
-}
-
-.card-neon-red {
-  border: 3px solid #ff4d4d !important;
-  border-left-width: 6px !important;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 0 12px rgba(255, 77, 77, 0.4);
-}
-
-.card-neon-blue {
-  border: 3px solid #3399ff !important;
-  border-left-width: 6px !important;
-  border-radius: 0.75rem !important;
-  box-shadow: 0 0 12px rgba(51, 153, 255, 0.4);
-}
-</style>
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-<script src="/js/history.js"></script>
-

@@ -32,8 +32,13 @@ const ServiceType = sequelize.define('ServiceType', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  }, photo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'URL ou caminho da foto do serviço'
   }
-}, {
+},
+ {
   tableName: 'service_types',
   timestamps: true
 });
