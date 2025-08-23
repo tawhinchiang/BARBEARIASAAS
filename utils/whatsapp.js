@@ -46,7 +46,9 @@ client = new whatsapp.Client({
     clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
   }),
 puppeteer: {
-  headless: true,
+headless: 'new',
+protocolTimeout: 120000,
+ timeout: 60000,
   executablePath: chromiumPath,
   args: [
     '--no-sandbox',
@@ -122,8 +124,13 @@ try { await disconnectWhatsApp({ keepSession: false }); } catch {}
     console.log('✅ Inicialização do WhatsApp finalizada.');
 
   } catch (error) {
-    console.error('❌ Erro ao inicializar WhatsApp:', error);
-    initializing = false;
+  +  console.error('❌ Erro ao inicializar WhatsApp:', error);
+ try { await client?.destroy(); } catch (_) {}
+ client = null;
+ isReady = false;
+ initializing = false;
+ // Backoff curto para context destroyed / navegação
+ setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
   }
 }
 // Aguarda confirmação de entrega (ACK) da mensagem específica.
@@ -230,7 +237,7 @@ async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.se
 async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   console.log(`[WHATSAPP] 🚀 Enviando para: ${phone}`);
   await ensureClientReady();
-
+  await waitWhatsAppReady(30000);
   // 1) Base format + variações (inclui versões com '+' para E.164)
   const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
   const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
@@ -261,6 +268,7 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
           return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
         } else {
   console.warn(`[WHATSAPP] ⚠️ Enviado, mas sem confirmação (timeout/ack=0).`);
+  return { ok: true, delivered: false, ack: 0, used: variation };
    // Considere retorno "ok" (aceito pelo servidor), apenas sem confirmação:+    return { ok: true, delivered: false, ack: 0, used: variation };
         }
       } catch (err) {
