@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
       appointmentDate,
       appointmentTime,
       isEncaixe: true,
-      fitInNote: notes, // <-- campo certo
+      fitInNote: notes, 
       clientData: {
         firstName,
         lastName,
@@ -450,7 +450,7 @@ function setDefaultDates() {
 
 // Selecionar barbeiro no filtro
 function selectBarber(barberId, barberName) {
-  console.log('[ADMIN] Barbeiro selecionado:', barberName);
+  // console.log('[ADMIN] Barbeiro selecionado:', barberName);
   selectedBarberId = barberId;
   document.getElementById('selectedBarber').textContent = barberName;
 }
@@ -459,7 +459,7 @@ function selectBarber(barberId, barberName) {
 
 // Toggle menu de ações
 function toggleActionsMenu(appointmentId) {
-  console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
+  // console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
 
   // Fechar outros menus
   if (openMenuId && openMenuId !== appointmentId) {
@@ -514,7 +514,7 @@ function createParagraph(label, value) {
 }
 
 async function viewAppointment(appointmentId) {
-  console.log('[ADMIN] Visualizando agendamento:', appointmentId);
+  // console.log('[ADMIN] Visualizando agendamento:', appointmentId);
   closeAllMenus();
 
   try {
@@ -616,7 +616,7 @@ async function editAppointment(appointmentId) {
 
 
 async function confirmAppointment(appointmentId) {
-  console.log('[ADMIN] Confirmando agendamento:', appointmentId);
+  // console.log('[ADMIN] Confirmando agendamento:', appointmentId);
   closeAllMenus();
 
      const ok = await confirmDialog({
@@ -650,7 +650,7 @@ async function confirmAppointment(appointmentId) {
 
 
 async function completeAppointment(appointmentId) {
-  console.log('[ADMIN] Concluindo agendamento:', appointmentId);
+  // console.log('[ADMIN] Concluindo agendamento:', appointmentId);
   closeAllMenus();
 
    const ok = await confirmDialog({
@@ -720,7 +720,7 @@ async function cancelAppointment(appointmentId) {
 }
 
 async function deleteAppointment(appointmentId) {
-  console.log('[ADMIN] Excluindo agendamento:', appointmentId);
+  // console.log('[ADMIN] Excluindo agendamento:', appointmentId);
   closeAllMenus();
 
 const ok = await confirmDialog({
