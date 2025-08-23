@@ -703,10 +703,10 @@ router.get('/reports', async (req, res) => {
       pageTitle: 'Relatórios',
       layout: 'admin',
       user: req.session.user,
-      appointments: formatted, // usado pela tabela e pelos cards
+      appointments: formatted, 
       barbers,
       view,
-      stats, // <-- Agora sempre enviamos stats
+      stats, 
       filters: { startDate, endDate, barberId, status, sort, limit },
       selectedLimit: limit,
       pagination: {
