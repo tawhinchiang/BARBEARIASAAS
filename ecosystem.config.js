@@ -30,7 +30,7 @@ module.exports = {
         LC_ALL: 'pt_BR.UTF-8',
         NODE_OPTIONS: '--max-old-space-size=512',
         PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: '0',
-         PUPPETEER_CACHE_DIR: '/root/.cache/puppeteer',
+        PUPPETEER_CACHE_DIR: '/root/.cache/puppeteer',
         FORCE_PUPPETEER: '1'
       }
     }

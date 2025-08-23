@@ -6,7 +6,8 @@ const { generatePhoneVariations, cleanPhone } = require('./smartphoneformatter')
 const deleteSession = require('../utils/deleteSession');
 const { exec } = require('child_process');
 const fs = require('fs');
-
+const puppeteer = require('puppeteer');
+const chromiumPath = puppeteer.executablePath();
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
   send: 10000,
@@ -46,19 +47,22 @@ client = new whatsapp.Client({
   }),
 puppeteer: {
   headless: true,
+  executablePath: chromiumPath,
   args: [
     '--no-sandbox',
     '--disable-setuid-sandbox',
-    '--disable-extensions',
-    '--lang=pt-BR',
-    '--mute-audio',
     '--disable-dev-shm-usage',
     '--no-first-run',
     '--no-zygote',
     '--disable-gpu',
-    '--disable-software-rasterizer'
+    '--disable-extensions',
+    '--disable-software-rasterizer',
+    '--lang=pt-BR',
+    '--mute-audio',
+    '--window-size=800,600'
   ]
-}
+},
+ qrTimeoutMs: 0
 });
 
 
