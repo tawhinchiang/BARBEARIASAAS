@@ -363,12 +363,16 @@ async function waitWhatsAppReady(timeoutMs = 20000) {
 function getLastQRCode() {
   return latestQrCode;
 }
+const isPM2 = !!process.env.pm_id;
 ['SIGINT','SIGTERM','SIGHUP'].forEach(sig => {
   process.on(sig, async () => {
+    console.log(`[WHATSAPP] Sinal ${sig} recebido, encerrando sessão com keepSession=true`);
     try { await disconnectWhatsApp({ keepSession: true }); } catch {}
-    process.exit(0);
+    // Sob PM2, NÃO finalize manualmente; deixe o PM2 orquestrar.
+    if (!isPM2) process.exit(0);
   });
 });
+
 module.exports = {
   initializeWhatsApp,
   sendWhatsAppMessage,
