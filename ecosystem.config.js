@@ -1,15 +1,14 @@
-
 module.exports = {
   apps: [
     {
       name: 'barbershop-app',
-     
-        script: "./server.js",   
+      script: "./server.js",
+      cwd: "/root/BARBEARIASAAS",          // ← GARANTE caminhos relativos
       instances: 1,
       exec_mode: 'fork',
       watch: false,
-      time: true,                 
-      merge_logs: true,          
+      time: true,
+      merge_logs: true,
       out_file: '/var/log/barbershop/out.log',
       error_file: '/var/log/barbershop/error.log',
       autorestart: true,
@@ -17,6 +16,7 @@ module.exports = {
       restart_delay: 4000,
       exp_backoff_restart_delay: 2000,
       kill_timeout: 8000,
+      wait_ready: false,                   // ← evite kill por timeout
       env: {
         NODE_ENV: 'development',
         PORT: 3000,
