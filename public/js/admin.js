@@ -700,8 +700,7 @@ function initializeCharts() {
       }
     });
   }
-  // Gráfico de agendamentos por dia    
-  // Gráfico de agendamentos por barbeiro
+
   const barberChartCanvas = document.getElementById('barberChart');
   if (barberChartCanvas) {
     const barberData = JSON.parse(barberChartCanvas.dataset.chartData || '{}');

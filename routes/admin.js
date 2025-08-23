@@ -57,13 +57,13 @@ router.use((req, res, next) => {
 });
 
 // ===== LOGS DETALHADOS =====
-const log = (message, data = null) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [ADMIN] ${message}`);
-  if (data) {
-    console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
-  }
-};
+// const log = (message, data = null) => {
+//   const timestamp = new Date().toISOString();
+//   console.log(`[${timestamp}] [ADMIN] ${message}`);
+//   if (data) {
+//     console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
+//   }
+// };
 
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
@@ -403,7 +403,7 @@ router.get('/appointments', async (req, res) => {
                          END`;
 
    const order = buildOrder(sort);
-    log('Filtros aplicados', { whereClause, sort, order, page, limit, offset });
+    
 
     const { count, rows: appointments } = await Appointment.findAndCountAll({
       where: whereClause,
@@ -703,10 +703,10 @@ router.get('/reports', async (req, res) => {
       pageTitle: 'Relatórios',
       layout: 'admin',
       user: req.session.user,
-      appointments: formatted, // usado pela tabela e pelos cards
+      appointments: formatted, 
       barbers,
       view,
-      stats, // <-- Agora sempre enviamos stats
+      stats, 
       filters: { startDate, endDate, barberId, status, sort, limit },
       selectedLimit: limit,
       pagination: {
