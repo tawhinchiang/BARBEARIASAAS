@@ -60,28 +60,20 @@ client = new whatsapp.Client({
   authStrategy: new SafeLocalAuth({
     clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
   }),
-  puppeteer: {
-    headless:'new',                      
-    executablePath: chromePath || undefined,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--disable-gpu',
-      '--disable-software-rasterizer',
-      '--no-first-run',
-      '--no-zygote',
-      // REMOVIDO: '--single-process' (instável em alguns hosts)
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-renderer-backgrounding',
-      '--disable-extensions',
-      '--mute-audio',
-      '--disable-sync',
-      '--disable-translate'
-    ]
-  }
+puppeteer: {
+  headless: 'new',
+  executablePath: chromePath || process.env.WHATSAPP_CHROME_BIN || '/usr/bin/google-chrome-stable',
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-extensions',
+    '--mute-audio',
+    '--no-first-run',
+    '--no-zygote',
+    '--disable-gpu',
+    '--disable-software-rasterizer'
+  ]
+}
 });
 
 
