@@ -28,6 +28,13 @@ serviceTypeId: {
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE'
 },
+reminderSent: {
+  type: DataTypes.BOOLEAN,
+  allowNull: false,
+  defaultValue: false,
+  comment: 'Indica se o lembrete prévio foi enviado (ACK ≥ 2)'
+},
+
   appointmentDate: {
     type: DataTypes.DATEONLY,
     allowNull: false

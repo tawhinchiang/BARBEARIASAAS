@@ -10,10 +10,13 @@ const fs = require('fs');
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
   send: 10000,
-  ack: 20000,
+  ack: 45000,
   retryBase: 1000,
   debugDelay: 10000
 };
+function ackLabel(ack) {
+  return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[ack] ?? String(ack);
+}
 
 let client = null;
 let isReady = false;
@@ -67,7 +70,9 @@ puppeteer: {
     '--no-sandbox',
     '--disable-setuid-sandbox',
     '--disable-extensions',
+    '--lang=pt-BR',
     '--mute-audio',
+    '--disable-dev-shm-usage',
     '--no-first-run',
     '--no-zygote',
     '--disable-gpu',
@@ -137,13 +142,52 @@ try { await disconnectWhatsApp({ keepSession: false }); } catch {}
     initializing = false;
   }
 }
+// Aguarda confirmação de entrega (ACK) da mensagem específica.
+// ack: 0=pending, 1=servidor, 2=entregue no aparelho, 3=lido, 4=áudio reproduzido
+function waitForAck(msg, { minAck = 2, timeoutMs = TIMEOUTS.ack } = {}) {
+  return new Promise((resolve) => {
+    let done = false;
+
+    const timer = setTimeout(() => {
+      if (!done) {
+        done = true;
+        try { client.removeListener('message_ack', onAck); } catch (_) {}
+        resolve({ delivered: false, ack: 0, reason: 'timeout' });
+      }
+    }, timeoutMs);
+
+    const onAck = (ackMsg, ack) => {
+      try {
+        // Garante que é o mesmo messageId
+        const same = ackMsg?.id?.id && msg?.id?.id && (ackMsg.id.id === msg.id.id);
+        if (same && ack >= minAck && !done) {
+          done = true;
+          clearTimeout(timer);
+          client.removeListener('message_ack', onAck);
+          resolve({ delivered: true, ack });
+        }
+      } catch (_) { /* ignora */ }
+    };
+
+    client.on('message_ack', onAck);
+  });
+}
 
 // Desconectar WhatsApp corretamente
 async function disconnectWhatsApp(options = { keepSession: false }) {
   try {
     if (client) {
       console.log('🔌 Desconectando WhatsApp...');
+           try {
+       const browser = client.pupBrowser;
+        const proc = browser && browser.process ? browser.process() : null;
+        if (proc?.pid) {
+         console.log(`🧹 Encerrando navegador PID=${proc.pid}...`);
+         proc.kill('SIGKILL');
+    }
+      } catch (_) {}
       await client.destroy();
+      
       await delay(2000);
       client = null;
       isReady = false;
@@ -186,24 +230,33 @@ async function ensureClientReady() {
   return true;
 }
 
-async function sendMessageWithTimeout(numberId, message, timeoutMs = 10000) {
-  return Promise.race([
-    client.sendMessage(numberId, message),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("⏱ Timeout no envio da mensagem")), timeoutMs)
-    )
-  ]);
+async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.send) {
+ return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {      reject(new Error('⏱ Timeout no envio da mensagem'));    }, timeoutMs);  client.sendMessage(numberId, message)
+     .then(res => {
+       clearTimeout(timer);
+       resolve(res);
+      })     .catch(err => {
+       clearTimeout(timer);
+        reject(err);
+      });
+  });
 }
 
 async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   console.log(`[WHATSAPP] 🚀 Enviando para: ${phone}`);
   await ensureClientReady();
 
+  // 1) Base format + variações (inclui versões com '+' para E.164)
   const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
-  const variations = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))];
+  const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
+
+  // Inclui a mesma variação com e sem '+' e remove duplicadas
+  const variations = Array.from(new Set(
+    rawVars.flatMap(v => (v.startsWith('+') ? [v, v.slice(1)] : [v, `+${v}`]))
+  ));
 
   for (const variation of variations) {
-    if (!variation) continue;
     console.log(`[WHATSAPP] 🔍 Testando variação: ${variation}`);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -211,18 +264,24 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         const numberId = await client.getNumberId(variation);
         if (!numberId) throw new Error(`Número inválido no WhatsApp: ${variation}`);
 
+        // 2) Envia com timeout
         const msg = await sendMessageWithTimeout(numberId._serialized, message, TIMEOUTS.send);
-        console.log(`[WHATSAPP] ✅ Envio aceito pelo WhatsApp (tentativa ${attempt})`);
+        console.log(`[WHATSAPP] ✅ Envio ACEITO (tentativa ${attempt})`);
 
-        client.on("message_ack", (ackMsg, ack) => {
-          if (ackMsg.id.id === msg.id.id) {
-            console.log(`[WHATSAPP] 📬 ACK recebido (${ack}) para ${variation}`);
-          }
-        });
+        // 3) Aguarda ACK ≥ 2 (entregue no aparelho)
+        const ackInfo = await waitForAck(msg, { minAck: 2, timeoutMs: TIMEOUTS.ack });
 
-        return true;
+        if (ackInfo.delivered) {
+console.log(`[WHATSAPP] 📬 ENTREGUE (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}`);
+          // Retorno "rico" (retrocompatível: será truthy onde esperam boolean)
+          return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
+        } else {
+          console.warn(`[WHATSAPP] ⚠️ Sem ACK de entrega (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}.`);
+          // Tenta próxima variação (não adianta re-tentar a mesma sem ACK)
+          break;
+        }
       } catch (err) {
-        console.error(`[WHATSAPP] ❌ Falha com ${variation} (tentativa ${attempt}): ${err.message}`);
+        console.error(`[WHATSAPP] ❌ Falha ${variation} (tentativa ${attempt}): ${err.message}`);
         if (attempt < maxRetries) {
           const waitTime = attempt * TIMEOUTS.retryBase;
           console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
@@ -233,24 +292,34 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   }
 
   console.error(`[WHATSAPP] 💥 Todas as variações falharam para ${phone}`);
-  return false;
+  return { ok: false, delivered: false };
 }
 
 async function sendWhatsAppMessageDebug(phone, message) {
   console.log(`[DEBUG] 🔬 Debug ativado para: ${phone}`);
   try {
     await ensureClientReady();
-    const variations = generatePhoneVariations(cleanPhone(phone));
+
+    const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
+    const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
+    const variations = Array.from(new Set(
+      rawVars.flatMap(v => (v.startsWith('+') ? [v, v.slice(1)] : [v, `+${v}`]))
+    ));
+
     if (DEBUG) console.log(`[DEBUG] Variações geradas:`, variations);
 
     for (const variation of variations) {
       try {
         const contactId = await client.getNumberId(variation);
         if (contactId) {
-          await sendMessageWithTimeout(contactId._serialized, message);
-          console.log(`[DEBUG] ✅ Sucesso com ${variation}`);
-          await delay(10000);
-          return true;
+          const msg = await sendMessageWithTimeout(contactId._serialized, message, TIMEOUTS.send);
+          const ackInfo = await waitForAck(msg, { minAck: 2, timeoutMs: TIMEOUTS.ack });
+          if (ackInfo.delivered) {
+            console.log(`[DEBUG] ✅ ENTREGUE (ack=${ackInfo.ack}) com ${variation}`);
+            return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
+          } else {
+            console.warn(`[DEBUG] ⚠️ Sem ACK de entrega (ack=${ackInfo.ack}) com ${variation}`);
+          }
         }
       } catch (err) {
         console.log(`[DEBUG] ❌ Falhou com ${variation}: ${err.message}`);
@@ -258,12 +327,14 @@ async function sendWhatsAppMessageDebug(phone, message) {
     }
 
     console.log(`[DEBUG] 💥 Nenhuma variação funcionou`);
-    return false;
+    return { ok: false, delivered: false };
   } catch (err) {
     console.error(`[DEBUG] 💥 Erro geral:`, err.message);
-    return false;
+    return { ok: false, delivered: false };
   }
 }
+
+
 
 function getWhatsAppStatus() {
   return {
@@ -292,7 +363,12 @@ async function waitWhatsAppReady(timeoutMs = 20000) {
 function getLastQRCode() {
   return latestQrCode;
 }
-
+['SIGINT','SIGTERM','SIGHUP'].forEach(sig => {
+  process.on(sig, async () => {
+    try { await disconnectWhatsApp({ keepSession: true }); } catch {}
+    process.exit(0);
+  });
+});
 module.exports = {
   initializeWhatsApp,
   sendWhatsAppMessage,
