@@ -1,7 +1,8 @@
 const express = require('express');
 const { sendWhatsAppMessage } = require('../utils/whatsapp'); // Usando versão corrigida
 const normalizePhone = require('../utils/normalizePhone'); // Usando versão corrigida
-const moment = require('moment');
+const moment = require('moment-timezone');
+const TZ = process.env.TZ || 'America/Sao_Paulo';
 const { QueryTypes } = require('sequelize');
 const { Client, Barber, ServiceType, Appointment } = require('../models');
 const sequelize = require('../config/database'); 
@@ -94,7 +95,7 @@ router.post('/api/appointments', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Barbeiro inválido ou sem expediente configurado' });
     }
 
-    const weekdayIndex = moment(appointmentDate).isoWeekday(); // 1..7 (Mon..Sun)
+    const weekdayIndex = moment.tz(appointmentDate, 'YYYY-MM-DD', TZ).isoWeekday();
     const weekdayNames = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
     const weekday = weekdayNames[weekdayIndex - 1];
 
@@ -193,31 +194,33 @@ router.post('/api/appointments', async (req, res) => {
       notes: clientData.notes || null
     });
 
-    const io = req.app.get('io');
+   const io = req.app.get('io');
+   if (io) {
     io.emit('new_appointment', {
       id: appointment.id,
       client: `${client.firstName} ${client.lastName}`,
       time: appointment.appointmentTime,
       date: appointment.appointmentDate
     });
-
+  }
     const fullName = `${client.firstName} ${client.lastName}`;
     const priceNum = Number(serviceType.price);
     const priceFormatted = Number.isNaN(priceNum) ? '0.00' : priceNum.toFixed(2);
 
-    const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:* ${appointmentTime}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
+    const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:*  ${timeHHmm}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
 
-    // CORREÇÃO CRÍTICA: Usar o telefone original (não normalizado) para o WhatsApp
-    // A nova função sendWhatsAppMessage vai fazer a formatação inteligente
-    log(`Tentando enviar WhatsApp para: ${phone} (original)`);
-    const sent = await sendWhatsAppMessage(phone, msg);
+   
+   log(`Tentando enviar WhatsApp para: ${cleanPhone} (normalizado)`);
+   const sent = await sendWhatsAppMessage(cleanPhone, msg);
     
-    if (sent) {
-      log('✅ Mensagem WhatsApp enviada com sucesso');
+     if (sent?.delivered) {
+      await appointment.update({ whatsappSent: true });
+      log(`✅ Mensagem ENTREGUE (ack=${sent.ack ?? 'n/a'})`);
     } else {
       logError('❌ Falha ao enviar mensagem pelo WhatsApp', { 
         originalPhone: phone, 
-        normalizedPhone: cleanPhone 
+        normalizedPhone: cleanPhone ,
+         result: sent || null
       });
     }
 
@@ -229,7 +232,7 @@ router.post('/api/appointments', async (req, res) => {
       date: appointmentDate,
       time: timeHHmm,
       price: serviceType.price,
-      whatsappSent: sent
+      whatsappSent: !!sent?.delivered
     });
 
     res.status(201).json({
@@ -253,7 +256,7 @@ router.post('/api/appointments', async (req, res) => {
         totalPrice: priceNum,
         status: appointment.status
       },
-      whatsappSent: sent
+      whatsappSent: !!sent?.delivered
     });
 
   } catch (error) {
