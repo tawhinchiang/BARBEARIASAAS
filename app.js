@@ -223,6 +223,11 @@ app.use((req, res, next) => {
   
   next();
 });
+// Evita ruído de 404 p/ favicon ausente
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// Responde rápido a varredura maliciosa por .env
+app.all('/.env', (req, res) => res.status(404).type('txt').send('Not Found'));
 
 // Middleware de erro 404
 // 404 limpo (sem stack)
