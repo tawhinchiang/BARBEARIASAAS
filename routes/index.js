@@ -109,16 +109,7 @@ router.get('/api/services', async (req, res) => {
       order: [['name', 'ASC']]
     });
     
-    log('Serviços encontrados', {
-      count: services.length,
-      services: services.map(s => ({
-        id: s.id,
-        name: s.name,
-        price: s.price,
-        duration: s.duration,
-        photo: s.photo   // ← loga também a duração
-      }))
-    });
+
     
     res.json({ services });
   } catch (error) {
@@ -192,7 +183,7 @@ router.get('/api/available-times', async (req, res) => {
         logError('Erro ao fazer parse de workingHours', err);
         parsed = {};
       }
-      log('workingHours recebido do banco', { raw: barber.workingHours });
+     
 
 if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
   const dayConfig = parsed[dayOfWeek];
