@@ -57,13 +57,13 @@ router.use((req, res, next) => {
 });
 
 // ===== LOGS DETALHADOS =====
-// const log = (message, data = null) => {
-//   const timestamp = new Date().toISOString();
-//   console.log(`[${timestamp}] [ADMIN] ${message}`);
-//   if (data) {
-//     console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
-//   }
-// };
+const log = (message, data = null) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [ADMIN] ${message}`);
+  if (data) {
+    console.log(`[${timestamp}] [ADMIN] Data:`, JSON.stringify(data, null, 2));
+  }
+};
 
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
