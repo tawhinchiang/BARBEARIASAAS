@@ -60,9 +60,9 @@ async function getServiceRevenue(serviceId) {
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [SERVICES] ${message}`);
+  // console.log(`[${timestamp}] [SERVICES] ${message}`);
   if (data) {
-    console.log(`[${timestamp}] [SERVICES] Data:`, JSON.stringify(data, null, 2));
+    // console.log(`[${timestamp}] [SERVICES] Data:`, JSON.stringify(data, null, 2));
   }
 };
 
