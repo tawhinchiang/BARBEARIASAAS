@@ -58,13 +58,13 @@ async function getServiceRevenue(serviceId) {
 }
 
 // ===== LOGS DETALHADOS =====
-// const log = (message, data = null) => {
-//   const timestamp = new Date().toISOString();
-//   console.log(`[${timestamp}] [SERVICES] ${message}`);
-//   if (data) {
-//     console.log(`[${timestamp}] [SERVICES] Data:`, JSON.stringify(data, null, 2));
-//   }
-// };
+const log = (message, data = null) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [SERVICES] ${message}`);
+  if (data) {
+    console.log(`[${timestamp}] [SERVICES] Data:`, JSON.stringify(data, null, 2));
+  }
+};
 
 const logError = (message, error) => {
   const timestamp = new Date().toISOString();
@@ -110,7 +110,7 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 }));
 
     
-    log(`${services.length} serviços carregados`);
+    // log(`${services.length} serviços carregados`);
     console.log(servicesWithStats);
     res.render('admin/services', {
       title: 'Gerenciar Serviços',
@@ -138,7 +138,7 @@ router.post('/create', upload.single('photo'), async (req, res) => {
     const { name, description, price, duration, isActive, isPromo } = req.body;
     const photo = req.file ? '/uploads/services/' + req.file.filename : null;
 
-    log('Criando novo serviço', { body: req.body, file: req.file?.filename });
+    // log('Criando novo serviço', { body: req.body, file: req.file?.filename });
 
     // === Validações ===
     if (!name || !price || !duration) {
