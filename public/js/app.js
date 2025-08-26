@@ -682,48 +682,97 @@ function validateClientForm() {
 
 // Confirmar agendamento
 // Confirmar agendamento
-async function confirmBooking() {
-  if (!validateClientForm()) {
-    showNotification('Preencha todos os campos corretamente', 'error');
+function setBtnLoading(btn, isLoading, textWhenLoading = 'Confirmando agendamento...', textWhenIdle = 'Confirmar agendamento') {
+  if (!btn) return;
+  const spinner = btn.querySelector('.spinner-border');
+  const label = btn.querySelector('.btn-label');
+
+  if (isLoading) {
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    btn.setAttribute('aria-busy', 'true');
+    if (spinner) spinner.classList.remove('d-none');
+    if (label) label.textContent = textWhenLoading;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('btn-loading');
+    btn.setAttribute('aria-busy', 'false');
+    if (spinner) spinner.classList.add('d-none');
+    if (label) label.textContent = textWhenIdle;
+  }
+}
+
+async function confirmBooking(btnEl) {
+ if (typeof validateClientForm === 'function' && !validateClientForm()) {
+    if (typeof showNotification === 'function') {
+      showNotification('Preencha todos os campos corretamente', 'error');
+    }
     return;
   }
-
-  const phoneInput = document.getElementById('clientPhone');
-  const formattedPhone = formatPhoneForWhatsApp(phoneInput.value);
-
-  const bookingData = {
-    serviceId: appState.selectedService.id,
-    barberId: appState.selectedBarber.id,
-    appointmentDate: appState.selectedDate.toISOString().split('T')[0],
-    appointmentTime: appState.selectedTime,
-    clientData: {
-      firstName: document.getElementById('clientFirstName').value.trim(),
-      lastName: document.getElementById('clientLastName').value.trim(),
-      phone: formattedPhone,
-      email: document.getElementById('clientEmail')?.value.trim() || ''
-    }
-  };
-
+  setBtnLoading(btnEl, true, 'Confirmando agendamento...', 'Confirmar agendamento');
+  
   try {
-    const res = await fetch('/api/appointments', {
+    
+    const phoneInput = document.getElementById('clientPhone');
+    const formattedPhone = typeof formatPhoneForWhatsApp === 'function'
+      ? formatPhoneForWhatsApp(phoneInput.value)
+      : (phoneInput?.value || '').trim();
+
+    const bookingData = typeof collectBookingData === 'function' ? collectBookingData() : {};
+    bookingData.clientPhone = formattedPhone;
+
+   
+    const csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : (window.csrfToken || ''));
+    const resp = await fetch('/api/appointments/confirm', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+      },
       body: JSON.stringify(bookingData)
     });
 
-    if (!res.ok) throw new Error((await res.json()).message || res.statusText);
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(errText || 'Falha ao confirmar o agendamento');
+    }
 
-    updateFinalConfirmation(bookingData);
-    goToStep(5); 
-    // Esconde form do cliente e mostra confirmação final
-    document.getElementById('clientSection').style.display = 'none';
-    document.getElementById('finalSection').style.display = 'block';
+    const result = await resp.json();
 
-    showNotification('Agendamento confirmado!', 'success');
+  
+    if (result?.sendWhatsApp === true && formattedPhone) {
+      const wppResp = await fetch('/api/whatsapp/send-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
+        body: JSON.stringify({
+          to: formattedPhone,
+          appointmentId: result.appointmentId,
+          message: result?.whatsMessage || 'Seu agendamento foi confirmado!'
+        })
+      });
+      if (!wppResp.ok) {
+        const errText = await wppResp.text();
+        throw new Error(errText || 'Agendou, mas falhou ao enviar mensagem no WhatsApp');
+      }
+    }
+
+    if (typeof showNotification === 'function') {
+      showNotification('Agendamento confirmado com sucesso!', 'success');
+    }
+  
+    if (typeof goToStep === 'function') goToStep(5);
 
   } catch (err) {
-    logError('Erro ao confirmar agendamento', err);
-    showNotification('Erro ao confirmar agendamento', 'error');
+    console.error('[confirmBooking] erro:', err);
+    if (typeof showNotification === 'function') {
+      showNotification(err.message || 'Erro ao confirmar agendamento', 'error');
+    }
+  } finally {
+    
+    setBtnLoading(btnEl, false);
   }
 }
 

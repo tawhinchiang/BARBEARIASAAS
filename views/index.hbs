@@ -92,7 +92,14 @@
         <li class="list-group-item bg-dark text-light">Preço: <span id="summaryPrice"></span></li>
       </ul>
 
-      <button id="confirmBooking" class="btn btn-success w-100" onclick="confirmBooking()">Confirmar Agendamento</button>
+     <button id="btnConfirmBooking"
+        type="button"
+        class="btn btn-success w-100 d-inline-flex align-items-center justify-content-center gap-2"
+        onclick="confirmBooking(this)">
+  <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+  <span class="btn-label">Confirmar agendamento</span>
+</button>
+
     </div>
       <!-- Botão voltar -->
       <div class="d-flex justify-content-start mt-3">
