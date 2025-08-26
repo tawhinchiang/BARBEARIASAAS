@@ -18,7 +18,7 @@ const TIMEOUTS = {
 function ackLabel(ack) {
   return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[ack] ?? String(ack);
 }
-
+const ACK_SUCCESS_LEVEL = parseInt(process.env.ACK_SUCCESS_LEVEL || "1", 10);
 let client = null;
 let isReady = false;
 let latestQrCode = null;
@@ -260,7 +260,7 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         console.log(`[WHATSAPP] ✅ Envio ACEITO (tentativa ${attempt})`);
 
         // 3) Aguarda ACK ≥ 2 (entregue no aparelho)
-        const ackInfo = await waitForAck(msg, { minAck: 1, timeoutMs: TIMEOUTS.ack });
+         const ackInfo = await waitForAck(msg, { minAck: ACK_SUCCESS_LEVEL, timeoutMs: TIMEOUTS.ack });
 
         if (ackInfo.delivered) {
           console.log(`[WHATSAPP] 📬 ENTREGUE (ack=${ackInfo.ack}=${ackLabel(ackInfo.ack)}) via ${variation}`);
