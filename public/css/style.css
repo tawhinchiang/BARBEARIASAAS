@@ -682,8 +682,12 @@ mark {
   z-index: 1050;
 }
 
-#meuModal .modal.show {
+#meuModal.show {
   display: flex !important;
+}
+
+  body.modal-open {
+  overflow: hidden;
 }
 
 #meuModal .modal-dialog {
@@ -708,7 +712,8 @@ mark {
 #meuModal .modal-content {
   background-color: #000 !important;
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
   color: #fff !important;
   display: flex;
   flex-direction: column;
@@ -716,6 +721,7 @@ mark {
   overflow: auto;
   width: 100%;
   max-width: 900px; 
+  margin:0;
 }
 
 #meuModal .modal-header {
