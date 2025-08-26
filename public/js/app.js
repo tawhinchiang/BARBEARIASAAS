@@ -574,32 +574,36 @@ function changeMonth(direction) {
 // Atualizar resumo do agendamento
 function updateBookingSummary() {
   log('Atualizando resumo do agendamento');
-  
-  const elements = {
-    service: document.getElementById('summaryService'),
-    barber: document.getElementById('summaryBarber'),
-    date: document.getElementById('summaryDate'),
-    time: document.getElementById('summaryTime'),
-    duration: document.getElementById('summaryDuration'),
-    price: document.getElementById('summaryPrice')
-  };
-  
-  if (elements.service) 
-    elements.service.textContent = appState.selectedService?.name || '-';
-  if (elements.barber) 
-    elements.barber.textContent = appState.selectedBarber?.name || '-';
-  if (elements.date) 
-    elements.date.textContent = appState.selectedDate?.toLocaleDateString('pt-BR') || '-';
-  if (elements.time) 
-    elements.time.textContent = appState.selectedTime || '-';
-  if (elements.duration) 
-    elements.duration.textContent = appState.selectedService?.duration + 'min' || '-';
 
-  if (elements.price) {
+  const el = {
+    service:  document.getElementById('summaryService'),
+    barber:   document.getElementById('summaryBarber'),
+    date:     document.getElementById('summaryDate'),
+    time:     document.getElementById('summaryTime'),
+    duration: document.getElementById('summaryDuration'),
+    price:    document.getElementById('summaryPrice')
+  };
+
+  if (el.service) el.service.textContent = appState.selectedService?.name || '-';
+  if (el.barber)  el.barber.textContent  = appState.selectedBarber?.name || '-';
+  if (el.date)    el.date.textContent    = appState.selectedDate?.toLocaleDateString('pt-BR') || '-';
+  if (el.time)    el.time.textContent    = appState.selectedTime || '-';
+
+  if (el.duration) {
+    const d = appState.selectedService?.duration;
+    let label;
+    if (typeof d === 'number') label = `${d} min`;
+    else if (typeof d === 'string') label = d.replace(/\s*min$/i, '').trim() + ' min';
+    else label = '-';
+    el.duration.textContent = label;
+  }
+
+  if (el.price) {
     const priceNum = Number(appState.selectedService?.price) || 0;
-    elements.price.textContent = `R$ ${priceNum.toFixed(2)}`;
+    el.price.textContent = `R$ ${priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   }
 }
+
 
 // Máscara de telefone
 function setupPhoneMask() {
@@ -711,24 +715,22 @@ async function confirmBooking(btnEl) {
   }
   setBtnLoading(btnEl, true, 'Confirmando agendamento...', 'Confirmar agendamento');
   
-  try {
-    
-    const phoneInput = document.getElementById('clientPhone');
-    const formattedPhone = typeof formatPhoneForWhatsApp === 'function'
-      ? formatPhoneForWhatsApp(phoneInput.value)
-      : (phoneInput?.value || '').trim();
-
-    const bookingData = typeof collectBookingData === 'function' ? collectBookingData() : {};
-    bookingData.clientPhone = formattedPhone;
-
+    try {
    
+    const bookingData = collectBookingData();
+
+    
     const csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : (window.csrfToken || ''));
+
     const resp = await fetch('/api/appointments', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
-    body: JSON.stringify(bookingData)
-  });
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+      },
+      body: JSON.stringify(bookingData)
+    });
 
     if (!resp.ok) {
       const errText = await resp.text();
@@ -737,24 +739,67 @@ async function confirmBooking(btnEl) {
 
     const result = await resp.json();
 
-  
- 
+    // 4) Atualiza o resumo final (Step 5) com os dados enviados/selecionados
+    if (typeof updateFinalConfirmation === 'function') {
+      updateFinalConfirmation(bookingData);
+    }
+    if (typeof goToStep === 'function') goToStep(5);
 
     if (typeof showNotification === 'function') {
       showNotification('Agendamento confirmado com sucesso!', 'success');
     }
-  
-    if (typeof goToStep === 'function') goToStep(5);
-
   } catch (err) {
     console.error('[confirmBooking] erro:', err);
     if (typeof showNotification === 'function') {
       showNotification(err.message || 'Erro ao confirmar agendamento', 'error');
     }
   } finally {
-    
     setBtnLoading(btnEl, false);
   }
+}
+function collectBookingData() {
+  if (!window.appState) window.appState = {};
+  const { selectedService, selectedBarber, selectedDate, selectedTime } = window.appState;
+
+  // Checks de fluxo
+  if (!selectedService || !selectedService.id) throw new Error('Serviço não selecionado');
+  if (!selectedBarber || !selectedBarber.id) throw new Error('Barbeiro não selecionado');
+  if (!selectedDate || !(selectedDate instanceof Date)) throw new Error('Data não selecionada');
+  if (!selectedTime) throw new Error('Horário não selecionado');
+
+  // Campos do formulário
+  const firstNameEl = document.getElementById('clientFirstName');
+  const lastNameEl  = document.getElementById('clientLastName');
+  const phoneEl     = document.getElementById('clientPhone');
+  const emailEl     = document.getElementById('clientEmail');
+
+  const firstName = firstNameEl?.value?.trim() || '';
+  const lastName  = lastNameEl?.value?.trim() || '';
+  const phoneRaw  = phoneEl?.value?.trim() || '';
+  const email     = emailEl?.value?.trim() || '';
+
+  if (!firstName || !lastName || !phoneRaw) {
+    throw new Error('Preencha nome, sobrenome e telefone');
+  }
+
+  // Normaliza telefone (reutiliza sua helper)
+  const formattedPhone = (typeof formatPhoneForWhatsApp === 'function')
+    ? formatPhoneForWhatsApp(phoneRaw)
+    : phoneRaw;
+
+  // Importante: o telefone vai **dentro de clientData**
+  return {
+    serviceId: selectedService.id,
+    barberId: selectedBarber.id,
+    appointmentDate: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
+    appointmentTime: selectedTime,                             // HH:mm
+    clientData: {
+      firstName,
+      lastName,
+      phone: formattedPhone || phoneRaw,
+      email
+    }
+  };
 }
 
 // Atualizar confirmação final
