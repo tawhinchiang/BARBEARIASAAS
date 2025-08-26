@@ -867,39 +867,42 @@ function abrirModal() {
 }
 
 function positionModalOverCalendar() {
-  const cal = document.getElementById('calendarSection');
+  const anchor = document.getElementById('calendarGrid') || document.getElementById('calendarSection');
   const content = modal?.querySelector('.modal-content');
-  if (!cal || !content || !modal) return;
+  if (!anchor || !content || !modal) return;
 
-  // Garantir que o overlay alinhe pelo topo (o JS decide o “offset”)
+  // overlay controla o deslocamento via padding-top
   modal.style.alignItems = 'flex-start';
   modal.style.justifyContent = 'center';
 
-  const calRect = cal.getBoundingClientRect();
-  const styles = window.getComputedStyle(content);
-  const marginY = (parseFloat(styles.marginTop) || 0) + (parseFloat(styles.marginBottom) || 0);
+  const rect = anchor.getBoundingClientRect();
+
+  // altura final da caixa (inclui paddings/borda + eventuais margens)
+  const cs = window.getComputedStyle(content);
+  const marginY = (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
   const contentH = content.offsetHeight + marginY;
 
-  // Centro do calendário
-  const calCenterY = calRect.top + (calRect.height / 2);
+  // centro do GRID (não da seção inteira)
+  const anchorCenterY = rect.top + rect.height / 2;
 
-  // Topo desejado da caixa = centro do calendário - metade da caixa
-  let top = calCenterY - (contentH / 2);
+  // topo ideal da caixa = centro do grid - metade da caixa
+  let top = anchorCenterY - contentH / 2;
 
-  // Mantém dentro da viewport (16px de respiro)
-  const minTop = 16;
-  const maxTop = Math.max(16, window.innerHeight - contentH - 16);
-  top = Math.min(Math.max(top, minTop), maxTop);
+  // mantém dentro da tela (16px de respiro)
+  const pad = 16;
+  const maxTop = Math.max(pad, window.innerHeight - contentH - pad);
+  top = Math.min(Math.max(top, pad), maxTop);
 
-  // Aplicar o “offset” via padding do overlay
+  // aplica deslocamento no overlay
   modal.style.paddingTop = `${Math.round(top)}px`;
 
-  // Garante que nenhum resíduo de posicionamento antigo interfira
+  // limpar qualquer resíduo de posicionamento na caixa
   content.style.position = '';
   content.style.left = '';
   content.style.top = '';
   content.style.transform = '';
 }
+
 
 
 
