@@ -2839,8 +2839,9 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 
   #meuModal .modal-content {
-    margin: 10px;
-  }
+  margin: 0;            /* não empurra para baixo em telas pequenas */
+  box-sizing: border-box;
+}
 }
 
 @media (max-width: 480px) {

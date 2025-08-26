@@ -485,7 +485,7 @@ async function loadAvailableTimes(date) {
     timesContainer.style.display = 'block';
     timesContainer.classList.add('show');
     timesContainer.classList.add('fade-in-soft');
-
+    requestAnimationFrame(() => positionModalOverCalendar());
     log(`${times.length} horários carregados e exibidos`);
 
   } catch (error) {
@@ -852,38 +852,44 @@ const modal = document.getElementById('meuModal');
 function abrirModal() {
   if (!modal) return;
 
-  // Garante que o modal não “herde” transform de ancestrais
   if (modal.parentElement !== document.body) {
-    document.body.appendChild(modal); // “portal” pro <body>
+    document.body.appendChild(modal);
   }
 
   modal.style.display = 'flex';
   modal.classList.add('show', 'fade-in-modal');
-  document.body.classList.add('modal-open'); // trava scroll do body
+  document.body.classList.add('modal-open');
 
-  // Posiciona a caixa do modal sobre o centro do calendário
-  requestAnimationFrame(positionModalOverCalendar);
+  requestAnimationFrame(() => {
+    positionModalOverCalendar();
+    watchModalResize(); // 👈 começa a observar mudanças de altura
+  });
 }
+
 function positionModalOverCalendar() {
   const cal = document.getElementById('calendarSection');
   const content = modal?.querySelector('.modal-content');
   if (!cal || !content) return;
 
   const rect = cal.getBoundingClientRect();
-  const contentH = content.offsetHeight;
 
-  // Centro vertical do calendário – metade de sua altura – metade da altura da caixa
+  // altura da caixa + margens (para mobile)
+  const contentRect = content.getBoundingClientRect();
+  const styles = window.getComputedStyle(content);
+  const marginY = (parseFloat(styles.marginTop) || 0) + (parseFloat(styles.marginBottom) || 0);
+  const contentH = contentRect.height + marginY;
+
+  // Centro vertical do calendário
   let top = rect.top + (rect.height / 2) - (contentH / 2);
 
-  // Limites de segurança para não grudar nas bordas
-  const minTop = 16;                  // 16px do topo
+  // Mantém dentro da viewport
+  const minTop = 16;
   const maxTop = Math.max(16, window.innerHeight - contentH - 16);
   top = Math.min(Math.max(top, minTop), maxTop);
 
   // Centro horizontal do calendário
   const left = rect.left + (rect.width / 2);
 
-  // Aplica posicionamento fixo na viewport (sem mexer no calendário)
   content.style.position = 'fixed';
   content.style.left = `${left}px`;
   content.style.top = `${top}px`;
@@ -891,14 +897,45 @@ function positionModalOverCalendar() {
 }
 
 
+let modalResizeObserver;
+
+function watchModalResize() {
+  const content = modal?.querySelector('.modal-content');
+  if (!content) return;
+  if (modalResizeObserver) modalResizeObserver.disconnect();
+
+  modalResizeObserver = new ResizeObserver(() => {
+    positionModalOverCalendar();
+  });
+  modalResizeObserver.observe(content);
+}
+
 function fecharModal() {
   if (!modal) return;
-  
+
   modal.classList.remove('show', 'fade-in-modal');
   modal.style.display = 'none';
   document.body.classList.remove('modal-open');
-  log('Modal fechado');
+
+  if (modalResizeObserver) modalResizeObserver.disconnect();
+
+  const content = modal.querySelector('.modal-content');
+  if (content) {
+    content.style.position = '';
+    content.style.left = '';
+    content.style.top = '';
+    content.style.transform = '';
+  }
 }
+window.addEventListener('resize', () => {
+  if (modal?.classList.contains('show')) positionModalOverCalendar();
+});
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    if (modal?.classList.contains('show')) positionModalOverCalendar();
+  }, 150);
+});
+
 
 // Fechar modal ao clicar fora
 if (modal) {
