@@ -862,46 +862,33 @@ function abrirModal() {
 
   requestAnimationFrame(() => {
     positionModalOverCalendar();
-    watchModalResize(); // 👈 começa a observar mudanças de altura
+    watchModalResize(); 
   });
 }
 
 function positionModalOverCalendar() {
-  const anchor = document.getElementById('calendarGrid') || document.getElementById('calendarSection');
+  const anchor  = document.getElementById('calendarGrid') || document.getElementById('calendarSection');
   const content = modal?.querySelector('.modal-content');
-  if (!anchor || !content || !modal) return;
+  if (!modal || !anchor || !content) return;
 
-  // overlay controla o deslocamento via padding-top
-  modal.style.alignItems = 'flex-start';
+  // overlay começa no topo (via flex-start); vamos só deslocar por padding-top
+  modal.style.alignItems   = 'flex-start';
   modal.style.justifyContent = 'center';
 
-  const rect = anchor.getBoundingClientRect();
+  const rect = anchor.getBoundingClientRect();          // coords do calendário na viewport
+  const contentH = content.getBoundingClientRect().height;
 
-  // altura final da caixa (inclui paddings/borda + eventuais margens)
-  const cs = window.getComputedStyle(content);
-  const marginY = (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
-  const contentH = content.offsetHeight + marginY;
+  const calendarCenterY = rect.top + rect.height / 2;   // centro vertical do calendário
+  let top = calendarCenterY - contentH / 2;             // centraliza a caixa nesse centro
 
-  // centro do GRID (não da seção inteira)
-  const anchorCenterY = rect.top + rect.height / 2;
-
-  // topo ideal da caixa = centro do grid - metade da caixa
-  let top = anchorCenterY - contentH / 2;
-
-  // mantém dentro da tela (16px de respiro)
+  // mantém dentro da viewport (com respiro)
   const pad = 16;
   const maxTop = Math.max(pad, window.innerHeight - contentH - pad);
   top = Math.min(Math.max(top, pad), maxTop);
 
-  // aplica deslocamento no overlay
   modal.style.paddingTop = `${Math.round(top)}px`;
-
-  // limpar qualquer resíduo de posicionamento na caixa
-  content.style.position = '';
-  content.style.left = '';
-  content.style.top = '';
-  content.style.transform = '';
 }
+
 
 
 
