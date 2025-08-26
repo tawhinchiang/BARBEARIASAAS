@@ -3236,3 +3236,4 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   box-sizing: border-box;
   will-change: top;
 }
+#meuModal { transform: none !important; animation: none !important; }

@@ -855,12 +855,16 @@ function abrirModal() {
   if (modal.parentElement !== document.body) document.body.appendChild(modal);
 
   modal.style.display = 'flex';
-  modal.classList.add('show', 'fade-in-modal');
+  modal.classList.add('show');              // <- sem fade-in-modal aqui
+
+  const content = modal.querySelector('.modal-content');
+  content?.classList.add('fade-in-modal');  // <- anima só a caixa
+
   document.body.classList.add('modal-open');
 
   requestAnimationFrame(() => {
     positionModalOverCalendar();
-    watchModalResize();  // já reposiciona se o conteúdo mudar de altura
+    watchModalResize();
   });
 }
 function positionModalOverCalendar() {
@@ -868,18 +872,18 @@ function positionModalOverCalendar() {
   const content = modal?.querySelector('.modal-content');
   if (!modal || !anchor || !content) return;
 
-  const rect = anchor.getBoundingClientRect();     // posição do calendário na viewport
-  const contentH = content.getBoundingClientRect().height;
+  const rect = anchor.getBoundingClientRect();
+  const contentH = content.offsetHeight;               // altura real da caixa
+  const centerY = rect.top + rect.height / 2;          // centro vertical do calendário
 
-  const calendarCenterY = rect.top + rect.height / 2; // centro vertical do calendário
-  let top = Math.round(calendarCenterY - contentH / 2);
-
-  // mantém visível na viewport com respiro
+  let top = Math.round(centerY - contentH / 2);
   const pad = 16;
-  top = Math.max(pad, Math.min(top, window.innerHeight - contentH - pad));
+  const maxTop = window.innerHeight - contentH - pad;  // não deixa sair da viewport
+  top = Math.max(pad, Math.min(top, maxTop));
 
   content.style.top = `${top}px`;
 }
+
 
 
 
@@ -901,17 +905,16 @@ function watchModalResize() {
 
 function fecharModal() {
   if (!modal) return;
-
-  modal.classList.remove('show', 'fade-in-modal');
+  modal.classList.remove('show');
   modal.style.display = 'none';
   document.body.classList.remove('modal-open');
 
-  if (modalResizeObserver) modalResizeObserver.disconnect();
-
   const content = modal.querySelector('.modal-content');
-  if (content) content.style.top = '';  // limpa o top fixo
-}
+  content?.classList.remove('fade-in-modal'); // limpa
 
+  if (modalResizeObserver) modalResizeObserver.disconnect();
+  content && (content.style.top = '');
+}
 
 window.addEventListener('resize', () => {
   if (modal?.classList.contains('show')) positionModalOverCalendar();
