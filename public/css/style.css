@@ -686,7 +686,7 @@ mark {
   position: fixed;
   inset: 0;
   display: none;            /* o .show liga o flex */
-  align-items: center;  /* topo — o JS desce via paddingTop */
+  align-items: top;  /* topo — o JS desce via paddingTop */
   justify-content: center;
   background: rgba(0,0,0,.6);
   z-index: 1055;
