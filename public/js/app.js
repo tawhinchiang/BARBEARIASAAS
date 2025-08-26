@@ -852,9 +852,7 @@ const modal = document.getElementById('meuModal');
 function abrirModal() {
   if (!modal) return;
 
-  if (modal.parentElement !== document.body) {
-    document.body.appendChild(modal);
-  }
+  if (modal.parentElement !== document.body) document.body.appendChild(modal);
 
   modal.style.display = 'flex';
   modal.classList.add('show', 'fade-in-modal');
@@ -862,32 +860,27 @@ function abrirModal() {
 
   requestAnimationFrame(() => {
     positionModalOverCalendar();
-    watchModalResize(); 
+    watchModalResize();  // já reposiciona se o conteúdo mudar de altura
   });
 }
-
 function positionModalOverCalendar() {
   const anchor  = document.getElementById('calendarGrid') || document.getElementById('calendarSection');
   const content = modal?.querySelector('.modal-content');
   if (!modal || !anchor || !content) return;
 
-  // overlay começa no topo (via flex-start); vamos só deslocar por padding-top
-  modal.style.alignItems   = 'flex-start';
-  modal.style.justifyContent = 'center';
-
-  const rect = anchor.getBoundingClientRect();          // coords do calendário na viewport
+  const rect = anchor.getBoundingClientRect();     // posição do calendário na viewport
   const contentH = content.getBoundingClientRect().height;
 
-  const calendarCenterY = rect.top + rect.height / 2;   // centro vertical do calendário
-  let top = calendarCenterY - contentH / 2;             // centraliza a caixa nesse centro
+  const calendarCenterY = rect.top + rect.height / 2; // centro vertical do calendário
+  let top = Math.round(calendarCenterY - contentH / 2);
 
-  // mantém dentro da viewport (com respiro)
+  // mantém visível na viewport com respiro
   const pad = 16;
-  const maxTop = Math.max(pad, window.innerHeight - contentH - pad);
-  top = Math.min(Math.max(top, pad), maxTop);
+  top = Math.max(pad, Math.min(top, window.innerHeight - contentH - pad));
 
-  modal.style.paddingTop = `${Math.round(top)}px`;
+  content.style.top = `${top}px`;
 }
+
 
 
 
@@ -915,16 +908,8 @@ function fecharModal() {
 
   if (modalResizeObserver) modalResizeObserver.disconnect();
 
-  // limpa offset aplicado pelo posicionamento
-  modal.style.paddingTop = '';
-
   const content = modal.querySelector('.modal-content');
-  if (content) {
-    content.style.position = '';
-    content.style.left = '';
-    content.style.top = '';
-    content.style.transform = '';
-  }
+  if (content) content.style.top = '';  // limpa o top fixo
 }
 
 

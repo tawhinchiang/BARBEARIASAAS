@@ -3211,3 +3211,28 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 .card.status-card.status-in_progress::before  { background: var(--info-color); }
 .card.status-card.status-no_show::before      { background: var(--danger-color); }/* pode usar outra se preferir */
 .card.status-card.status-scheduled::before    { background: var(--warning-color); }/* alias útil */
+/* === Forçar posicionamento da caixa do modal na viewport === */
+#meuModal{
+  align-items: stretch !important;   /* não usamos flex do overlay pra posicionar */
+  justify-content: flex-start !important;
+  padding: 0 !important;
+}
+
+#meuModal .modal-dialog{
+  margin: 0 auto !important;         /* zera empurrão vertical padrão */
+  max-width: 900px;
+  width: 95%;
+}
+
+#meuModal .modal-content{
+  position: fixed !important;        /* fixa na viewport */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  top: 16px;                          /* valor inicial; JS sobrescreve */
+  margin: 0 !important;
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100vh - 32px) !important; /* cabe na tela */
+  box-sizing: border-box;
+  will-change: top;
+}
