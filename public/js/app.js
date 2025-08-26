@@ -670,7 +670,7 @@ function validateClientForm() {
   const isValidPhone = phoneRegex.test(phone);
   const isValid = firstName.length > 0 && lastName.length > 0 && isValidPhone;
 
-  const confirmBtn = document.getElementById('confirmBooking');
+  const confirmBtn = document.getElementById('btnConfirmBooking');
   if (confirmBtn) {
     confirmBtn.disabled = !isValid;
     confirmBtn.classList.toggle('disabled', !isValid);
@@ -723,14 +723,12 @@ async function confirmBooking(btnEl) {
 
    
     const csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : (window.csrfToken || ''));
-    const resp = await fetch('/api/appointments/confirm', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-      },
-      body: JSON.stringify(bookingData)
-    });
+    const resp = await fetch('/api/appointments', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+    body: JSON.stringify(bookingData)
+  });
 
     if (!resp.ok) {
       const errText = await resp.text();
@@ -740,24 +738,7 @@ async function confirmBooking(btnEl) {
     const result = await resp.json();
 
   
-    if (result?.sendWhatsApp === true && formattedPhone) {
-      const wppResp = await fetch('/api/whatsapp/send-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-        },
-        body: JSON.stringify({
-          to: formattedPhone,
-          appointmentId: result.appointmentId,
-          message: result?.whatsMessage || 'Seu agendamento foi confirmado!'
-        })
-      });
-      if (!wppResp.ok) {
-        const errText = await wppResp.text();
-        throw new Error(errText || 'Agendou, mas falhou ao enviar mensagem no WhatsApp');
-      }
-    }
+ 
 
     if (typeof showNotification === 'function') {
       showNotification('Agendamento confirmado com sucesso!', 'success');
