@@ -357,7 +357,7 @@ async function cancelarAgendamento(appointmentId) {
    const ok = await confirmDialog({
     title: 'Cancelar agendamento',
     message: 'Tem certeza que deseja cancelar este agendamento?',
-    confirmText: 'Cancelar',
+    confirmText: 'Não',
     variant: 'danger'
   });
   if (!ok) return;
