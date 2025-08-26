@@ -154,12 +154,11 @@ function renderServices(services) {
   container.innerHTML = '';
 
   services.forEach(svc => {
-    const serviceId = svc.id || svc._id || svc.serviceId; // cobre qualquer formato
     const priceNum = Number(svc.price);
 
     const item = document.createElement('div');
     item.className = 'service-card bg-dark text-light border-secondary rounded-3 mb-2 px-3 py-2 d-flex align-items-center justify-content-between w-100';
-    item.dataset.serviceId = serviceId;
+    item.dataset.serviceId = svc.id;
 
     item.innerHTML = `
       <div class="d-flex align-items-center gap-3">
@@ -173,16 +172,11 @@ function renderServices(services) {
         </div>
       </div>
       <div class="text-end">
-        <span class="text-success fw-bold d-block">R$ ${Number.isNaN(priceNum) ? '0,00' : priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-        <button class="btn btn-primary btn-sm mt-1">Agendar</button>
+<span class="text-success fw-bold d-block">R$ ${Number.isNaN(priceNum) ? '0,00' : priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>        <button class="btn btn-primary btn-sm mt-1">Agendar</button>
       </div>
     `;
 
-    // 🚀 Garante que o objeto sempre tenha .id
-    item.querySelector('button').addEventListener('click', () => {
-      selectService({ ...svc, id: serviceId });
-    });
-
+    item.querySelector('button').addEventListener('click', () => selectService(svc));
     container.appendChild(item);
   });
 
@@ -580,36 +574,32 @@ function changeMonth(direction) {
 // Atualizar resumo do agendamento
 function updateBookingSummary() {
   log('Atualizando resumo do agendamento');
-
-  const el = {
-    service:  document.getElementById('summaryService'),
-    barber:   document.getElementById('summaryBarber'),
-    date:     document.getElementById('summaryDate'),
-    time:     document.getElementById('summaryTime'),
+  
+  const elements = {
+    service: document.getElementById('summaryService'),
+    barber: document.getElementById('summaryBarber'),
+    date: document.getElementById('summaryDate'),
+    time: document.getElementById('summaryTime'),
     duration: document.getElementById('summaryDuration'),
-    price:    document.getElementById('summaryPrice')
+    price: document.getElementById('summaryPrice')
   };
+  
+  if (elements.service) 
+    elements.service.textContent = appState.selectedService?.name || '-';
+  if (elements.barber) 
+    elements.barber.textContent = appState.selectedBarber?.name || '-';
+  if (elements.date) 
+    elements.date.textContent = appState.selectedDate?.toLocaleDateString('pt-BR') || '-';
+  if (elements.time) 
+    elements.time.textContent = appState.selectedTime || '-';
+  if (elements.duration) 
+    elements.duration.textContent = appState.selectedService?.duration + 'min' || '-';
 
-  if (el.service) el.service.textContent = appState.selectedService?.name || '-';
-  if (el.barber)  el.barber.textContent  = appState.selectedBarber?.name || '-';
-  if (el.date)    el.date.textContent    = appState.selectedDate?.toLocaleDateString('pt-BR') || '-';
-  if (el.time)    el.time.textContent    = appState.selectedTime || '-';
-
-  if (el.duration) {
-    const d = appState.selectedService?.duration;
-    let label;
-    if (typeof d === 'number') label = `${d} min`;
-    else if (typeof d === 'string') label = d.replace(/\s*min$/i, '').trim() + ' min';
-    else label = '-';
-    el.duration.textContent = label;
-  }
-
-  if (el.price) {
+  if (elements.price) {
     const priceNum = Number(appState.selectedService?.price) || 0;
-    el.price.textContent = `R$ ${priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    elements.price.textContent = `R$ ${priceNum.toFixed(2)}`;
   }
 }
-
 
 // Máscara de telefone
 function setupPhoneMask() {
@@ -680,7 +670,7 @@ function validateClientForm() {
   const isValidPhone = phoneRegex.test(phone);
   const isValid = firstName.length > 0 && lastName.length > 0 && isValidPhone;
 
-  const confirmBtn = document.getElementById('btnConfirmBooking');
+  const confirmBtn = document.getElementById('confirmBooking');
   if (confirmBtn) {
     confirmBtn.disabled = !isValid;
     confirmBtn.classList.toggle('disabled', !isValid);
@@ -691,7 +681,8 @@ function validateClientForm() {
 }
 
 // Confirmar agendamento
-// Confirmar agendamento
+
+// Função para controlar spinner no botão
 function setBtnLoading(btn, isLoading, textWhenLoading = 'Confirmando agendamento...', textWhenIdle = 'Confirmar agendamento') {
   if (!btn) return;
   const spinner = btn.querySelector('.spinner-border');
@@ -712,100 +703,53 @@ function setBtnLoading(btn, isLoading, textWhenLoading = 'Confirmando agendament
   }
 }
 
+// Confirmar agendamento com spinner
 async function confirmBooking(btnEl) {
- if (typeof validateClientForm === 'function' && !validateClientForm()) {
-    if (typeof showNotification === 'function') {
-      showNotification('Preencha todos os campos corretamente', 'error');
-    }
+  if (!validateClientForm()) {
+    showNotification('Preencha todos os campos corretamente', 'error');
     return;
   }
-  setBtnLoading(btnEl, true, 'Confirmando agendamento...', 'Confirmar agendamento');
-  
-    try {
-   
-    const bookingData = collectBookingData();
 
-    
-    const csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : (window.csrfToken || ''));
+  setBtnLoading(btnEl, true);
 
-    const resp = await fetch('/api/appointments', {
+  const phoneInput = document.getElementById('clientPhone');
+  const formattedPhone = formatPhoneForWhatsApp(phoneInput.value);
+
+  const bookingData = {
+    serviceId: appState.selectedService.id,
+    barberId: appState.selectedBarber.id,
+    appointmentDate: appState.selectedDate.toISOString().split('T')[0],
+    appointmentTime: appState.selectedTime,
+    clientData: {
+      firstName: document.getElementById('clientFirstName').value.trim(),
+      lastName: document.getElementById('clientLastName').value.trim(),
+      phone: formattedPhone,
+      email: document.getElementById('clientEmail')?.value.trim() || ''
+    }
+  };
+
+  try {
+    const res = await fetch('/api/appointments', {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData)
     });
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(errText || 'Falha ao confirmar o agendamento');
-    }
+    if (!res.ok) throw new Error((await res.json()).message || res.statusText);
 
-    const result = await resp.json();
+    updateFinalConfirmation(bookingData);
+    goToStep(5);
 
-    // 4) Atualiza o resumo final (Step 5) com os dados enviados/selecionados
-    if (typeof updateFinalConfirmation === 'function') {
-      updateFinalConfirmation(bookingData);
-    }
-    if (typeof goToStep === 'function') goToStep(5);
+    document.getElementById('clientSection').style.display = 'none';
+    document.getElementById('finalSection').style.display = 'block';
 
-    if (typeof showNotification === 'function') {
-      showNotification('Agendamento confirmado com sucesso!', 'success');
-    }
+    showNotification('Agendamento confirmado!', 'success');
   } catch (err) {
-    console.error('[confirmBooking] erro:', err);
-    if (typeof showNotification === 'function') {
-      showNotification(err.message || 'Erro ao confirmar agendamento', 'error');
-    }
+    logError('Erro ao confirmar agendamento', err);
+    showNotification('Erro ao confirmar agendamento', 'error');
   } finally {
     setBtnLoading(btnEl, false);
   }
-}
-function collectBookingData() {
-  if (!window.appState) window.appState = {};
-  const { selectedService, selectedBarber, selectedDate, selectedTime } = window.appState;
-
-  // Checks de fluxo
-  if (!selectedService || !selectedService.id) throw new Error('Serviço não selecionado');
-  if (!selectedBarber || !selectedBarber.id) throw new Error('Barbeiro não selecionado');
-  if (!selectedDate || !(selectedDate instanceof Date)) throw new Error('Data não selecionada');
-  if (!selectedTime) throw new Error('Horário não selecionado');
-
-  // Campos do formulário
-  const firstNameEl = document.getElementById('clientFirstName');
-  const lastNameEl  = document.getElementById('clientLastName');
-  const phoneEl     = document.getElementById('clientPhone');
-  const emailEl     = document.getElementById('clientEmail');
-
-  const firstName = firstNameEl?.value?.trim() || '';
-  const lastName  = lastNameEl?.value?.trim() || '';
-  const phoneRaw  = phoneEl?.value?.trim() || '';
-  const email     = emailEl?.value?.trim() || '';
-
-  if (!firstName || !lastName || !phoneRaw) {
-    throw new Error('Preencha nome, sobrenome e telefone');
-  }
-
-  // Normaliza telefone (reutiliza sua helper)
-  const formattedPhone = (typeof formatPhoneForWhatsApp === 'function')
-    ? formatPhoneForWhatsApp(phoneRaw)
-    : phoneRaw;
-
-  // Importante: o telefone vai **dentro de clientData**
-  return {
-    serviceId: selectedService.id,
-    barberId: selectedBarber.id,
-    appointmentDate: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD
-    appointmentTime: selectedTime,                             // HH:mm
-    clientData: {
-      firstName,
-      lastName,
-      phone: formattedPhone || phoneRaw,
-      email
-    }
-  };
 }
 
 // Atualizar confirmação final
