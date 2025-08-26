@@ -869,32 +869,38 @@ function abrirModal() {
 function positionModalOverCalendar() {
   const cal = document.getElementById('calendarSection');
   const content = modal?.querySelector('.modal-content');
-  if (!cal || !content) return;
+  if (!cal || !content || !modal) return;
 
-  const rect = cal.getBoundingClientRect();
+  // Garantir que o overlay alinhe pelo topo (o JS decide o “offset”)
+  modal.style.alignItems = 'flex-start';
+  modal.style.justifyContent = 'center';
 
-  // altura da caixa + margens (para mobile)
-  const contentRect = content.getBoundingClientRect();
+  const calRect = cal.getBoundingClientRect();
   const styles = window.getComputedStyle(content);
   const marginY = (parseFloat(styles.marginTop) || 0) + (parseFloat(styles.marginBottom) || 0);
-  const contentH = contentRect.height + marginY;
+  const contentH = content.offsetHeight + marginY;
 
-  // Centro vertical do calendário
-  let top = rect.top + (rect.height / 2) - (contentH / 2);
+  // Centro do calendário
+  const calCenterY = calRect.top + (calRect.height / 2);
 
-  // Mantém dentro da viewport
+  // Topo desejado da caixa = centro do calendário - metade da caixa
+  let top = calCenterY - (contentH / 2);
+
+  // Mantém dentro da viewport (16px de respiro)
   const minTop = 16;
   const maxTop = Math.max(16, window.innerHeight - contentH - 16);
   top = Math.min(Math.max(top, minTop), maxTop);
 
-  // Centro horizontal do calendário
-  const left = rect.left + (rect.width / 2);
+  // Aplicar o “offset” via padding do overlay
+  modal.style.paddingTop = `${Math.round(top)}px`;
 
-  content.style.position = 'fixed';
-  content.style.left = `${left}px`;
-  content.style.top = `${top}px`;
-  content.style.transform = 'translate(-50%, 0)';
+  // Garante que nenhum resíduo de posicionamento antigo interfira
+  content.style.position = '';
+  content.style.left = '';
+  content.style.top = '';
+  content.style.transform = '';
 }
+
 
 
 let modalResizeObserver;
@@ -919,6 +925,9 @@ function fecharModal() {
 
   if (modalResizeObserver) modalResizeObserver.disconnect();
 
+  // limpa offset aplicado pelo posicionamento
+  modal.style.paddingTop = '';
+
   const content = modal.querySelector('.modal-content');
   if (content) {
     content.style.position = '';
@@ -927,6 +936,8 @@ function fecharModal() {
     content.style.transform = '';
   }
 }
+
+
 window.addEventListener('resize', () => {
   if (modal?.classList.contains('show')) positionModalOverCalendar();
 });
