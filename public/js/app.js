@@ -154,11 +154,12 @@ function renderServices(services) {
   container.innerHTML = '';
 
   services.forEach(svc => {
+    const serviceId = svc.id || svc._id || svc.serviceId; // cobre qualquer formato
     const priceNum = Number(svc.price);
 
     const item = document.createElement('div');
     item.className = 'service-card bg-dark text-light border-secondary rounded-3 mb-2 px-3 py-2 d-flex align-items-center justify-content-between w-100';
-    item.dataset.serviceId = svc.id;
+    item.dataset.serviceId = serviceId;
 
     item.innerHTML = `
       <div class="d-flex align-items-center gap-3">
@@ -172,11 +173,16 @@ function renderServices(services) {
         </div>
       </div>
       <div class="text-end">
-<span class="text-success fw-bold d-block">R$ ${Number.isNaN(priceNum) ? '0,00' : priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>        <button class="btn btn-primary btn-sm mt-1">Agendar</button>
+        <span class="text-success fw-bold d-block">R$ ${Number.isNaN(priceNum) ? '0,00' : priceNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+        <button class="btn btn-primary btn-sm mt-1">Agendar</button>
       </div>
     `;
 
-    item.querySelector('button').addEventListener('click', () => selectService(svc));
+    // 🚀 Garante que o objeto sempre tenha .id
+    item.querySelector('button').addEventListener('click', () => {
+      selectService({ ...svc, id: serviceId });
+    });
+
     container.appendChild(item);
   });
 
