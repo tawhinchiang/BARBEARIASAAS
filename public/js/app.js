@@ -485,7 +485,7 @@ async function loadAvailableTimes(date) {
     timesContainer.style.display = 'block';
     timesContainer.classList.add('show');
     timesContainer.classList.add('fade-in-soft');
-    requestAnimationFrame(() => positionModalOverCalendar());
+   
     log(`${times.length} horários carregados e exibidos`);
 
   } catch (error) {
@@ -849,41 +849,13 @@ function filterServices() {
 // ===== MODAL - CORRIGIDO =====
 const modal = document.getElementById('meuModal');
 
-function abrirModal() {
+function abrirModal(){
   if (!modal) return;
-
   if (modal.parentElement !== document.body) document.body.appendChild(modal);
-
+  modal.classList.add('show');
   modal.style.display = 'flex';
-  modal.classList.add('show');              // <- sem fade-in-modal aqui
-
-  const content = modal.querySelector('.modal-content');
-  content?.classList.add('fade-in-modal');  // <- anima só a caixa
-
   document.body.classList.add('modal-open');
-
-  requestAnimationFrame(() => {
-    positionModalOverCalendar();
-    watchModalResize();
-  });
 }
-function positionModalOverCalendar() {
-  const anchor  = document.getElementById('calendarGrid') || document.getElementById('calendarSection');
-  const content = modal?.querySelector('.modal-content');
-  if (!modal || !anchor || !content) return;
-
-  const rect = anchor.getBoundingClientRect();
-  const contentH = content.offsetHeight;               // altura real da caixa
-  const centerY = rect.top + rect.height / 2;          // centro vertical do calendário
-
-  let top = Math.round(centerY - contentH / 2);
-  const pad = 16;
-  const maxTop = window.innerHeight - contentH - pad;  // não deixa sair da viewport
-  top = Math.max(pad, Math.min(top, maxTop));
-
-  content.style.top = `${top}px`;
-}
-
 
 
 
@@ -892,38 +864,14 @@ function positionModalOverCalendar() {
 
 let modalResizeObserver;
 
-function watchModalResize() {
-  const content = modal?.querySelector('.modal-content');
-  if (!content) return;
-  if (modalResizeObserver) modalResizeObserver.disconnect();
 
-  modalResizeObserver = new ResizeObserver(() => {
-    positionModalOverCalendar();
-  });
-  modalResizeObserver.observe(content);
-}
-
-function fecharModal() {
+function fecharModal(){
   if (!modal) return;
   modal.classList.remove('show');
   modal.style.display = 'none';
   document.body.classList.remove('modal-open');
-
-  const content = modal.querySelector('.modal-content');
-  content?.classList.remove('fade-in-modal'); // limpa
-
-  if (modalResizeObserver) modalResizeObserver.disconnect();
-  content && (content.style.top = '');
 }
 
-window.addEventListener('resize', () => {
-  if (modal?.classList.contains('show')) positionModalOverCalendar();
-});
-window.addEventListener('orientationchange', () => {
-  setTimeout(() => {
-    if (modal?.classList.contains('show')) positionModalOverCalendar();
-  }, 150);
-});
 
 
 // Fechar modal ao clicar fora

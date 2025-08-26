@@ -686,14 +686,14 @@ mark {
   position: fixed;
   inset: 0;
   display: none;            /* o .show liga o flex */
-  align-items: flex-start;  /* topo — o JS desce via paddingTop */
+  align-items: center;  /* topo — o JS desce via paddingTop */
   justify-content: center;
   background: rgba(0,0,0,.6);
   z-index: 1055;
   padding: 0;               /* o JS definirá padding-top dinamicamente */
 }
 
-#meuModal.show { display: flex !important; }
+
 
 #meuModal.show {
   display: flex !important;
@@ -3213,11 +3213,18 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 .card.status-card.status-scheduled::before    { background: var(--warning-color); }/* alias útil */
 /* === Forçar posicionamento da caixa do modal na viewport === */
 #meuModal{
-  align-items: stretch !important;   /* não usamos flex do overlay pra posicionar */
-  justify-content: flex-start !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0,0,0,.6);
+  z-index: 20000;                 /* acima de qualquer coisa */
   padding: 0 !important;
+  transform: none !important;     /* impede contexto de transform */
+  animation: none !important;
 }
-
+#meuModal.show{ display:flex !important; }
 #meuModal .modal-dialog{
   margin: 0 auto !important;         /* zera empurrão vertical padrão */
   max-width: 900px;
@@ -3225,15 +3232,17 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 }
 
 #meuModal .modal-content{
-  position: fixed !important;        /* fixa na viewport */
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  top: 16px;                          /* valor inicial; JS sobrescreve */
-  margin: 0 !important;
-  width: 100%;
-  max-width: 900px;
-  max-height: calc(100vh - 32px) !important; /* cabe na tela */
-  box-sizing: border-box;
-  will-change: top;
+  position: static !important;      /* <- tira o fixed */
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  width: min(900px, 95vw);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #333;
+  border-radius: 1rem;
+  background: #000; color:#fff;
 }
-#meuModal { transform: none !important; animation: none !important; }
+
+html.modal-open, body.modal-open{ overflow:hidden !important; }
