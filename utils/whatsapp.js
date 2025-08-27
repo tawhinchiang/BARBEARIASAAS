@@ -15,6 +15,7 @@ const TIMEOUTS = {
   retryBase: 1000,
   debugDelay: 10000
 };
+
 function ackLabel(ack) {
   return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[ack] ?? String(ack);
 }
@@ -23,6 +24,9 @@ let client = null;
 let isReady = false;
 let latestQrCode = null;
 let initializing = false; // trava para não inicializar múltiplas vezes
+let reinitTimer = null;
+let initializingStartedAt = 0;
+let lastDisconnectWasManual = false;
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -30,12 +34,28 @@ function delay(ms) {
 
 // Inicializar cliente WhatsApp
 async function initializeWhatsApp() {
-  if (initializing || client) {
-    console.log('[WHATSAPP] Ignorado: já existe uma instância ativa ou em inicialização');
-    return;
+// Destrava lock 'fantasma': initializing=true sem client por > 15s
+if (initializing && !client) {
+  const elapsed = Date.now() - (initializingStartedAt || 0);
+  if (elapsed > 15000) {
+    console.warn('[WHATSAPP] Inicialização travada; resetando lock.');
+    initializing = false;
   }
+}
 
-  initializing = true;
+// Evita reentrada
+if (initializing || client) {
+  console.log('[WHATSAPP] Ignorado: já existe instância ativa ou em inicialização');
+  return;
+}
+
+// Marca início e zera QR antigo
+initializing = true;
+initializingStartedAt = Date.now();
+latestQrCode = null;
+
+
+ 
   try {
     console.log('[WHATSAPP] Criando instância do cliente...');
   
@@ -93,20 +113,27 @@ protocolTimeout: 120000,
     });
 
     // Usar ONCE para não acumular listeners
-    client.once('disconnected', async (reason) => {
+   client.once('disconnected', async (reason) => {
+  console.log('❌ WhatsApp desconectado:', reason);
+  isReady = false;
 
-      console.log('❌ WhatsApp desconectado:', reason);
-      isReady = false;
-      console.log('🔄 Reinicializando em 5s...');
+  try { await disconnectWhatsApp({ keepSession: true, internal: true }); } catch {}
 
-      await disconnectWhatsApp({ keepSession: true });
+  // Evita re-inits concorrentes
+  if (reinitTimer) clearTimeout(reinitTimer);
 
-      setTimeout(async () => {
-        await initializeWhatsApp();
-      }, 5000);
-    });
+  // Se NÃO foi logout manual, agenda re-init
+  if (!lastDisconnectWasManual) {
+    reinitTimer = setTimeout(() => {
+      initializeWhatsApp().catch(() => {});
+    }, 3000);
+  }
 
-   client.on('auth_failure', async (msg) => {
+  // Limpa a marca manual (se houver)
+  lastDisconnectWasManual = false;
+});
+
+  client.on('auth_failure', async (msg) => {
   console.error('❌ Falha na autenticação WhatsApp:', msg);
   try {
     const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
@@ -115,16 +142,16 @@ protocolTimeout: 120000,
   } catch (e) {
     console.error('⚠️ Erro ao limpar sessão após auth_failure:', e.message);
   }
-try { await disconnectWhatsApp({ keepSession: false }); } catch {}
+  try { await disconnectWhatsApp({ keepSession: false, manual: true }); } catch {}
   setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
 });
+
 
     console.log('🔄 Inicializando WhatsApp...');
     await client.initialize();
     console.log('✅ Inicialização do WhatsApp finalizada.');
 
-  } catch (error) {
-  +  console.error('❌ Erro ao inicializar WhatsApp:', error);
+  } catch (error) {console.error('❌ Erro ao inicializar WhatsApp:', error);
  try { await client?.destroy(); } catch (_) {}
  client = null;
  isReady = false;
@@ -165,26 +192,40 @@ function waitForAck(msg, { minAck = 1, timeoutMs = TIMEOUTS.ack } = {}) {
 }
 
 // Desconectar WhatsApp corretamente
-async function disconnectWhatsApp(options = { keepSession: false }) {
+async function disconnectWhatsApp(options = { keepSession: false, manual: false, internal: false }) {
   try {
     if (client) {
       console.log('🔌 Desconectando WhatsApp...');
-           try {
-       const browser = client.pupBrowser;
+
+      // Tenta logout "limpo" primeiro (invalida do lado do servidor)
+      try { await client.logout(); } catch (_) {}
+
+      // Fecha o navegador atrelado (se houver)
+      try {
+        const browser = client.pupBrowser;
         const proc = browser && browser.process ? browser.process() : null;
         if (proc?.pid) {
-         console.log(`🧹 Encerrando navegador PID=${proc.pid}...`);
-         proc.kill('SIGKILL');
-    }
+          console.log(`🧹 Encerrando navegador PID=${proc.pid}...`);
+          proc.kill('SIGKILL');
+        }
       } catch (_) {}
-      await client.destroy();
-      
-      await delay(2000);
+
+      // Destrói o cliente
+      try { await client.destroy(); } catch (_) {}
+
+      // Reseta estado — ESSENCIAL
       client = null;
       isReady = false;
+      initializing = false;     // desbloqueia inicializações futuras
+      latestQrCode = null;      // previne exibir QR antigo
 
+      // Evita múltiplos re-inits concorrentes
+      if (reinitTimer) { clearTimeout(reinitTimer); reinitTimer = null; }
 
-      // Força matar processos Chrome/Chromium que ficarem abertos
+      // Marca que foi logout manual (a rota controla re-init)
+      if (options.manual) lastDisconnectWasManual = true;
+
+      // Limpeza de processos Chrome/Chromium órfãos
       exec("pkill -f '(chrome|chromium)'", (err) => {
         if (err) {
           console.error('⚠️ Erro ao matar processos chrome:', err.message);
@@ -192,13 +233,15 @@ async function disconnectWhatsApp(options = { keepSession: false }) {
           console.log('🧹 Processos Chrome/Chromium encerrados.');
         }
       });
- if (!options.keepSession) {
-    const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+
+      // Remoção da sessão local (se não preservar)
+      if (!options.keepSession) {
+        const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
         await deleteSession(sessionId);
         console.log('📱 Sessão WhatsApp removida (keepSession = false)');
-    } else {
-      console.log('ℹ️ Sessão preservada (keepSession = true)');
-     }
+      } else {
+        console.log('ℹ️ Sessão preservada (keepSession = true)');
+      }
     }
   } catch (error) {
     console.error('❌ Erro ao desconectar WhatsApp:', error);
@@ -269,7 +312,7 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         } else {
   console.warn(`[WHATSAPP] ⚠️ Enviado, mas sem confirmação (timeout/ack=0).`);
   return { ok: true, delivered: false, ack: 0, used: variation };
-   // Considere retorno "ok" (aceito pelo servidor), apenas sem confirmação:+    return { ok: true, delivered: false, ack: 0, used: variation };
+   // Considere retorno "ok" (aceito pelo servidor), apenas sem confirmação
         }
       } catch (err) {
         console.error(`[WHATSAPP] ❌ Falha ${variation} (tentativa ${attempt}): ${err.message}`);

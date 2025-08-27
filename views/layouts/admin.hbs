@@ -215,7 +215,7 @@
     // Status do WhatsApp (mantém os mesmos IDs que você já usa)
     async function checkWhatsAppStatus() {
       try {
-        const res = await fetch('/admin/whatsapp/status');
+        const res = await fetch('/admin/api/whatsapp/status');
         const data = await res.json();
 
         const toast = document.getElementById('whatsapp-status-toast');

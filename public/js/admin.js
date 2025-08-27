@@ -332,10 +332,10 @@ if (window.location.pathname.startsWith('/admin/reports')) {
     document.body.classList.remove('fade-in-soft', 'fade-out-soft');
   });
 
-  if (window.location.pathname.includes('/admin/config')) {
-    // Atualiza a cada 10s só se o estado mudar
-    setInterval(loadQRCodeIfDisconnected, 10000);
-  }
+  // if (window.location.pathname.includes('/admin/config')) {
+  //   // Atualiza a cada 10s só se o estado mudar
+  //   setInterval(loadQRCodeIfDisconnected, 10000);
+  // }
 
   if (typeof window.checkWhatsAppStatus === 'function') {
     window.checkWhatsAppStatus(); // usa a versão do admin.hbs (toast)
@@ -491,7 +491,7 @@ function confirmAction(message, callback) {
 // Substituir a função existente por esta versão compatível:
 async function checkWhatsAppStatusFallback() {
   try {
-    const res = await fetch('/admin/whatsapp/status', { credentials: 'include' });
+    const res = await fetch('/admin/api/whatsapp/status', { credentials: 'include' });
     const data = await res.json();
 
     // Novo toast na sidebar
@@ -528,31 +528,145 @@ async function checkWhatsAppStatusFallback() {
   }
 }
 
+// if (window.location.pathname.includes('/admin/config')) {
+//   checkWhatsAppStatusConfig();
+//   loadQRCodeIfDisconnected();
+// }
+// // ======= Fluxo WhatsApp (apenas na tela /admin/config) =======
+// if (window.location.pathname.includes('/admin/config')) {
+//   setupWhatsAppConfigUI();
+// }
 if (window.location.pathname.includes('/admin/config')) {
   checkWhatsAppStatusConfig();
   loadQRCodeIfDisconnected();
+  setupWhatsAppConfigUI();
+  // se quiser polling periódico:
+  setInterval(loadQRCodeIfDisconnected, 10000);
+}
+function setupWhatsAppConfigUI() {
+  const qrDiv = document.getElementById('qrCode');
+  const qrSection = document.getElementById('qrCodeSection');
+  const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+  let pollingTimer = null;
+
+  function clearQr() {
+    if (qrDiv) qrDiv.innerHTML = '';
+  }
+
+  function renderQr(qrText) {
+    if (!qrDiv || !qrText) return;
+    clearQr();
+    new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
+    if (qrSection) {
+      qrSection.style.display = 'block';
+      qrSection.classList.add('fade-in-soft');
+    }
+  }
+
+  async function getWaStatus() {
+    const res = await fetch('/admin/api/whatsapp/status', {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Falha ao obter status');
+    return res.json(); // { isConnected, qrCode }
+  }
+
+  function stopPolling() {
+    if (pollingTimer) {
+      clearInterval(pollingTimer);
+      pollingTimer = null;
+    }
+  }
+
+  async function startPollingForQr(timeoutMs = 30000, intervalMs = 500) {
+    const started = Date.now();
+    stopPolling();
+    return new Promise((resolve) => {
+      pollingTimer = setInterval(async () => {
+        try {
+          const s = await getWaStatus();
+          if (!s.isConnected && s.qrCode) {
+            renderQr(s.qrCode);
+            stopPolling();
+            return resolve(true);
+          }
+        } catch (_) {}
+        if (Date.now() - started > timeoutMs) {
+          stopPolling();
+          notify && notify({ type: 'error', message: 'Não foi possível gerar o QR. Tente novamente.' });
+          return resolve(false);
+        }
+      }, intervalMs);
+    });
+  }
+
+  // Clique em "Desconectar" -> limpa QR, chama logout, renderiza QR ou entra em polling
+  btnDisconnect?.addEventListener('click', async () => {
+    try {
+      btnDisconnect.disabled = true;
+      btnDisconnect.setAttribute('aria-busy', 'true');
+
+      clearQr(); // evita reaproveitar QR antigo
+
+      const resp = await fetch('/admin/api/whatsapp/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        }
+      });
+      const data = await resp.json();
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Falha ao desconectar');
+      }
+
+      if (data.qr) {
+        renderQr(data.qr);
+      } else {
+        await startPollingForQr(30000, 500);
+      }
+    } catch (err) {
+      console.error(err);
+      notify && notify({ type: 'error', message: 'Erro ao reiniciar WhatsApp.' });
+    } finally {
+      btnDisconnect?.removeAttribute('aria-busy');
+      if (btnDisconnect) btnDisconnect.disabled = false;
+    }
+  });
+
+  // Ao abrir a aba, se já houver QR disponível, renderiza
+  (async () => {
+    try {
+      const s = await getWaStatus();
+      if (!s.isConnected && s.qrCode) renderQr(s.qrCode);
+    } catch (_) {}
+  })();
 }
 
 async function checkWhatsAppStatusConfig() {
-  const statusRes = await fetch('/admin/whatsapp/status');
+  const statusRes = await fetch('/admin/api/whatsapp/status', { credentials: 'same-origin' });
   const { isConnected } = await statusRes.json();
   const statusSpan = document.getElementById('whatsappStatusConfig');
 
-  if (isConnected) {
-    statusSpan.textContent = 'Conectado';
-    statusSpan.classList.replace('bg-secondary', 'bg-success');
-  } else {
-    statusSpan.textContent = 'Desconectado';
-    statusSpan.classList.replace('bg-secondary', 'bg-danger');
+  if (statusSpan) {
+    statusSpan.textContent = isConnected ? 'Conectado' : 'Desconectado';
+    statusSpan.classList.remove('bg-secondary', 'bg-success', 'bg-danger');
+    statusSpan.classList.add(isConnected ? 'bg-success' : 'bg-danger');
   }
 }
+
 
 let wasWhatsAppConnected = null;
 
 async function loadQRCodeIfDisconnected() {
   try {
-    const statusRes = await fetch('/admin/whatsapp/status');
-    const { isConnected } = await statusRes.json();
+    const statusRes = await fetch('/admin/api/whatsapp/status', { credentials: 'same-origin' });
+    const { isConnected, qrCode } = await statusRes.json();
 
     const qrSection = document.getElementById('qrCodeSection');
     const qrDiv = document.getElementById('qrCode');
@@ -560,11 +674,9 @@ async function loadQRCodeIfDisconnected() {
     const toast = document.getElementById('whatsapp-status-toast');
     const toastText = document.getElementById('whatsapp-status-text');
 
-    // Apenas se mudou o estado
     if (wasWhatsAppConnected !== isConnected) {
       wasWhatsAppConnected = isConnected;
 
-      // Atualiza status visual
       if (statusSpan) {
         statusSpan.textContent = isConnected ? 'Conectado' : 'Desconectado';
         statusSpan.classList.remove('bg-secondary', 'bg-danger', 'bg-success');
@@ -573,7 +685,6 @@ async function loadQRCodeIfDisconnected() {
 
       if (toast && toastText) {
         toast.classList.remove('success', 'error', 'd-none', 'show');
-
         if (isConnected) {
           toast.classList.add('success', 'show');
           toastText.innerText = 'WhatsApp está conectado ✅';
@@ -584,24 +695,22 @@ async function loadQRCodeIfDisconnected() {
         }
       }
 
-      // Exibe/oculta QR code
       if (!isConnected && qrSection && qrDiv) {
-        const qrRes = await fetch('/admin/whatsapp/qr');
-        if (!qrRes.ok) return;
-        const { qr } = await qrRes.json();
         qrDiv.innerHTML = '';
-        new QRCode(qrDiv, { text: qr, width: 220, height: 220 });
+        if (qrCode) {
+          new QRCode(qrDiv, { text: qrCode, width: 220, height: 220 });
+        }
         qrSection.style.display = 'block';
         qrSection.classList.add('fade-in-soft');
       } else if (isConnected && qrSection) {
         qrSection.style.display = 'none';
       }
     }
-
   } catch (e) {
     console.warn('❌ Erro ao verificar QR Code:', e);
   }
 }
+
 
 
 // document.body.style.opacity = '1';

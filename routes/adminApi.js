@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const upload = multer();
+const {
+  getWhatsAppStatus,
+  disconnectWhatsApp,
+  initializeWhatsApp
+} = require('../utils/whatsapp');
 const { Appointment, Client, Barber, ServiceType } = require('../models');
 const { isAuthenticatedApi } = require('../middleware/auth');
 
@@ -124,5 +127,57 @@ router.delete('/appointments/:id', async (req, res) => {
   }
 });
 
+// === WHATSAPP ADMIN API ===
+
+// Status atual (connectado/QR)
+router.get('/whatsapp/status', async (req, res) => {
+  try {
+    const status = getWhatsAppStatus();
+    return res.json({ success: true, ...status });
+  } catch (e) {
+    console.error('[ADMIN API] /whatsapp/status erro:', e);
+    return res.status(500).json({ success: false, error: 'Falha ao obter status do WhatsApp' });
+  }
+});
+
+// Logout completo + reinit esperando QR novo por até 10s
+router.post('/whatsapp/logout', async (req, res) => {
+  try {
+    // logout MANUAL (marca 'manual' para não re-inicializar duas vezes)
+    await disconnectWhatsApp({ keepSession: false, manual: true });
+
+    // reinit imediato (em vez de esperar 'disconnected')
+    await initializeWhatsApp();
+
+    // espera até 10s por um QR novo
+    const started = Date.now();
+    while ((Date.now() - started) < 10000) {
+      const status = getWhatsAppStatus();
+      if (!status.isConnected && status.qrCode) {
+        return res.json({ success: true, qr: status.qrCode, message: 'QR gerado' });
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    // sem QR a tempo: front deve continuar polling
+    return res.json({ success: true, qr: null, message: 'Reinicializado; aguarde QR via polling' });
+
+  } catch (e) {
+    console.error('[ADMIN API] /whatsapp/logout erro:', e);
+    return res.status(500).json({ success: false, error: 'Falha ao reiniciar WhatsApp' });
+  }
+});
+
+// (Opcional) Reinicialização mantendo sessão local
+router.post('/whatsapp/restart', async (req, res) => {
+  try {
+    await disconnectWhatsApp({ keepSession: true, manual: true });
+    await initializeWhatsApp();
+    return res.json({ success: true, message: 'WhatsApp reinicializando' });
+  } catch (e) {
+    console.error('[ADMIN API] /whatsapp/restart erro:', e);
+    return res.status(500).json({ success: false, error: 'Falha ao reinicializar' });
+  }
+});
 
 module.exports = router;
