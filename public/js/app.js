@@ -681,7 +681,8 @@ function validateClientForm() {
 }
 
 // Confirmar agendamento
-// Confirmar agendamento
+
+// Função para controlar spinner no botão
 function setBtnLoading(btn, isLoading, textWhenLoading = 'Confirmando agendamento...', textWhenIdle = 'Confirmar agendamento') {
   if (!btn) return;
   const spinner = btn.querySelector('.spinner-border');
@@ -702,76 +703,51 @@ function setBtnLoading(btn, isLoading, textWhenLoading = 'Confirmando agendament
   }
 }
 
+// Confirmar agendamento com spinner
 async function confirmBooking(btnEl) {
- if (typeof validateClientForm === 'function' && !validateClientForm()) {
-    if (typeof showNotification === 'function') {
-      showNotification('Preencha todos os campos corretamente', 'error');
-    }
+  if (!validateClientForm()) {
+    showNotification('Preencha todos os campos corretamente', 'error');
     return;
   }
-  setBtnLoading(btnEl, true, 'Confirmando agendamento...', 'Confirmar agendamento');
-  
+
+  setBtnLoading(btnEl, true);
+
+  const phoneInput = document.getElementById('clientPhone');
+  const formattedPhone = formatPhoneForWhatsApp(phoneInput.value);
+
+  const bookingData = {
+    serviceId: appState.selectedService.id,
+    barberId: appState.selectedBarber.id,
+    appointmentDate: appState.selectedDate.toISOString().split('T')[0],
+    appointmentTime: appState.selectedTime,
+    clientData: {
+      firstName: document.getElementById('clientFirstName').value.trim(),
+      lastName: document.getElementById('clientLastName').value.trim(),
+      phone: formattedPhone,
+      email: document.getElementById('clientEmail')?.value.trim() || ''
+    }
+  };
+
   try {
-    
-    const phoneInput = document.getElementById('clientPhone');
-    const formattedPhone = typeof formatPhoneForWhatsApp === 'function'
-      ? formatPhoneForWhatsApp(phoneInput.value)
-      : (phoneInput?.value || '').trim();
-
-    const bookingData = typeof collectBookingData === 'function' ? collectBookingData() : {};
-    bookingData.clientPhone = formattedPhone;
-
-   
-    const csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : (window.csrfToken || ''));
-    const resp = await fetch('/api/appointments/confirm', {
+    const res = await fetch('/api/appointments', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookingData)
     });
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(errText || 'Falha ao confirmar o agendamento');
-    }
+    if (!res.ok) throw new Error((await res.json()).message || res.statusText);
 
-    const result = await resp.json();
+    updateFinalConfirmation(bookingData);
+    goToStep(5);
 
-  
-    if (result?.sendWhatsApp === true && formattedPhone) {
-      const wppResp = await fetch('/api/whatsapp/send-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-        },
-        body: JSON.stringify({
-          to: formattedPhone,
-          appointmentId: result.appointmentId,
-          message: result?.whatsMessage || 'Seu agendamento foi confirmado!'
-        })
-      });
-      if (!wppResp.ok) {
-        const errText = await wppResp.text();
-        throw new Error(errText || 'Agendou, mas falhou ao enviar mensagem no WhatsApp');
-      }
-    }
+    document.getElementById('clientSection').style.display = 'none';
+    document.getElementById('finalSection').style.display = 'block';
 
-    if (typeof showNotification === 'function') {
-      showNotification('Agendamento confirmado com sucesso!', 'success');
-    }
-  
-    if (typeof goToStep === 'function') goToStep(5);
-
+    showNotification('Agendamento confirmado!', 'success');
   } catch (err) {
-    console.error('[confirmBooking] erro:', err);
-    if (typeof showNotification === 'function') {
-      showNotification(err.message || 'Erro ao confirmar agendamento', 'error');
-    }
+    logError('Erro ao confirmar agendamento', err);
+    showNotification('Erro ao confirmar agendamento', 'error');
   } finally {
-    
     setBtnLoading(btnEl, false);
   }
 }
