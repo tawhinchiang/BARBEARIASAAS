@@ -264,8 +264,8 @@ router.get('/:id', async (req, res) => {
 
 // ===== ATUALIZAR SERVIÇO =====
 // ===== ATUALIZAR SERVIÇO =====
-router.put('/:id', upload.single('photo'), async (req, res) => {
-   upload.single('photo')(req, res, async (err) => {
+router.put('/:id', (req, res) => {
+  upload.single('photo')(req, res, async (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({ success: false, error: 'Imagem muito grande (máx 5MB).' });
