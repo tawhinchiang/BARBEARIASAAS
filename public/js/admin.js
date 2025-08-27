@@ -59,6 +59,117 @@ if (window.location.pathname.startsWith('/admin/reports')) {
     }
     return new URLSearchParams(base).toString();
   }
+if (window.location.pathname.startsWith('/admin/config')) {
+  checkWhatsAppStatusConfig();
+  loadQRCodeIfDisconnected();
+  setupWhatsAppConfigUI();
+  // se quiser polling periódico:
+  setInterval(loadQRCodeIfDisconnected, 10000);
+}
+function setupWhatsAppConfigUI() {
+  const qrDiv = document.getElementById('qrCode');
+  const qrSection = document.getElementById('qrCodeSection');
+  const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+  let pollingTimer = null;
+
+  function clearQr() {
+    if (qrDiv) qrDiv.innerHTML = '';
+  }
+
+  function renderQr(qrText) {
+    if (!qrDiv || !qrText) return;
+    clearQr();
+    new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
+    if (qrSection) {
+      qrSection.style.display = 'block';
+      qrSection.classList.add('fade-in-soft');
+    }
+  }
+
+  async function getWaStatus() {
+    const res = await fetch('/admin/api/whatsapp/status', {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Falha ao obter status');
+    return res.json(); // { isConnected, qrCode }
+  }
+
+  function stopPolling() {
+    if (pollingTimer) {
+      clearInterval(pollingTimer);
+      pollingTimer = null;
+    }
+  }
+
+  async function startPollingForQr(timeoutMs = 30000, intervalMs = 500) {
+    const started = Date.now();
+    stopPolling();
+    return new Promise((resolve) => {
+      pollingTimer = setInterval(async () => {
+        try {
+          const s = await getWaStatus();
+          if (!s.isConnected && s.qrCode) {
+            renderQr(s.qrCode);
+            stopPolling();
+            return resolve(true);
+          }
+        } catch (_) {}
+        if (Date.now() - started > timeoutMs) {
+          stopPolling();
+          notify && notify({ type: 'error', message: 'Não foi possível gerar o QR. Tente novamente.' });
+          return resolve(false);
+        }
+      }, intervalMs);
+    });
+  }
+
+  // Clique em "Desconectar" -> limpa QR, chama logout, renderiza QR ou entra em polling
+  btnDisconnect?.addEventListener('click', async () => {
+    try {
+      btnDisconnect.disabled = true;
+      btnDisconnect.setAttribute('aria-busy', 'true');
+
+      clearQr(); // evita reaproveitar QR antigo
+
+      const resp = await fetch('/admin/api/whatsapp/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        }
+      });
+      const data = await resp.json();
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Falha ao desconectar');
+      }
+
+      if (data.qr) {
+        renderQr(data.qr);
+      } else {
+        await startPollingForQr(30000, 500);
+      }
+    } catch (err) {
+      console.error(err);
+      notify && notify({ type: 'error', message: 'Erro ao reiniciar WhatsApp.' });
+    } finally {
+      btnDisconnect?.removeAttribute('aria-busy');
+      if (btnDisconnect) btnDisconnect.disabled = false;
+    }
+  });
+
+  // Ao abrir a aba, se já houver QR disponível, renderiza
+  (async () => {
+    try {
+      const s = await getWaStatus();
+      if (!s.isConnected && s.qrCode) renderQr(s.qrCode);
+    } catch (_) {}
+  })();
+}
 
   async function loadMore({ view }) {
     const isTable = view === 'table';
@@ -528,125 +639,8 @@ async function checkWhatsAppStatusFallback() {
   }
 }
 
-// if (window.location.pathname.includes('/admin/config')) {
-//   checkWhatsAppStatusConfig();
-//   loadQRCodeIfDisconnected();
-// }
-// // ======= Fluxo WhatsApp (apenas na tela /admin/config) =======
-// if (window.location.pathname.includes('/admin/config')) {
-//   setupWhatsAppConfigUI();
-// }
-if (window.location.pathname.includes('/admin/config')) {
-  checkWhatsAppStatusConfig();
-  loadQRCodeIfDisconnected();
-  setupWhatsAppConfigUI();
-  // se quiser polling periódico:
-  setInterval(loadQRCodeIfDisconnected, 10000);
-}
-function setupWhatsAppConfigUI() {
-  const qrDiv = document.getElementById('qrCode');
-  const qrSection = document.getElementById('qrCodeSection');
-  const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-  let pollingTimer = null;
 
-  function clearQr() {
-    if (qrDiv) qrDiv.innerHTML = '';
-  }
-
-  function renderQr(qrText) {
-    if (!qrDiv || !qrText) return;
-    clearQr();
-    new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
-    if (qrSection) {
-      qrSection.style.display = 'block';
-      qrSection.classList.add('fade-in-soft');
-    }
-  }
-
-  async function getWaStatus() {
-    const res = await fetch('/admin/api/whatsapp/status', {
-      credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
-    });
-    if (!res.ok) throw new Error('Falha ao obter status');
-    return res.json(); // { isConnected, qrCode }
-  }
-
-  function stopPolling() {
-    if (pollingTimer) {
-      clearInterval(pollingTimer);
-      pollingTimer = null;
-    }
-  }
-
-  async function startPollingForQr(timeoutMs = 30000, intervalMs = 500) {
-    const started = Date.now();
-    stopPolling();
-    return new Promise((resolve) => {
-      pollingTimer = setInterval(async () => {
-        try {
-          const s = await getWaStatus();
-          if (!s.isConnected && s.qrCode) {
-            renderQr(s.qrCode);
-            stopPolling();
-            return resolve(true);
-          }
-        } catch (_) {}
-        if (Date.now() - started > timeoutMs) {
-          stopPolling();
-          notify && notify({ type: 'error', message: 'Não foi possível gerar o QR. Tente novamente.' });
-          return resolve(false);
-        }
-      }, intervalMs);
-    });
-  }
-
-  // Clique em "Desconectar" -> limpa QR, chama logout, renderiza QR ou entra em polling
-  btnDisconnect?.addEventListener('click', async () => {
-    try {
-      btnDisconnect.disabled = true;
-      btnDisconnect.setAttribute('aria-busy', 'true');
-
-      clearQr(); // evita reaproveitar QR antigo
-
-      const resp = await fetch('/admin/api/whatsapp/logout', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Accept': 'application/json',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-        }
-      });
-      const data = await resp.json();
-
-      if (!data?.success) {
-        throw new Error(data?.error || 'Falha ao desconectar');
-      }
-
-      if (data.qr) {
-        renderQr(data.qr);
-      } else {
-        await startPollingForQr(30000, 500);
-      }
-    } catch (err) {
-      console.error(err);
-      notify && notify({ type: 'error', message: 'Erro ao reiniciar WhatsApp.' });
-    } finally {
-      btnDisconnect?.removeAttribute('aria-busy');
-      if (btnDisconnect) btnDisconnect.disabled = false;
-    }
-  });
-
-  // Ao abrir a aba, se já houver QR disponível, renderiza
-  (async () => {
-    try {
-      const s = await getWaStatus();
-      if (!s.isConnected && s.qrCode) renderQr(s.qrCode);
-    } catch (_) {}
-  })();
-}
 
 async function checkWhatsAppStatusConfig() {
   const statusRes = await fetch('/admin/api/whatsapp/status', { credentials: 'same-origin' });
