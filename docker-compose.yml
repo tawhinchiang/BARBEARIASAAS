@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: barbershop_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: barbershop_db
+    ports:
+      - "5432:5432"                # expõe na máquina host
+    volumes:
+      - barbershop_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d barbershop_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  barbershop_pgdata:
