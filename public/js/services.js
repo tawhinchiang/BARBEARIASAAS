@@ -28,37 +28,75 @@ servicePhotoInput.addEventListener('change', () => {
 });
 
   // ================= ENVIO DO FORMULÁRIO ================= //
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const input = document.getElementById('servicePhoto'); // ajuste o id conforme seu form
+  const file = input?.files?.[0];
+  if (file && file.size > 5 * 1024 * 1024) {
+    showNotification('Imagem maior que 5MB. Escolha um arquivo menor.', 'error');
+    return;
+  }
+
   const formData = new FormData(form);
   const id = formData.get('serviceId');
   const url = id ? `/admin/services/${id}` : '/admin/services/create';
   const method = id ? 'PUT' : 'POST';
 
- try {
-  const res = await fetch(url, {
-    method,
-    body: formData // 👈 envia o FormData direto
-  });
+  
+  const submitBtn = form.querySelector('[type="submit"]');
+  const originalText = submitBtn?.innerHTML;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Salvando...';
+  }
 
-    if (!res.ok) throw new Error('Erro ao salvar serviço');
+  try {
+    const headers = { 'Accept': 'application/json' };
+  
 
-    const result = await res.json();
-    const newId = result.service.id;
+    const res = await fetch(url, { method, body: formData, headers });
 
-    await refreshServiceCard(newId);
+   
+    let result = null;
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      result = await res.json();
+    }
 
-    bootstrap.Modal.getInstance(modalElement)?.hide();
+    if (!res.ok || (result && result.success === false)) {
+      const msg =
+        (result && (result.error || result.message)) ||
+        (res.status === 413 ? 'Imagem muito grande (máx 5MB).' : `Falha ao salvar (${res.status})`);
+      throw new Error(msg);
+    }
+
+    const newId = result?.service?.id || id;
+    if (newId && typeof refreshServiceCard === 'function') {
+      await refreshServiceCard(newId);
+    }
+
+    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal?.getInstance === 'function') {
+      bootstrap.Modal.getInstance(modalElement)?.hide();
+    }
+
     form.reset();
-    form.serviceId.value = '';
-    modalTitle.textContent = 'Novo Serviço';
-    showNotification('Serviço salvo com sucesso');
+    if (form.serviceId) form.serviceId.value = '';
+    if (modalTitle) modalTitle.textContent = 'Novo Serviço';
 
+    showNotification('Serviço salvo com sucesso');
   } catch (err) {
     console.error(err);
     showNotification(err.message || 'Erro interno', 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
   }
-  });
+});
+
+
 
   const searchInput = document.getElementById('serviceSearch');
   const statusSelect = document.getElementById('serviceStatus');

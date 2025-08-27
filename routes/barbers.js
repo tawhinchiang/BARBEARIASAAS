@@ -267,7 +267,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     if (req.file) {
       // Remover foto antiga se existir
       if (barber.photo) {
-        const oldPhotoPath = path.join(__dirname, '../public', barber.photo);
+        const oldPhotoPath = path.join(__dirname, '../public', barber.photo.replace(/^\//, ''));
         if (fs.existsSync(oldPhotoPath)) {
           fs.unlinkSync(oldPhotoPath);
         }
@@ -329,7 +329,7 @@ router.delete('/:id', async (req, res) => {
 
     // Remover foto se existir
     if (barber.photo) {
-      const photoPath = path.join(__dirname, '../public', barber.photo);
+      const photoPath = path.join(__dirname, '../public', barber.photo.replace(/^\//, ''));
       if (fs.existsSync(photoPath)) {
         fs.unlinkSync(photoPath);
       }

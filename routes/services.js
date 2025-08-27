@@ -14,18 +14,25 @@ const fs = require('fs');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'services');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
   }
 });
-
-const upload = multer({ storage });
+const allowedTypes = /jpeg|jpg|png|gif|webp/;
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const okExt = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const okMime = allowedTypes.test(file.mimetype);
+    if (okExt && okMime) return cb(null, true);
+    cb(new Error('Apenas imagens são permitidas (JPG, PNG, GIF, WEBP).'));
+  }
+});
 
 const router = express.Router();
 
@@ -133,7 +140,14 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
 
 // ===== CRIAR SERVIÇO =====
 // ===== CRIAR SERVIÇO =====
-router.post('/create', upload.single('photo'), async (req, res) => {
+router.post('/create', (req, res) => {
+  upload.single('photo')(req, res, async (err) => {
+if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ success: false, error: 'Imagem muito grande (máx 5MB).' });
+      }
+      return res.status(400).json({ success: false, error: err.message || 'Falha no upload.' });
+    }
   try {
     const { name, description, price, duration, isActive, isPromo } = req.body;
     const photo = req.file ? '/uploads/services/' + req.file.filename : null;
@@ -199,8 +213,8 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       error: error.message || 'Erro interno do servidor'
     });
   }
+  });
 });
-
 
 // ===== BUSCAR SERVIÇO POR ID =====
 router.get('/:id', async (req, res) => {
@@ -251,6 +265,13 @@ router.get('/:id', async (req, res) => {
 // ===== ATUALIZAR SERVIÇO =====
 // ===== ATUALIZAR SERVIÇO =====
 router.put('/:id', upload.single('photo'), async (req, res) => {
+   upload.single('photo')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ success: false, error: 'Imagem muito grande (máx 5MB).' });
+      }
+      return res.status(400).json({ success: false, error: err.message || 'Falha no upload.' });
+    }
   try {
     const { id } = req.params;   // 👈 primeiro captura
     log(`Atualizando serviço ID: ${id}`, { body: req.body, file: req.file?.filename });
@@ -291,9 +312,9 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       error: 'Erro interno do servidor'
     });
   }
+  });
+
 });
-
-
 
 // ===== DELETAR SERVIÇO =====
 router.delete('/:id', async (req, res) => {

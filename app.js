@@ -106,8 +106,8 @@ log('CORS seguro configurado');
 
 // Middlewares básicos
 app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true, limit: '20mb' }));
+app.use(bodyParser.json({ limit: '20mb' }));
 
 
 

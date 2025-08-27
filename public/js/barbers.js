@@ -173,12 +173,17 @@ function applyFilters() {
 //   // desativado pois não é utilizado com os cards
 // }
 
-function submitForm(e) {
+async function submitForm(e) {
   e.preventDefault();
-  const form = e.target;
-  const formData = new FormData(form);
 
-  // Validação dos horários
+  const photoInput = document.getElementById('barberPhoto');
+  const file = photoInput?.files?.[0];
+  if (file && file.size > 5 * 1024 * 1024) {
+    alert('Imagem maior que 5MB. Escolha um arquivo menor.');
+    return;
+  }
+
+  // validação de horários
   const hourFields = [
     'defaultWorkingHour',
     'workingHoursMonday',
@@ -189,33 +194,65 @@ function submitForm(e) {
     'workingHoursSaturday'
   ];
 
-  for (const id of hourFields) {
-    const input = document.getElementById(id);
-    if (input && input.value.trim() !== '' && !isValidTimeRange(input.value.trim())) {
-      alert(`Horário inválido em "${input.previousElementSibling?.innerText || id}". Use o formato HH:MM-HH:MM (ex: 09:00-18:00)`);
-      input.focus();
+  for (const fieldId of hourFields) {
+    const fieldEl = document.getElementById(fieldId);
+    if (fieldEl && fieldEl.value.trim() !== '' && !isValidTimeRange(fieldEl.value.trim())) {
+      alert(`Horário inválido em "${fieldEl.previousElementSibling?.innerText || fieldId}". Use o formato HH:MM-HH:MM (ex: 09:00-18:00)`);
+      fieldEl.focus();
       return;
     }
   }
 
-  const id = document.getElementById('barberId').value;
+  const form = e.target;
+  const formData = new FormData(form);
+  const id = document.getElementById('barberId')?.value;
   const method = id ? 'PUT' : 'POST';
   const url = id ? `/admin/barbers/${id}` : '/admin/barbers/create';
 
-  fetch(url, {
-    method,
-    body: formData
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) location.reload();
-      else alert(data.error || 'Erro ao salvar barbeiro');
-    })
-    .catch(err => {
-      console.error('Erro:', err);
-      alert('Erro interno ao salvar');
-    });
+  // trava botão (opcional)
+  const submitBtn = form.querySelector('[type="submit"]');
+  const originalText = submitBtn?.innerHTML;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Salvando...';
+  }
+
+  try {
+    const headers = {};
+    // Se você usa CSRF no admin, descomente:
+    // const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    // if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+    const res = await fetch(url, { method, body: formData, headers });
+
+    // tenta ler JSON se possível
+    let data = null;
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      data = await res.json();
+    }
+
+    // trata status antes de confiar no payload
+    if (!res.ok || (data && data.success === false)) {
+      const msg =
+        (data && (data.error || data.message)) ||
+        (res.status === 413 ? 'Imagem muito grande (máx 5MB).' : `Falha ao salvar (${res.status})`);
+      throw new Error(msg);
+    }
+
+    // sucesso
+    location.reload();
+  } catch (err) {
+    console.error('Erro:', err);
+    alert(err.message || 'Erro interno ao salvar');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
+  }
 }
+
 
 
 // CRUD helpers
