@@ -46,8 +46,8 @@ async function startServer() {
     console.log('[BOOT] Iniciando server.listen...');
     server.listen(PORT, HOST, () => {
       console.log(`Servidor rodando na porta ${PORT}`);
-      console.log(`Acesse: http://localhost:${PORT}`);
-      console.log(`Admin: http://localhost:${PORT}/admin/login`);
+      // console.log(`Acesse: http://localhost:${PORT}`);
+      // console.log(`Admin: http://localhost:${PORT}/admin/login`);
     });
 
     // 4) Inicializa WhatsApp e CRON em background
