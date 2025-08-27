@@ -1,0 +1,12 @@
+<div class="container py-5 text-center">
+  <h1 class="display-4 text-danger">404</h1>
+  <p class="lead">Página não encontrada</p>
+
+  {{#if url}}
+    <p class="text-muted">A URL <code>{{url}}</code> não foi encontrada.</p>
+  {{/if}}
+
+  <a href="/" class="btn btn-primary mt-3">
+    <i class="bi bi-house"></i> Voltar para a página inicial
+  </a>
+</div>
