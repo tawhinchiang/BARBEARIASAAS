@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:15
     container_name: barbershop_postgres
     restart: always
     environment:
@@ -20,4 +20,4 @@ services:
 volumes:
   pgdata_external:
     external: true
-    name: barbeariasaas_postgres_data   # 👈 volume ANTIGO (o que tem seus dados)
+    name: barbeariasaas_postgres_data
