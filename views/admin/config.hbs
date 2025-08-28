@@ -30,10 +30,21 @@
         <div class="admin-card position-relative" style="min-height: 100%;">
           <h5 class="fw-bold mb-2">📲 WhatsApp</h5>
           <p class="mb-2">Status: <span id="whatsappStatusConfig" class="badge bg-secondary">Carregando...</span></p>
-          <div id="qrCodeSection" class="fade-soft rounded bg-dark text-center p-3 mt-3" style="display: none;">
-            <p class="text-white mb-2">Escaneie o QR Code:</p>
-            <div id="qrCode" class="border rounded p-2 bg-white d-inline-block"></div>
-          </div>
+
+           <!-- Wrapper do QR + Loading -->
+            <div id="qrCodeSection" class="qr-wrapper mt-3" style="display:none;">
+              <!-- LOADING enquanto reinicia / gera QR -->
+              <div id="qrLoading" class="qr-loading show">
+                <div class="text-white text-center">
+                  <i class="fa-solid fa-circle-notch fa-spin fa-2x mb-2"></i>
+                  <p class="mb-0 fw-semibold">Reiniciando WhatsApp…</p>
+                  <small class="text-muted">Gerando um novo QR Code. Isso pode levar alguns segundos.</small>
+                </div>
+              </div>
+
+              <!-- Onde o QR será desenhado -->
+              <div id="qrCode" class="qr-canvas d-inline-block"></div>
+            </div>
           
           <button id="btnDisconnectWhatsApp" type="button" class="btn btn-outline-danger w-100 mt-2">
             🔌 Desconectar WhatsApp

@@ -66,26 +66,44 @@ if (window.location.pathname.startsWith('/admin/config')) {
   // se quiser polling periódico:
   setInterval(loadQRCodeIfDisconnected, 10000);
 }
+
+
 function setupWhatsAppConfigUI() {
   const qrDiv = document.getElementById('qrCode');
   const qrSection = document.getElementById('qrCodeSection');
   const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
+  console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
   let pollingTimer = null;
 
+
+ 
+
+  
+
   function clearQr() {
-    if (qrDiv) qrDiv.innerHTML = '';
+    if (qrDiv) {
+    qrDiv.innerHTML = '';
+    qrDiv.style.opacity = 0;
+    qrDiv.classList.remove('qr-enter', 'qr-exit');
+  }
   }
 
   function renderQr(qrText) {
-    if (!qrDiv || !qrText) return;
-    clearQr();
-    new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
-    if (qrSection) {
-      qrSection.style.display = 'block';
-      qrSection.classList.add('fade-in-soft');
-    }
+  if (!qrDiv || !qrText) return;
+  if (typeof QRCode === 'undefined') {
+    console.warn('[WA] QRCode lib ainda não carregada');
+    showLoading(); // mantém spinner, não quebra
+    return;
+  }
+  clearQr();
+  hideLoading();
+  new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
+  showSection();
+  requestAnimationFrame(() => {
+    qrDiv.style.opacity = 1;
+    qrDiv.classList.add('qr-enter');
+  });
   }
 
   async function getWaStatus() {
@@ -106,6 +124,7 @@ console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
 
   async function startPollingForQr(timeoutMs = 30000, intervalMs = 500) {
     const started = Date.now();
+    showLoading();
     stopPolling();
     return new Promise((resolve) => {
       pollingTimer = setInterval(async () => {
@@ -119,6 +138,7 @@ console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
         } catch (_) {}
         if (Date.now() - started > timeoutMs) {
           stopPolling();
+          hideLoading();
           notify && notify({ type: 'error', message: 'Não foi possível gerar o QR. Tente novamente.' });
           return resolve(false);
         }
@@ -131,7 +151,7 @@ console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
     try {
       btnDisconnect.disabled = true;
       btnDisconnect.setAttribute('aria-busy', 'true');
-
+      showLoading(); 
       clearQr(); // evita reaproveitar QR antigo
 
       const resp = await fetch('/admin/api/whatsapp/logout', {
@@ -155,6 +175,7 @@ console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
       }
     } catch (err) {
       console.error(err);
+      hideLoading();
       notify && notify({ type: 'error', message: 'Erro ao reiniciar WhatsApp.' });
     } finally {
       btnDisconnect?.removeAttribute('aria-busy');
@@ -162,13 +183,22 @@ console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
     }
   });
 
-  // Ao abrir a aba, se já houver QR disponível, renderiza
-  (async () => {
-    try {
-      const s = await getWaStatus();
-      if (!s.isConnected && s.qrCode) renderQr(s.qrCode);
-    } catch (_) {}
-  })();
+  
+(async () => {
+  try {
+    const s = await getWaStatus();
+    if (!s.isConnected) {
+      if (s.qrCode) {
+        renderQr(s.qrCode);
+      } else {
+        showLoading(); 
+      }
+    } else {
+      hideLoading();
+      if (qrSection) qrSection.style.display = 'none';
+    }
+  } catch (_) {}
+})();
 }
 
   async function loadMore({ view }) {
@@ -455,6 +485,42 @@ console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
   }
 
 });
+ function getQrEls() {
+  return {
+    qrSection: document.getElementById('qrCodeSection'),
+    qrDiv: document.getElementById('qrCode'),
+    qrLoading: document.getElementById('qrLoading')
+  };
+}
+
+function showSection() {
+  const { qrSection } = getQrEls();
+  if (qrSection) {
+    qrSection.style.display = 'block';
+    qrSection.classList.add('fade-in-soft');
+  }
+}
+
+function showLoading() {
+  const { qrSection, qrDiv, qrLoading } = getQrEls();
+  // garante que a seção está visível
+  if (qrSection) {
+    qrSection.style.display = 'block';
+    qrSection.classList.add('fade-in-soft');
+  }
+  if (qrLoading) qrLoading.classList.add('show');
+  if (qrDiv) {
+    qrDiv.innerHTML = '';
+    qrDiv.style.opacity = 0;
+    qrDiv.classList.remove('qr-enter', 'qr-exit');
+  }
+}
+
+function hideLoading() {
+  const { qrLoading } = getQrEls();
+  if (qrLoading) qrLoading.classList.remove('show');
+}
+
 // Navegação da paginação numerada
 document.addEventListener('click', (e) => {
   const link = e.target.closest('.pagination .page-link');
@@ -693,10 +759,13 @@ async function loadQRCodeIfDisconnected() {
         qrDiv.innerHTML = '';
         if (qrCode) {
           new QRCode(qrDiv, { text: qrCode, width: 220, height: 220 });
+        } else {
+          showLoading(); 
         }
         qrSection.style.display = 'block';
         qrSection.classList.add('fade-in-soft');
       } else if (isConnected && qrSection) {
+        hideLoading();
         qrSection.style.display = 'none';
       }
     }
