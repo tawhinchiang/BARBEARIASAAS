@@ -81,30 +81,24 @@ function setupWhatsAppConfigUI() {
 
   
 
-  function clearQr() {
-    if (qrDiv) {
-    qrDiv.innerHTML = '';
-    qrDiv.style.opacity = 0;
-    qrDiv.classList.remove('qr-enter', 'qr-exit');
-  }
-  }
+ 
 
-  function renderQr(qrText) {
-  if (!qrDiv || !qrText) return;
-  if (typeof QRCode === 'undefined') {
-    console.warn('[WA] QRCode lib ainda não carregada');
-    showLoading(); // mantém spinner, não quebra
-    return;
-  }
-  clearQr();
-  hideLoading();
-  new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
-  showSection();
-  requestAnimationFrame(() => {
-    qrDiv.style.opacity = 1;
-    qrDiv.classList.add('qr-enter');
-  });
-  }
+  // function renderQr(qrText) {
+  // if (!qrDiv || !qrText) return;
+  // if (typeof QRCode === 'undefined') {
+  //   console.warn('[WA] QRCode lib ainda não carregada');
+  //   showLoading(); // mantém spinner, não quebra
+  //   return;
+  // }
+  // clearQr();
+  // hideLoading();
+  // new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
+  // showSection();
+  // requestAnimationFrame(() => {
+  //   qrDiv.style.opacity = 1;
+  //   qrDiv.classList.add('qr-enter');
+  // });
+  // }
 
   async function getWaStatus() {
     const res = await fetch('/admin/api/whatsapp/status', {
@@ -485,6 +479,47 @@ function setupWhatsAppConfigUI() {
   }
 
 });
+document.addEventListener('qrcodejs:ready', () => {
+  // se você tiver guardado um qr pendente:
+  if (window.__pendingQrText) {
+    const el = document.getElementById('qrCode');
+    if (el) {
+      el.innerHTML = '';
+      new QRCode(el, { text: window.__pendingQrText, width: 220, height: 220 });
+      hideLoading();
+    }
+    window.__pendingQrText = null;
+  }
+});
+function clearQr() {
+  const { qrDiv } = getQrEls();
+  if (!qrDiv) return;
+  qrDiv.innerHTML = '';
+  qrDiv.style.opacity = 0;
+  qrDiv.classList.remove('qr-enter', 'qr-exit');
+}
+
+function renderQr(qrText) {
+  const { qrDiv } = getQrEls();
+  if (!qrDiv || !qrText) return;
+
+ 
+  if (typeof QRCode === 'undefined') {
+    window.__pendingQrText = qrText;
+    showLoading();
+    return;
+  }
+
+  clearQr();
+  hideLoading();
+  new QRCode(qrDiv, { text: qrText, width: 220, height: 220 });
+  showSection();
+  requestAnimationFrame(() => {
+    qrDiv.style.opacity = 1;
+    qrDiv.classList.add('qr-enter');
+  });
+}
+
  function getQrEls() {
   return {
     qrSection: document.getElementById('qrCodeSection'),
@@ -756,11 +791,10 @@ async function loadQRCodeIfDisconnected() {
       }
 
       if (!isConnected && qrSection && qrDiv) {
-        qrDiv.innerHTML = '';
         if (qrCode) {
-          new QRCode(qrDiv, { text: qrCode, width: 220, height: 220 });
+          renderQr(qrCode);
         } else {
-          showLoading(); 
+          showLoading();
         }
         qrSection.style.display = 'block';
         qrSection.classList.add('fade-in-soft');
