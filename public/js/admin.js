@@ -71,7 +71,7 @@ function setupWhatsAppConfigUI() {
   const qrSection = document.getElementById('qrCodeSection');
   const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
+console.log('Elemento do botão Desconectar encontrado:', btnDisconnect);
   let pollingTimer = null;
 
   function clearQr() {
