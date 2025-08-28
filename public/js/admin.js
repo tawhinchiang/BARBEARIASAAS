@@ -182,15 +182,17 @@ function setupWhatsAppConfigUI() {
   try {
     const s = await getWaStatus();
     if (!s.isConnected) {
-      if (s.qrCode) {
-        renderQr(s.qrCode);
-      } else {
-        showLoading(); 
-      }
+    if (s.qrCode) {
+      renderQr(s.qrCode);
     } else {
-      hideLoading();
-      if (qrSection) qrSection.style.display = 'none';
+      showLoading();
+      // polling rápido até o backend publicar o QR
+      startPollingForQr(30000, 500);
     }
+  } else {
+    hideLoading();
+    if (qrSection) qrSection.style.display = 'none';
+  }
   } catch (_) {}
 })();
 }
@@ -769,6 +771,7 @@ async function loadQRCodeIfDisconnected() {
     const toast = document.getElementById('whatsapp-status-toast');
     const toastText = document.getElementById('whatsapp-status-text');
 
+    // Atualiza badge/toast somente quando o estado mudar
     if (wasWhatsAppConnected !== isConnected) {
       wasWhatsAppConnected = isConnected;
 
@@ -789,19 +792,23 @@ async function loadQRCodeIfDisconnected() {
           toastText.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
         }
       }
+    }
 
-      if (!isConnected && qrSection && qrDiv) {
-        if (qrCode) {
-          renderQr(qrCode);
-        } else {
-          showLoading();
-        }
+    // SEMPRE manter a UI do QR atualizada quando desconectado
+    if (!isConnected) {
+      if (qrDiv) qrDiv.innerHTML = '';
+      if (qrCode) {
+        renderQr(qrCode);
+      } else {
+        showLoading();
+      }
+      if (qrSection) {
         qrSection.style.display = 'block';
         qrSection.classList.add('fade-in-soft');
-      } else if (isConnected && qrSection) {
-        hideLoading();
-        qrSection.style.display = 'none';
       }
+    } else if (qrSection) {
+      hideLoading();
+      qrSection.style.display = 'none';
     }
   } catch (e) {
     console.warn('❌ Erro ao verificar QR Code:', e);
@@ -810,8 +817,7 @@ async function loadQRCodeIfDisconnected() {
 
 
 
-// document.body.style.opacity = '1';
-// document.body.classList.add('fade-in-soft');
+
 let isNavigating = false;
 function navigateWithFade(href) {
   if (isNavigating) return;
@@ -819,46 +825,7 @@ function navigateWithFade(href) {
   document.body.classList.add('fade-out-soft');
   setTimeout(() => window.location.href = href, 300);
 }
-// Função para mostrar alertas administrativos
-// function showAlert(message, type = 'info') {
-//     const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
 
-//     const alertDiv = document.createElement('div');
-//     alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
-//     alertDiv.innerHTML = `
-//       <i class="fa-solid ${getAlertIcon(type)} me-2"></i>
-//       ${message}
-//       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-//     `;
-
-//     alertContainer.appendChild(alertDiv);
-
-//     // Auto-remover após 5 segundos
-//     setTimeout(() => {
-//         if (alertDiv.parentNode) {
-//             alertDiv.remove();
-//         }
-//     }, 5000);
-// }
-
-// Obter ícone do alerta
-
-
-
-// Criar container de alertas se não existir
-// function createAlertContainer() {
-//     const container = document.createElement('div');
-//     container.id = 'alertContainer';
-//     container.style.position = 'fixed';
-//     container.style.top = '20px';
-//     container.style.right = '20px';
-//     container.style.zIndex = '9999';
-//     container.style.maxWidth = '400px';
-//     document.body.appendChild(container);
-//     return container;
-// }
-
-// Inicializar gráficos do dashboard
 function initializeCharts() {
   // Gráfico de agendamentos por status
   const statusChartCanvas = document.getElementById('statusChart');
