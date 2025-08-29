@@ -5,7 +5,9 @@ const { Client, Barber, ServiceType, Appointment } = require('../models');
 const { sendWhatsAppMessage } = require('../utils/whatsapp');
 const router = express.Router();
 const VerificationCode = require('../models/VerificationCode');
-
+const { Op, fn, col, where } = require('sequelize');
+const TZ_OFFSET = process.env.TZ_OFFSET || '-03:00';
+const parseAppt = (dateStr, timeStr) => new Date(`${dateStr}T${timeStr}${TZ_OFFSET}`);
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -41,8 +43,7 @@ router.post('/send-code', async (req, res) => {
     await VerificationCode.destroy({
     where: {
       phone: cleanPhone,
-      expiresAt: { [require('sequelize').Op.lt]: new Date() }
-    }
+      expiresAt: { [Op.lt]: new Date() }    }
   });
     // Buscar último código gerado
     const lastCode = await VerificationCode.findOne({
@@ -68,12 +69,17 @@ router.post('/send-code', async (req, res) => {
     await VerificationCode.create({ phone: cleanPhone, code, expiresAt });
 
     const msg = `👋 Olá! Seu código de verificação é:\n\n*${code}*\n\nEle expira em 2 minutos.`;
-    const sent = await sendWhatsAppMessage(cleanPhone, msg);
-
+    const variants = buildPhoneVariants(cleanPhone);
+    let sent = false;
+    for (const v of variants) {
+      if (await sendWhatsAppMessage(v, msg)) {
+        sent = true;
+        break;
+      }
+    }
     if (!sent) {
       return res.status(500).json({ success: false, message: 'Erro ao enviar mensagem via WhatsApp.' });
     }
-
     res.json({ success: true });
 
   } catch (error) {
@@ -154,7 +160,7 @@ router.post('/verify-code', async (req, res) => {
     const recentAttempts = await VerificationCode.count({
       where: {
         phone: cleanPhone,
-        createdAt: { [require('sequelize').Op.gt]: tenMinutesAgo }
+        createdAt: { [Op.gt]: tenMinutesAgo }
       }
     });
 
@@ -172,7 +178,8 @@ router.post('/verify-code', async (req, res) => {
     }
 
     // Código válido
-    res.json({ success: true });
+    await record.destroy();
+     res.json({ success: true });
 
   } catch (error) {
     logError('Erro ao verificar código', error);
@@ -181,7 +188,6 @@ router.post('/verify-code', async (req, res) => {
 });
 
 
-// Gera variações plausíveis do telefone para busca no banco
 // Gera variações plausíveis do telefone para busca no banco
 function buildPhoneVariants(input) {
   let cleaned = String(input || '').replace(/\D/g, '');
@@ -193,20 +199,41 @@ function buildPhoneVariants(input) {
   const variants = new Set();
   variants.add(cleaned);
   variants.add('55' + cleaned);
-
+  variants.add('+55' + cleaned);
   // Se começar com 9, tenta sem
   if (num.length === 9 && num.startsWith('9')) {
     variants.add(ddd + num.slice(1));
     variants.add('55' + ddd + num.slice(1));
+    variants.add('+55' + ddd + num.slice(1));
   }
 
   // Se tiver 8 dígitos, tenta com 9
   if (num.length === 8) {
     variants.add(ddd + '9' + num);
     variants.add('55' + ddd + '9' + num);
+    variants.add('+55' + ddd + '9' + num);
   }
 
   return [...variants];
+}
+async function findClientIdsByPhoneVariants(variants) {
+  // normaliza a lista recebida: só dígitos
+  const onlyDigits = Array.from(new Set(variants.map(v => String(v || '').replace(/\D/g, ''))));
+
+  // garante presença com/sem 55 (cobre legado)
+  const expanded = new Set();
+  for (const v of onlyDigits) {
+    expanded.add(v);
+    expanded.add(v.startsWith('55') ? v.slice(2) : '55' + v);
+  }
+
+  // coluna normalizada do banco (só dígitos)
+  const normalizedCol = fn('regexp_replace', col('phone'), '\\D', '', 'g');
+  const rows = await Client.findAll({
+    attributes: ['id'],
+    where: where(normalizedCol, { [Op.in]: Array.from(expanded) })
+  });
+  return rows.map(r => r.id);
 }
 
 
@@ -221,11 +248,12 @@ router.post('/search', async (req, res) => {
     const variants = buildPhoneVariants(cleanPhone);
     log('Variações de telefone para busca', variants);
 
-    const client = await Client.findOne({ where: { phone: variants } });
-    if (!client) return res.json({ success: false, message: 'Nenhum cliente encontrado com este telefone.' });
-
+  const clientIds = await findClientIdsByPhoneVariants(variants);
+   if (!clientIds.length) {
+    return res.json({ success: false, message: 'Nenhum cliente encontrado com este telefone.' });
+   }
     const appointments = await Appointment.findAll({
-      where: { clientId: client.id },
+      where: { clientId: { [Op.in]: clientIds } },
       include: [
         { model: ServiceType, as: 'serviceType' },
         { model: Barber, as: 'barber' },
@@ -235,7 +263,7 @@ router.post('/search', async (req, res) => {
     });
 
     const data = appointments.map(app => {
-      const appointmentDateTime = new Date(`${app.appointmentDate}T${app.appointmentTime}`);
+      const appointmentDateTime = parseAppt(app.appointmentDate, app.appointmentTime);
       const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
       return {
         id: app.id,
@@ -245,7 +273,7 @@ router.post('/search', async (req, res) => {
         time: app.appointmentTime?.slice(0, 5) || '—',
         status: app.status,
         canCancel: ['scheduled', 'confirmed'].includes(app.status) && appointmentDateTime > oneHourFromNow,
-        clientName: `${client.firstName} ${client.lastName}`,
+          clientName: `${app.client?.firstName ?? ''} ${app.client?.lastName ?? ''}`.trim(),
         totalPrice: app.totalPrice || 0
       };
     });
@@ -273,7 +301,7 @@ router.post('/cancel/:id', async (req, res) => {
 
     if (!appointment) return res.status(404).json({ success: false, message: 'Agendamento não encontrado.' });
 
-    const appointmentDateTime = new Date(`${appointment.appointmentDate}T${appointment.appointmentTime}`);
+    const appointmentDateTime = parseAppt(appointment.appointmentDate, appointment.appointmentTime);
     const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
 
     if (appointmentDateTime <= oneHourFromNow)
@@ -301,8 +329,8 @@ router.post('/cancel/:id', async (req, res) => {
   Seu agendamento foi cancelado com sucesso:
   🗓️ *Data:* ${appointment.appointmentDate}
   ⏰ *Horário:* ${appointment.appointmentTime}
-  ✂️ *Serviço:* ${appointment.serviceType.name}
-  💈 *Barbeiro:* ${appointment.barber.name}
+  ✂️ *Serviço:* ${appointment.serviceType?.name || '—'}
+  💈 *Barbeiro:* ${appointment.barber?.name || '—'}
 
   Se precisar remarcar ou se tiver algum motivo para o cancelamento, ficaremos felizes em ouvir. 😊
 
@@ -338,14 +366,14 @@ router.post('/active', async (req, res) => {
 
     const cleanPhone = normalizePhone(phone);
     const variants = buildPhoneVariants(cleanPhone);
-    const client = await Client.findOne({ where: { phone: variants } });
-    if (!client) return res.json({ success: false, message: 'Cliente não encontrado.' });
+    const clientIds = await findClientIdsByPhoneVariants(variants);
+    if (!clientIds.length) return res.json({ success: false, message: 'Cliente não encontrado.' });
 
     const now = new Date();
     const appointments = await Appointment.findAll({
       where: {
-        clientId: client.id,
-        status: ['scheduled', 'confirmed']
+        clientId: { [Op.in]: clientIds },
+        status: { [Op.in]: ['scheduled', 'confirmed'] }
       },
       include: [
         { model: ServiceType, as: 'serviceType' },
@@ -355,12 +383,12 @@ router.post('/active', async (req, res) => {
     });
 
     const data = appointments.filter(app => {
-      const start = new Date(`${app.appointmentDate}T${app.appointmentTime}`);
-      const duration = parseInt(app.serviceDuration || app.serviceType?.duration || 30);
+      const start = parseAppt(app.appointmentDate, app.appointmentTime);
+      const duration = parseInt(app.serviceDuration || app.serviceType?.duration || 30, 10);
       const end = new Date(start.getTime() + duration * 60000);
       return end > now;
     }).map(app => {
-      const appointmentDateTime = new Date(`${app.appointmentDate}T${app.appointmentTime}`);
+      const appointmentDateTime = parseAppt(app.appointmentDate, app.appointmentTime);
       const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
       return {
         id: app.id,
