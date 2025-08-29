@@ -1,3 +1,5 @@
+name: barbeariasaas  # fixa o prefixo do compose p/ não trocar o nome dos volumes
+
 services:
   postgres:
     image: postgres:16
@@ -12,6 +14,7 @@ services:
     volumes:
       - pgdata_external:/var/lib/postgresql/data
     healthcheck:
+      # se quiser, pode checar só a instância; mas se já existir o DB, essa linha está ok:
       test: ["CMD-SHELL", "pg_isready -U postgres -d barbershop_db"]
       interval: 10s
       timeout: 5s
@@ -20,4 +23,4 @@ services:
 volumes:
   pgdata_external:
     external: true
-    name: barbeariasaas_postgres_data
+    name: barbeariasaas_barbershop_pgdata   
