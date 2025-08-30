@@ -27,7 +27,34 @@ let initializing = false; // trava para não inicializar múltiplas vezes
 let reinitTimer = null;
 let initializingStartedAt = 0;
 let lastDisconnectWasManual = false;
+let lastState = 'UNLAUNCHED'; // rastreia o último estado do client
 
+async function waitUntilConnected(label = 'post-auth') {
+  // evita erro se client não existe
+  if (!client) return false;
+  for (let i = 0; i < 45; i++) { // ~45s
+    try {
+      const s = await client.getState();
+      if (s === 'CONNECTED') {
+        lastState = 'CONNECTED';
+        if (!isReady) {
+          isReady = true;
+          latestQrCode = null;
+          initializing = false;
+          console.log(`[WA] ✅ Estado CONNECTED (${label}) — marcando isReady=true`);
+        }
+        return true;
+      } else {
+        lastState = s || lastState;
+      }
+    } catch (e) {
+      // ignora exceção momentânea de getState durante boot
+    }
+    await delay(1000);
+  }
+  console.warn('[WA] ⏳ Timeout aguardando CONNECTED em', label);
+  return false;
+}
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -92,28 +119,41 @@ protocolTimeout: 120000,
       client.on('loading_screen', (percent, message) => {
         console.log(`[WA] loading_screen: ${percent}% - ${message}`);
       });
-      client.on('change_state', (state) => {
-        console.log(`[WA] change_state: ${state}`);
-      });
+     client.on('change_state', (state) => {
+  lastState = state || lastState;
+  console.log(`[WA] change_state: ${state}`);
+  if (state === 'CONNECTED') {
+    if (!isReady) {
+      isReady = true;
+      latestQrCode = null;
+      initializing = false;
+      console.log('🚀 WhatsApp conectado via change_state!');
+    }
+  }
+});
     client.on('qr', (qr) => {
       latestQrCode = qr;
       console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
       qrcode.generate(qr, { small: true });
     });
 
-    client.on('authenticated', () => {
-      console.log('✅ WhatsApp autenticado com sucesso!');
-    });
+   client.on('authenticated', async () => {
+  console.log('✅ WhatsApp autenticado com sucesso!');
+  // Novo: força uma checagem por CONNECTED caso o 'ready' não venha
+  waitUntilConnected('authenticated');
+});
 
-    client.on('ready', () => {
-      console.log('🚀 WhatsApp conectado e pronto para uso!');
+    client.on('ready', async () => {
+      initializing = false;
       isReady = true;
-       latestQrCode = null;
-      initializing = false; // libera lock só quando estiver pronto
+      latestQrCode = null;
+      lastState = 'CONNECTED'; // Novo
+      console.log('🚀 WhatsApp conectado e pronto para uso!');
     });
 
     // Usar ONCE para não acumular listeners
    client.once('disconnected', async (reason) => {
+  lastState = 'DISCONNECTED';
   console.log('❌ WhatsApp desconectado:', reason);
   isReady = false;
 
@@ -373,10 +413,10 @@ async function sendWhatsAppMessageDebug(phone, message) {
 function getWhatsAppStatus() {
   return {
     isConnected: isReady,
+    state: lastState,           // Novo: vizualização do estado (CONNECTED/OPENING/etc.)
     qrCode: isReady ? null : latestQrCode
   };
 }
-
 function isWhatsAppReady() {
   return isReady;
 }
