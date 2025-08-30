@@ -1,19 +1,64 @@
+# ========================================
+# DEPENDÊNCIAS DO NODE
+# ========================================
 node_modules/
-.wwebjs_cache/
-logs/
-reports/
-*.log
-.DS_Store
-Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.nyc_output
+pnpm-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# ========================================
+# LOGS E RELATÓRIOS
+# ========================================
+logs/
+*.log
+reports/
+debug.log
+out.log
+error.log
+
+# ========================================
+# WHATSAPP E PUPPETEER
+# ========================================
+.wwebjs_cache/
+.wwebjs_auth/
+cookies.txt
+psql
+-c
+.cache/
+puppeteer-screenshots/
+puppeteer-traces/
+
+# ========================================
+# UPLOADS DE ARQUIVOS (IMAGENS / PDFs)
+# ========================================
+
+
+# ========================================
+# CONFIGURAÇÕES LOCAIS / SESSÕES
+# ========================================
+
+sessions/
+*.session
+*.cache
+*.pid
+
+# ========================================
+# COBERTURA DE TESTES
+# ========================================
 coverage/
+.nyc_output/
+
+# ========================================
+# CONFIGURAÇÕES DE EDITORES
+# ========================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.wwebjs_auth/
-
+.DS_Store
+Thumbs.db
