@@ -10,15 +10,29 @@ const puppeteer = require('puppeteer');
 const chromiumPath = puppeteer.executablePath();
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
-  send: 10000,
-  ack: 45000,
-  retryBase: 1000,
+  send: parseInt(process.env.WHATSAPP_SEND_TIMEOUT || '10000', 10),
+  ack: parseInt(process.env.WHATSAPP_ACK_TIMEOUT  || '12000', 10),
+  retryBase: parseInt(process.env.WHATSAPP_RETRY_BASE || '800', 10),
   debugDelay: 10000
 };
 
-function ackLabel(ack) {
-  return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[ack] ?? String(ack);
+function toAckCode(ackMsg, ack) {
+  if (typeof ack === 'number') return ack;
+  if (ack && typeof ack === 'object') {
+    if (typeof ack.ack === 'number') return ack.ack;
+    if (typeof ack.status === 'number') return ack.status;
+    if (typeof ack.value === 'number') return ack.value;
+  }
+  if (typeof ackMsg?.ack === 'number') return ackMsg.ack;
+  const n = Number(ack);
+  return Number.isFinite(n) ? n : 0;
 }
+
+function ackLabel(ack) {
+  const code = toAckCode(null, ack);
+  return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[code] ?? String(code);
+}
+
 const ACK_SUCCESS_LEVEL = parseInt(process.env.ACK_SUCCESS_LEVEL || "1", 10);
 let client = null;
 let isReady = false;
@@ -201,35 +215,41 @@ protocolTimeout: 120000,
   }
 }
 // Aguarda confirmação de entrega (ACK) da mensagem específica.
-// ack: 0=pending, 1=servidor, 2=entregue no aparelho, 3=lido, 4=áudio reproduzido
-function waitForAck(msg, { minAck = 1, timeoutMs = TIMEOUTS.ack } = {}) {
+// 0=pending, 1=server, 2=device, 3=read, 4=played
+function waitForAck(msg, { minAck = ACK_SUCCESS_LEVEL, timeoutMs = TIMEOUTS.ack } = {}) {
   return new Promise((resolve) => {
     let done = false;
+    let latest = 0;
 
-    const timer = setTimeout(() => {
+    const finish = (result) => {
       if (!done) {
         done = true;
         try { client.removeListener('message_ack', onAck); } catch (_) {}
-        resolve({ delivered: false, ack: 0, reason: 'timeout' });
+        clearTimeout(timer);
+        resolve(result);
       }
-    }, timeoutMs);
-
-    const onAck = (ackMsg, ack) => {
-      try {
-        // Garante que é o mesmo messageId
-        const same = ackMsg?.id?.id && msg?.id?.id && (ackMsg.id.id === msg.id.id);
-        if (same && ack >= minAck && !done) {
-          done = true;
-          clearTimeout(timer);
-          client.removeListener('message_ack', onAck);
-          resolve({ delivered: true, ack });
-        }
-      } catch (_) { /* ignora */ }
     };
+
+    const onAck = (ackMsg, ackRaw) => {
+      try {
+        const same = ackMsg?.id?.id && msg?.id?.id && (ackMsg.id.id === msg.id.id);
+        if (!same) return;
+        const code = toAckCode(ackMsg, ackRaw);
+        latest = code;
+        if (code >= minAck) {
+          finish({ delivered: true, ack: code });
+        }
+      } catch (_) { /* ignore */ }
+    };
+
+    const timer = setTimeout(() => {
+      finish({ delivered: false, ack: latest, reason: 'timeout' });
+    }, timeoutMs);
 
     client.on('message_ack', onAck);
   });
 }
+
 
 // Desconectar WhatsApp corretamente
 async function disconnectWhatsApp(options = { keepSession: false, manual: false, internal: false }) {
@@ -324,6 +344,19 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   await ensureClientReady();
   await waitWhatsAppReady(30000);
 
+  // Helper local para normalizar ACK (corrige "[object Object]")
+  const toAckCode = (msgObj, ackRaw) => {
+    if (typeof ackRaw === 'number') return ackRaw;
+    if (ackRaw && typeof ackRaw === 'object') {
+      if (typeof ackRaw.ack === 'number') return ackRaw.ack;
+      if (typeof ackRaw.status === 'number') return ackRaw.status;
+      if (typeof ackRaw.value === 'number') return ackRaw.value;
+    }
+    if (msgObj && typeof msgObj.ack === 'number') return msgObj.ack;
+    const n = Number(ackRaw);
+    return Number.isFinite(n) ? n : 0;
+  };
+
   // 1) Base format + variações numéricas (SEM criar aberrações do tipo +...@c.us)
   //    Se o formatador já devolver um JID (...@c.us), priorizamos ele.
   const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone); // pode vir número OU JID
@@ -335,9 +368,10 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   // - Se for número, testamos com e sem '+' (E.164 e puro)
   const variations = Array.from(new Set(
     rawVars.flatMap(v => {
-      if (/@c\.us$/.test(v)) return [v];                           // já é JID válido
-      const n = String(v).replace(/\D/g, ''); if (!n) return [];   // garante apenas dígitos
-      return [`+${n}`, n];                                         // número: com e sem '+'
+      if (/@c\.us$/.test(v)) return [v]; // já é JID válido
+      const n = String(v).replace(/\D/g, '');
+      if (!n) return [];
+      return [n, `+${n}`];
     })
   ));
 
@@ -367,26 +401,26 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
       }
     }
 
-    // 3) Envio com retentativas e ACK
+    // 3) Envio: tenta reenvio APENAS se o envio falhar (erro). NÃO reenvia por ACK baixo.
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const msg = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
+        const msgObj = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
         console.log(`[WHATSAPP] 📤 Enviado para ${jid} (tentativa ${attempt})`);
 
-        const ack = await waitForAck(msg, TIMEOUTS.ack);
-        console.log(`[WHATSAPP] 📨 ACK ${ackLabel(ack)} para ${jid}`);
-
-        // Sucesso quando atinge o nível configurado (1=server, 2=device, etc.)
-        if (ack >= ACK_SUCCESS_LEVEL) {
-          return { ok: true, delivered: ack >= 2 };
+        // Espera ACK, mas não bloqueia a UX nem reenvia por causa de ACK baixo
+        let ackRaw;
+        try {
+          // Mantém assinatura antiga (timeout numérico); se sua waitForAck aceitar objeto, ajuste aqui
+          ackRaw = await waitForAck(msgObj, TIMEOUTS.ack);
+        } catch (_) {
+          ackRaw = 0;
         }
+        const ackCode = toAckCode(msgObj, ackRaw);
+        console.log(`[WHATSAPP] 📨 ACK ${ackLabel(ackCode)} (${ackCode}) para ${jid}`);
 
-        // Se não atingiu o nível exigido, aguarda backoff e tenta novamente
-        if (attempt < maxRetries) {
-          const waitTime = attempt * TIMEOUTS.retryBase;
-          console.log(`[WHATSAPP] ⏳ ACK abaixo do nível (${ackLabel(ack)}). Retentando em ${waitTime}ms...`);
-          await delay(waitTime);
-        }
+        // Sucesso: retorna imediatamente após 1 envio OK
+        // 'delivered' true quando ACK >= 2 (device); ajuste se quiser outro limiar
+        return { ok: true, delivered: ackCode >= 2, ack: ackCode, used: jid };
       } catch (err) {
         console.error(`[WHATSAPP] ❌ Falha ${jid} (tentativa ${attempt}): ${err.message}`);
         if (attempt < maxRetries) {
@@ -396,11 +430,13 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         }
       }
     }
+    // se todas as tentativas de envio falharem para esta variação, cai para próxima variação
   }
 
   console.error(`[WHATSAPP] 💥 Todas as variações falharam para ${phone}`);
   return { ok: false, delivered: false };
 }
+
 
 
 async function sendWhatsAppMessageDebug(phone, message) {
