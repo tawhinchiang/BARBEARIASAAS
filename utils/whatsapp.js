@@ -1,8 +1,7 @@
 const whatsapp = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
-const SafeLocalAuth = require('../utils/CustomLocalAuth');
-const { formatBrazilianPhoneForWhatsApp } = require('./smartphoneformatter');
-const { generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
+const SafeLocalAuth = require('./CustomLocalAuth');
+const { formatBrazilianPhoneForWhatsApp, generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
 const deleteSession = require('../utils/deleteSession');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -11,11 +10,11 @@ const chromiumPath = puppeteer.executablePath();
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
 const TIMEOUTS = {
   send: parseInt(process.env.WHATSAPP_SEND_TIMEOUT || '10000', 10),
-  ack: parseInt(process.env.WHATSAPP_ACK_TIMEOUT  || '12000', 10),
+  ack: parseInt(process.env.WHATSAPP_ACK_TIMEOUT || '12000', 10),
   retryBase: parseInt(process.env.WHATSAPP_RETRY_BASE || '800', 10),
   debugDelay: 10000
 };
-
+let watchdogTimer = null;
 function toAckCode(ackMsg, ack) {
   if (typeof ack === 'number') return ack;
   if (ack && typeof ack === 'object') {
@@ -30,7 +29,7 @@ function toAckCode(ackMsg, ack) {
 
 function ackLabel(ack) {
   const code = toAckCode(null, ack);
-  return ({0:'pending',1:'server',2:'device',3:'read',4:'played'})[code] ?? String(code);
+  return ({ 0: 'pending', 1: 'server', 2: 'device', 3: 'read', 4: 'played' })[code] ?? String(code);
 }
 
 const ACK_SUCCESS_LEVEL = parseInt(process.env.ACK_SUCCESS_LEVEL || "1", 10);
@@ -75,87 +74,87 @@ function delay(ms) {
 
 // Inicializar cliente WhatsApp
 async function initializeWhatsApp() {
-// Destrava lock 'fantasma': initializing=true sem client por > 15s
-if (initializing && !client) {
-  const elapsed = Date.now() - (initializingStartedAt || 0);
-  if (elapsed > 15000) {
-    console.warn('[WHATSAPP] Inicialização travada; resetando lock.');
-    initializing = false;
+  // Destrava lock 'fantasma': initializing=true sem client por > 15s
+  if (initializing && !client) {
+    const elapsed = Date.now() - (initializingStartedAt || 0);
+    if (elapsed > 15000) {
+      console.warn('[WHATSAPP] Inicialização travada; resetando lock.');
+      initializing = false;
+    }
   }
-}
 
-// Evita reentrada
-if (initializing || client) {
-  console.log('[WHATSAPP] Ignorado: já existe instância ativa ou em inicialização');
-  return;
-}
+  // Evita reentrada
+  if (initializing || client) {
+    console.log('[WHATSAPP] Ignorado: já existe instância ativa ou em inicialização');
+    return;
+  }
 
-// Marca início e zera QR antigo
-initializing = true;
-initializingStartedAt = Date.now();
-latestQrCode = null;
+  // Marca início e zera QR antigo
+  initializing = true;
+  initializingStartedAt = Date.now();
+  latestQrCode = null;
 
 
- 
+
   try {
     console.log('[WHATSAPP] Criando instância do cliente...');
-  
-   
 
-client = new whatsapp.Client({
-  authStrategy: new SafeLocalAuth({
-    clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
-  }),
-puppeteer: {
-headless: 'new',
-protocolTimeout: 120000,
- timeout: 60000,
-  executablePath: chromiumPath,
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--no-first-run',
-    '--no-zygote',
-    '--disable-gpu',
-    '--disable-extensions',
-    '--disable-software-rasterizer',
-    '--lang=pt-BR',
-    '--mute-audio',
-    '--window-size=800,600'
-  ]
-},
- qrTimeoutMs: 0
-});
+
+
+    client = new whatsapp.Client({
+      authStrategy: new SafeLocalAuth({
+        clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
+      }),
+      puppeteer: {
+        headless: 'new',
+        protocolTimeout: 120000,
+        timeout: 60000,
+        executablePath: chromiumPath,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-software-rasterizer',
+          '--lang=pt-BR',
+          '--mute-audio',
+          '--window-size=800,600'
+        ]
+      },
+      qrTimeoutMs: 0
+    });
 
 
     console.log('[WHATSAPP] Registrando eventos...');
-      client.on('loading_screen', (percent, message) => {
-        console.log(`[WA] loading_screen: ${percent}% - ${message}`);
-      });
-     client.on('change_state', (state) => {
-  lastState = state || lastState;
-  console.log(`[WA] change_state: ${state}`);
-  if (state === 'CONNECTED') {
-    if (!isReady) {
-      isReady = true;
-      latestQrCode = null;
-      initializing = false;
-      console.log('🚀 WhatsApp conectado via change_state!');
-    }
-  }
-});
+    client.on('loading_screen', (percent, message) => {
+      console.log(`[WA] loading_screen: ${percent}% - ${message}`);
+    });
+    client.on('change_state', (state) => {
+      lastState = state || lastState;
+      console.log(`[WA] change_state: ${state}`);
+      if (state === 'CONNECTED') {
+        if (!isReady) {
+          isReady = true;
+          latestQrCode = null;
+          initializing = false;
+          console.log('🚀 WhatsApp conectado via change_state!');
+        }
+      }
+    });
     client.on('qr', (qr) => {
       latestQrCode = qr;
       console.log('📱 Escaneie o QR Code abaixo com seu WhatsApp:');
       qrcode.generate(qr, { small: true });
     });
 
-   client.on('authenticated', async () => {
-  console.log('✅ WhatsApp autenticado com sucesso!');
-  // Novo: força uma checagem por CONNECTED caso o 'ready' não venha
-  waitUntilConnected('authenticated');
-});
+    client.on('authenticated', async () => {
+      console.log('✅ WhatsApp autenticado com sucesso!');
+      // Novo: força uma checagem por CONNECTED caso o 'ready' não venha
+      waitUntilConnected('authenticated');
+    });
 
     client.on('ready', async () => {
       initializing = false;
@@ -166,52 +165,67 @@ protocolTimeout: 120000,
     });
 
     // Usar ONCE para não acumular listeners
-   client.once('disconnected', async (reason) => {
-  lastState = 'DISCONNECTED';
-  console.log('❌ WhatsApp desconectado:', reason);
-  isReady = false;
+    client.once('disconnected', async (reason) => {
+      lastState = 'DISCONNECTED';
+      console.log('❌ WhatsApp desconectado:', reason);
+      isReady = false;
 
-  try { await disconnectWhatsApp({ keepSession: true, internal: true }); } catch {}
+      try { await disconnectWhatsApp({ keepSession: true, internal: true }); } catch { }
 
-  // Evita re-inits concorrentes
-  if (reinitTimer) clearTimeout(reinitTimer);
+      // Evita re-inits concorrentes
+      if (reinitTimer) clearTimeout(reinitTimer);
 
-  // Se NÃO foi logout manual, agenda re-init
-  if (!lastDisconnectWasManual) {
-    reinitTimer = setTimeout(() => {
-      initializeWhatsApp().catch(() => {});
-    }, 3000);
-  }
+      // Se NÃO foi logout manual, agenda re-init
+      if (!lastDisconnectWasManual) {
+        reinitTimer = setTimeout(() => {
+          initializeWhatsApp().catch(() => { });
+        }, 3000);
+      }
 
-  // Limpa a marca manual (se houver)
-  lastDisconnectWasManual = false;
-});
+      // Limpa a marca manual (se houver)
+      lastDisconnectWasManual = false;
+    });
 
-  client.on('auth_failure', async (msg) => {
-  console.error('❌ Falha na autenticação WhatsApp:', msg);
-  try {
-    const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
-    await deleteSession(sessionId);
-    console.log('🧹 Sessão WhatsApp apagada após auth_failure');
-  } catch (e) {
-    console.error('⚠️ Erro ao limpar sessão após auth_failure:', e.message);
-  }
-  try { await disconnectWhatsApp({ keepSession: false, manual: true }); } catch {}
-  setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
-});
+    client.on('auth_failure', async (msg) => {
+      console.error('❌ Falha na autenticação WhatsApp:', msg);
+      try {
+        const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
+        await deleteSession(sessionId);
+        console.log('🧹 Sessão WhatsApp apagada após auth_failure');
+      } catch (e) {
+        console.error('⚠️ Erro ao limpar sessão após auth_failure:', e.message);
+      }
+      try { await disconnectWhatsApp({ keepSession: false, manual: true }); } catch { }
+      setTimeout(() => { initializeWhatsApp().catch(() => { }); }, 3000);
+    });
 
 
     console.log('🔄 Inicializando WhatsApp...');
     await client.initialize();
+    if (!watchdogTimer) {
+      watchdogTimer = setInterval(async () => {
+        try {
+          if (!client) return;
+          const s = await client.getState().catch(() => null);
+          if (s !== 'CONNECTED') {
+            console.warn('[WA] Watchdog detectou estado não conectado — reinicializando...');
+            await disconnectWhatsApp({ keepSession: true, internal: true });
+            initializeWhatsApp().catch(() => {});
+          }
+          } catch (_) { /* ignore */ }
+      }, 60000);
+    }
+
     console.log('✅ Inicialização do WhatsApp finalizada.');
 
-  } catch (error) {console.error('❌ Erro ao inicializar WhatsApp:', error);
- try { await client?.destroy(); } catch (_) {}
- client = null;
- isReady = false;
- initializing = false;
- // Backoff curto para context destroyed / navegação
- setTimeout(() => { initializeWhatsApp().catch(()=>{}); }, 3000);
+  } catch (error) {
+    console.error('❌ Erro ao inicializar WhatsApp:', error);
+    try { await client?.destroy(); } catch (_) { }
+    client = null;
+    isReady = false;
+    initializing = false;
+    // Backoff curto para context destroyed / navegação
+    setTimeout(() => { initializeWhatsApp().catch(() => { }); }, 3000);
   }
 }
 // Aguarda confirmação de entrega (ACK) da mensagem específica.
@@ -224,7 +238,7 @@ function waitForAck(msg, { minAck = ACK_SUCCESS_LEVEL, timeoutMs = TIMEOUTS.ack 
     const finish = (result) => {
       if (!done) {
         done = true;
-        try { client.removeListener('message_ack', onAck); } catch (_) {}
+        try { client.removeListener('message_ack', onAck); } catch (_) { }
         clearTimeout(timer);
         resolve(result);
       }
@@ -258,7 +272,9 @@ async function disconnectWhatsApp(options = { keepSession: false, manual: false,
       console.log('🔌 Desconectando WhatsApp...');
 
       // Tenta logout "limpo" primeiro (invalida do lado do servidor)
-      try { await client.logout(); } catch (_) {}
+      if (!options.keepSession) {
+        try { await client.logout(); } catch (_) { }
+      }
 
       // Fecha o navegador atrelado (se houver)
       try {
@@ -266,12 +282,17 @@ async function disconnectWhatsApp(options = { keepSession: false, manual: false,
         const proc = browser && browser.process ? browser.process() : null;
         if (proc?.pid) {
           console.log(`🧹 Encerrando navegador PID=${proc.pid}...`);
-          proc.kill('SIGKILL');
+          try {
+            proc.kill('SIGTERM');
+            // pequeno grace period
+            await new Promise(r => setTimeout(r, 500));
+            if (!proc.killed) proc.kill('SIGKILL');
+          } catch (_) {}
         }
-      } catch (_) {}
+      } catch (_) { }
 
       // Destrói o cliente
-      try { await client.destroy(); } catch (_) {}
+      try { await client.destroy(); } catch (_) { }
 
       // Reseta estado — ESSENCIAL
       client = null;
@@ -286,14 +307,15 @@ async function disconnectWhatsApp(options = { keepSession: false, manual: false,
       if (options.manual) lastDisconnectWasManual = true;
 
       // Limpeza de processos Chrome/Chromium órfãos
-      exec("pkill -f '(chrome|chromium)'", (err) => {
-        if (err) {
-          console.error('⚠️ Erro ao matar processos chrome:', err.message);
-        } else {
-          console.log('🧹 Processos Chrome/Chromium encerrados.');
-        }
-      });
-
+      if (process.env.ALLOW_GLOBAL_CHROME_KILL === 'true') {
+        exec("pkill -f '(chrome|chromium)'", (err) => {
+          if (err) {
+            console.error('⚠️ Erro ao matar processos chrome:', err.message);
+          } else {
+            console.log('🧹 Processos Chrome/Chromium encerrados.');
+          }
+        });
+      }
       // Remoção da sessão local (se não preservar)
       if (!options.keepSession) {
         const sessionId = process.env.WHATSAPP_SESSION_NAME || 'barbershop_session';
@@ -319,19 +341,26 @@ async function ensureClientReady() {
       throw new Error(`Cliente em estado inválido: ${state}`);
     }
   } catch (error) {
-    throw new Error(`Erro ao verificar estado do cliente: ${error.message}`);
+    const msg = String(error?.message || '');
+    if (/Session closed|Target closed|Browser is closed|Protocol error/i.test(msg)) {
+      console.warn('[WA] Cliente desconectado durante getState — tentando reinicializar...');
+      try { await disconnectWhatsApp({ keepSession: true, internal: true }); } catch { }
+      setTimeout(() => { initializeWhatsApp().catch(() => { }); }, 1000);
+    
+    }
+    throw new Error(`Erro ao verificar estado do cliente: ${msg}`);
   }
   return true;
 }
 
 async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.send) {
- return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {      reject(new Error('⏱ Timeout no envio da mensagem'));    }, timeoutMs);  client.sendMessage(numberId, message)
-     .then(res => {
-       clearTimeout(timer);
-       resolve(res);
-      })     .catch(err => {
-       clearTimeout(timer);
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { reject(new Error('⏱ Timeout no envio da mensagem')); }, timeoutMs); client.sendMessage(numberId, message)
+      .then(res => {
+        clearTimeout(timer);
+        resolve(res);
+      }).catch(err => {
+        clearTimeout(timer);
         reject(err);
       });
   });
@@ -410,8 +439,8 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
         // Espera ACK, mas não bloqueia a UX nem reenvia por causa de ACK baixo
         let ackRaw;
         try {
-          // Mantém assinatura antiga (timeout numérico); se sua waitForAck aceitar objeto, ajuste aqui
-          ackRaw = await waitForAck(msgObj, TIMEOUTS.ack);
+          // Passe como objeto de opções
+          ackRaw = await waitForAck(msgObj, { timeoutMs: TIMEOUTS.ack });
         } catch (_) {
           ackRaw = 0;
         }
@@ -508,13 +537,18 @@ function getLastQRCode() {
   return latestQrCode;
 }
 const isPM2 = !!process.env.pm_id;
-['SIGINT','SIGTERM','SIGHUP'].forEach(sig => {
+
+['SIGINT', 'SIGTERM'].forEach(sig => {
   process.on(sig, async () => {
-    console.log(`[WHATSAPP] Sinal ${sig} recebido, encerrando sessão com keepSession=true`);
-    try { await disconnectWhatsApp({ keepSession: true }); } catch {}
-    // Sob PM2, NÃO finalize manualmente; deixe o PM2 orquestrar.
+    console.log(`[WHATSAPP] Sinal ${sig} recebido — encerrando sessão (keepSession=true)`);
+    try { await disconnectWhatsApp({ keepSession: true }); } catch { }
     if (!isPM2) process.exit(0);
   });
+});
+
+
+process.on('SIGHUP', () => {
+  console.log('[WHATSAPP] SIGHUP recebido — ignorando para manter sessão WhatsApp ativa.');
 });
 
 module.exports = {
