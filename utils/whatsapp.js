@@ -41,7 +41,7 @@ let reinitTimer = null;
 let initializingStartedAt = 0;
 let lastDisconnectWasManual = false;
 let lastState = 'UNLAUNCHED'; // rastreia o último estado do client
-
+let lastInitAt = 0;
 async function waitUntilConnected(label = 'post-auth') {
   // evita erro se client não existe
   if (!client) return false;
@@ -93,7 +93,7 @@ async function initializeWhatsApp() {
   initializing = true;
   initializingStartedAt = Date.now();
   latestQrCode = null;
-
+  lastInitAt = Date.now();
 
 
   try {
@@ -106,6 +106,9 @@ async function initializeWhatsApp() {
         clientId: process.env.WHATSAPP_SESSION_NAME || 'barbershop_session'
       }),
       puppeteer: {
+        handleSIGINT: false,
+        handleSIGHUP: false,
+        handleSIGTERM: false,
         headless: 'new',
         protocolTimeout: 120000,
         timeout: 60000,
@@ -202,19 +205,23 @@ async function initializeWhatsApp() {
 
     console.log('🔄 Inicializando WhatsApp...');
     await client.initialize();
-    if (!watchdogTimer) {
-      watchdogTimer = setInterval(async () => {
-        try {
-          if (!client) return;
-          const s = await client.getState().catch(() => null);
-          if (s !== 'CONNECTED') {
-            console.warn('[WA] Watchdog detectou estado não conectado — reinicializando...');
-            await disconnectWhatsApp({ keepSession: true, internal: true });
-            initializeWhatsApp().catch(() => {});
-          }
-          } catch (_) { /* ignore */ }
-      }, 60000);
-    }
+   if (!watchdogTimer) {
+   watchdogTimer = setInterval(async () => {
+     try {
+       if (!client) return;
+       const s = await client.getState().catch(() => null);
+      
+      // janela de graça de 120s após init; e não reinicia se estiver abrindo/pareando
+      const grace = Date.now() - (lastInitAt || 0) < 120000;
+      const opening = s === 'OPENING' || s === 'PAIRING' || s === 'UNLAUNCHED';
+      if (s !== 'CONNECTED' && !grace && !opening) {
+         console.warn('[WA] Watchdog detectou estado não conectado — reinicializando...');
+         await disconnectWhatsApp({ keepSession: true, internal: true });
+         initializeWhatsApp().catch(() => {});
+       }
+     } catch (_) { /* ignore */ }
+   }, 60000);
+ }
 
     console.log('✅ Inicialização do WhatsApp finalizada.');
 
