@@ -12,7 +12,7 @@ module.exports = {
       out_file: '/var/log/barbershop/out.log',
       error_file: '/var/log/barbershop/error.log',
       autorestart: true,
-      max_memory_restart: '0',
+      max_memory_restart: '512',
       restart_delay: 4000,
       exp_backoff_restart_delay: 2000,
       kill_timeout: 8000,
