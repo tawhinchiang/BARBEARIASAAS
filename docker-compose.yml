@@ -7,10 +7,10 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin
+      POSTGRES_PASSWORD: 92162055
       POSTGRES_DB: barbershop_db
     ports:
-      - "5432:5432"
+      - "6543:5432"
     volumes:
       - pgdata_external:/var/lib/postgresql/data
     healthcheck:
