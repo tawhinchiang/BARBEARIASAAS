@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const { Op } = require('sequelize');
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -202,9 +202,14 @@ if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
 }
  // Buscar agendamentos existentes do barbeiro na data
     const existingAppointments = await Appointment.findAll({
-      where: { barberId, appointmentDate: date },
-      attributes: ['appointmentTime', 'serviceDuration'] // ajuste o nome da coluna se necessário
-    });
+    where: {
+      barberId,
+      appointmentDate: date,
+      status: { [Op.notIn]: ['cancelled', 'no_show'] }
+    },
+    attributes: ['appointmentTime', 'serviceDuration', 'status']
+  });
+
 
   // Obter tempos bloqueados
     const bookedTimes = getBlockedTimesWithDuration(existingAppointments);
@@ -243,24 +248,24 @@ return res.json({
 function getBlockedTimesWithDuration(appointments) {
   const blocked = new Set();
 
-    appointments.forEach(({ appointmentTime, serviceDuration }) => {
-      const start = timeToMinutes(appointmentTime.slice(0, 5));
-      const duration = parseInt(serviceDuration, 10) || 20;
-      const end = start + duration;
+  appointments.forEach(({ appointmentTime, serviceDuration, status }) => {
+    // Ignora horários cancelados e no_show para não bloquear slots
+    if (status === 'cancelled' || status === 'no_show') {
+      return;
+    }
 
-      // Marca cada slot de 10 minutos dentro do intervalo como bloqueado
-        for (let t = start; t < end; t += 10) {
-        blocked.add(minutesToTime(t));
-        } 
-        //ou 
-        // for (let t = start; t < end; t += 10) {
-        //   blocked.add(minutesToTime(t));
-        // }
+    const start = timeToMinutes(appointmentTime.slice(0, 5));
+    const duration = parseInt(serviceDuration, 10) || 20;
+    const end = start + duration;
 
-    });
+    for (let t = start; t < end; t += 10) {
+      blocked.add(minutesToTime(t));
+    }
+  });
 
   return Array.from(blocked);
 }
+
 
 
 function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr = null, requiredDuration = 20) {
