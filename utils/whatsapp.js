@@ -5,6 +5,7 @@ const { formatBrazilianPhoneForWhatsApp, generatePhoneVariations, cleanPhone } =
 const deleteSession = require('../utils/deleteSession');
 const { exec } = require('child_process');
 const fs = require('fs');
+const path = require("path");
 const puppeteer = require('puppeteer');
 const chromiumPath = puppeteer.executablePath();
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
@@ -99,7 +100,22 @@ async function initializeWhatsApp() {
   try {
     console.log('[WHATSAPP] Criando instância do cliente...');
 
+    function clearStaleLocks(sessionDir) {
+  try {
+    const files = fs.readdirSync(sessionDir);
+    files.forEach(file => {
+      if (file.startsWith("Singleton")) {
+        fs.rmSync(path.join(sessionDir, file), { force: true });
+        console.log(`[WHATSAPP] 🔐 Removido lock órfão: ${file}`);
+      }
+    });
+  } catch (e) {
+    console.warn("[WHATSAPP] Erro ao limpar locks:", e.message);
+  }
+}
 
+const sessionPath = path.resolve(__dirname, "..", ".wwebjs_auth", "session-barbershop_session");
+clearStaleLocks(sessionPath);
 
     client = new whatsapp.Client({
       authStrategy: new SafeLocalAuth({
