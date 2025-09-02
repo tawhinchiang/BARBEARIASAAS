@@ -279,6 +279,7 @@ function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr
 
     for (let dt = 0; dt < requiredDuration; dt += 10) {
       const candidate = minutesToTime(t + dt);
+      // verifica se qualquer minuto do intervalo já está ocupado
       if (bookedTimes.includes(candidate)) {
         blocked = true;
         break;
