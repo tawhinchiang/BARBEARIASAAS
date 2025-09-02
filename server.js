@@ -26,8 +26,8 @@ async function startServer() {
     const io = new Server(server, {
       cors: {
         origin: [
-          'https://barbeariamarinho.agendastudios.com.br/',
-          'https://www.barbeariamarinho.agendastudios.com.br/',
+          'https://barbeariamarinho.agendastudios.com.br',
+          'https://www.barbeariamarinho.agendastudios.com.br',
           'http://64.227.83.125:3000'
         ]
       }

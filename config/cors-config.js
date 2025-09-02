@@ -41,9 +41,9 @@ const corsConfig = {
   production: {
     // IMPORTANTE: Substitua pelos seus domínios reais de produção
     allowedOrigins: [
-      'https://barbeariamarinho.agendastudios.com.br/',   
-      'https://www.barbeariamarinho.agendastudios.com.br/',
-      'http://barbeariamarinho.agendastudios.com.br/',
+      'https://barbeariamarinho.agendastudios.com.br',   
+      'https://www.barbeariamarinho.agendastudios.com.br',
+      'http://barbeariamarinho.agendastudios.com.br',
       'http://64.227.83.125:3000',      
     ],
     // Métodos mais restritivos para produção
@@ -70,8 +70,8 @@ const corsConfig = {
 const adminApiCorsConfig = {
   development: {
     allowedOrigins: [
-      'https://barbeariamarinho.agendastudios.com.br/',
-      'https://www.barbeariamarinho.agendastudios.com.br/',
+      'https://barbeariamarinho.agendastudios.com.br',
+      'https://www.barbeariamarinho.agendastudios.com.br',
       'http://64.227.83.125:3000'
     ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -89,9 +89,9 @@ const adminApiCorsConfig = {
 
   production: { 
     allowedOrigins: [
-      'https://barbeariamarinho.agendastudios.com.br/',
-      'https://www.barbeariamarinho.agendastudios.com.br/',
-      'http://barbeariamarinho.agendastudios.com.br/',
+      'https://barbeariamarinho.agendastudios.com.br',
+      'https://www.barbeariamarinho.agendastudios.com.br',
+      'http://barbeariamarinho.agendastudios.com.br',
       'http://64.227.83.125:3000'
     ],
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], 
@@ -127,9 +127,9 @@ const publicApiCorsConfig = {
   
   production: {
     allowedOrigins: [
-     'https://barbeariamarinho.agendastudios.com.br/',
-      'https://www.barbeariamarinho.agendastudios.com.br/',
-      'http://barbeariamarinho.agendastudios.com.br/',
+     'https://barbeariamarinho.agendastudios.com.br',
+      'https://www.barbeariamarinho.agendastudios.com.br',
+      'http://barbeariamarinho.agendastudios.com.br',
       'http://64.227.83.125:3000'
             // Pode incluir mais domínios para APIs públicas
     ],
