@@ -2,20 +2,20 @@
 {
   "development": {
     "username": "postgres",
-    "password": "admin",
+    "password": "92162055",
     "database": "barbershop_db", 
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
-    "password": "admin",
+    "password": "92162055",
     "database": "barbershop_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
   "production": {
     "username": "postgres",
-    "password": "admin",
+    "password": "92162055",
     "database": "barbershop_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
