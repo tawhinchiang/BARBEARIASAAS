@@ -222,7 +222,31 @@ mark {
   
   
 }
+/* Serviços no ADMIN: lado a lado */
+.admin-body #servicesContainer {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
 
+.admin-body #servicesContainer > .col {
+  flex: 1 1 calc(33.333% - 1.5rem);
+  max-width: calc(33.333% - 1.5rem);
+}
+
+@media (max-width: 992px) {
+  .admin-body #servicesContainer > .col {
+    flex: 1 1 calc(50% - 1.5rem);
+    max-width: calc(50% - 1.5rem);
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-body #servicesContainer > .col {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
 /* #servicesContainer .d-none {
   display: none !important;
 } */
