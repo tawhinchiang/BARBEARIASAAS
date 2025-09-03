@@ -210,9 +210,10 @@ body.page-fade-out {
 }
 
 #servicesContainer {
+  opacity: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 mark {
    /* amarelinho */
