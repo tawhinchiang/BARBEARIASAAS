@@ -1012,7 +1012,11 @@ router.post('/api/appointments/:id/cancel', async (req, res) => {
     if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
 
     const { reason } = req.body; // Motivo opcional
-    await appointment.update({ status: 'cancelled' });
+    await appointment.update({
+    status: 'cancelled',
+    cancelReason: reason || null,
+    cancelledAt: new Date()
+  });
     res.json({ success: true, reason });
   } catch (error) {
     logError('Erro ao cancelar agendamento', error);
