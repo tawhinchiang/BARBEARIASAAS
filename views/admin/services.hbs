@@ -111,9 +111,11 @@
 
     <p class="text-muted">Total de serviços: {{services.length}}</p>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="servicesContainer">
-      {{#each services}}
+     {{#each services}}
+      <div class="col">
         {{> service-card this}}
-      {{/each}}
+      </div>
+    {{/each}}
     </div>
   </div>
 </div>
