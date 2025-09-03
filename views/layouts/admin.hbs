@@ -91,28 +91,28 @@
 
   <!-- Footer administrativo -->
   {{#unless hideFooter}}
-<footer class="admin-footer border-top bg-dark text-light py-2 mt-4">
-  <div class="container-fluid">
-    <div class="row align-items-center g-2">
+<footer class="admin-footer border-top bg-dark text-light py-2 mt-4 small">
+  <div class="container-fluid ps-md-5"> {{!-- ps-md-5: compensa sidebar fechada no desktop --}}
+    <div class="row align-items-center g-2 lh-sm">
       <!-- Copyright -->
       <div class="col-md-5">
-        <small class="text-muted">
+        <span class="text-muted">
           © {{#if currentYear}}{{currentYear}}{{else}}2025{{/if}}
           <span class="text-primary fw-semibold">Agenda Studios</span>. Todos os direitos reservados.
-        </small>
+        </span>
       </div>
 
       <!-- Versão -->
       <div class="col-md-4 text-md-center">
-        <small class="text-muted">
+        <span class="text-muted">
           <i class="fa-solid fa-code-branch me-1"></i>
           Versão {{#if appVersion}}{{appVersion}}{{else}}1.0.0{{/if}}
-        </small>
+        </span>
       </div>
 
       <!-- Suporte WhatsApp -->
       <div class="col-md-3 text-md-end">
-        <small class="text-muted d-inline-flex align-items-center gap-2">
+        <span class="text-muted d-inline-flex align-items-center gap-2">
           <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
           <a class="link-light text-decoration-none"
              href="https://wa.me/5563992014547"
@@ -120,12 +120,13 @@
              aria-label="Abrir conversa de suporte no WhatsApp">
             Suporte: (63) 99201-4547
           </a>
-        </small>
+        </span>
       </div>
     </div>
   </div>
 </footer>
 {{/unless}}
+
 
   <!-- Stack de Toasts (notificações) -->
   <div id="toastStack" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;"></div>
