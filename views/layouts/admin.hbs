@@ -95,23 +95,21 @@
   <div class="container-fluid ps-md-5"> {{!-- ps-md-5: compensa sidebar fechada no desktop --}}
     <div class="row align-items-center g-2 lh-sm">
       <!-- Copyright -->
-      <div class="col-md-5">
+      <div class="col-md-8">
         <span class="text-muted">
           © {{#if currentYear}}{{currentYear}}{{else}}2025{{/if}}
           <span class="text-primary fw-semibold">Agenda Studios</span>. Todos os direitos reservados.
         </span>
       </div>
 
-      <!-- Versão -->
-      <div class="col-md-4 text-md-center">
+     
+
+      <!-- Suporte WhatsApp -->
+      <div class="col-md-3 text-md-end">
         <span class="text-muted">
           <i class="fa-solid fa-code-branch me-1"></i>
           Versão {{#if appVersion}}{{appVersion}}{{else}}1.0.0{{/if}}
         </span>
-      </div>
-
-      <!-- Suporte WhatsApp -->
-      <div class="col-md-3 text-md-end">
         <span class="text-muted d-inline-flex align-items-center gap-2">
           <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
           <a class="link-light text-decoration-none"
