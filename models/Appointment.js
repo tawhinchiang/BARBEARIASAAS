@@ -96,7 +96,7 @@ isEncaixe: {
     name: 'uq_appointments_regular_slot',
     unique: true,
     fields: ['barberId', 'appointmentDate', 'appointmentTime'],
-    where: { isEncaixe: false }   // ← Postgres: índice único parcial
+    where: { isEncaixe: false,status: { [sequelize.Sequelize.Op.notIn]: ['cancelled', 'no_show'] } }  
   },
   {
     name: 'idx_appointments_barber_date',
