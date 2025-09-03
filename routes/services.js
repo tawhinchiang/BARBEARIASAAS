@@ -122,6 +122,7 @@ const servicesWithStats = await Promise.all(services.map(async (service) => {
     res.render('admin/services', {
       title: 'Gerenciar Serviços',
       services: servicesWithStats,
+      adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin'
     });
   } catch (error) {

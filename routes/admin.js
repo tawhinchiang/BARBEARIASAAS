@@ -331,7 +331,7 @@ const topServices = topServicesRaw.map(item => ({
     res.render('admin/dashboard', {
       title: 'Dashboard Administrativo',
       pageTitle: 'Dashboard Administrativo',
-     
+      adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin',
       user: req.session.user,
       todayAppointmentsCount: todayAppointments.length,
@@ -455,6 +455,7 @@ router.get('/appointments', async (req, res) => {
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       pageTitle: 'Agendamentos',
+      adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin',
       user: req.session.user,
       appointments: formattedAppointments,
@@ -701,6 +702,7 @@ router.get('/reports', async (req, res) => {
     res.render('admin/reports', {
       title: 'Relatórios',
       pageTitle: 'Relatórios',
+      adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin',
       user: req.session.user,
       appointments: formatted, 

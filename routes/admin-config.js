@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
   res.render('admin/config', {
     title: 'Configurações do Sistema',
     layout: 'admin',
+    adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
     config: configMap,
     success
   });

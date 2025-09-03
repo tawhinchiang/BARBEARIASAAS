@@ -100,6 +100,7 @@ router.get('/', async (req, res) => {
 
       title: 'Gerenciar Barbeiros',
       pageTitle: 'Gerenciar Barbeiros',
+      adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       barbers: barbersWithStats,
       layout: 'admin'
     });

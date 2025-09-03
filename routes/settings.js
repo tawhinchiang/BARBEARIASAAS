@@ -99,6 +99,7 @@ router.get('/', async (req, res) => {
     res.render('admin/settings', {
       title: 'Configurações do Sistema',
       settings: settings,
+      adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin'
     });
   } catch (error) {
