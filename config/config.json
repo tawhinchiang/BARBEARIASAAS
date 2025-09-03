@@ -13,13 +13,16 @@
     "host": "127.0.0.1",
     "dialect": "postgres"
   },
-  "production": {
-    "username": "postgres",
-    "password": "92162055",
-    "database": "barbershop_db",
-    "host": "127.0.0.1",
-    "dialect": "postgres"
-  }
+ "production": {
+  "username": "postgres",
+  "password": "92162055",
+  "database": "barbershop_db",
+  "host": "127.0.0.1",
+  "port": 6543,
+  "dialect": "postgres",
+  "logging": false
+}
+
 }
 
  
