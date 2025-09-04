@@ -215,41 +215,39 @@ body.page-fade-out {
   grid-template-columns: 1fr;
   gap: 8px;
 }
+
 mark {
-   /* amarelinho */
-   background-color: transparent;
+
+  background-color: transparent;
   color: #000;
-  
-  
+
 }
-/* Serviços no ADMIN: lado a lado */
+
 .admin-body #servicesContainer {
   display: flex !important;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
 
-.admin-body #servicesContainer > .col {
+.admin-body #servicesContainer>.col {
   flex: 1 1 calc(33.333% - 1.5rem);
   max-width: calc(33.333% - 1.5rem);
 }
 
 @media (max-width: 992px) {
-  .admin-body #servicesContainer > .col {
+  .admin-body #servicesContainer>.col {
     flex: 1 1 calc(50% - 1.5rem);
     max-width: calc(50% - 1.5rem);
   }
 }
 
 @media (max-width: 576px) {
-  .admin-body #servicesContainer > .col {
+  .admin-body #servicesContainer>.col {
     flex: 1 1 100%;
     max-width: 100%;
   }
 }
-/* #servicesContainer .d-none {
-  display: none !important;
-} */
+
 .services-grid {
   display: grid;
   gap: 1.5rem;
@@ -259,7 +257,7 @@ mark {
 
 
 .service-card {
-   display: flex !important;
+  display: flex !important;
   width: 100%;
   min-height: 50px;
   background: var(--bg-light);
@@ -275,12 +273,14 @@ mark {
 
 .service-card:hover {
   background-color: #1e1e1e;
-  box-shadow: 0 0 8px rgba(0,0,0,0.5);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
   transform: scale(1.01);
 }
+
 .service-card img {
   flex-shrink: 0;
 }
+
 .service-card.selected {
   background: #2a2a2e;
   box-shadow: var(--shadow-hover);
@@ -692,29 +692,17 @@ mark {
   transform: translateY(-2px);
 }
 
-/* #meuModal.modal {
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: none;
-  height: 100%;
-  justify-content: center;
-  left: 0;
-  padding: 15px;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 1050;
-} */
+
 
 #meuModal.modal {
   position: fixed;
   inset: 0;
-  display: none;            /* o .show liga o flex */
-  align-items: center;  /* topo — o JS desce via paddingTop */
+  display: none;
+  align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,.6);
+  background: rgba(0, 0, 0, .6);
   z-index: 1055;
-  padding: 0;               /* o JS definirá padding-top dinamicamente */
+  padding: 0;
 }
 
 
@@ -723,7 +711,7 @@ mark {
   display: flex !important;
 }
 
-  body.modal-open {
+body.modal-open {
   overflow: hidden;
 }
 
@@ -734,33 +722,27 @@ mark {
   max-width: 900px;
   width: 95%;
 }
-/*
-#meuModal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.6); 
-  z-index: 1050;
-}*/
+
 
 #meuModal .modal-content {
   background-color: #000 !important;
   border: 1px solid #333;
   border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
   color: #fff !important;
   display: flex;
   flex-direction: column;
   overflow: auto;
   width: 100%;
-  max-height: 80vh; 
-  max-width: 900px; 
-  margin:0;
+  max-height: 80vh;
+  max-width: 900px;
+  margin: 0;
 }
-#meuModal.fade-in-modal { transform: none !important; }
+
+#meuModal.fade-in-modal {
+  transform: none !important;
+}
+
 #meuModal .modal-header {
   align-items: center;
   border-bottom: 1px solid var(--border-color);
@@ -788,22 +770,19 @@ mark {
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 10px;
 }
+
 .times-container {
   margin-top: 2rem;
   overflow: hidden;
   width: 100%;
 }
 
-/*#meuModal .modal-content {
-  max-width: 900px;  
-  width: 95%;
-}
-*/
+
 .times-grid {
   display: grid;
-  gap: 8px; /* menos espaço entre slots */
+  gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  justify-content: center; /* centraliza tudo */
+  justify-content: center;
   margin: 0 auto;
   max-width: 100%;
 }
@@ -829,6 +808,7 @@ mark {
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);
 }
+
 .compact-mode .times-grid {
   gap: 5px !important;
   grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)) !important;
@@ -929,7 +909,7 @@ mark {
 }
 
 .admin-filters {
-   background: var(--bg-light) !important;
+  background: var(--bg-light) !important;
   border: none;
   border-radius: 12px;
   box-shadow: var(--shadow);
@@ -1284,8 +1264,9 @@ mark {
   color: var(--text-dark);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 
 #editModal .modal-header {
@@ -1331,31 +1312,19 @@ mark {
   z-index: 9999;
 }
 
- #editModal { --bs-modal-margin: calc(48px + 1rem); }
-/* Garante que a margem aumentada seja aplicada no diálogo */
 
-
-/* Evita que o conteúdo “estoure” a viewport e force o topo a colar */
-#editModal .modal-content {
-  max-height: calc(100vh - (var(--bs-modal-margin) * 2));
-}
-
-/* Quando passar da altura máxima, só o corpo rola */
-#editModal .modal-body {
-  overflow-y: auto;
-}
 
 #editModal select.form-control {
   max-height: 300px;
   overflow-y: auto;
 }
 
- #editModal .modal-dialog {
-   margin: var(--bs-modal-margin) auto;   
-   display: flex;
-   flex-direction: column;
-   max-width: 900px;
- }
+#editModal .modal-dialog {
+  margin: var(--modal-top) auto var(--modal-bottom);
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+}
 
 .select2-container--bootstrap-5 .select2-selection {
   background-color: var(--bg-gray);
@@ -1399,13 +1368,14 @@ mark {
 
 #editModal .modal-body {
   flex-grow: 1;
-  max-height: calc(90vh - 130px);
   overflow: visible !important;
-  overflow-y: auto !important;
   padding: 1rem 1.5rem;
   position: relative;
   z-index: 1;
+  max-height: none !important;
+  overflow-y: visible !important;
 }
+
 
 canvas {
   display: block;
@@ -2000,7 +1970,7 @@ canvas {
   filter: invert(1);
 }
 
-/* Navbar fixa no topo */
+
 .admin-navbar.navbar {
   background: var(--nav-bg) !important;
   border-bottom: 1px solid var(--nav-border);
@@ -2015,7 +1985,7 @@ canvas {
   padding: 0;
 }
 
-/* Garantir conteúdo visível abaixo da navbar */
+
 .admin-main {
   flex: 1;
   padding-top: 64px;
@@ -2031,11 +2001,11 @@ canvas {
   color: var(--sidebar-text);
   border-right: 1px solid var(--sidebar-sep);
   display: none;
-  /* escondida no mobile */
+
   z-index: 1300;
 }
 
-sidenav-header .brand-text {
+.sidenav-header .brand-text {
   color: #e5e7eb;
   font-weight: 600;
   font-size: .95rem;
@@ -2091,7 +2061,7 @@ sidenav-header .brand-text {
   font-weight: 600;
 }
 
-/* Colapso no desktop (ícones apenas) */
+
 body.sidebar-collapsed .admin-sidenav {
   width: 72px;
 }
@@ -2115,7 +2085,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   padding: 12px 8px;
 }
 
-/* Main desloca conforme a largura da sidebar */
+
 @media (min-width: 992px) {
   .admin-sidenav {
     display: block;
@@ -2130,7 +2100,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   }
 }
 
-/* Mobile: usa offcanvas, esconde a fixa */
+
 @media (max-width: 991.98px) {
   .admin-sidenav {
     display: none !important;
@@ -2145,7 +2115,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   }
 }
 
-/* Tira resíduos de azul antigos */
+
 .status-confirmed {
   background: var(--confirmed-color);
   color: #fff;
@@ -2155,7 +2125,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   border-left-color: var(--confirmed-color);
 }
 
-/* OFFCANVAS */
+
 .admin-offcanvas {
   width: 320px;
   background: var(--sidebar-bg);
@@ -2163,12 +2133,11 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   border-right: 1px solid var(--sidebar-sep);
 }
 
-/* Alturas/offsets sticky */
+
 :root {
   --sidebar-header-h: 56px;
 }
 
-/* Header da sidebar (sticky) */
 .admin-offcanvas .sidebar-header {
   background: var(--sidebar-header-bg);
   color: var(--sidebar-text);
@@ -2179,7 +2148,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   border-bottom: 1px solid var(--sidebar-sep);
 }
 
-/* Busca (sticky logo abaixo do header) */
+
 .admin-offcanvas .sidebar-search {
   position: sticky;
   top: var(--sidebar-header-h);
@@ -2203,7 +2172,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   color: var(--sidebar-text-muted);
 }
 
-/* Itens do menu */
+
 .admin-menu .list-group-item {
   background: transparent;
   border: none;
@@ -2231,7 +2200,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   font-weight: 600;
 }
 
-/* Rodapé da sidebar */
+
 .sidebar-footer {
   background: var(--sidebar-bg);
 }
@@ -2248,7 +2217,6 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   font-weight: 600;
 }
 
-/* Status WhatsApp dentro da sidebar (um único ID!) */
 #whatsapp-status-toast {
   height: 44px;
   padding: 0 .75rem;
@@ -2269,7 +2237,6 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   border-color: #dc3545;
 }
 
-/* Substituir azuis antigos */
 .status-confirmed {
   background: var(--confirmed-color);
   color: #fff;
@@ -2279,7 +2246,6 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   border-left-color: var(--confirmed-color);
 }
 
-/* Responsivo */
 @media (max-width: 768px) {
   .admin-offcanvas {
     width: 100%;
@@ -2500,7 +2466,7 @@ body.fade-out-soft {
   text-decoration: underline;
 }
 
-/* Deixe a sidenav em coluna para o footer “grudar” embaixo */
+
 .admin-sidenav {
   position: fixed;
   top: 48px;
@@ -2512,32 +2478,29 @@ body.fade-out-soft {
   border-right: 1px solid var(--sidebar-sep);
   display: flex;
   flex-direction: column;
-  /* 👈 */
   z-index: 1300;
 }
 
-/* Menu ocupa o espaço restante sem height calc */
 .sidenav-menu {
   padding: 6px 0;
   flex: 1 1 auto;
-  /* 👈 */
+
   overflow-y: auto;
-  /* 👈 */
+
 }
 
-/* Footer fixo dentro da coluna, sem estourar */
+
 .sidenav-footer {
   padding: 12px;
   border-top: 1px solid var(--sidebar-sep);
   background: var(--sidebar-bg);
 }
 
-/* Botões ocupam a largura, sem quebrar */
+
 .sidenav-footer .btn {
   width: 100%;
 }
 
-/* --------- Modo colapsado (ícones apenas) ---------- */
 body.sidebar-collapsed .admin-sidenav {
   width: 72px;
 }
@@ -2557,7 +2520,7 @@ body.sidebar-collapsed .admin-sidenav .user-box {
   pointer-events: none;
 }
 
-/* Footer no colapso: centraliza ícones e evita overflow */
+
 body.sidebar-collapsed .sidenav-footer {
   padding: 12px 8px;
 }
@@ -2576,7 +2539,7 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 
 
 
-/* tira borda/moldura do botão */
+
 .navbar-toggler {
   border: none !important;
   outline: none !important;
@@ -2587,11 +2550,11 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   box-shadow: none;
 }
 
-/* ícone hamburger branco (3 traços) */
+
 .navbar-toggler-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath stroke='white' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
   filter: none !important;
-  /* ignora qualquer invert */
+
 }
 
 .admin-navbar .navbar-title {
@@ -2600,7 +2563,7 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   font-size: 1rem;
 }
 
-/* Logo + título na navbar */
+
 .admin-navbar .brand-compact {
   min-width: 0;
 }
@@ -2773,9 +2736,10 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 }
 
 @media (max-width: 500px) {
-.times-grid {
-    grid-template-columns: repeat(2, 1fr); /* celular */
+  .times-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
+
   .time-slot {
     width: 100%;
     height: 40px;
@@ -2856,9 +2820,9 @@ body.sidebar-collapsed .sidenav-footer .btn i {
     font-size: 0.9rem;
   }
 
- 
-    .times-grid {
-    grid-template-columns: repeat(3, 1fr); /* tablets */
+
+  .times-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .step-navigation {
@@ -2889,9 +2853,9 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 
   #meuModal .modal-content {
-  margin: 0;            /* não empurra para baixo em telas pequenas */
-  box-sizing: border-box;
-}
+    margin: 0;
+    box-sizing: border-box;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3006,46 +2970,46 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 }
 
-/* ===== MELHORIAS PARA RESPONSIVIDADE MÓVEL ===== */
 
-/* Garantir que o offcanvas funcione corretamente em mobile */
+
+
 .admin-offcanvas {
   background: var(--sidebar-bg) !important;
   color: var(--sidebar-text) !important;
   width: 280px !important;
 }
 
-/* Melhorar visibilidade do botão hamburger em mobile */
+
 @media (max-width: 991.98px) {
   .admin-navbar .navbar-toggler {
     border: none !important;
     padding: 0.25rem 0.5rem;
     margin-right: 0.5rem;
   }
-  
+
   .admin-navbar .navbar-toggler:focus {
     box-shadow: none !important;
   }
-  
+
   .admin-navbar .navbar-toggler-icon {
     width: 1.5em;
     height: 1.5em;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath stroke='white' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
   }
-  
-  /* Esconder sidebar fixa em mobile */
+
+
   .admin-sidenav {
     display: none !important;
   }
-  
-  /* Ajustar padding do conteúdo principal em mobile */
+
+
   .admin-main {
     padding-left: 0 !important;
     padding-top: 64px;
   }
 }
 
-/* Melhorar estilos do offcanvas */
+
 .admin-offcanvas .sidebar-header {
   background: var(--sidebar-header-bg);
   color: var(--sidebar-text);
@@ -3079,7 +3043,7 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   color: var(--sidebar-text-muted);
 }
 
-/* Melhorar itens do menu offcanvas */
+
 .admin-offcanvas .admin-menu .list-group-item {
   background: transparent;
   border: none;
@@ -3101,7 +3065,7 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   border-left: 3px solid var(--primary-color);
 }
 
-/* Footer do offcanvas */
+
 .admin-offcanvas .sidebar-footer {
   background: var(--sidebar-bg);
   border-top: 1px solid var(--sidebar-sep);
@@ -3142,12 +3106,12 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   border-color: var(--danger-color);
 }
 
-/* Garantir que o backdrop funcione corretamente */
+
 .offcanvas-backdrop {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* Melhorar touch targets para mobile */
+
 @media (max-width: 767.98px) {
   .admin-offcanvas .admin-menu .list-group-item {
     padding: 1rem;
@@ -3155,21 +3119,21 @@ body.sidebar-collapsed .sidenav-footer .btn i {
     display: flex;
     align-items: center;
   }
-  
+
   .admin-offcanvas .sidebar-footer .btn {
     min-height: 44px;
     padding: 0.75rem 1rem;
   }
 }
 
-/* Centralizar paginação dentro do bloco */
+
 .pagination-wrapper {
   flex: 1;
   display: flex;
   justify-content: center;
 }
 
-/* Estilo padronizado de acordo com tema */
+
 .pagination .page-link {
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
@@ -3187,89 +3151,118 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   color: #000 !important;
   border-color: var(--primary-color);
 }
+
 .list-group-item {
   transition: all 0.2s ease-in-out;
 }
+
 .list-group-item:hover {
   background-color: #1e1e22 !important;
   transform: translateY(-2px);
 }
+
 .list-group-item h6 {
   font-size: 1rem;
 }
+
 .list-group-item button {
   min-width: 100px;
 }
-/* Base para faixa lateral também em .card */
+
 .card.status-card {
   border-left: 6px solid transparent;
   padding-left: 1rem;
 }
 
-/* Badge que faltava */
+
 .status-completed {
   background: var(--success-color);
   color: #fff;
 }
 
-/* Alias útil caso venha "scheduled" do backend */
-.status-scheduled { 
+
+.status-scheduled {
   background: var(--warning-color);
   color: var(--text-dark);
 }
-.status-card.status-scheduled { 
+
+.status-card.status-scheduled {
   border-left-color: var(--warning-color);
 }
-/* Faixa lateral robusta por pseudo-elemento (independente do border do Bootstrap) */
+
 .card.status-card {
   position: relative;
-  overflow: hidden; /* garante curva da faixa no canto */
+  overflow: hidden;
 }
 
-/* Base da faixa */
+
 .card.status-card::before {
   content: "";
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 6px;                 /* espessura da faixa */
-  background: transparent;    /* cor definida por estado abaixo */
+  width: 6px;
+  background: transparent;
   z-index: 1;
   border-top-left-radius: inherit;
   border-bottom-left-radius: inherit;
 }
 
-/* Cores por estado (mantém sua paleta atual) */
-.card.status-card.status-pending::before      { background: var(--warning-color); }
-.card.status-card.status-confirmed::before    { background: #007bff; }            /* mesma usada no seu CSS */
-.card.status-card.status-cancelled::before    { background: var(--danger-color); }
-.card.status-card.status-completed::before    { background: var(--success-color); }
-.card.status-card.status-in_progress::before  { background: var(--info-color); }
-.card.status-card.status-no_show::before      { background: var(--danger-color); }/* pode usar outra se preferir */
-.card.status-card.status-scheduled::before    { background: var(--warning-color); }/* alias útil */
-/* === Forçar posicionamento da caixa do modal na viewport === */
-#meuModal{
+
+.card.status-card.status-pending::before {
+  background: var(--warning-color);
+}
+
+.card.status-card.status-confirmed::before {
+  background: #007bff;
+}
+
+.card.status-card.status-cancelled::before {
+  background: var(--danger-color);
+}
+
+.card.status-card.status-completed::before {
+  background: var(--success-color);
+}
+
+.card.status-card.status-in_progress::before {
+  background: var(--info-color);
+}
+
+.card.status-card.status-no_show::before {
+  background: var(--danger-color);
+}
+
+.card.status-card.status-scheduled::before {
+  background: var(--warning-color);
+}
+
+#meuModal {
   position: fixed !important;
   inset: 0 !important;
   display: none;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(0,0,0,.6);
-  z-index: 20000;                 /* acima de qualquer coisa */
+  background: rgba(0, 0, 0, .6);
+  z-index: 20000;
   padding: 0 !important;
-  transform: none !important;     /* impede contexto de transform */
+  transform: none !important;
   animation: none !important;
 }
-#meuModal.show{ display:flex !important; }
-#meuModal .modal-dialog{
-  margin: 0 auto !important;         /* zera empurrão vertical padrão */
+
+#meuModal.show {
+  display: flex !important;
+}
+
+#meuModal .modal-dialog {
+  margin: 0 auto !important;
   max-width: 900px;
   width: 95%;
 }
 
-#meuModal .modal-content{
-  position: static !important;      /* <- tira o fixed */
+#meuModal .modal-content {
+  position: static !important;
   left: auto !important;
   top: auto !important;
   transform: none !important;
@@ -3279,7 +3272,28 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   margin: 0;
   border: 1px solid #333;
   border-radius: 1rem;
-  background: #000; color:#fff;
+  background: #000;
+  color: #fff;
 }
 
-html.modal-open, body.modal-open{ overflow:hidden !important; }
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+}
+
+#editModal {
+
+  --modal-top: .5rem;
+  --modal-bottom: 1rem;
+}
+#editModal .modal-header {
+  padding: .65rem 1rem !important;
+}
+
+#editModal .modal-title {
+  margin: 0 !important;
+}
+
+#editModal .row.g-3 {
+  --bs-gutter-y: .5rem !important;
+}
