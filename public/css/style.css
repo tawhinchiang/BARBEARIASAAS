@@ -1331,12 +1331,34 @@ mark {
   z-index: 9999;
 }
 
+#editModal {
+  /* Aumenta a margem vertical padrão do Bootstrap só neste modal */
+  --bs-modal-margin: 3rem; /* ajuste fino: 2rem ~ 4rem */
+}
+/* Garante que a margem aumentada seja aplicada no diálogo */
+#editModal .modal-dialog {
+  margin-top: var(--bs-modal-margin);
+  margin-bottom: var(--bs-modal-margin);
+}
+
+/* Evita que o conteúdo “estoure” a viewport e force o topo a colar */
+#editModal .modal-content {
+  max-height: calc(100vh - (var(--bs-modal-margin) * 2));
+}
+
+/* Quando passar da altura máxima, só o corpo rola */
+#editModal .modal-body {
+  overflow-y: auto;
+}
+
 #editModal select.form-control {
   max-height: 300px;
   overflow-y: auto;
 }
 
 #editModal .modal-dialog {
+  margin-top: var(--bs-modal-margin);
+  margin-bottom: var(--bs-modal-margin);
   display: flex;
   flex-direction: column;
   height: 90vh;
