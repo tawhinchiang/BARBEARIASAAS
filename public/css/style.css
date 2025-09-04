@@ -1331,15 +1331,9 @@ mark {
   z-index: 9999;
 }
 
-#editModal {
-  /* Aumenta a margem vertical padrão do Bootstrap só neste modal */
-  --bs-modal-margin: 3rem; /* ajuste fino: 2rem ~ 4rem */
-}
+ #editModal { --bs-modal-margin: calc(48px + 1rem); }
 /* Garante que a margem aumentada seja aplicada no diálogo */
-#editModal .modal-dialog {
-  margin-top: var(--bs-modal-margin);
-  margin-bottom: var(--bs-modal-margin);
-}
+
 
 /* Evita que o conteúdo “estoure” a viewport e force o topo a colar */
 #editModal .modal-content {
@@ -1356,15 +1350,12 @@ mark {
   overflow-y: auto;
 }
 
-#editModal .modal-dialog {
-  margin-top: var(--bs-modal-margin);
-  margin-bottom: var(--bs-modal-margin);
-  display: flex;
-  flex-direction: column;
-  height: 90vh;
-  margin: 1.75rem auto;
-  max-width: 900px;
-}
+ #editModal .modal-dialog {
+   margin: var(--bs-modal-margin) auto;   
+   display: flex;
+   flex-direction: column;
+   max-width: 900px;
+ }
 
 .select2-container--bootstrap-5 .select2-selection {
   background-color: var(--bg-gray);
