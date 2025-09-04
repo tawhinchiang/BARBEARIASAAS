@@ -1405,37 +1405,9 @@ canvas {
   min-width: 120px;
 }
 
-.bottom-barber-navbar {
-  align-items: center;
-  backdrop-filter: blur(6px);
-  background-color: var(--bg-gray);
-  border-radius: 20px 20px 0 0;
-  bottom: 0;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
-  display: flex;
-  height: 75px;
-  justify-content: space-around;
-  left: 0;
-  padding: 0 10px;
-  position: fixed;
-  right: 0;
-  z-index: 9999;
-}
 
-.bottom-barber-navbar .nav-button {
-  align-items: center;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  font-size: 0.75rem;
-  transition: all 0.2s ease-in-out;
-  user-select: none;
-}
 
-.bottom-barber-navbar .nav-button i {
-  margin-bottom: 4px;
-}
+
 
 .bottom-barber-navbar .nav-button:hover,
 .bottom-barber-navbar .nav-button.active {
@@ -3298,12 +3270,62 @@ body.modal-open {
   --bs-gutter-y: .5rem !important;
 }
 .client-body.has-bottom-nav {
-  padding-bottom: calc(75px + env(safe-area-inset-bottom));
+  padding-bottom: calc(55px + env(safe-area-inset-bottom));
 }
-.bottom-barber-navbar {
 
-  padding-bottom: env(safe-area-inset-bottom);
-  
-  will-change: transform;
-  transform: translateZ(0);
+.bottom-barber-navbar {
+    will-change: transform;
+    transform: translateZ(0);
+    padding-bottom: env(safe-area-inset-bottom);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 55px; /* ↓ Antes: 75px */
+    background: rgba(255, 255, 255, 0.8); /* Glassmorphism */
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 5px 10px;
+    z-index: 9999;
+    transition: all 0.3s ease;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.bottom-barber-navbar .nav-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    color: #555;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+}
+
+.bottom-barber-navbar .nav-button i {
+    font-size: 18px; /* Ícones maiores */
+    transition: transform 0.25s ease, color 0.25s ease;
+}
+
+/* Hover moderno */
+.bottom-barber-navbar .nav-button:hover {
+    color: var(--primary-color);
+}
+
+.bottom-barber-navbar .nav-button:hover i {
+    transform: scale(1.2);
+    color: var(--primary-color);
+}
+
+/* Estado ativo */
+.bottom-barber-navbar .nav-button.active {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.bottom-barber-navbar .nav-button.active i {
+    color: var(--primary-color);
 }
