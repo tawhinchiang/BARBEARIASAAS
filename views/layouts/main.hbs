@@ -39,8 +39,10 @@
     <!-- Google Sign-In -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body class="client-body">
+<body class="client-body has-bottom-nav">
+    <div id="pageWrapper">
     {{{body}}}
+    </div>
     <nav class="bottom-barber-navbar" id="quickNav" aria-label="Navegação">
   <a href="/" class="nav-button">
     <i class="fa-solid fa-house"></i>
@@ -91,11 +93,8 @@
 <script src="/js/ui.js"></script>
 
 </body>
-<!-- 🔹 Barra de Navegação Inferior -->
 
 
-<!-- Espaço extra para não esconder o conteúdo atrás da barra -->
-<div style="margin-bottom: 80px;"></div>
 
 </html>
 

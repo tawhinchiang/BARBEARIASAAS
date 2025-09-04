@@ -3297,3 +3297,13 @@ body.modal-open {
 #editModal .row.g-3 {
   --bs-gutter-y: .5rem !important;
 }
+.client-body.has-bottom-nav {
+  padding-bottom: calc(75px + env(safe-area-inset-bottom));
+}
+.bottom-barber-navbar {
+
+  padding-bottom: env(safe-area-inset-bottom);
+  
+  will-change: transform;
+  transform: translateZ(0);
+}

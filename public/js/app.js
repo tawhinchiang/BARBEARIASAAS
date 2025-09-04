@@ -73,13 +73,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupSmoothPageTransition() {
+  const wrapper = document.getElementById('pageWrapper');
   document.querySelectorAll('a[href]').forEach(link => {
     const href = link.getAttribute('href');
     if (!href || !href.startsWith('/') || href === window.location.pathname) return;
 
     link.addEventListener('click', function (e) {
       e.preventDefault();
-      document.body.classList.add('carousel-slide');
+      if (wrapper) wrapper.classList.add('carousel-slide');
       setTimeout(() => {
         window.location.href = href;
       }, 400);
