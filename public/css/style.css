@@ -3282,7 +3282,7 @@ body.modal-open {
     left: 0;
     width: 100%;
     height: 55px; /* ↓ Antes: 75px */
-    background: rgba(255, 255, 255, 0.8); /* Glassmorphism */
+    background:#1e1e1e; /* Glassmorphism */
     backdrop-filter: blur(12px);
     box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -3306,7 +3306,7 @@ body.modal-open {
 }
 
 .bottom-barber-navbar .nav-button i {
-    font-size: 18px; /* Ícones maiores */
+    font-size: 20px; 
     transition: transform 0.25s ease, color 0.25s ease;
 }
 
