@@ -62,6 +62,7 @@
     {{#if frontendConfigJson}}
   <script>
     // Disponível para todos os scripts da página
+    window.BARBERSHOP_CONFIG.BARBERSHOP_LOGO = "{{BARBERSHOP_LOGO}}";
     window.BARBERSHOP_CONFIG = {{{frontendConfigJson}}};
   </script>
 {{/if}}

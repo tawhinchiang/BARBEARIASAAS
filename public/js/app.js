@@ -5,6 +5,7 @@ if (typeof window.BARBERSHOP_CONFIG === 'undefined') {
     WHATSAPP_NUMBER: '5563992014547',
     GOOGLE_CLIENT_ID: 'SEU_GOOGLE_CLIENT_ID_AQUI'
   };
+  
 }
 
 const CONFIG = window.BARBERSHOP_CONFIG;
@@ -163,7 +164,7 @@ function renderServices(services) {
 
     item.innerHTML = `
       <div class="d-flex align-items-center gap-3">
-        <img src="${svc.photo || '/images/logo.jpg'}" alt="${svc.name}" 
+        <img src="${svc.photo || window.BARBERSHOP_CONFIG.BARBERSHOP_LOGO}" alt="${svc.name}"" 
              class="rounded-circle" style="width:40px; height:40px; object-fit:cover;">
         <div>
           <h6 class="mb-0 fw-bold service-name">${svc.name}</h6>
