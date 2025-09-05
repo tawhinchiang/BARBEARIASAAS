@@ -19,7 +19,7 @@ const {
 } = require('./middleware/security');
 const compression = require('compression');
 console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
-app.locals.BARBERSHOP_LOGO = process.env.BARBERSHOP_LOGO || '/images/logo.jpg';
+
 
 // IMPORTAR CONFIGURAÇÃO SEGURA DE CORS
 const { 
@@ -32,6 +32,7 @@ const app = express();
 app.use(compression());
 app.use(securityHeaders);
 app.set('trust proxy', 1);
+app.locals.BARBERSHOP_LOGO = process.env.BARBERSHOP_LOGO || '/images/logo.jpg';
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
