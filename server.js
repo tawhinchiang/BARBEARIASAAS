@@ -22,16 +22,17 @@ async function startServer() {
 
     // 2) Cria HTTP server e socket.io
     const server = http.createServer(app);
+  const allowedCorsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : [process.env.BASE_URL];
 
-    const io = new Server(server, {
-      cors: {
-        origin: [
-          'https://barbeariamarinho.agendastudios.com.br',
-          'https://www.barbeariamarinho.agendastudios.com.br',
-          'http://64.227.83.125:3000'
-        ]
-      }
-    });
+  const io = new Server(server, {
+  cors: {
+    origin: allowedCorsOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
     app.set('io', io);
 

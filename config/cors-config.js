@@ -37,16 +37,11 @@ const corsConfig = {
     exposedHeaders: ['X-Total-Count', 'X-Page-Count']
   },
 
-  // Configuração para produção
   production: {
-    // IMPORTANTE: Substitua pelos seus domínios reais de produção
-    allowedOrigins: [
-      'https://barbeariamarinho.agendastudios.com.br',   
-      'https://www.barbeariamarinho.agendastudios.com.br',
-      'http://barbeariamarinho.agendastudios.com.br',
-      'http://64.227.83.125:3000',      
-    ],
-    // Métodos mais restritivos para produção
+  allowedOrigins: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : [process.env.BASE_URL],
+    
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'],
     
     // Headers mais restritivos
@@ -70,9 +65,9 @@ const corsConfig = {
 const adminApiCorsConfig = {
   development: {
     allowedOrigins: [
-      'https://barbeariamarinho.agendastudios.com.br',
-      'https://www.barbeariamarinho.agendastudios.com.br',
-      'http://64.227.83.125:3000'
+      'lochalhost:3000',
+      'lochalhost:3000/admin'
+    
     ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -87,13 +82,10 @@ const adminApiCorsConfig = {
     maxAge: 3600
   },
 
-  production: { 
-    allowedOrigins: [
-      'https://barbeariamarinho.agendastudios.com.br',
-      'https://www.barbeariamarinho.agendastudios.com.br',
-      'http://barbeariamarinho.agendastudios.com.br',
-      'http://64.227.83.125:3000'
-    ],
+production: {
+  allowedOrigins: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : [process.env.BASE_URL],
     allowedMethods: ['GET', 'POST', 'PUT', 'OPTIONS'], 
     allowedHeaders: [
       'Origin',
@@ -125,14 +117,10 @@ const publicApiCorsConfig = {
     maxAge: 86400
   },
   
-  production: {
-    allowedOrigins: [
-     'https://barbeariamarinho.agendastudios.com.br',
-      'https://www.barbeariamarinho.agendastudios.com.br',
-      'http://barbeariamarinho.agendastudios.com.br',
-      'http://64.227.83.125:3000'
-            // Pode incluir mais domínios para APIs públicas
-    ],
+production: {
+  allowedOrigins: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : [process.env.BASE_URL],
     allowedMethods: ['GET', 'OPTIONS'],
     allowedHeaders: [
       'Origin',
