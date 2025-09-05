@@ -19,7 +19,7 @@ const {
 } = require('./middleware/security');
 const compression = require('compression');
 console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
-
+app.locals.BARBERSHOP_LOGO = process.env.BARBERSHOP_LOGO || '/images/logo.jpg';
 
 // IMPORTAR CONFIGURAÇÃO SEGURA DE CORS
 const { 
@@ -191,6 +191,7 @@ app.use('/admin/api', cors(createCorsConfig('admin')), require('./routes/adminAp
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   res.status(204).end();
 });
+
 // Rotas “comuns” para reduzir ruído de 404
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain').send('User-agent: *\nDisallow: /admin\n');
