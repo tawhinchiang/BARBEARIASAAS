@@ -147,6 +147,23 @@ async function loadServices() {
   
 
 }
+function formatDuration(minutes) {
+  if (!minutes || isNaN(minutes)) return '-';
+
+  const totalMinutes = Number(minutes);
+  if (totalMinutes < 60) {
+    return `${totalMinutes} min`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${remainingMinutes}min`;
+}
 
 // Renderizar cards de serviços dinamicamente
 function renderServices(services) {
@@ -169,7 +186,7 @@ function renderServices(services) {
         <div>
           <h6 class="mb-0 fw-bold service-name">${svc.name}</h6>
           <small class="text-muted">
-            <i class="far fa-clock me-1"></i> ${svc.duration} min
+            <i class="far fa-clock me-1"></i> ${formatDuration(svc.duration)}
           </small>
         </div>
       </div>
