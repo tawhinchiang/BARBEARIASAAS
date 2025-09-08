@@ -181,7 +181,7 @@ function renderServices(services) {
 
     item.innerHTML = `
       <div class="d-flex align-items-center gap-3">
-        <img src="${svc.photo || window.BARBERSHOP_CONFIG.BARBERSHOP_LOGO}" alt="${svc.name}"" 
+        <img src="${svc.photo || window.BARBERSHOP_CONFIG.BARBERSHOP_LOGO}" alt="${svc.name}" 
              class="rounded-circle" style="width:50px; height:50px; object-fit:cover;">
         <div>
           <h6 class="mb-0 fw-bold service-name">${svc.name}</h6>

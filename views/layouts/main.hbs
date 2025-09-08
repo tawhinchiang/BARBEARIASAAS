@@ -61,10 +61,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     {{#if frontendConfigJson}}
   <script>
-    // Disponível para todos os scripts da página
-    window.BARBERSHOP_CONFIG.BARBERSHOP_LOGO = "{{BARBERSHOP_LOGO}}";
-    window.BARBERSHOP_CONFIG = {{{frontendConfigJson}}};
-  </script>
+  window.BARBERSHOP_CONFIG = Object.assign(
+    {},
+    {{{frontendConfigJson}}},
+    { BARBERSHOP_LOGO: "{{BARBERSHOP_LOGO}}" }
+  );
+</script>
 {{/if}}
     <!-- Scripts customizados -->
     {{#if isClientPage}}
