@@ -384,8 +384,10 @@ function restoreFilters() {
     if (el) el.value = value;
   }
 }
-
+let tableListenersAttached = false;
 function initTableListeners() {
+  if (tableListenersAttached) return; // evita duplicar
+  tableListenersAttached = true;
   document.addEventListener('click', async function (event) {
     const button = event.target.closest('button');
     if (!button || !button.classList.contains('action-item')) return;
@@ -602,20 +604,7 @@ async function editAppointment(appointmentId) {
 
     await loadSelectOptions('edit-service', '/api/services', appointment.serviceType.id);
     await loadSelectOptions('edit-barber', '/api/barbers', appointment.barber.id);
-    document.getElementById('edit-price').value = 
-    `R$ ${Number(appointment.serviceType.price).toFixed(2)}`;
-    const serviceSelect = document.getElementById('edit-service');
-    if (serviceSelect) {
-      // garante que só tenha 1 listener
-      serviceSelect.onchange = async () => {
-        const res = await fetch(`/admin/services/${serviceSelect.value}`);
-        const data = await res.json();
-        if (data.success) {
-          document.getElementById('edit-price').value =
-            `R$ ${Number(data.service.price).toFixed(2)}`;
-        }
-      };
-}
+    
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);
@@ -972,10 +961,16 @@ async function refreshAppointmentsTable() {
   const tableBody = document.querySelector('.admin-table tbody');
   if (tableBody) {
     try {
-      const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
-      const data = await response.json();
-      tableBody.innerHTML = data;
-      
+      const res = await fetch(`/admin/appointments/partial?${params.toString()}`);
+      const ct = res.headers.get('content-type') || '';
+
+      if (ct.includes('application/json')) {
+        const { html } = await res.json();
+        tableBody.innerHTML = html || '';
+      } else {
+        const html = await res.text();
+        tableBody.innerHTML = html;
+      }
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar a TABELA:', err);
     }
@@ -985,15 +980,21 @@ async function refreshAppointmentsTable() {
   const cardContainer = document.getElementById('appointmentsCardView');
   if (cardContainer) {
     try {
-      const response = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
-      const data = await response.json();
-      cardContainer.innerHTML = data;
-      
+      const res = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
+      const ct = res.headers.get('content-type') || '';
+
+      if (ct.includes('application/json')) {
+        const { html } = await res.json();
+        cardContainer.innerHTML = html || '';
+      } else {
+        const html = await res.text();
+        cardContainer.innerHTML = html;
+      }
+
       requestAnimationFrame(() => {
         initCardExpandables();
         limitarCardsPorBarbeiro(10);
       });
-
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar os CARDS:', err);
     }
