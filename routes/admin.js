@@ -1081,34 +1081,34 @@ router.get('/appointments/:id/edit', async (req, res) => {
 });
 
 
-// router.put('/appointments/:id', async (req, res) => {
-//   const { id } = req.params;
-//   const { serviceTypeId, barberId, appointmentDate, appointmentTime } = req.body;
+router.put('/appointments/:id', async (req, res) => {
+  const { id } = req.params;
+  const { serviceTypeId, barberId, appointmentDate, appointmentTime } = req.body;
 
-//   try {
-//     const appointment = await Appointment.findByPk(id);
-//     if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
+  try {
+    const appointment = await Appointment.findByPk(id);
+    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
 
-//     // atualiza campos básicos
-//     appointment.serviceTypeId   = serviceTypeId;
-//     appointment.barberId        = barberId;
-//     appointment.appointmentDate = appointmentDate;
-//     appointment.appointmentTime = appointmentTime;
+    // atualiza campos básicos
+    appointment.serviceTypeId   = serviceTypeId;
+    appointment.barberId        = barberId;
+    appointment.appointmentDate = appointmentDate;
+    appointment.appointmentTime = appointmentTime;
 
-//     // garante que o PREÇO e a DURAÇÃO acompanhem o serviço selecionado
-//     const service = await ServiceType.findByPk(serviceTypeId);
-//     if (service) {
-//       appointment.totalPrice      = service.price;
-//       appointment.serviceDuration = service.duration;
-//     }
+    // garante que o PREÇO e a DURAÇÃO acompanhem o serviço selecionado
+    const service = await ServiceType.findByPk(serviceTypeId);
+    if (service) {
+      appointment.totalPrice      = service.price;
+      appointment.serviceDuration = service.duration;
+    }
 
-//     await appointment.save();
-//     res.json({ success: true });
-//   } catch (err) {
-//     console.error('Erro ao editar agendamento:', err);
-//     res.status(500).json({ error: 'Erro interno' });
-//   }
-// });
+    await appointment.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao editar agendamento:', err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
 
 // ===== ROTAS DE BARBEIROS =====
 router.use('/barbers', require('./barbers'));
