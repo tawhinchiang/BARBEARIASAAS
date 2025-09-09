@@ -284,8 +284,7 @@ function initModals() {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
 
-  // Inicializar modal de encaixe corretamente (DENTRO DA FUNÇÃO - CORRETO!)
-  // --- colocar dentro de initModals(), substituindo a lógica atual do fitInModal ---
+
 const fitInModalEl = document.getElementById('fitInModal');
 if (fitInModalEl) {
   // move modal para o body se estiver aninhado (resolve problemas de stacking/context)
@@ -582,7 +581,7 @@ async function viewAppointment(appointmentId) {
 
 
 
-// Outras funções (editar, confirmar, cancelar, etc.)
+
 async function editAppointment(appointmentId) {
   closeAllMenus();
 
@@ -603,7 +602,20 @@ async function editAppointment(appointmentId) {
 
     await loadSelectOptions('edit-service', '/api/services', appointment.serviceType.id);
     await loadSelectOptions('edit-barber', '/api/barbers', appointment.barber.id);
-
+    document.getElementById('edit-price').value = 
+    `R$ ${Number(appointment.serviceType.price).toFixed(2)}`;
+    const serviceSelect = document.getElementById('edit-service');
+    if (serviceSelect) {
+      // garante que só tenha 1 listener
+      serviceSelect.onchange = async () => {
+        const res = await fetch(`/admin/services/${serviceSelect.value}`);
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('edit-price').value =
+            `R$ ${Number(data.service.price).toFixed(2)}`;
+        }
+      };
+}
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);
