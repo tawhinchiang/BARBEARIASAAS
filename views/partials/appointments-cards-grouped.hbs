@@ -32,18 +32,25 @@
             <button class="btn btn-sm btn-outline-light action-item js-view-appointment" data-id="{{id}}">
               <i class="fas fa-eye"></i> Ver
             </button>
-
+            
+             <button class="btn btn-sm btn-outline-primary action-item js-edit-appointment" data-id="{{id}}">
+              <i class="fas fa-edit"></i> Editar
+            </button>
             {{#if (eq status "confirmed")}}
+            <button class="btn btn-sm btn-outline-warning action-item js-no-show-appointment" data-id="{{id}}">
+              <i class="fas fa-user-slash"></i> Não Compareceu
+            </button>
+             {{else if (eq status "in_progress")}}
             <button class="btn btn-sm btn-outline-warning action-item js-no-show-appointment" data-id="{{id}}">
               <i class="fas fa-user-slash"></i> Não Compareceu
             </button>
             {{/if}}
 
-            {{#unless whatsappSent}}
+            {{!-- {{#unless whatsappSent}}
             <button class="btn btn-sm btn-outline-success action-item js-send-whatsapp" data-id="{{id}}">
               <i class="fab fa-whatsapp"></i> WhatsApp
             </button>
-            {{/unless}}
+            {{/unless}} --}}
 
             {{#eq status "pending"}}
             <button class="btn btn-sm btn-outline-primary action-item js-confirm-appointment" data-id="{{id}}">
@@ -53,15 +60,18 @@
 
             {{#unless (eq status "cancelled")}}
             {{#unless (eq status "completed")}}
-            {{#if (eq status "in_progress")}}
-            <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
+            {{#if (eq status "confirmed")}}
+              <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
               <i class="fas fa-check-double"></i> Concluir
             </button>
+            {{else if (eq status "in_progress")}}
+              <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
+              <i class="fas fa-check-double"></i> Concluir
+            </button>
+
             {{/if}}
 
-            <button class="btn btn-sm btn-outline-primary action-item js-edit-appointment" data-id="{{id}}">
-              <i class="fas fa-edit"></i> Editar
-            </button>
+           
 
             <button class="btn btn-sm btn-outline-danger action-item js-cancel-appointment" data-id="{{id}}">
               <i class="fas fa-times"></i> Cancelar
