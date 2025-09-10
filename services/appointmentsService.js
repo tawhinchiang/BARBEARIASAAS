@@ -1,57 +1,32 @@
 // services/appointmentsService.js
-const { Op } = require('sequelize');
 const { Appointment, Barber, Client, ServiceType } = require('../models');
+const { Op } = require('sequelize');
 
-// Normaliza 'date' para 'YYYY-MM-DD' se vier Date/ISO
-function normalizeDate(d) {
-  if (!d) return new Date().toISOString().slice(0, 10);
-  if (typeof d === 'string') {
-    // já vem 'YYYY-MM-DD' no seu admin (ex: where: { appointmentDate: '2025-09-10' })
-    return d.length >= 10 ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10);
-  }
-  return new Date(d).toISOString().slice(0, 10);
+function normalizeDate(date) {
+  return typeof date === 'string'
+    ? date.slice(0, 10)
+    : new Date(date).toISOString().slice(0, 10);
 }
 
-function addMinutes(hhmm, minutes) {
+function addMinutes(hhmm, mins) {
   const [h, m] = (hhmm || '00:00').split(':').map(Number);
-  const total = (h * 60 + m) + (Number(minutes) || 0);
-  const hh = String(Math.floor(total / 60)).padStart(2, '0');
-  const mm = String(total % 60).padStart(2, '0');
-  return `${hh}:${mm}`;
+  const t = h * 60 + m + (Number(mins) || 0);
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 }
 
-/**
- * Retorna barbeiros ativos com campos necessários para montar a grade
- * [{ id, name, workingHours }]
- */
-async function getBarbers() {
-  const rows = await Barber.findAll({
-    where: { isActive: true },
-    attributes: ['id', 'name', 'workingHours']
-  });
-  return rows.map(b => b.toJSON());
-}
-
-/**
- * Retorna TODOS os agendamentos do dia para marcar os slots ocupados
- * Saída simplificada para a grade:
- * [{ id, barberId, status, startTime, endTime, clientName, serviceName }]
- */
 async function getAppointmentsByDate(date) {
   const day = normalizeDate(date);
 
   const rows = await Appointment.findAll({
     where: { appointmentDate: day },
     attributes: [
-      'id',
-      'barberId',
-      'appointmentTime',
-      'serviceDuration',   // você já mantém no registro ao editar
-      'status'
+      'id', 'barberId', 'appointmentTime',
+      'serviceDuration', 'status', 'totalPrice'
     ],
     include: [
-      { model: Client, as: 'client', attributes: ['firstName', 'lastName'] },
-      { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration'] }
+      { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone'] },
+      { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration'] },
+      { model: Barber, as: 'barber', attributes: ['name', 'photo'] }
     ],
     order: [['appointmentTime', 'ASC']]
   });
@@ -59,24 +34,22 @@ async function getAppointmentsByDate(date) {
   return rows.map(r => {
     const j = r.toJSON();
     const start = (j.appointmentTime || '').slice(0, 5);
-    const duration =
-      Number(j.serviceDuration) ||
-      Number(j.serviceType?.duration) ||
-      30; // fallback: 30 min
+    const duration = Number(j.serviceDuration) || Number(j.serviceType?.duration) || 30;
 
     return {
       id: j.id,
       barberId: j.barberId,
+      barberName: j.barber?.name || '',
+      barberPhoto: j.barber?.photo || '/images/default-barber.png',
       status: j.status,
       startTime: start,
       endTime: addMinutes(start, duration),
       clientName: [j.client?.firstName, j.client?.lastName].filter(Boolean).join(' ') || '',
-      serviceName: j.serviceType?.name || ''
+      clientPhone: j.client?.phone || '',
+      serviceName: j.serviceType?.name || '',
+      totalPrice: j.totalPrice || 0
     };
   });
 }
 
-module.exports = {
-  getBarbers,
-  getAppointmentsByDate
-};
+module.exports = { getAppointmentsByDate };
