@@ -116,15 +116,15 @@ Seu agendamento é hoje às ${hhmm} com ${barberName}. ✂️
 🗺 ${BARBERSHOP_MAPS_LINK}`.trim();
 
         const result = await sendWhatsAppMessage(apt.client.phone, msg);
-        const delivered = (typeof result === 'object') ? !!result.delivered : !!result; // compatível com retorno antigo
-
-        if (delivered) {
-          await apt.update({ reminderSent: true });
-          const ack = (typeof result === 'object') ? result.ack : undefined;
-          console.log(`✅ Lembrete ENTREGUE${ack != null ? ` (ack=${ack})` : ''} para ${firstName}`);
-        } else {
-          console.warn(`⚠️ Lembrete NÃO entregue para ${firstName}`, result);
-        }
+       if (result?.ok) {
+    await apt.update({
+        reminderSent: true,
+        whatsappAck: result.ack ?? null
+    });
+    console.log(`✅ Lembrete enviado para ${firstName} (ack=${result.ack ?? 'n/a'})`);
+} else {
+    console.warn(`⚠️ Lembrete FALHOU para ${firstName}`, result);
+}
       }
 
       // === ENTRANDO EM ATENDIMENTO ===
