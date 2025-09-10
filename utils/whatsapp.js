@@ -413,7 +413,7 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
     })
   ));
 
-  for (const variation of variations) {
+    for (const variation of variations) {
     console.log(`[WHATSAPP] 🔍 Testando variação: ${variation}`);
 
     
@@ -476,15 +476,15 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
       }
     }
     // se todas as tentativas de envio falharem para esta variação, cai para próxima variação
-  }
+  
 
   console.error(`[WHATSAPP] 💥 Todas as variações falharam para ${phone}`);
   return { ok: false, delivered: false };
 
+}
 
 
-
-async function sendWhatsAppMessageDebug(phone, message) {
+  async function sendWhatsAppMessageDebug(phone, message) {
   console.log(`[DEBUG] 🔬 Debug ativado para: ${phone}`);
   try {
     await ensureClientReady();
@@ -521,7 +521,7 @@ async function sendWhatsAppMessageDebug(phone, message) {
     console.error(`[DEBUG] 💥 Erro geral:`, err.message);
     return { ok: false, delivered: false };
   }
-}
+  }
 
 
 
