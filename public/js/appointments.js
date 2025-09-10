@@ -1210,7 +1210,7 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-    if (status === 'confirmed') {
+    if (status === 'confirmed'|| status === 'in_progress') {
       html += `
         <button class="btn btn-outline-warning w-100 mb-2 js-no-show-appointment" onclick="markNoShow(${id})">
           <i class="fas fa-user-slash me-2"></i> Não Compareceu

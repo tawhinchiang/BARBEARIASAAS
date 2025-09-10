@@ -40,6 +40,10 @@
             <button class="btn btn-sm btn-outline-warning action-item js-no-show-appointment" data-id="{{id}}">
               <i class="fas fa-user-slash"></i> Não Compareceu
             </button>
+             {{else if (eq status "in_progress")}}
+            <button class="btn btn-sm btn-outline-warning action-item js-no-show-appointment" data-id="{{id}}">
+              <i class="fas fa-user-slash"></i> Não Compareceu
+            </button>
             {{/if}}
 
             {{!-- {{#unless whatsappSent}}
