@@ -1210,7 +1210,13 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-
+    if (status === 'confirmed') {
+      html += `
+        <button class="btn btn-outline-warning w-100 mb-2 js-no-show-appointment" onclick="markNoShow(${id})">
+          <i class="fas fa-user-slash me-2"></i> Não Compareceu
+        </button>
+      `;
+    }
     if (status === 'confirmed' || status === 'in_progress') {
       html += `
         <button class="btn btn-outline-warning w-100 mb-2 js-complete-appointment" onclick="completeAppointment(${id})">
@@ -1218,7 +1224,7 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-
+    
     if (status !== 'cancelled' && status !== 'completed') {
       html += `
         <button class="btn btn-outline-danger w-100 mb-2 js-cancel-appointment" onclick="cancelAppointment(${id})">
@@ -1227,12 +1233,12 @@ async function openActionPanel(id) {
       `;
     }
 
-    // WhatsApp é sempre visível
-    html += `
-      <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
-        <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
-      </button>
-    `;
+    // // WhatsApp é sempre visível
+    // html += `
+    //   <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
+    //     <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
+    //   </button>
+    // `;
 
     body.innerHTML = html;
     panel.classList.add('show');
