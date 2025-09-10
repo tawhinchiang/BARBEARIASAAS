@@ -1,19 +1,18 @@
 {{#each appointments}}
-
-<tr class="table-row-transition">
+<tr class="table-row-transition {{#if (eq status 'free')}}table-free{{/if}}">
   <td class="d-none">
-    <span class="fw-bold">#{{id}}</span>
+    <span class="fw-bold">
+      {{#if (eq status 'free')}}—{{else}}#{{id}}{{/if}}
+    </span>
   </td>
-  
-  <td>
-      <div class="d-flex align-items-center">
-      <div class="avatar-sm me-2">
-         <img src="{{barber.photo}}" alt="Foto de {{barber.name}}" class="avatar-img">
 
+  <td>
+    <div class="d-flex align-items-center">
+      <div class="avatar-sm me-2">
+        <img src="{{barber.photo}}" alt="Foto de {{barber.name}}" class="avatar-img">
       </div>
       <div class="fw-semibold">{{barber.name}}</div>
-      
-      </div>
+    </div>
   </td>
 
   <td class="text-center">
@@ -21,41 +20,54 @@
     <small class="text-muted">{{appointmentTimeFormatted}}</small>
   </td>
 
-
-    <td class="text-left">
-    
-      <div>
-        <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
-        {{!-- <small class="text-muted">{{client.phone}}</small> --}}
-      </div>
-    
-    </td>
-
- <td>
- <div class="fw-semibold">{{serviceType.name}}</div>
- <small class="text-muted">{{serviceType.duration}} min </small>
-
+  <td class="text-left">
+    {{#if (eq status 'free')}}
+      <span class="text-muted fst-italic">Horário livre</span>
+    {{else}}
+      <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+    {{/if}}
   </td>
-<td class="text-center">
-    <div class="fw-bold"> {{formatCurrency totalPrice}}</div>
+
+  <td>
+    {{#if (eq status 'free')}}
+      <div class="fw-semibold text-success">Disponível</div>
+    {{else}}
+      <div class="fw-semibold">{{serviceType.name}}</div>
+      <small class="text-muted">{{serviceType.duration}} min</small>
+    {{/if}}
   </td>
- <td class="text-center">
-  <span class="status-badge status-{{status}}">
-    {{statusText status}}
-  </span>
-</td>
 
-<td class="text-center">
-  <button type="button" class="js-open-action-panel btn btn-sm btn-dark" data-id="{{id}}">
-    <i class="fas fa-ellipsis-v"></i>
-  </button>
-</td>
+  <td class="text-center">
+    {{#if (eq status 'free')}}
+      —
+    {{else}}
+      <div class="fw-bold">{{formatCurrency totalPrice}}</div>
+    {{/if}}
+  </td>
 
+  <td class="text-center">
+    {{#if (eq status 'free')}}
+      <span class="badge bg-success">LIVRE</span>
+    {{else}}
+      <span class="status-badge status-{{status}}">
+        {{statusText status}}
+      </span>
+    {{/if}}
+  </td>
 
-
-
-
-
-
+  <td class="text-center">
+    {{#if (eq status 'free')}}
+      <button class="btn btn-outline-success btn-sm js-open-fitin"
+              data-barber="{{barber.id}}"
+              data-date="{{appointmentDateFormatted}}"
+              data-time="{{appointmentTimeFormatted}}">
+        Agendar
+      </button>
+    {{else}}
+      <button type="button" class="js-open-action-panel btn btn-sm btn-dark" data-id="{{id}}">
+        <i class="fas fa-ellipsis-v"></i>
+      </button>
+    {{/if}}
+  </td>
 </tr>
 {{/each}}

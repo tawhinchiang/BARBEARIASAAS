@@ -12,9 +12,11 @@ const {
 } = require('../utils/whatsapp');
 const { isAuthenticated, isAuthenticatedApi } = require('../middleware/auth');
 const router = express.Router();
+
 const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
 const todayStr = new Date().toLocaleDateString('en-CA');
+const timeSlots = require('../utils/timeSlots'); // ajuste conforme o banco usado
 
 // admin.js (rotas admin) – helper no topo do arquivo
 function buildOrder(sort) {
@@ -422,8 +424,9 @@ router.get('/appointments', async (req, res) => {
     const prevPage = page > 1 ? page - 1 : 1;
     const nextPage = page < totalPages ? page + 1 : totalPages;
  
-    const barbers = await Barber.findAll({ where: { isActive: true } });
-   
+   const barbers = await Barber.findAll({
+  where: { isActive: true, ...(barberId && { id: barberId }) }
+});
     const formattedAppointments = appointments.map(app => {
       const plain = app.toJSON();
       const serviceType = plain.serviceType || {};
@@ -451,7 +454,62 @@ router.get('/appointments', async (req, res) => {
         }
       };
     });
+   
 
+
+let freeSlots = [];
+for (const barber of barbers) {
+  // Determinar data base (ou intervalo se quiser mais dias)
+  const date = startDate || todayStr;
+
+  // Parse do workingHours do barbeiro
+  let parsed = {};
+  try {
+    parsed = typeof barber.workingHours === 'string'
+      ? JSON.parse(barber.workingHours)
+      : barber.workingHours || {};
+  } catch (err) {
+    parsed = {};
+  }
+
+  const selectedDate = new Date(date + 'T00:00:00');
+  const dayOfWeek = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][selectedDate.getDay()];
+
+  const workingPeriods = [];
+  if (parsed[dayOfWeek]) {
+    const cfg = parsed[dayOfWeek];
+    if (cfg.morning && cfg.morning !== 'closed') workingPeriods.push(cfg.morning);
+    if (cfg.afternoon && cfg.afternoon !== 'closed') workingPeriods.push(cfg.afternoon);
+  }
+
+  // Agendamentos do barbeiro nesta data
+  const barberAppointments = appointments.filter(a => a.barberId === barber.id);
+  const bookedTimes = timeSlots.getBlockedTimesWithDuration(barberAppointments);
+
+  // Gerar slots livres
+  workingPeriods.forEach(period => {
+    const [start, end] = period.split('-');
+    const slots = timeSlots.generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
+    slots.forEach(time => {
+      freeSlots.push({
+        id: null,
+        barber,
+        barberId: barber.id,
+        appointmentDateFormatted: new Date(date).toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: time,
+        client: { firstName: '', lastName: '' },
+        serviceType: { name: 'Livre', duration: '' },
+        totalPrice: 0,
+        status: 'free'
+      });
+    });
+  });
+}
+
+// Mesclar
+const merged = [...formattedAppointments, ...freeSlots];
+// Ordenar pela hora
+merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
@@ -459,7 +517,7 @@ router.get('/appointments', async (req, res) => {
       adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin',
       user: req.session.user,
-      appointments: formattedAppointments,
+      appointments: merged,
       barbers,
       filters: { startDate, endDate, barberId, status, sort, limit },
        selectedLimit: limit,
@@ -527,8 +585,66 @@ router.get('/appointments/partial', async (req, res) => {
       };
     });
 
+
+const barbers = await Barber.findAll({
+  where: { isActive: true, ...(barberId && { id: barberId }) }
+});
+
+let freeSlots = [];
+for (const barber of barbers) {
+  // Determinar data base (ou intervalo se quiser mais dias)
+  const date = startDate || todayStr;
+
+  // Parse do workingHours do barbeiro
+  let parsed = {};
+  try {
+    parsed = typeof barber.workingHours === 'string'
+      ? JSON.parse(barber.workingHours)
+      : barber.workingHours || {};
+  } catch (err) {
+    parsed = {};
+  }
+
+  const selectedDate = new Date(date + 'T00:00:00');
+  const dayOfWeek = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][selectedDate.getDay()];
+
+  const workingPeriods = [];
+  if (parsed[dayOfWeek]) {
+    const cfg = parsed[dayOfWeek];
+    if (cfg.morning && cfg.morning !== 'closed') workingPeriods.push(cfg.morning);
+    if (cfg.afternoon && cfg.afternoon !== 'closed') workingPeriods.push(cfg.afternoon);
+  }
+
+  // Agendamentos do barbeiro nesta data
+  const barberAppointments = rows.filter(a => a.barberId === barber.id);
+  const bookedTimes = getBlockedTimesWithDuration(barberAppointments);
+
+  // Gerar slots livres
+  workingPeriods.forEach(period => {
+    const [start, end] = period.split('-');
+    const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
+    slots.forEach(time => {
+      freeSlots.push({
+        id: null,
+        barber,
+        barberId: barber.id,
+        appointmentDateFormatted: new Date(date).toLocaleDateString('pt-BR'),
+        appointmentTimeFormatted: time,
+        client: { firstName: '', lastName: '' },
+        serviceType: { name: 'Livre', duration: '' },
+        totalPrice: 0,
+        status: 'free'
+      });
+    });
+  });
+}
+
+// Mesclar
+const merged = [...formattedAppointments, ...freeSlots];
+// Ordenar pela hora
+merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
     // Renderiza partial em string
-    res.render('partials/appointments-table-rows', { layout: false, appointments: formatted }, (err, html) => {
+    res.render('partials/appointments-table-rows', { layout: false, appointments: merged }, (err, html) => {
       if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
       const hasNext = (p * l) < count;
       res.json({ html, hasNext, nextPage: p + 1 });

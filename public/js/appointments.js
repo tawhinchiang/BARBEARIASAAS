@@ -1256,6 +1256,24 @@ function closeActionPanel() {
   panel.classList.remove('show');
 }
 
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.js-open-fitin');
+  if (!btn) return;
+
+  const barberId = btn.dataset.barber;
+  const date = btn.dataset.date;
+  const time = btn.dataset.time;
+
+  // Abre o modal de encaixe
+  const openBtn = document.getElementById('openFitInBtn');
+  if (openBtn) openBtn.click();
+
+  setTimeout(() => {
+    document.querySelector('#fitInModal select[name="barberId"]').value = barberId;
+    document.querySelector('#fitInModal input[name="appointmentDate"]').value = date;
+    document.querySelector('#fitInModal input[name="appointmentTime"]').value = time;
+  }, 200);
+});
 
 
 
