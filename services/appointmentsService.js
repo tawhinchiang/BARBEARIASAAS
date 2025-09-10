@@ -14,6 +14,16 @@ function addMinutes(hhmm, mins) {
   return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 }
 
+// 🔹 pega barbeiros ativos com workingHours
+async function getBarbers() {
+  const rows = await Barber.findAll({
+    where: { isActive: true },
+    attributes: ['id', 'name', 'workingHours', 'photo']
+  });
+  return rows.map(b => b.toJSON());
+}
+
+// 🔹 pega agendamentos do dia
 async function getAppointmentsByDate(date) {
   const day = normalizeDate(date);
 
@@ -52,4 +62,4 @@ async function getAppointmentsByDate(date) {
   });
 }
 
-module.exports = { getAppointmentsByDate };
+module.exports = { getBarbers, getAppointmentsByDate };
