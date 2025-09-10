@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
+const { getBarbers, getAppointmentsByDate } = require('../services/appointmentsService'); 
 const {
   disconnectWhatsApp,
   initializeWhatsApp,
@@ -1151,7 +1152,117 @@ router.post('/whatsapp/disconnect', async (req, res) => {
   }
 });
 
+function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60 + m; }
+function fromMin(min) { const h = String(Math.floor(min/60)).padStart(2,'0'); const m = String(min%60).padStart(2,'0'); return `${h}:${m}`; }
+function parsePeriod(str) { // "08:00-12:00" -> [480,720]
+  if (!str || !str.includes('-')) return null;
+  const [a,b] = str.split('-').map(toMin);
+  return [Math.min(a,b), Math.max(a,b)];
+}
+function dayKey(dateStr) {
+  const d = new Date(dateStr);
+  return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][d.getDay()];
+}
+function getDayPeriods(workingHours, dateStr) {
+  const wk = workingHours || {};
+  const dk = dayKey(dateStr);
+  const day = wk[dk] || {};
+  const out = [];
+  const m = parsePeriod(day.morning);
+  const a = parsePeriod(day.afternoon);
+  if (m) out.push(m);
+  if (a) out.push(a);
+  return out; // array de [start,end] em minutos
+}
+function inAnyPeriod(min, periods) {
+  return periods.some(([s,e]) => min >= s && min < e);
+}
+function overlaps([s1,e1],[s2,e2]) {
+  return s1 < e2 && s2 < e1;
+}
 
+/**
+ * GET /admin/appointments/schedule
+ * Query: date=YYYY-MM-DD&barberId=opcional&step=30
+ */
+router.get('/appointments/schedule', async (req, res, next) => {
+  try {
+    const date = req.query.date || new Date().toISOString().slice(0,10);
+    const step = Number(req.query.step || 30);
+    const onlyBarberId = req.query.barberId ? Number(req.query.barberId) : null;
+
+    // 1) Barbeiros
+    const barbers = await getBarbers(); // [{id,name,workingHours:{monday:{morning,afternoon},...}}]
+    const activeBarbers = barbers.filter(b => !onlyBarberId || b.id === onlyBarberId);
+
+    // 2) Períodos do dia por barbeiro + limites globais (para alinhar a grade entre colunas)
+    let globalStart = Infinity, globalEnd = -Infinity;
+    const periodsByBarber = {};
+    for (const b of activeBarbers) {
+      const periods = getDayPeriods(b.workingHours, date);
+      periodsByBarber[b.id] = periods;
+      const starts = periods.map(p => p[0]);
+      const ends = periods.map(p => p[1]);
+      if (starts.length) globalStart = Math.min(globalStart, ...starts);
+      if (ends.length)   globalEnd   = Math.max(globalEnd,   ...ends);
+    }
+    // Se algum barbeiro não tem expediente definido, define jan/fev default 08–18 (opcional)
+    if (!Number.isFinite(globalStart) || !Number.isFinite(globalEnd)) {
+      globalStart = toMin('08:00'); globalEnd = toMin('18:00');
+    }
+
+    // 3) Agendamentos do dia (qualquer status que bloqueie horário)
+    // Ajuste a função abaixo para retornar [{barberId, startTime:"HH:mm", endTime:"HH:mm", status, ...}]
+    const appts = await getAppointmentsByDate(date);
+
+    // 4) Mapa de intervalos ocupados por barbeiro
+    const bookedByBarber = new Map();
+    for (const b of activeBarbers) bookedByBarber.set(b.id, []);
+    for (const a of appts) {
+      // Defina quais status bloqueiam (confirmado, em_atendimento, concluído etc.)
+      if (['confirmed','in_progress','completed'].includes(a.status)) {
+        const s = toMin(a.startTime);
+        const e = toMin(a.endTime || a.startTime); // se não tiver endTime, calcule por duração do serviço
+        bookedByBarber.get(a.barberId)?.push([s,e,{ appointment:a }]);
+      }
+    }
+
+    // 5) Monta a matriz de slots (linhas = horas, colunas = barbeiros)
+    const rows = [];
+    for (let t = globalStart; t < globalEnd; t += step) {
+      const row = { time: fromMin(t), cells: [] };
+      for (const b of activeBarbers) {
+        const periods = periodsByBarber[b.id] || [];
+        const inside = inAnyPeriod(t, periods);
+        if (!inside) {
+          row.cells.push({ barberId: b.id, status: 'off' });
+          continue;
+        }
+        const blocks = bookedByBarber.get(b.id) || [];
+        const hit = blocks.find(([bs,be]) => overlaps([t, t+step], [bs,be]));
+        if (hit) {
+          const info = hit[2] || {};
+          row.cells.push({ barberId: b.id, status: 'booked', appointment: info.appointment });
+        } else {
+          row.cells.push({ barberId: b.id, status: 'free' });
+        }
+      }
+      rows.push(row);
+    }
+
+    // 6) Renderiza view nova
+    res.render('admin/appointments-schedule', {
+      layout: 'admin',
+      pageTitle: 'Grade de horários',
+      date,
+      step,
+      barbers: activeBarbers,
+      slots: rows
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 
 module.exports = router;

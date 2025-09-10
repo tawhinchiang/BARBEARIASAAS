@@ -1,0 +1,71 @@
+{{! views/appointments-schedule.hbs }}
+{{! Usa o mesmo layout/admin visual que você já tem }}
+<div class="container-fluid admin-dashboard fade-in-soft">
+  <div class="admin-card mb-3">
+    <form class="row g-2" method="GET">
+      <div class="col-auto">
+        <label class="form-label mb-0 small">Data</label>
+        <input type="date" class="form-control" name="date" value="{{date}}">
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0 small">Intervalo</label>
+        <select class="form-select" name="step">
+          <option value="15" {{#eq step 15}}selected{{/eq}}>15 min</option>
+          <option value="20" {{#eq step 20}}selected{{/eq}}>20 min</option>
+          <option value="30" {{#eq step 30}}selected{{/eq}}>30 min</option>
+          <option value="60" {{#eq step 60}}selected{{/eq}}>60 min</option>
+        </select>
+      </div>
+      <div class="col-auto align-self-end">
+        <button class="btn btn-primary"><i class="fas fa-sync"></i> Atualizar</button>
+      </div>
+      <div class="col-auto ms-auto align-self-end">
+        <a href="/admin/appointments" class="btn btn-secondary">
+          <i class="fas fa-list"></i> Voltar à lista
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="admin-card admin-table">
+    <div class="admin-table-wrapper">
+      <table class="table table-hover table-sm align-middle">
+        <thead>
+          <tr>
+            <th style="width: 90px;">Hora</th>
+            {{#each barbers}}
+              <th>{{this.name}}</th>
+            {{/each}}
+          </tr>
+        </thead>
+        <tbody id="scheduleBody">
+          {{#each slots}}
+            <tr>
+              <td><strong>{{time}}</strong></td>
+              {{#each cells}}
+                <td class="slot-cell {{status}}"
+                    data-barber="{{barberId}}"
+                    data-time="{{../time}}">
+                  {{#if appointment}}
+                    <div class="slot-booked">
+                      <div class="fw-bold">{{appointment.clientName}}</div>
+                      <small class="text-muted">{{appointment.serviceName}}</small>
+                    </div>
+                  {{else}}
+                    {{#if (eq status "off")}}
+                      <small class="text-muted">Fora do exp.</small>
+                    {{else}}
+                      <button class="btn btn-outline-success btn-sm js-open-fitin">Livre</button>
+                    {{/if}}
+                  {{/if}}
+                </td>
+              {{/each}}
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script defer src="/js/appointments-schedule.js"></script>

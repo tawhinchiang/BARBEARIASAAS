@@ -3329,3 +3329,13 @@ body.modal-open {
 .bottom-barber-navbar .nav-button.active i {
     color: var(--primary-color);
 }
+/* Grade de horários (admin) */
+.slot-cell { min-width: 140px; }
+.slot-cell.off { background: #1a1a1a; color: #777; }
+.slot-cell.free { background: #0f1a11; border: 1px dashed #2e7d32; }
+.slot-cell.booked { background: #13202e; border-left: 4px solid #0d6efd; }
+.slot-booked .fw-bold { color: #fff; }
+
+@media (max-width: 992px) {
+  .slot-cell { min-width: 220px; } /* melhora em telas menores */
+}

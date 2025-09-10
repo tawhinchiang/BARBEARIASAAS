@@ -9,6 +9,11 @@
          <div class="admin-card">
           <form id="filterForm">
             <div class="row">
+              <a class="btn btn-outline-light"
+                href="/admin/appointments/schedule?date={{filters.startDate}}{{#unless filters.startDate}}{{today}}{{/unless}}">
+                <i class="bi bi-grid-3x3-gap"></i> Grade do dia
+              </a>
+
               <div class="col-md-3">
                 <div class="filter-group">
                   <label class="form-label">Data Inicial</label>
