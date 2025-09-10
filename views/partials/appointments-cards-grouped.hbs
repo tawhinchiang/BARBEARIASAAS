@@ -56,10 +56,15 @@
 
             {{#unless (eq status "cancelled")}}
             {{#unless (eq status "completed")}}
-            {{#if (or (eq status "confirmed") (eq status "in_progress"))}}
-            <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
+            {{#if (eq status "confirmed")}}
+              <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
               <i class="fas fa-check-double"></i> Concluir
             </button>
+            {{else if (eq status "in_progress")}}
+              <button class="btn btn-sm btn-outline-success action-item js-complete-appointment" data-id="{{id}}">
+              <i class="fas fa-check-double"></i> Concluir
+            </button>
+
             {{/if}}
 
            
