@@ -1086,15 +1086,23 @@ router.put('/appointments/:id', async (req, res) => {
   const { serviceTypeId, barberId, appointmentDate, appointmentTime } = req.body;
 
   try {
-    const updated = await Appointment.update(
-      { serviceTypeId, barberId, appointmentDate, appointmentTime },
-      { where: { id } }
-    );
+    const appointment = await Appointment.findByPk(id);
+    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
 
-    if (updated[0] === 0) {
-      return res.status(404).json({ error: 'Agendamento não encontrado' });
+    // atualiza campos básicos
+    appointment.serviceTypeId   = serviceTypeId;
+    appointment.barberId        = barberId;
+    appointment.appointmentDate = appointmentDate;
+    appointment.appointmentTime = appointmentTime;
+
+    // garante que o PREÇO e a DURAÇÃO acompanhem o serviço selecionado
+    const service = await ServiceType.findByPk(serviceTypeId);
+    if (service) {
+      appointment.totalPrice      = service.price;
+      appointment.serviceDuration = service.duration;
     }
 
+    await appointment.save();
     res.json({ success: true });
   } catch (err) {
     console.error('Erro ao editar agendamento:', err);

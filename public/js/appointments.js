@@ -284,8 +284,7 @@ function initModals() {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
 
-  // Inicializar modal de encaixe corretamente (DENTRO DA FUNÇÃO - CORRETO!)
-  // --- colocar dentro de initModals(), substituindo a lógica atual do fitInModal ---
+
 const fitInModalEl = document.getElementById('fitInModal');
 if (fitInModalEl) {
   // move modal para o body se estiver aninhado (resolve problemas de stacking/context)
@@ -385,8 +384,10 @@ function restoreFilters() {
     if (el) el.value = value;
   }
 }
-
+let tableListenersAttached = false;
 function initTableListeners() {
+  if (tableListenersAttached) return; // evita duplicar
+  tableListenersAttached = true;
   document.addEventListener('click', async function (event) {
     const button = event.target.closest('button');
     if (!button || !button.classList.contains('action-item')) return;
@@ -582,7 +583,7 @@ async function viewAppointment(appointmentId) {
 
 
 
-// Outras funções (editar, confirmar, cancelar, etc.)
+
 async function editAppointment(appointmentId) {
   closeAllMenus();
 
@@ -603,7 +604,7 @@ async function editAppointment(appointmentId) {
 
     await loadSelectOptions('edit-service', '/api/services', appointment.serviceType.id);
     await loadSelectOptions('edit-barber', '/api/barbers', appointment.barber.id);
-
+    
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);
@@ -960,10 +961,16 @@ async function refreshAppointmentsTable() {
   const tableBody = document.querySelector('.admin-table tbody');
   if (tableBody) {
     try {
-      const response = await fetch(`/admin/appointments/partial?${params.toString()}`);
-      const data = await response.json();
-      tableBody.innerHTML = data;
-      
+      const res = await fetch(`/admin/appointments/partial?${params.toString()}`);
+      const ct = res.headers.get('content-type') || '';
+
+      if (ct.includes('application/json')) {
+        const { html } = await res.json();
+        tableBody.innerHTML = html || '';
+      } else {
+        const html = await res.text();
+        tableBody.innerHTML = html;
+      }
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar a TABELA:', err);
     }
@@ -973,15 +980,21 @@ async function refreshAppointmentsTable() {
   const cardContainer = document.getElementById('appointmentsCardView');
   if (cardContainer) {
     try {
-      const response = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
-      const data = await response.json();
-      cardContainer.innerHTML = data;
-      
+      const res = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
+      const ct = res.headers.get('content-type') || '';
+
+      if (ct.includes('application/json')) {
+        const { html } = await res.json();
+        cardContainer.innerHTML = html || '';
+      } else {
+        const html = await res.text();
+        cardContainer.innerHTML = html;
+      }
+
       requestAnimationFrame(() => {
         initCardExpandables();
         limitarCardsPorBarbeiro(10);
       });
-
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar os CARDS:', err);
     }
@@ -1197,7 +1210,13 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-
+    if (status === 'confirmed'|| status === 'in_progress') {
+      html += `
+        <button class="btn btn-outline-warning w-100 mb-2 js-no-show-appointment" onclick="markNoShow(${id})">
+          <i class="fas fa-user-slash me-2"></i> Não Compareceu
+        </button>
+      `;
+    }
     if (status === 'confirmed' || status === 'in_progress') {
       html += `
         <button class="btn btn-outline-warning w-100 mb-2 js-complete-appointment" onclick="completeAppointment(${id})">
@@ -1205,7 +1224,7 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-
+    
     if (status !== 'cancelled' && status !== 'completed') {
       html += `
         <button class="btn btn-outline-danger w-100 mb-2 js-cancel-appointment" onclick="cancelAppointment(${id})">
@@ -1214,12 +1233,12 @@ async function openActionPanel(id) {
       `;
     }
 
-    // WhatsApp é sempre visível
-    html += `
-      <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
-        <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
-      </button>
-    `;
+    // // WhatsApp é sempre visível
+    // html += `
+    //   <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
+    //     <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
+    //   </button>
+    // `;
 
     body.innerHTML = html;
     panel.classList.add('show');
