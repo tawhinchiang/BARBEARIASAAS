@@ -100,7 +100,7 @@ if (fitInForm) {
       if (data.success) {
         notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
 
-        // ✅ Fecha o modal imediatamente
+       
         const fitInModalEl = document.getElementById('fitInModal');
         const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
         if (fitInModal) fitInModal.hide();
