@@ -3329,3 +3329,9 @@ body.modal-open {
 .bottom-barber-navbar .nav-button.active i {
     color: var(--primary-color);
 }
+#fitInModal input,
+#fitInModal select,
+#fitInModal textarea,
+#fitInModal button {
+  font-size: 16px !important;
+}
