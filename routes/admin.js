@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-const { getBarbers, getAppointmentsByDate } = require('../services/appointmentsService'); 
+
 const {
   disconnectWhatsApp,
   initializeWhatsApp,
