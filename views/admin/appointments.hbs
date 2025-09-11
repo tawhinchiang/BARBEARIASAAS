@@ -9,10 +9,10 @@
          <div class="admin-card">
           <form id="filterForm">
             <div class="row">
-              <a class="btn btn-outline-light"
+              {{!-- <a class="btn btn-outline-light"
                 href="/admin/appointments/schedule?date={{filters.startDate}}{{#unless filters.startDate}}{{today}}{{/unless}}">
                 <i class="bi bi-grid-3x3-gap"></i> Grade do dia
-              </a>
+              </a> --}}
 
               <div class="col-md-3">
                 <div class="filter-group">
@@ -20,12 +20,12 @@
                   <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
                 </div>
               </div>
-              <div class="col-md-3">
+              {{!-- <div class="col-md-3">
                 <div class="filter-group">
                   <label class="form-label">Data Final</label>
                   <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.startDate}}">
                 </div>
-              </div>
+              </div> --}}
               <div class="col-md-3">
                 <div class="filter-group">
                   <label class="form-label">Barbeiro</label>
