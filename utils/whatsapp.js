@@ -396,102 +396,95 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
   await ensureClientReady();
   await waitWhatsAppReady(30000);
 
-  // Helper local para normalizar ACK (corrige "[object Object]")
-  const toAckCode = (msgObj, ackRaw) => {
-    if (typeof ackRaw === 'number') return ackRaw;
-    if (ackRaw && typeof ackRaw === 'object') {
-      if (typeof ackRaw.ack === 'number') return ackRaw.ack;
-      if (typeof ackRaw.status === 'number') return ackRaw.status;
-      if (typeof ackRaw.value === 'number') return ackRaw.value;
-    }
-    if (msgObj && typeof msgObj.ack === 'number') return msgObj.ack;
-    const n = Number(ackRaw);
-    return Number.isFinite(n) ? n : 0;
-  };
 
-  // 1) Base format + variações numéricas (SEM criar aberrações do tipo +...@c.us)
-  //    Se o formatador já devolver um JID (...@c.us), priorizamos ele.
-  const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone); // pode vir número OU JID
+
+
+  const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone); 
   const cleaned = cleanPhone(phone);
   const rawVars = [baseFormatted, ...generatePhoneVariations(cleaned)].filter(Boolean);
 
-  // Regras de variação:
-  // - Se já for JID, mantemos COMO ESTÁ (nada de adicionar '+')
-  // - Se for número, testamos com e sem '+' (E.164 e puro)
+  
   const variations = Array.from(new Set(
     rawVars.flatMap(v => {
-      if (/@c\.us$/.test(v)) return [v]; // já é JID válido
+      if (/@c\.us$/.test(v)) return [v]; 
       const n = String(v).replace(/\D/g, '');
       if (!n) return [];
       return [n, `+${n}`];
     })
   ));
 
-  for (const variation of variations) {
+    for (const variation of variations) {
     console.log(`[WHATSAPP] 🔍 Testando variação: ${variation}`);
 
-    // 2) Resolver JID apenas quando necessário
+    
     let jid = null;
     if (/@c\.us$/.test(variation)) {
-      // Já é JID, enviamos DIRETO (não chama getNumberId em JID!)
+      
       jid = variation;
       console.log(`[WHATSAPP] ✅ Usando JID direto: ${jid}`);
     } else {
-      // É número: descobrir o JID com a API pública
+    
       try {
         const numeric = variation.replace(/\D/g, '');
         const numberId = await client.getNumberId(numeric);
         if (!numberId) {
           console.log(`[WHATSAPP] ⚠️ Número não registrado no WhatsApp: ${variation}`);
-          continue; // testa próxima variação
+          continue; 
         }
         jid = numberId._serialized; // ex.: 556392014547@c.us
         console.log(`[WHATSAPP] ✅ JID resolvido: ${jid} (de ${variation})`);
       } catch (err) {
         console.error(`[WHATSAPP] ❌ getNumberId falhou para ${variation}: ${err.message}`);
-        continue; // testa próxima variação
+        continue; 
       }
     }
 
-    // 3) Envio: tenta reenvio APENAS se o envio falhar (erro). NÃO reenvia por ACK baixo.
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const msgObj = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
         console.log(`[WHATSAPP] 📤 Enviado para ${jid} (tentativa ${attempt})`);
+       const minAck = ACK_SUCCESS_LEVEL; // 1=server, 2=device...
+       const ackInfo = await waitForAck(msgObj, { minAck, timeoutMs: TIMEOUTS.ack });
+       const ackCode = toAckCode(msgObj, ackInfo);
+       const delivered = !!(ackInfo && (ackInfo.delivered || ackCode >= minAck));
+       console.log(`[WHATSAPP] 📨 ACK ${ackLabel(ackCode)} (${ackCode}) para ${jid} | delivered=${delivered}`);
 
-        // Espera ACK, mas não bloqueia a UX nem reenvia por causa de ACK baixo
-        let ackRaw;
-        try {
-          // Passe como objeto de opções
-          ackRaw = await waitForAck(msgObj, { timeoutMs: TIMEOUTS.ack });
-        } catch (_) {
-          ackRaw = 0;
-        }
-        const ackCode = toAckCode(msgObj, ackRaw);
-        console.log(`[WHATSAPP] 📨 ACK ${ackLabel(ackCode)} (${ackCode}) para ${jid}`);
+       // Sucesso de envio: ok=true SEMPRE que o WhatsApp aceitou a mensagem
+      return { ok: true, delivered, ack: ackCode, used: jid };
 
-        // Sucesso: retorna imediatamente após 1 envio OK
-        // 'delivered' true quando ACK >= 2 (device); ajuste se quiser outro limiar
-        return { ok: true, delivered: ackCode >= 2, ack: ackCode, used: jid };
       } catch (err) {
-        console.error(`[WHATSAPP] ❌ Falha ${jid} (tentativa ${attempt}): ${err.message}`);
-        if (attempt < maxRetries) {
-          const waitTime = attempt * TIMEOUTS.retryBase;
-          console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
-          await delay(waitTime);
-        }
+      console.error(`[WHATSAPP] ❌ Falha ${jid} (tentativa ${attempt}): ${err.message}`);
+      const msg = String(err.message || '');
+      const fatal = /not.*registered|invalid.*jid|not-authorized/i.test(msg);
+       if (!fatal) {
+        
+         if (attempt < Math.min(maxRetries, 2)) {
+           const waitTime = attempt * TIMEOUTS.retryBase;
+           console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
+           await delay(waitTime);
+         } else {
+           // sai do laço de variações: provavelmente já enviou e só demorou
+           return { ok: true, delivered: false, ack: 0, used: jid, note: 'send-timeout-likely-sent' };
+         }
+       } else if (attempt < maxRetries) {
+         const waitTime = attempt * TIMEOUTS.retryBase;
+         console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms (erro fatal)...`);
+         await delay(waitTime);
+       }
+      }
       }
     }
     // se todas as tentativas de envio falharem para esta variação, cai para próxima variação
-  }
+  
 
   console.error(`[WHATSAPP] 💥 Todas as variações falharam para ${phone}`);
   return { ok: false, delivered: false };
+
 }
 
 
-
-async function sendWhatsAppMessageDebug(phone, message) {
+  async function sendWhatsAppMessageDebug(phone, message) {
   console.log(`[DEBUG] 🔬 Debug ativado para: ${phone}`);
   try {
     await ensureClientReady();
@@ -509,7 +502,7 @@ async function sendWhatsAppMessageDebug(phone, message) {
         const contactId = await client.getNumberId(variation);
         if (contactId) {
           const msg = await sendMessageWithTimeout(contactId._serialized, message, TIMEOUTS.send);
-          const ackInfo = await waitForAck(msg, { minAck: 2, timeoutMs: TIMEOUTS.ack });
+          const ackInfo = await waitForAck(msg, { minAck: ACK_SUCCESS_LEVEL, timeoutMs: TIMEOUTS.ack });
           if (ackInfo.delivered) {
             console.log(`[DEBUG] ✅ ENTREGUE (ack=${ackInfo.ack}) com ${variation}`);
             return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
@@ -528,7 +521,7 @@ async function sendWhatsAppMessageDebug(phone, message) {
     console.error(`[DEBUG] 💥 Erro geral:`, err.message);
     return { ok: false, delivered: false };
   }
-}
+  }
 
 
 

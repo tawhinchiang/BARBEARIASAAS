@@ -213,16 +213,13 @@ router.post('/api/appointments', async (req, res) => {
    log(`Tentando enviar WhatsApp para: ${cleanPhone} (normalizado)`);
    const sent = await sendWhatsAppMessage(cleanPhone, msg);
     
-     if (sent?.delivered) {
-      await appointment.update({ whatsappSent: true });
-      log(`✅ Mensagem ENTREGUE (ack=${sent.ack ?? 'n/a'})`);
-    } else {
-      logError('❌ Falha ao enviar mensagem pelo WhatsApp', { 
-        originalPhone: phone, 
-        normalizedPhone: cleanPhone ,
-         result: sent || null
-      });
-    }
+  // Marcar como enviado se o WhatsApp aceitou (ok=true).
+ if (sent?.ok) {
+   await appointment.update({
+     whatsappSent: true,
+     whatsappAck: sent.ack ?? null
+   });
+ }
 
     log('Agendamento criado com sucesso', {
       id: appointment.id,

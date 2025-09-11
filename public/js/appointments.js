@@ -56,67 +56,72 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
     
-    const fitInForm = document.getElementById('fitInForm');
-    if (fitInForm) {
-      fitInForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
+const fitInForm = document.getElementById('fitInForm');
+if (fitInForm) {
+  fitInForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-      const firstName = document.getElementById('fitInFirstName').value.trim();
-      const lastName = document.getElementById('fitInLastName').value.trim();
-      const phone = document.getElementById('fitInPhone').value.trim();
-      const serviceId = document.getElementById('fitInService').value;
-      const barberId = document.getElementById('fitInBarber').value;
-      const appointmentDate = document.getElementById('fitInDate').value;
-      const appointmentTime = document.getElementById('fitInTime').value;
-      const notes = document.getElementById('fitInNote').value;
+    const submitBtn = fitInForm.querySelector('button[type="submit"]');
+    const originalHtml = submitBtn.innerHTML;
 
-      if (!firstName || !lastName || !phone || !serviceId || !barberId || !appointmentDate || !appointmentTime) {
-        notify({ type: 'error', message: 'Preencha todos os campos obrigatórios.' });
-        return;
-      }
+    // 🔒 Bloqueia múltiplos cliques
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Confirmando Encaixe...
+    `;
 
-    const payload = {
-      serviceId,
-      barberId,
-      appointmentDate,
-      appointmentTime,
-      isEncaixe: true,
-      fitInNote: notes, 
-      clientData: {
-        firstName,
-        lastName,
-        phone
-      }
-    };
-
-      try {
-      const res = await fetch('/api/appointments', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' ,
-              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
-          
-          setTimeout(() => location.reload(), 800);
-        } else {
-            
-          
-          notify({ type: 'error', message: data.error || 'Erro ao criar encaixe.' });
+    try {
+      const payload = {
+        serviceId: document.getElementById('fitInService').value,
+        barberId: document.getElementById('fitInBarber').value,
+        appointmentDate: document.getElementById('fitInDate').value,
+        appointmentTime: document.getElementById('fitInTime').value,
+        isEncaixe: true,
+        fitInNote: document.getElementById('fitInNote').value,
+        clientData: {
+          firstName: document.getElementById('fitInFirstName').value.trim(),
+          lastName: document.getElementById('fitInLastName').value.trim(),
+          phone: document.getElementById('fitInPhone').value.trim()
         }
-      } catch (err) {
-        console.error('[ERRO] Criando encaixe:', err);
+      };
+
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
+
        
-        notify({ type: 'error', message: 'Erro ao criar encaixe.' });
+        const fitInModalEl = document.getElementById('fitInModal');
+        const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
+        if (fitInModal) fitInModal.hide();
+
+        // Pequeno delay só para garantir que o modal feche antes do reload
+        setTimeout(() => location.reload(), 600);
       }
-    });
+ else {
+        notify({ type: 'error', message: data.error || 'Erro ao criar encaixe.' });
+      }
+    } catch (err) {
+      console.error('[ERRO] Criando encaixe:', err);
+      notify({ type: 'error', message: 'Erro ao criar encaixe.' });
+    } finally {
+      // 🔓 Restaura o botão
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalHtml;
+    }
+  });
 }
+
 
 
     initModals();

@@ -1812,9 +1812,9 @@ canvas {
   opacity: 1;
 }
 
-#fitInModal {
+/* #fitInModal {
   z-index: 1055 !important;
-}
+} */
 
 #fitInModal .modal-backdrop {
   z-index: 15000 !important;
@@ -1824,9 +1824,9 @@ canvas {
   z-index: 20000 !important;
 }
 
-#fitInModal .modal-dialog {
+/* #fitInModal .modal-dialog {
   z-index: 20001 !important;
-}
+} */
 
 .modal.show {
   display: flex !important;
@@ -3338,4 +3338,59 @@ body.modal-open {
 
 @media (max-width: 992px) {
   .slot-cell { min-width: 220px; } /* melhora em telas menores */
+}
+#fitInModal input,
+#fitInModal select,
+#fitInModal textarea,
+#fitInModal button {
+  font-size: 16px !important;
+}
+/* Ajuste do modal de encaixe em mobile */
+@media (max-width: 767px) {
+  #fitInModal .modal-dialog {
+    max-width: 90%;        /* reduz largura */
+    margin: 1.5rem auto;   /* dá espaçamento nas laterais */
+  }
+
+  #fitInModal .modal-content {
+    border-radius: 12px;   /* arredondamento mais suave */
+  }
+}
+
+/* Ajuste para modal ficar abaixo do toast */
+#fitInModal {
+  z-index: 1040 !important; /* modal-base */
+}
+#fitInModal .modal-dialog,
+#fitInModal .modal-content {
+  z-index: 1041 !important;
+}
+
+.toast, 
+.notify-container, 
+#toastStack {
+  z-index: 2000 !important; /* sempre acima */
+}/* Garantir que no modal de encaixe os botões fiquem lado a lado */
+#fitInModal .modal-footer {
+  display: flex;
+  justify-content: flex-end; /* alinhar à direita */
+  gap: 0.75rem;              /* espaçamento entre botões */
+  flex-wrap: nowrap !important; /* não deixar quebrar */
+}
+
+#fitInModal .modal-footer .btn {
+  min-width: 120px; /* opcional, para manter tamanhos iguais */
+}
+/* Botões do modal de encaixe mais compactos no mobile */
+@media (max-width: 576px) {
+  #fitInModal .modal-footer .btn {
+    flex: 1 1 auto;          /* deixa dividir espaço igualmente */
+    min-width: unset;        /* remove largura mínima */
+    padding: 0.6rem 0.8rem;  /* padding menor */
+    font-size: 0.9rem;       /* fonte menor */
+  }
+
+  #fitInModal .modal-footer {
+    justify-content: space-between; /* distribui os botões */
+  }
 }
