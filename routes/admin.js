@@ -16,7 +16,8 @@ const router = express.Router();
 const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
 const todayStr = new Date().toLocaleDateString('en-CA');
-const timeSlots = require('../utils/timeSlots'); // ajuste conforme o banco usado
+const { generateTimeSlots, getBlockedTimesWithDuration } = require('../utils/timeSlots');
+ // ajuste conforme o banco usado
 
 // admin.js (rotas admin) – helper no topo do arquivo
 function buildOrder(sort) {
@@ -484,12 +485,12 @@ for (const barber of barbers) {
 
   // Agendamentos do barbeiro nesta data
   const barberAppointments = appointments.filter(a => a.barberId === barber.id);
-  const bookedTimes = timeSlots.getBlockedTimesWithDuration(barberAppointments);
+  const bookedTimes = getBlockedTimesWithDuration(barberAppointments);
 
   // Gerar slots livres
   workingPeriods.forEach(period => {
     const [start, end] = period.split('-');
-    const slots = timeSlots.generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
+    const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
     slots.forEach(time => {
       freeSlots.push({
         id: null,

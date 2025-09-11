@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
-const  timeSlots = require('../utils/timeSlots'); // ajuste conforme o banco usado
+const { generateTimeSlots, getBlockedTimesWithDuration } = require('../utils/timeSlots');
+ // ajuste conforme o banco usado
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
   const timestamp = new Date().toISOString();
@@ -213,12 +214,12 @@ if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
 
 
   // Obter tempos bloqueados
-    const bookedTimes = timeSlots.getBlockedTimesWithDuration(existingAppointments);
+    const bookedTimes = getBlockedTimesWithDuration(existingAppointments);
     // Gerar slots disponíveis a partir de todos os turnos (manhã e tarde)
 let availableTimes = [];
 workingPeriods.forEach(period => {
   const [start, end] = period.split('-');
-  const slots = timeSlots.generateTimeSlots(start, end, bookedTimes, date, requiredDuration);
+  const slots = generateTimeSlots(start, end, bookedTimes, date, requiredDuration);
   availableTimes = availableTimes.concat(slots);
 });
 

@@ -57,3 +57,7 @@ function getBlockedTimesWithDuration(appointments) {
 
   return Array.from(blocked);
 }
+module.exports = {
+  generateTimeSlots,
+  getBlockedTimesWithDuration
+};
