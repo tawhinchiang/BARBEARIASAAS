@@ -99,8 +99,16 @@ if (fitInForm) {
       const data = await res.json();
       if (data.success) {
         notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
-        setTimeout(() => location.reload(), 800);
-      } else {
+
+        // ✅ Fecha o modal imediatamente
+        const fitInModalEl = document.getElementById('fitInModal');
+        const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
+        if (fitInModal) fitInModal.hide();
+
+        // Pequeno delay só para garantir que o modal feche antes do reload
+        setTimeout(() => location.reload(), 600);
+      }
+ else {
         notify({ type: 'error', message: data.error || 'Erro ao criar encaixe.' });
       }
     } catch (err) {
