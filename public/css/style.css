@@ -1812,9 +1812,9 @@ canvas {
   opacity: 1;
 }
 
-#fitInModal {
+/* #fitInModal {
   z-index: 1055 !important;
-}
+} */
 
 #fitInModal .modal-backdrop {
   z-index: 15000 !important;
@@ -1824,9 +1824,9 @@ canvas {
   z-index: 20000 !important;
 }
 
-#fitInModal .modal-dialog {
+/* #fitInModal .modal-dialog {
   z-index: 20001 !important;
-}
+} */
 
 .modal.show {
   display: flex !important;
@@ -3347,10 +3347,17 @@ body.modal-open {
   }
 }
 
-/* Garante que o modal não cubra a notificação */
+/* Ajuste para modal ficar abaixo do toast */
 #fitInModal {
-  z-index: 1040; /* menor que o toast/notify */
+  z-index: 1040 !important; /* modal-base */
 }
-.toast, .notify-container {
-  z-index: 1060; /* mais alto que o modal */
+#fitInModal .modal-dialog,
+#fitInModal .modal-content {
+  z-index: 1041 !important;
+}
+
+.toast, 
+.notify-container, 
+#toastStack {
+  z-index: 2000 !important; /* sempre acima */
 }
