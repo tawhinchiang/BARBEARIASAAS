@@ -496,7 +496,7 @@ for (const barber of barbers) {
         id: null,
         barber,
         barberId: barber.id,
-        appointmentDateFormatted: new Date(date).toLocaleDateString('pt-BR'),
+        appointmentDateFormatted: formatDateYYYYMMDD(date),
         appointmentTimeFormatted: time,
         client: { firstName: '', lastName: '' },
         serviceType: { name: 'Livre', duration: '' },
@@ -543,7 +543,11 @@ merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTime
     });
   }
 });
-
+function formatDateYYYYMMDD(str) {
+  if (!str) return '';
+  const [y, m, d] = String(str).split('-');
+  return `${d}/${m}/${y}`;
+}
 router.get('/appointments/partial', async (req, res) => {
   try {
     const { startDate, endDate, barberId, status, sort, page = 1, limit = 10 } = req.query;
@@ -629,7 +633,7 @@ for (const barber of barbers) {
         id: null,
         barber,
         barberId: barber.id,
-        appointmentDateFormatted: new Date(date).toLocaleDateString('pt-BR'),
+        appointmentDateFormatted: formatDateYYYYMMDD(date),
         appointmentTimeFormatted: time,
         client: { firstName: '', lastName: '' },
         serviceType: { name: 'Livre', duration: '' },
