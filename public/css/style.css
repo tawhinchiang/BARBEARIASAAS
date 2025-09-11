@@ -3371,3 +3371,16 @@ body.modal-open {
 #fitInModal .modal-footer .btn {
   min-width: 120px; /* opcional, para manter tamanhos iguais */
 }
+/* Botões do modal de encaixe mais compactos no mobile */
+@media (max-width: 576px) {
+  #fitInModal .modal-footer .btn {
+    flex: 1 1 auto;          /* deixa dividir espaço igualmente */
+    min-width: unset;        /* remove largura mínima */
+    padding: 0.6rem 0.8rem;  /* padding menor */
+    font-size: 0.9rem;       /* fonte menor */
+  }
+
+  #fitInModal .modal-footer {
+    justify-content: space-between; /* distribui os botões */
+  }
+}
