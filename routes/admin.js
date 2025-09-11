@@ -378,15 +378,17 @@ router.get('/appointments', async (req, res) => {
 
     // ✅ Data inicial: hoje (se não vier na query)
     if (startDate && endDate) {
-      whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
+    whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
     } else if (startDate) {
-      whereClause.appointmentDate = { [Op.gte]: startDate };
+      // força mostrar só aquele dia
+      whereClause.appointmentDate = startDate;
     } else if (endDate) {
-      whereClause.appointmentDate = { [Op.lte]: endDate };
+      // idem: só aquele dia
+      whereClause.appointmentDate = endDate;
     } else {
-      // default server-side
-      whereClause.appointmentDate = { [Op.gte]: todayStr };
+      whereClause.appointmentDate = todayStr;
     }
+
 
     if (barberId) whereClause.barberId = Number(barberId);
 
