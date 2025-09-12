@@ -547,7 +547,7 @@ const timeSlots = buildTimeSlots(merged, barbers, 30);
     });
   }
 });
-function formatDateYYYYMMDD(str) {
+function formatDateDDMMYYYY(str) {
   if (!str) return '';
   const [y, m, d] = String(str).split('-');
   return `${d}/${m}/${y}`;
