@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-
+const {buildTimeSlots } =require('../utils/schedule.js')
 const {
   disconnectWhatsApp,
   initializeWhatsApp,
@@ -513,6 +513,7 @@ for (const barber of barbers) {
 const merged = [...formattedAppointments, ...freeSlots];
 // Ordenar pela hora
 merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
+const timeSlots = buildTimeSlots(merged, barbers, 30);
 
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
@@ -521,6 +522,7 @@ merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTime
       layout: 'admin',
       user: req.session.user,
       appointments: merged,
+      timeSlots,
       barbers,
       filters: { startDate, endDate, barberId, status, sort, limit },
        selectedLimit: limit,
@@ -650,8 +652,10 @@ for (const barber of barbers) {
 const merged = [...formattedAppointments, ...freeSlots];
 // Ordenar pela hora
 merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
+const timeSlots = buildTimeSlots(merged, barbers, 30);
+
     // Renderiza partial em string
-    res.render('partials/appointments-table-rows', { layout: false, appointments: merged }, (err, html) => {
+    res.render('partials/appointments-table-rows', { layout: false, appointments: merged,timeSlots }, (err, html) => {
       if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
       const hasNext = (p * l) < count;
       res.json({ html, hasNext, nextPage: p + 1 });

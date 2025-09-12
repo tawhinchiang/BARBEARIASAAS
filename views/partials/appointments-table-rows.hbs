@@ -1,75 +1,58 @@
-{{#each appointments}}
-<tr class="table-row-transition {{#if (eq status 'free')}}table-free{{/if}}">
-  
-  {{!-- Coluna: Horário (data + hora centralizados) --}}
-  <td class="text-center align-middle" style="width:120px;">
-    <div class="fw-semibold">{{appointmentTimeFormatted}}</div>
-    <small class="text-muted">{{appointmentDateFormatted}}</small>
-  </td>
+<thead>
+  <tr>
+    <th class="text-center">Hora</th>
+    {{#each barbers}}
+      <th class="text-center">
+        <div class="d-flex align-items-center justify-content-center">
+          <div class="avatar-sm me-2">
+            <img src="{{photo}}" alt="Foto de {{name}}" class="avatar-img">
+          </div>
+          <span class="fw-semibold">{{name}}</span>
+        </div>
+      </th>
+    {{/each}}
+  </tr>
+</thead>
 
-  {{!-- Coluna: Profissional --}}
-  <td class="align-middle">
-    <div class="d-flex align-items-center">
-      <div class="avatar-sm me-2">
-        <img src="{{barber.photo}}" alt="Foto de {{barber.name}}" class="avatar-img">
-      </div>
-      <div class="fw-semibold">{{barber.name}}</div>
-    </div>
-  </td>
+<tbody>
+  {{#each timeSlots as |slot|}}
+    <tr>
+      <!-- Coluna fixa do horário -->
+      <td class="text-center fw-semibold align-middle" style="width:100px;">
+        {{slot.time}}
+      </td>
 
-  {{!-- Coluna: Cliente / Disponibilidade --}}
-  <td class="align-middle">
-    {{#if (eq status 'free')}}
-      <span class="text-muted fst-italic">Horário livre</span>
-    {{else}}
-      <div class="fw-semibold text-uppercase">{{client.firstName}} {{client.lastName}}</div>
-    {{/if}}
-  </td>
-
-  {{!-- Coluna: Serviço --}}
-  <td class="align-middle">
-    {{#if (eq status 'free')}}
-      <div class="fw-semibold text-success">Disponível</div>
-    {{else}}
-      <div class="fw-semibold">{{serviceType.name}}</div>
-      <small class="text-muted">{{serviceType.duration}} min</small>
-    {{/if}}
-  </td>
-
-  {{!-- Coluna: Valor --}}
-  <td class="text-center align-middle" style="width:120px;">
-    {{#if (eq status 'free')}}
-      —
-    {{else}}
-      <div class="fw-bold">{{formatCurrency totalPrice}}</div>
-    {{/if}}
-  </td>
-
-  {{!-- Coluna: Status --}}
-  <td class="text-center align-middle" style="width:140px;">
-    {{#if (eq status 'free')}}
-      <span class="badge bg-success">LIVRE</span>
-    {{else}}
-      <span class="status-badge status-{{status}}">
-        {{statusText status}}
-      </span>
-    {{/if}}
-  </td>
-
-  {{!-- Coluna: Ações --}}
-  <td class="text-center align-middle" style="width:120px;">
-    {{#if (eq status 'free')}}
-      <button class="btn btn-outline-success btn-sm js-open-schedule"
-              data-barber="{{barber.id}}"
-              data-date="{{appointmentDateFormattedRaw}}"
-              data-time="{{appointmentTimeFormatted}}">
-        Agendar
-      </button>
-    {{else}}
-      <button type="button" class="js-open-action-panel btn btn-sm btn-dark" data-id="{{id}}">
-        <i class="fas fa-ellipsis-v"></i>
-      </button>
-    {{/if}}
-  </td>
-</tr>
-{{/each}}
+      <!-- Colunas por barbeiro -->
+      {{#each slot.cells as |cell|}}
+        <td class="align-top">
+          {{#if cell.appointment}}
+            <div class="fw-semibold text-uppercase">
+              {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+            </div>
+            <div class="text-muted small">
+              {{cell.appointment.serviceType.name}} ({{cell.appointment.serviceType.duration}} min)
+            </div>
+            <div class="d-flex align-items-center gap-2 mt-1">
+              <span class="status-badge status-{{cell.appointment.status}}">
+                {{statusText cell.appointment.status}}
+              </span>
+              <button type="button"
+                      class="js-open-action-panel btn btn-sm btn-dark"
+                      data-id="{{cell.appointment.id}}">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+            </div>
+          {{else}}
+            <div class="text-success fw-semibold">Disponível</div>
+            <button class="btn btn-outline-success btn-sm js-open-schedule mt-1"
+                    data-barber="{{cell.barber.id}}"
+                    data-date="{{../dateRaw}}"
+                    data-time="{{slot.time}}">
+              Agendar
+            </button>
+          {{/if}}
+        </td>
+      {{/each}}
+    </tr>
+  {{/each}}
+</tbody>
