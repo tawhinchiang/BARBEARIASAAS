@@ -450,7 +450,6 @@ router.get('/appointments', async (req, res) => {
       return {
         ...plain,
         appointmentDateFormatted: dateFormatted,
-        appointmentDateFormattedRaw: plain.appointmentDate,
         appointmentTimeFormatted: plain.appointmentTime?.slice(0, 5),
         serviceType: {
           name: serviceType.name || 'Não informado',
@@ -499,9 +498,8 @@ for (const barber of barbers) {
         id: null,
         barber,
         barberId: barber.id,
-       appointmentDateFormatted: formatDateDDMMYYYY(date), 
-       appointmentDateFormattedRaw: date,                  
-       appointmentTimeFormatted: time,
+        appointmentDateFormatted: formatDateYYYYMMDD(date),
+        appointmentTimeFormatted: time,
         client: { firstName: '', lastName: '' },
         serviceType: { name: 'Livre', duration: '' },
         totalPrice: 0,
