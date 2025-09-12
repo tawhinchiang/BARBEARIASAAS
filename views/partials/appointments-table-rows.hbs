@@ -1,10 +1,10 @@
 <thead>
   <tr>
-    <th class="text-center">Hora</th>
+    <th class="text-center align-middle" style="width:100px;">Hora</th>
     {{#each barbers}}
-      <th class="text-center">
-        <div class="d-flex align-items-center justify-content-center">
-          <div class="avatar-sm me-2">
+      <th class="text-center align-middle">
+        <div class="d-flex flex-column align-items-center">
+          <div class="avatar-sm mb-1">
             <img src="{{photo}}" alt="Foto de {{name}}" class="avatar-img">
           </div>
           <span class="fw-semibold">{{name}}</span>
@@ -21,26 +21,26 @@
       <td class="text-center fw-semibold align-middle" style="width:100px;">
         {{slot.time}}
       </td>
-
+      
       <!-- Colunas por barbeiro -->
       {{#each slot.cells as |cell|}}
-        <td class="align-top">
+        <td class="align-top {{#if cell.appointment}}js-appointment-cell{{/if}}"
+            {{#if cell.appointment}}data-id="{{cell.appointment.id}}"{{/if}}>
+          
           {{#if cell.appointment}}
             <div class="fw-semibold text-uppercase">
               {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
             </div>
-            <div class="text-muted small">
+            <div class="text-muted small"> 
               {{cell.appointment.serviceType.name}} ({{cell.appointment.serviceType.duration}} min)
+            </div>
+            <div class="fw-bold mt-1">
+              {{formatCurrency cell.appointment.totalPrice}}
             </div>
             <div class="d-flex align-items-center gap-2 mt-1">
               <span class="status-badge status-{{cell.appointment.status}}">
                 {{statusText cell.appointment.status}}
               </span>
-              <button type="button"
-                      class="js-open-action-panel btn btn-sm btn-dark"
-                      data-id="{{cell.appointment.id}}">
-                <i class="fas fa-ellipsis-v"></i>
-              </button>
             </div>
           {{else}}
             <div class="text-success fw-semibold">Disponível</div>

@@ -72,7 +72,7 @@ if (fitInForm) {
     `;
 
     try {
-      const mode = document.getElementById('fitInMode')?.value || 'fitin'; // 👈 pega o modo
+      const mode = document.getElementById('fitInMode')?.value || 'fitin'; 
       const isEncaixe = mode === 'fitin';
 
       const payload = {
@@ -280,6 +280,31 @@ function initFitInTimePicker() {
 
 
 });
+document.addEventListener("DOMContentLoaded", () => {
+  const cells = document.querySelectorAll(".js-appointment-cell[data-id]");
+
+  cells.forEach(cell => {
+    const appointmentId = cell.getAttribute("data-id");
+
+    // 🖱️ Desktop: duplo clique
+    cell.addEventListener("dblclick", () => {
+      openActionPanel(appointmentId);
+    });
+
+    // 📱 Mobile: pressionar e segurar
+    let pressTimer;
+    cell.addEventListener("touchstart", () => {
+      pressTimer = setTimeout(() => {
+        openActionPanel(appointmentId);
+      }, 600); // 600ms de segurar
+    });
+
+    cell.addEventListener("touchend", () => {
+      clearTimeout(pressTimer);
+    });
+  });
+});
+
 
   function populateFitInSelects() {
   loadSelectOptions('fitInService', '/api/services');
@@ -1197,10 +1222,16 @@ async function openActionPanel(id) {
   const panel = document.getElementById('actionPanel');
   const body = document.getElementById('actionPanelBody');
   if (!panel || !body) return;
-
+   const btn = document.querySelector(`.js-open-action-panel[data-id="${id}"]`);
+  if (btn) {
+    btn.click(); // reaproveita a lógica já existente
+  } else {
+    console.warn("Botão oculto não encontrado para id:", id);
+  }
   console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
 
   try {
+
     const res = await fetch(`/admin/appointments/${id}`);
     const { appointment } = await res.json();
     const status = appointment.status;
