@@ -354,6 +354,46 @@
 
 
 <style>
+  /* --- Layout mobile para tabela de agendamentos --- */
+@media (max-width: 768px) {
+  table.admin-table {
+    display: block;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  table.admin-table thead {
+    display: none; /* Esconde cabeçalho no mobile */
+  }
+
+  table.admin-table tbody,
+  table.admin-table tr,
+  table.admin-table td {
+    display: block;
+    width: 100%;
+  }
+
+  table.admin-table tr {
+    margin-bottom: 1rem; /* Espaço entre "linhas" */
+    border: 1px solid #333;
+    border-radius: 0.5rem;
+    background: #1c1c1c;
+    padding: 0.5rem;
+  }
+
+  table.admin-table td {
+    border: none;
+    padding: 0.5rem 0;
+  }
+
+  /* Opcional: destaque da hora */
+  table.admin-table td:first-child {
+    font-weight: bold;
+    color: #0f0;
+    border-bottom: 1px solid #333;
+  }
+}
+
   /* 1. Botão Exportar alinhado com título em telas pequenas */
   @media (max-width: 768px) {
     .admin-card .d-flex {
