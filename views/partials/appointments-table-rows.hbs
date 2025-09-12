@@ -57,9 +57,9 @@
 
   <td class="text-center">
     {{#if (eq status 'free')}}
-      <button class="btn btn-outline-success btn-sm js-open-fitin"
+      <button class="btn btn-outline-success btn-sm js-open-schedule"
               data-barber="{{barber.id}}"
-              data-date="{{appointmentDateFormatted}}"
+              data-date="{{appointmentDateFormattedRaw}}"
               data-time="{{appointmentTimeFormatted}}">
         Agendar
       </button>
