@@ -68,16 +68,19 @@ if (fitInForm) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = `
       <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      Confirmando Encaixe...
+      Salvando...
     `;
 
     try {
+      const mode = document.getElementById('fitInMode')?.value || 'fitin'; // 👈 pega o modo
+      const isEncaixe = mode === 'fitin';
+
       const payload = {
         serviceId: document.getElementById('fitInService').value,
         barberId: document.getElementById('fitInBarber').value,
         appointmentDate: document.getElementById('fitInDate').value,
         appointmentTime: document.getElementById('fitInTime').value,
-        isEncaixe: true,
+        isEncaixe,
         fitInNote: document.getElementById('fitInNote').value,
         clientData: {
           firstName: document.getElementById('fitInFirstName').value.trim(),
@@ -98,29 +101,34 @@ if (fitInForm) {
 
       const data = await res.json();
       if (data.success) {
-        notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
+        notify({
+          type: 'success',
+          message: isEncaixe
+            ? 'Encaixe criado com sucesso!'
+            : 'Agendamento criado com sucesso!'
+        });
 
-       
         const fitInModalEl = document.getElementById('fitInModal');
         const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
         if (fitInModal) fitInModal.hide();
 
-        // Pequeno delay só para garantir que o modal feche antes do reload
         setTimeout(() => location.reload(), 600);
-      }
- else {
-        notify({ type: 'error', message: data.error || 'Erro ao criar encaixe.' });
+      } else {
+        notify({
+          type: 'error',
+          message: data.error || 'Erro ao criar agendamento.'
+        });
       }
     } catch (err) {
-      console.error('[ERRO] Criando encaixe:', err);
-      notify({ type: 'error', message: 'Erro ao criar encaixe.' });
+      console.error('[ERRO] Criando agendamento:', err);
+      notify({ type: 'error', message: 'Erro ao criar agendamento.' });
     } finally {
-      // 🔓 Restaura o botão
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalHtml;
     }
   });
 }
+
 
 
 
@@ -1262,23 +1270,40 @@ function closeActionPanel() {
 }
 
 document.addEventListener('click', e => {
-  const btn = e.target.closest('.js-open-fitin');
-  if (!btn) return;
+  // --- Encaixe ---
+  const fitinBtn = e.target.closest('.js-open-fitin');
+  if (fitinBtn) {
+    document.getElementById('fitInMode').value = 'fitin';
+    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Encaixe';
+    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Encaixe';
 
-  const barberId = btn.dataset.barber;
-  const date = btn.dataset.date;
-  const time = btn.dataset.time;
+    const openBtn = document.getElementById('openFitInBtn');
+    if (openBtn) openBtn.click();
+    return;
+  }
 
-  // Abre o modal de encaixe
-  const openBtn = document.getElementById('openFitInBtn');
-  if (openBtn) openBtn.click();
+  // --- Agendamento Normal ---
+  const scheduleBtn = e.target.closest('.js-open-schedule');
+  if (scheduleBtn) {
+    document.getElementById('fitInMode').value = 'normal';
+    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
+    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
 
-  setTimeout(() => {
-    document.querySelector('#fitInModal select[name="barberId"]').value = barberId;
-    document.querySelector('#fitInModal input[name="appointmentDate"]').value = date;
-    document.querySelector('#fitInModal input[name="appointmentTime"]').value = time;
-  }, 200);
+    const barberId = scheduleBtn.dataset.barber;
+    const date = scheduleBtn.dataset.date;
+    const time = scheduleBtn.dataset.time;
+
+    const openBtn = document.getElementById('openFitInBtn');
+    if (openBtn) openBtn.click();
+
+    setTimeout(() => {
+      document.getElementById('fitInBarber').value = barberId;
+      document.getElementById('fitInDate').value = date;
+      document.getElementById('fitInTime').value = time;
+    }, 200);
+  }
 });
+
 
 
 
