@@ -1,12 +1,14 @@
 {{#each appointments}}
 <tr class="table-row-transition {{#if (eq status 'free')}}table-free{{/if}}">
-  <td class="d-none">
-    <span class="fw-bold">
-      {{#if (eq status 'free')}}—{{else}}#{{id}}{{/if}}
-    </span>
+  
+  {{!-- Coluna: Horário (data + hora centralizados) --}}
+  <td class="text-center align-middle" style="width:120px;">
+    <div class="fw-semibold">{{appointmentTimeFormatted}}</div>
+    <small class="text-muted">{{appointmentDateFormatted}}</small>
   </td>
 
-  <td>
+  {{!-- Coluna: Profissional --}}
+  <td class="align-middle">
     <div class="d-flex align-items-center">
       <div class="avatar-sm me-2">
         <img src="{{barber.photo}}" alt="Foto de {{barber.name}}" class="avatar-img">
@@ -15,20 +17,17 @@
     </div>
   </td>
 
-  <td class="text-center">
-    <div class="fw-semibold">{{appointmentDateFormatted}}</div>
-    <small class="text-muted">{{appointmentTimeFormatted}}</small>
-  </td>
-
-  <td class="text-left">
+  {{!-- Coluna: Cliente / Disponibilidade --}}
+  <td class="align-middle">
     {{#if (eq status 'free')}}
       <span class="text-muted fst-italic">Horário livre</span>
     {{else}}
-      <div class="fw-semibold">{{client.firstName}} {{client.lastName}}</div>
+      <div class="fw-semibold text-uppercase">{{client.firstName}} {{client.lastName}}</div>
     {{/if}}
   </td>
 
-  <td>
+  {{!-- Coluna: Serviço --}}
+  <td class="align-middle">
     {{#if (eq status 'free')}}
       <div class="fw-semibold text-success">Disponível</div>
     {{else}}
@@ -37,7 +36,8 @@
     {{/if}}
   </td>
 
-  <td class="text-center">
+  {{!-- Coluna: Valor --}}
+  <td class="text-center align-middle" style="width:120px;">
     {{#if (eq status 'free')}}
       —
     {{else}}
@@ -45,7 +45,8 @@
     {{/if}}
   </td>
 
-  <td class="text-center">
+  {{!-- Coluna: Status --}}
+  <td class="text-center align-middle" style="width:140px;">
     {{#if (eq status 'free')}}
       <span class="badge bg-success">LIVRE</span>
     {{else}}
@@ -55,7 +56,8 @@
     {{/if}}
   </td>
 
-  <td class="text-center">
+  {{!-- Coluna: Ações --}}
+  <td class="text-center align-middle" style="width:120px;">
     {{#if (eq status 'free')}}
       <button class="btn btn-outline-success btn-sm js-open-schedule"
               data-barber="{{barber.id}}"
