@@ -11,7 +11,42 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('[ADMIN] Página de agendamentos carregada');
     restoreSavedView();
 
- 
+   // Gestos de interação para abrir o painel lateral
+  if (!window._gestureHandlersInstalled) {
+    window._gestureHandlersInstalled = true;
+
+    // 🖱️ Desktop: duplo clique em qualquer célula com agendamento
+    document.addEventListener('dblclick', (e) => {
+      const cell = e.target.closest('.js-appointment-cell[data-id]');
+      if (cell) {
+        const id = cell.dataset.id;
+        console.log('[GESTURE] Duplo clique na célula ID:', id);
+        openActionPanel(id);
+      }
+    });
+
+    // 📱 Mobile: pressionar e segurar (long press)
+    let longPressTimer = null;
+    document.addEventListener('touchstart', (e) => {
+      const cell = e.target.closest('.js-appointment-cell[data-id]');
+      if (!cell) return;
+      const id = cell.dataset.id;
+      longPressTimer = setTimeout(() => {
+        console.log('[GESTURE] Long press na célula ID:', id);
+        openActionPanel(id);
+      }, 600); // 600ms segurando
+    }, { passive: true });
+
+    ['touchend', 'touchcancel', 'touchmove'].forEach(evt => {
+      document.addEventListener(evt, () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      }, { passive: true });
+    });
+  }
+
     // 2. Configura alternância da visualização
   const toggleBtn = document.getElementById('toggleView');
   if (!toggleBtn) {
@@ -280,30 +315,7 @@ function initFitInTimePicker() {
 
 
 });
-document.addEventListener("DOMContentLoaded", () => {
-  const cells = document.querySelectorAll(".js-appointment-cell[data-id]");
 
-  cells.forEach(cell => {
-    const appointmentId = cell.getAttribute("data-id");
-
-    // 🖱️ Desktop: duplo clique
-    cell.addEventListener("dblclick", () => {
-      openActionPanel(appointmentId);
-    });
-
-    // 📱 Mobile: pressionar e segurar
-    let pressTimer;
-    cell.addEventListener("touchstart", () => {
-      pressTimer = setTimeout(() => {
-        openActionPanel(appointmentId);
-      }, 600); // 600ms de segurar
-    });
-
-    cell.addEventListener("touchend", () => {
-      clearTimeout(pressTimer);
-    });
-  });
-});
 
 
   function populateFitInSelects() {
@@ -1220,77 +1232,61 @@ function attachActionPanelListeners() {
 // Função para abrir o painel lateral
 async function openActionPanel(id) {
   const panel = document.getElementById('actionPanel');
-  const body = document.getElementById('actionPanelBody');
-  if (!panel || !body) return;
-   const btn = document.querySelector(`.js-open-action-panel[data-id="${id}"]`);
-  if (btn) {
-    btn.click(); // reaproveita a lógica já existente
-  } else {
-    console.warn("Botão oculto não encontrado para id:", id);
+  const body  = document.getElementById('actionPanelBody');
+  if (!panel || !body) { 
+    console.warn('[PAINEL] Markup ausente (#actionPanel / #actionPanelBody).');
+    return; 
   }
-  console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
 
   try {
-
     const res = await fetch(`/admin/appointments/${id}`);
+    if (!res.ok) throw new Error('Falha ao carregar agendamento');
     const { appointment } = await res.json();
     const status = appointment.status;
 
-    // Funções comuns sempre visíveis
     let html = `
-      <button class="btn btn-outline-light w-100 mb-2 js-view-appointment" onclick="viewAppointment(${id})">
+      <button class="btn btn-outline-light w-100 mb-2" onclick="viewAppointment(${id})">
         <i class="fas fa-eye me-2"></i> Ver Detalhes
       </button>
-      <button class="btn btn-outline-primary w-100 mb-2 js-edit-appointment" onclick="editAppointment(${id})">
+      <button class="btn btn-outline-primary w-100 mb-2" onclick="editAppointment(${id})">
         <i class="fas fa-pen me-2"></i> Editar
       </button>
     `;
 
-    // Regras específicas por status
     if (status === 'pending') {
       html += `
-        <button class="btn btn-outline-success w-100 mb-2 js-confirm-appointment" onclick="confirmAppointment(${id})">
+        <button class="btn btn-outline-success w-100 mb-2" onclick="confirmAppointment(${id})">
           <i class="fas fa-check-circle me-2"></i> Confirmar
-        </button>
-      `;
-    }
-    if (status === 'confirmed'|| status === 'in_progress') {
-      html += `
-        <button class="btn btn-outline-warning w-100 mb-2 js-no-show-appointment" onclick="markNoShow(${id})">
-          <i class="fas fa-user-slash me-2"></i> Não Compareceu
         </button>
       `;
     }
     if (status === 'confirmed' || status === 'in_progress') {
       html += `
-        <button class="btn btn-outline-warning w-100 mb-2 js-complete-appointment" onclick="completeAppointment(${id})">
+        <button class="btn btn-outline-warning w-100 mb-2" onclick="markNoShow(${id})">
+          <i class="fas fa-user-slash me-2"></i> Não Compareceu
+        </button>
+        <button class="btn btn-outline-warning w-100 mb-2" onclick="completeAppointment(${id})">
           <i class="fas fa-check me-2"></i> Concluir
         </button>
       `;
     }
-    
     if (status !== 'cancelled' && status !== 'completed') {
       html += `
-        <button class="btn btn-outline-danger w-100 mb-2 js-cancel-appointment" onclick="cancelAppointment(${id})">
+        <button class="btn btn-outline-danger w-100 mb-2" onclick="cancelAppointment(${id})">
           <i class="fas fa-times-circle me-2"></i> Cancelar
         </button>
       `;
     }
 
-    // // WhatsApp é sempre visível
-    // html += `
-    //   <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
-    //     <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
-    //   </button>
-    // `;
-
     body.innerHTML = html;
     panel.classList.add('show');
   } catch (err) {
-    console.error('[PAINEL] Erro ao carregar agendamento:', err);
-    notify({ type:'error', message:'Erro ao carregar detalhes do agendamento' });
+    console.error('[PAINEL] Erro:', err);
+    notify({ type: 'error', message: 'Erro ao carregar detalhes do agendamento' });
   }
 }
+window.openActionPanel = openActionPanel;
+
 
 
 
