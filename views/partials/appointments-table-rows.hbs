@@ -2,9 +2,9 @@
   <tr>
     <th class="text-center align-middle" style="width:100px;">Hora</th>
     {{#each barbers}}
-      <th class="text-center align-middle">
-        <div class="d-flex flex-column align-items-center">
-          <div class="avatar-sm mb-1">
+      <th class="text-start align-middle">
+        <div class="d-flex align-items-center">
+          <div class="avatar-sm me-2">
             <img src="{{photo}}" alt="Foto de {{name}}" class="avatar-img">
           </div>
           <span class="fw-semibold">{{name}}</span>
@@ -13,6 +13,7 @@
     {{/each}}
   </tr>
 </thead>
+
 
 <tbody>
   {{#each timeSlots as |slot|}}
