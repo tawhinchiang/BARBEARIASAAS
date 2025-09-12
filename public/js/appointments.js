@@ -12,40 +12,20 @@ document.addEventListener('DOMContentLoaded', function () {
     restoreSavedView();
 
    // Gestos de interação para abrir o painel lateral
-  if (!window._gestureHandlersInstalled) {
-    window._gestureHandlersInstalled = true;
+ if (!window._gestureHandlersInstalled) {
+  window._gestureHandlersInstalled = true;
 
-    // 🖱️ Desktop: duplo clique em qualquer célula com agendamento
-    document.addEventListener('dblclick', (e) => {
-      const cell = e.target.closest('.js-appointment-cell[data-id]');
-      if (cell) {
-        const id = cell.dataset.id;
-        console.log('[GESTURE] Duplo clique na célula ID:', id);
-        openActionPanel(id);
-      }
-    });
 
-    // 📱 Mobile: pressionar e segurar (long press)
-    let longPressTimer = null;
-    document.addEventListener('touchstart', (e) => {
-      const cell = e.target.closest('.js-appointment-cell[data-id]');
-      if (!cell) return;
+  document.addEventListener('dblclick', (e) => {
+    const cell = e.target.closest('.js-appointment-cell[data-id]');
+    if (cell) {
       const id = cell.dataset.id;
-      longPressTimer = setTimeout(() => {
-        console.log('[GESTURE] Long press na célula ID:', id);
-        openActionPanel(id);
-      }, 600); // 600ms segurando
-    }, { passive: true });
+      console.log('[GESTURE] Duplo clique na célula ID:', id);
+      openActionPanel(id);
+    }
+  });
+}
 
-    ['touchend', 'touchcancel', 'touchmove'].forEach(evt => {
-      document.addEventListener(evt, () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      }, { passive: true });
-    });
-  }
 
     // 2. Configura alternância da visualização
   const toggleBtn = document.getElementById('toggleView');
