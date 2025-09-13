@@ -357,7 +357,6 @@
 <style>
   /* --- Layout mobile para tabela de agendamentos --- */
   @media (max-width: 768px) {
-    
     .admin-card .d-flex {
       flex-direction: column;
       align-items: stretch;
@@ -387,6 +386,7 @@
     .admin-table-wrapper table {
       min-width: 100% !important;
     }
+
     table.admin-table {
       display: block;
       width: 100%;
@@ -402,31 +402,36 @@
       width: 100%;
     }
 
+    /* Linha de horário */
     table.admin-table tr {
-      display: flex;                 /* coloca hora + card lado a lado */
-      align-items: flex-start;
+      display: flex;                 /* hora + card lado a lado */
+      align-items: stretch;
       justify-content: flex-start;
-      gap: 1rem;                     /* espaço entre hora e card */
-      margin-bottom: 1rem;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
       border: none;
       background: transparent;
       padding: 0;
     }
 
-    /* Coluna da hora */
+    /* Coluna do horário */
     table.admin-table td:first-child {
-      flex: 0 0 60px;                /* largura fixa */
+      flex: 0 0 65px;
       font-weight: bold;
-      color: #0f0;
-      text-align: left;
-      background: transparent;
-      border: none;
-      padding: 0.5rem 0;
+      font-size: 1rem;
+      color: #111;
+      text-align: right;
+      background: #f5f5f5;
+      border-radius: 0.5rem 0 0 0.5rem;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* Coluna do agendamento */
     table.admin-table td:not(:first-child) {
-      flex: 1;                       /* ocupa resto da largura */
+      flex: 1;
       border: none;
       background: transparent;
       padding: 0;
@@ -434,15 +439,25 @@
 
     /* Card dentro da célula */
     table.admin-table td:not(:first-child) > div {
-      border: 1px solid #333;
-      border-radius: 0.5rem;
-      background: #1c1c1c;
+      border-radius: 0 0.5rem 0.5rem 0;
       padding: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
+
+    /* Exemplos de cores por status */
+    .slot-confirmed { background: #d1e7dd; }   /* verde claro */
+    .slot-completed { background: #e0cffc; }   /* roxo claro */
+    .slot-cancelled { background: #f8d7da; }   /* vermelho claro */
+    .slot-pending   { background: #fff3cd; }   /* amarelo claro */
+    .slot-free      { background: #f1f1f1; color: #555; } /* cinza para horários livres */
   }
 
- 
-
+  /* Mobile extra pequeno */
   @media (max-width: 576px) {
     .admin-table table {
       font-size: 0.875rem;
@@ -465,7 +480,7 @@
     }
   }
 
-  
+  /* Scroll horizontal para desktop */
   .admin-table {
     overflow-x: auto;
     padding-bottom: 1rem;
@@ -480,7 +495,7 @@
     width: 100%;
   }
 
-  
+  /* Dropdown de ações */
   .actions-menu {
     position: relative;
     display: flex;
@@ -528,6 +543,7 @@
     display: block;
   }
 </style>
+
 
 
 
