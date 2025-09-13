@@ -468,6 +468,33 @@
 .slot-cancelled   { background: #e74a3b; color: #fff; }   /* vermelho */
 .slot-no_show     { background: #858796; color: #fff; }   /* cinza */
 .slot-pending     { background: #36b9cc; color: #fff; }   /* ciano *//* cinza para horários livres */
+
+.admin-table table {
+    min-width: 100% !important;
+    width: 100% !important;
+    table-layout: fixed;   /* força conteúdo a caber */
+    overflow-wrap: break-word; /* quebra texto longo */
+  }
+
+  .admin-table td {
+    font-size: 0.75rem;   /* reduz fonte */
+    padding: 0.5rem;      /* compacta altura */
+  }
+
+  /* Ajusta célula do horário */
+  .admin-table td:first-child {
+    flex: 0 0 50px;       /* fixa coluna de hora menor */
+    text-align: right;
+    font-size: 0.8rem;
+  }
+
+  /* Ajusta cards (agendados ou livres) */
+  .admin-table td:not(:first-child) > div {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.4rem;
+  }
+
   }
 
   /* Mobile extra pequeno */
