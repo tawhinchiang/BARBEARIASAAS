@@ -26,7 +26,24 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 }
 
+  const prevBtn = document.getElementById('prevDay');
+  const nextBtn = document.getElementById('nextDay');
+  
+  if (prevBtn && nextBtn) {
+    prevBtn.addEventListener('click', () => changeDay(-1));
+    nextBtn.addEventListener('click', () => changeDay(1));
+  }
 
+  function changeDay(offset) {
+    const url = new URL(window.location.href);
+    const currentDate = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + offset);
+
+    const formatted = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    url.searchParams.set('date', formatted);
+    window.location.href = url.toString(); // recarrega com nova data
+  }
     // 2. Configura alternância da visualização
   const toggleBtn = document.getElementById('toggleView');
   if (!toggleBtn) {
@@ -314,49 +331,68 @@ function initModals() {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
 
+  const fitInModalEl = document.getElementById('fitInModal');
+  if (fitInModalEl) {
+    if (fitInModalEl.parentElement !== document.body) {
+      document.body.appendChild(fitInModalEl);
+      console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
+    }
 
-const fitInModalEl = document.getElementById('fitInModal');
-if (fitInModalEl) {
-  // move modal para o body se estiver aninhado (resolve problemas de stacking/context)
-  if (fitInModalEl.parentElement !== document.body) {
-    document.body.appendChild(fitInModalEl);
-    console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
-  }
+    const fitInModal = new bootstrap.Modal(fitInModalEl);
+    fitInModalEl.addEventListener('show.bs.modal', () => {
+      populateFitInSelects();
 
-  // cria modal bootstrap e listeners (mantém populateFill etc)
-  const fitInModal = new bootstrap.Modal(fitInModalEl);
-  fitInModalEl.addEventListener('show.bs.modal', () => {
-    populateFitInSelects();
- const timeInput = document.getElementById('fitInTime');
- timeInput.addEventListener('click', () => {
-  timeInput.showPicker?.(); // Método nativo moderno
-});
-  const agora = new Date();
-  
-  const horas = String(agora.getHours()).padStart(2, '0');
-  const minutos = String(agora.getMinutes()).padStart(2, '0');
+      const timeInput = document.getElementById('fitInTime');
+      const dateInput = document.getElementById('fitInDate');
 
-  timeInput.min = `${horas}:${minutos}`;
-  });
+      // Força abrir picker no clique
+      timeInput.addEventListener('click', () => {
+        timeInput.showPicker?.();
+      });
 
-  const openFitInBtn = document.getElementById('openFitInBtn');
-  if (openFitInBtn) {
-    openFitInBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      try {
-        fitInModal.show();
-      } catch (err) {
-        console.error('[DEBUG] Erro ao abrir fitInModal:', err);
-      }
+      const updateMinTime = () => {
+        const hoje = new Date();
+        const dataSelecionada = new Date(dateInput.value);
+
+        const isHoje =
+          dataSelecionada.getFullYear() === hoje.getFullYear() &&
+          dataSelecionada.getMonth() === hoje.getMonth() &&
+          dataSelecionada.getDate() === hoje.getDate();
+
+        if (isHoje) {
+          const horas = String(hoje.getHours()).padStart(2, '0');
+          const minutos = String(hoje.getMinutes()).padStart(2, '0');
+          timeInput.min = `${horas}:${minutos}`;
+        } else {
+          timeInput.min = "00:00"; // libera todos os horários se não for hoje
+        }
+      };
+
+      // Atualiza quando abrir o modal
+      updateMinTime();
+
+      // Atualiza quando trocar a data
+      dateInput.addEventListener('change', updateMinTime);
     });
-  }
-}
 
+    const openFitInBtn = document.getElementById('openFitInBtn');
+    if (openFitInBtn) {
+      openFitInBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        try {
+          fitInModal.show();
+        } catch (err) {
+          console.error('[DEBUG] Erro ao abrir fitInModal:', err);
+        }
+      });
+    }
+  }
 
   if (window.Inputmask) {
     Inputmask({ mask: "(99) 99999-9999" }).mask("#fitInPhone");
   }
 }
+
 
 function gerarSlotsHorarios(intervaloMinutos = 30) {
   const agora = new Date();
@@ -1310,6 +1346,7 @@ document.addEventListener('click', e => {
     }, 200);
   }
 });
+
 
 
 

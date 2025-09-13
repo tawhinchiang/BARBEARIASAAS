@@ -12,6 +12,15 @@ module.exports = {
     if (!date) return '';
     return new Date(date).toLocaleDateString('pt-BR');
   },
+dayOfWeek: function(date) {
+  if (!date) return '';
+  const dias = [
+    'Domingo', 'Segunda-feira', 'Terça-feira',
+    'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'
+  ];
+  const d = new Date(date);
+  return dias[d.getDay()];
+},
 
   formatTime: function(time) {
     if (!time) return '';
