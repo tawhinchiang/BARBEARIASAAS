@@ -1,20 +1,20 @@
-
-<!-- Navegação de datas - visível só no mobile -->
 <!-- Navegação de datas - visível só no mobile -->
 <div class="d-flex justify-content-between align-items-center mb-2 d-block d-md-none">
   <button id="prevDay" class="btn btn-sm btn-outline-secondary">&lt;</button>
 
   <div class="fw-bold text-center flex-grow-1">
-    {{formatDate currentDateRaw}},{{dayOfWeek currentDateRaw}}
+    {{formatDate currentDateRaw}}, {{dayOfWeek currentDateRaw}}
   </div>
 
   <button id="nextDay" class="btn btn-sm btn-outline-secondary">&gt;</button>
 </div>
 
-
 <thead>
   <tr>
-    {{!-- <th class="text-center align-middle" style="width:100px;">Horário</th> --}}
+    <!-- ✅ Coluna fixa de horário -->
+    <th class="text-center align-middle" style="width:100px;">Horário</th>
+
+    <!-- ✅ Colunas por barbeiro -->
     {{#each barbers}}
       <th class="text-start align-middle">
         <div class="d-flex align-items-center">
@@ -42,25 +42,25 @@
             {{#if cell.appointment}}data-id="{{cell.appointment.id}}"{{/if}}>
 
           {{#if cell.appointment}}
-            <!-- Card compacto para agendado -->
-            <div class="slot-{{cell.appointment.status}} d-flex flex-row justify-content-between align-items-center">
-              <span class="fw-semibold text-truncate">
+            <!-- Card para agendado -->
+            <div class="slot-{{cell.appointment.status}} d-flex justify-content-between align-items-center flex-wrap">
+              <span class="fw-semibold">
                 {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
               </span>
-              <span class="text-truncate">
-                {{cell.appointment.serviceType.name}} {{!-- ({{cell.appointment.serviceType.duration}} min) --}}
+              <span>
+                {{cell.appointment.serviceType.name}}
               </span>
               <span class="fw-bold">
                 {{formatCurrency cell.appointment.totalPrice}}
               </span>
             </div>
           {{else}}
-            <!-- Card compacto para livre -->
+            <!-- Slot livre -->
             <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
-     data-barber="{{cell.barber.id}}"
-     data-date="{{../dateRaw}}"
-     data-time="{{slot.time}}">
-</div>
+                 data-barber="{{cell.barber.id}}"
+                 data-date="{{../dateRaw}}"
+                 data-time="{{slot.time}}">
+            </div>
           {{/if}}
 
         </td>
