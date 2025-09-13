@@ -415,7 +415,7 @@
       border: none;
       background: transparent;
       padding: 0;
-      height: 44px;              /* 🔥 altura fixa da linha */
+      min-height: 44px;           /* 🔥 altura mínima da linha */
     }
 
     /* Coluna do horário */
@@ -431,7 +431,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100%;              /* 🔥 ocupa altura da linha */
+      min-height: 44px;           /* 🔥 acompanha altura da linha */
     }
 
     /* Coluna do agendamento */
@@ -442,7 +442,7 @@
       padding: 0;
       display: flex;
       align-items: stretch;
-      height: 100%;              /* 🔥 ocupa altura da linha */
+      min-height: 44px;           /* 🔥 acompanha altura da linha */
     }
 
     /* Card dentro da célula → compacto e horizontal */
@@ -460,7 +460,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      height: 100%;              /* 🔥 ocupa altura da linha */
+      min-height: 44px;           /* 🔥 acompanha altura da linha */
       box-sizing: border-box;
     }
 
