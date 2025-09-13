@@ -356,46 +356,7 @@
 <style>
   /* --- Layout mobile para tabela de agendamentos --- */
   @media (max-width: 768px) {
-    table.admin-table {
-      display: block;
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    table.admin-table tbody,
-    table.admin-table tr,
-    table.admin-table td {
-      display: block;
-      width: 100%;
-    }
-
-    table.admin-table tr {
-      margin-bottom: 1rem;
-      border: none;
-      background: transparent;
-      padding: 0;
-    }
-
-    table.admin-table td {
-      border: 1px solid #333;       /* borda apenas no card */
-      border-radius: 0.5rem;
-      background: #1c1c1c;
-      padding: 0.75rem;
-      margin-bottom: 0.75rem;
-    }
-
-    /* destaque da hora */
-    table.admin-table td:first-child {
-      font-weight: bold;
-      color: #0f0;
-      border-bottom: 1px solid #333;
-      background: #000; /* opcional: destaca hora com fundo diferente */
-      margin-bottom: 0.5rem;
-    }
-  }
-
-  /* 1. Botão Exportar alinhado com título em telas pequenas */
-  @media (max-width: 768px) {
+    
     .admin-card .d-flex {
       flex-direction: column;
       align-items: stretch;
@@ -406,20 +367,7 @@
       align-self: flex-start;
       width: 100%;
     }
-  }
 
-  /* 2. Dropdowns e campos de data não estouram layout */
-  .admin-filters {
-    overflow-x: auto;
-  }
-
-  .admin-filters select,
-  .admin-filters input[type="date"] {
-    max-width: 100%;
-  }
-
-  /* 3. Espaçamento entre filtros e ordenação em telas pequenas */
-  @media (max-width: 768px) {
     #filterForm .row.mt-3 {
       display: flex;
       flex-direction: column;
@@ -429,9 +377,94 @@
     #filterForm .col-md-9 {
       margin-top: 0;
     }
+
+    .admin-dashboard {
+      overflow-y: auto;
+      padding-bottom: 3rem;
+    }
+
+    .admin-table-wrapper table {
+      min-width: 100% !important;
+    }
+    table.admin-table {
+      display: block;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.admin-table thead {
+      display: none; /* esconde cabeçalho no mobile */
+    }
+
+    table.admin-table tbody {
+      display: block;
+      width: 100%;
+    }
+
+    table.admin-table tr {
+      display: flex;                 /* coloca hora + card lado a lado */
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 1rem;                     /* espaço entre hora e card */
+      margin-bottom: 1rem;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+
+    /* Coluna da hora */
+    table.admin-table td:first-child {
+      flex: 0 0 60px;                /* largura fixa */
+      font-weight: bold;
+      color: #0f0;
+      text-align: left;
+      background: transparent;
+      border: none;
+      padding: 0.5rem 0;
+    }
+
+    /* Coluna do agendamento */
+    table.admin-table td:not(:first-child) {
+      flex: 1;                       /* ocupa resto da largura */
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+
+    /* Card dentro da célula */
+    table.admin-table td:not(:first-child) > div {
+      border: 1px solid #333;
+      border-radius: 0.5rem;
+      background: #1c1c1c;
+      padding: 0.75rem;
+    }
   }
 
-  /* 4. Scroll horizontal na tabela (desktop) */
+ 
+
+  @media (max-width: 576px) {
+    .admin-table table {
+      font-size: 0.875rem;
+    }
+
+    .actions-dropdown {
+      min-width: 100%;
+      max-width: 100vw;
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 60vh;
+      position: absolute;
+      left: auto;
+      right: 0;
+    }
+
+    .actions-dropdown .action-item {
+      font-size: 1rem;
+      padding: 14px;
+    }
+  }
+
+  
   .admin-table {
     overflow-x: auto;
     padding-bottom: 1rem;
@@ -441,7 +474,12 @@
     min-width: 800px;
   }
 
-  /* 5. Ações (menu de 3 pontos) responsivo e funcional */
+  .admin-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  
   .actions-menu {
     position: relative;
     display: flex;
@@ -456,7 +494,6 @@
     z-index: 2;
   }
 
-  /* Dropdown flutuante */
   .actions-dropdown {
     display: none;
     position: absolute;
@@ -488,48 +525,6 @@
 
   .actions-menu.show .actions-dropdown {
     display: block;
-  }
-
-  /* Responsivo para dropdown e tabela */
-  @media (max-width: 576px) {
-    .admin-table table {
-      font-size: 0.875rem;
-    }
-
-    .actions-dropdown {
-      min-width: 100%;
-      max-width: 100vw;
-      overflow-x: auto;
-      overflow-y: auto;
-      max-height: 60vh;
-      left: auto;
-      right: 0;
-      position: absolute;
-    }
-
-    .actions-dropdown .action-item {
-      font-size: 1rem;
-      padding: 14px;
-    }
-  }
-
-  /* Scroll vertical para dashboard em telas pequenas */
-  @media (max-width: 768px) {
-    .admin-dashboard {
-      overflow-y: auto;
-      padding-bottom: 3rem;
-    }
-  }
-
-  .admin-table-wrapper {
-    overflow-x: auto;
-    width: 100%;
-  }
-
-  @media (max-width: 768px) {
-    .admin-table-wrapper table {
-      min-width: 100% !important;
-    }
   }
 </style>
 
