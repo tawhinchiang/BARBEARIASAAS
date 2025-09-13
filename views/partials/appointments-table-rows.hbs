@@ -47,9 +47,9 @@
               <span class="fw-semibold text-truncate">
                 {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
               </span>
-              {{!-- <span class="text-truncate">
-                {{cell.appointment.serviceType.name}} ({{cell.appointment.serviceType.duration}} min)
-              </span> --}}
+              <span class="text-truncate">
+                {{cell.appointment.serviceType.name}} {{!-- ({{cell.appointment.serviceType.duration}} min) --}}
+              </span>
               <span class="fw-bold">
                 {{formatCurrency cell.appointment.totalPrice}}
               </span>
