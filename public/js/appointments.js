@@ -1319,22 +1319,43 @@ function closeActionPanel() {
   panel.classList.remove('show');
 }
 
-document.addEventListener('click', e => {
-  // --- Encaixe ---
-  const fitinBtn = e.target.closest('.js-open-fitin');
-  if (fitinBtn) {
-    document.getElementById('fitInMode').value = 'fitin';
-    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Encaixe';
-    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Encaixe';
+document.addEventListener('DOMContentLoaded', () => {
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-    const openBtn = document.getElementById('openFitInBtn');
-    if (openBtn) openBtn.click();
-    return;
-  }
+  // --- Encaixe ---
+  document.addEventListener('click', e => {
+    const fitinBtn = e.target.closest('.js-open-fitin');
+    if (fitinBtn) {
+      document.getElementById('fitInMode').value = 'fitin';
+      document.querySelector('#fitInModal .modal-title').textContent = 'Novo Encaixe';
+      document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Encaixe';
+
+      const openBtn = document.getElementById('openFitInBtn');
+      if (openBtn) openBtn.click();
+      return;
+    }
+  });
 
   // --- Agendamento Normal ---
-  const scheduleBtn = e.target.closest('.js-open-schedule');
-  if (scheduleBtn) {
+  if (isMobile) {
+    // Clique simples no mobile
+    document.addEventListener('click', e => {
+      const scheduleBtn = e.target.closest('.js-open-schedule');
+      if (!scheduleBtn) return;
+
+      abrirModalAgendamento(scheduleBtn);
+    });
+  } else {
+    // Duplo clique no desktop
+    document.addEventListener('dblclick', e => {
+      const scheduleBtn = e.target.closest('.js-open-schedule');
+      if (!scheduleBtn) return;
+
+      abrirModalAgendamento(scheduleBtn);
+    });
+  }
+
+  function abrirModalAgendamento(scheduleBtn) {
     document.getElementById('fitInMode').value = 'normal';
     document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
     document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
@@ -1353,6 +1374,7 @@ document.addEventListener('click', e => {
     }, 200);
   }
 });
+
 
 
 
