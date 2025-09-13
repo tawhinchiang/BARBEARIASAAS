@@ -99,7 +99,7 @@
       <div class="row">
         <div class="col-12">
 
-            {{!-- <div class="admin-table"> --}}
+            <div class="admin-table">
               {{!-- <div class="admin-table-wrapper"> --}}
 
                 {{!-- {{#if appointments.length}} --}}
@@ -175,7 +175,7 @@
                 </div>
                 {{/if}} --}}
               </div>
-            {{!-- </div> --}}
+            </div>
           </div>
         </div>
       </div>
@@ -406,62 +406,69 @@
     }
 
     /* Linha = horário + card lado a lado */
-  table.admin-table tr {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.4rem;
-  border-radius: 0.4rem;
-  overflow: hidden;            
-  background: #f8f9fc;           
-  min-height: 42px;              
-}
+    table.admin-table tr {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+      border: none;
+      background: transparent;
+      padding: 0;
+      min-height: 40px; 
+    }
 
     /* Coluna do horário */
     table.admin-table td:first-child {
-  flex: 0 0 55px;
-  font-weight: bold;
-  font-size: 0.75rem;
-  color: #fff;
-  text-align: center;
-  background: #111;
-  padding: 0.3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0; /* sem radius, fica colado */
-}
+      flex: 0 0 45px;      
+      font-weight: bold;
+      font-size: 0.75rem;
+      color: #111;
+      text-align: center;
+      background: #f1f1f1;
+      border-radius: 0.3rem 0 0 0.3rem;
+      padding: 0.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     /* Coluna do agendamento */
-   table.admin-table td:not(:first-child) {
-  flex: 1;
-  border: none;
-  background: transparent;
-  padding: 0;
-}
+    table.admin-table td:not(:first-child) {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
 
     /* Card dentro da célula → compacto e horizontal */
-   table.admin-table td:not(:first-child) > div {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
+    table.admin-table td:not(:first-child) > div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 0.3rem;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      line-height: 1.2;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 40px;
+    }
 
     /* Livre */
-   .slot-free {
-  background: #d0d0d1;
-  color: #198754;
-  min-height: 42px;   /* mesma altura dos ocupados */
-}
+    .slot-free {
+      min-height: 40px;
+      background: #f8f9fc;
+      border: 1px solid #ccc;
+      color: #198754;
+    }
     .slot-free button {
-  font-size: 0.65rem;
-  padding: 0.2rem 0.4rem;
-}
+      font-size: 0.65rem;
+      padding: 0.15rem 0.3rem;
+    }
 
     /* Status → cores no fundo */
     .slot-confirmed   { background: #4e73df; color: #fff; }
