@@ -355,42 +355,44 @@
 
 <style>
   /* --- Layout mobile para tabela de agendamentos --- */
-@media (max-width: 768px) {
-  table.admin-table {
-    display: block;
-    width: 100%;
-    border-collapse: collapse;
+  @media (max-width: 768px) {
+    table.admin-table {
+      display: block;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.admin-table tbody,
+    table.admin-table tr,
+    table.admin-table td {
+      display: block;
+      width: 100%;
+    }
+
+    table.admin-table tr {
+      margin-bottom: 1rem;
+      border: none;
+      background: transparent;
+      padding: 0;
+    }
+
+    table.admin-table td {
+      border: 1px solid #333;       /* borda apenas no card */
+      border-radius: 0.5rem;
+      background: #1c1c1c;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    /* destaque da hora */
+    table.admin-table td:first-child {
+      font-weight: bold;
+      color: #0f0;
+      border-bottom: 1px solid #333;
+      background: #000; /* opcional: destaca hora com fundo diferente */
+      margin-bottom: 0.5rem;
+    }
   }
-
-
-
-  table.admin-table tbody,
-  table.admin-table tr,
-  table.admin-table td {
-    display: block;
-    width: 100%;
-  }
-
-  table.admin-table tr {
-    margin-bottom: 1rem; /* Espaço entre "linhas" */
-    border: 1px solid #333;
-    border-radius: 0.5rem;
-    background: #1c1c1c;
-    padding: 0.5rem;
-  }
-
-  table.admin-table td {
-    border: none;
-    padding: 0.5rem 0;
-  }
-
-  /* Opcional: destaque da hora */
-  table.admin-table td:first-child {
-    font-weight: bold;
-    color: #0f0;
-    border-bottom: 1px solid #333;
-  }
-}
 
   /* 1. Botão Exportar alinhado com título em telas pequenas */
   @media (max-width: 768px) {
@@ -429,7 +431,7 @@
     }
   }
 
-  /* 4. Scroll horizontal na tabela */
+  /* 4. Scroll horizontal na tabela (desktop) */
   .admin-table {
     overflow-x: auto;
     padding-bottom: 1rem;
@@ -440,7 +442,6 @@
   }
 
   /* 5. Ações (menu de 3 pontos) responsivo e funcional */
-
   .actions-menu {
     position: relative;
     display: flex;
@@ -455,7 +456,7 @@
     z-index: 2;
   }
 
-  /* Dropdown flutuante e sem quebrar tabela */
+  /* Dropdown flutuante */
   .actions-dropdown {
     display: none;
     position: absolute;
@@ -526,11 +527,12 @@
   }
 
   @media (max-width: 768px) {
-  .admin-table-wrapper table {
-    min-width: 100% !important;
+    .admin-table-wrapper table {
+      min-width: 100% !important;
+    }
   }
-}
 </style>
+
 
 
 
