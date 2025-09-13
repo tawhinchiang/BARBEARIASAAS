@@ -8,19 +8,36 @@ module.exports = {
     return JSON.stringify(context, null, 2);
   },
 
-  formatDate: function(date) {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('pt-BR');
-  },
+ formatDate: function(date) {
+  if (!date) return '';
+  
+  
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  
+  return new Date(date).toLocaleDateString('pt-BR');
+},
+
 dayOfWeek: function(date) {
   if (!date) return '';
   const dias = [
     'Domingo', 'Segunda-feira', 'Terça-feira',
     'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'
   ];
-  const d = new Date(date);
-  return dias[d.getDay()];
+
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split('-');
+    const jsDate = new Date(y, m - 1, d); // local
+    return dias[jsDate.getDay()];
+  }
+
+  const dObj = new Date(date);
+  return dias[dObj.getDay()];
 },
+
 
   formatTime: function(time) {
     if (!time) return '';
