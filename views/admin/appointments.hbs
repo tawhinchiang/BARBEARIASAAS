@@ -100,10 +100,11 @@
         <div class="col-12">
 
             <div class="admin-table">
-              <div class="admin-table-wrapper">
-                {{#if appointments.length}}
+              {{!-- <div class="admin-table-wrapper"> --}}
+
+                {{!-- {{#if appointments.length}} --}}
                 {{!-- Controles da TABELA: seletor de itens por página --}}
-              <div class="d-flex align-items-center justify-content-end mb-2 gap-2">
+                {{!-- <div class="d-flex align-items-center justify-content-end mb-2 gap-2">
                 <label for="pageSize" class="mb-0 small text-muted">Itens por página:</label>
                 <select id="pageSize" class="form-select form-select-sm" style="width:auto">
                   <option value="10"  {{#if (eq selectedLimit 10)}}selected{{/if}}>10</option>
@@ -111,7 +112,7 @@
                   <option value="50"  {{#if (eq selectedLimit 50)}}selected{{/if}}>50</option>
                   <option value="100" {{#if (eq selectedLimit 100)}}selected{{/if}}>100</option>
                 </select>
-              </div>
+                </div> --}}
 
                 <table class="table table-hover admin-table">
                  
@@ -119,51 +120,51 @@
                       {{> appointments-table-rows}}
                   </tbody>
                 </table>
-               {{#if pagination.totalPages}}
-  <div class="d-flex flex-column flex-md-row align-items-center justify-content-between mt-3 gap-2">
-    <div class="text-muted small ms-2">
-    Página {{pagination.currentPage}} de {{pagination.totalPages}}
-    </div>
+                  {{!-- {{#if pagination.totalPages}} --}}
+                  {{!-- <div class="d-flex flex-column flex-md-row align-items-center justify-content-between mt-3 gap-2">
+                  <div class="text-muted small ms-2">
+                  Página {{pagination.currentPage}} de {{pagination.totalPages}} 
+                  </div>
 
-<div class="pagination-wrapper">
-  <nav aria-label="Paginação de agendamentos">
-    <ul class="pagination pagination-sm mb-0">
-      <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
-        <a class="page-link" href="#" data-page="1" aria-label="Primeira">«</a>
-      </li>
+              {{!-- <div class="pagination-wrapper">
+                <nav aria-label="Paginação de agendamentos">
+                  <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
+                      <a class="page-link" href="#" data-page="1" aria-label="Primeira">«</a>
+                    </li>
 
-      <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
-        <a class="page-link" href="#" data-page="{{pagination.prevPage}}" aria-label="Anterior">‹</a>
-      </li>
+                    <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
+                      <a class="page-link" href="#" data-page="{{pagination.prevPage}}" aria-label="Anterior">‹</a>
+                    </li>
 
-      {{#each pagination.pages}}
-        {{#if (eq this '...')}}
-          <li class="page-item disabled"><span class="page-link">…</span></li>
-        {{else}}
-          <li class="page-item {{#if (eq ../pagination.currentPage this)}}active{{/if}}">
-            <a class="page-link" href="#" data-page="{{this}}">{{this}}</a>
-          </li>
-        {{/if}}
-      {{/each}}
+                    {{#each pagination.pages}}
+                      {{#if (eq this '...')}}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                      {{else}}
+                        <li class="page-item {{#if (eq ../pagination.currentPage this)}}active{{/if}}">
+                          <a class="page-link" href="#" data-page="{{this}}">{{this}}</a>
+                        </li>
+                      {{/if}}
+                    {{/each}}
 
-      <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
-        <a class="page-link" href="#" data-page="{{pagination.nextPage}}" aria-label="Próxima">›</a>
-      </li>
+                    <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
+                      <a class="page-link" href="#" data-page="{{pagination.nextPage}}" aria-label="Próxima">›</a>
+                    </li>
 
-      <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
-        <a class="page-link" href="#" data-page="{{pagination.totalPages}}" aria-label="Última">»</a>
-      </li>
-    </ul>
-  </nav>
-</div>
+                    <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
+                      <a class="page-link" href="#" data-page="{{pagination.totalPages}}" aria-label="Última">»</a>
+                    </li>
+                  </ul>
+                </nav>
+              </div> 
 
-  </div>
-{{/if}}
+                  </div> --}}
+                  {{!-- {{/if}} --}}
 
 
-                <div class="text-center my-3">
+                {{!-- <div class="text-center my-3">
 
-                </div>
+                </div> --}}
                 {{else}}
                 <div class="text-center py-5">
                   <div class="display-1 text-muted mb-3">
