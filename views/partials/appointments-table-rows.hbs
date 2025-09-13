@@ -1,6 +1,6 @@
 <thead>
   <tr>
-    <th class="text-center align-middle" style="width:100px;">Hora</th>
+    <th class="text-center align-middle" style="width:100px;">Horário</th>
     {{#each barbers}}
       <th class="text-start align-middle">
         <div class="d-flex align-items-center">
@@ -44,7 +44,7 @@
               </span>
             </div>
           {{else}}
-            <div class="text-success fw-semibold">Disponível</div>
+            {{!-- <div class="text-success fw-semibold">Disponível</div> --}}
             <button class="btn btn-outline-success btn-sm js-open-schedule mt-1"
                     data-barber="{{cell.barber.id}}"
                     data-date="{{../dateRaw}}"
