@@ -448,13 +448,26 @@
       align-items: center;
       justify-content: space-between;
     }
+.slot-free {
+  background: #f8f9fc;
+  border: 1px solid #ccc;
+  border-radius: 0.4rem;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  color: #198754;
+}
 
+.slot-free button {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+}
     /* Exemplos de cores por status */
-    .slot-confirmed { background: #d1e7dd; }   /* verde claro */
-    .slot-completed { background: #e0cffc; }   /* roxo claro */
-    .slot-cancelled { background: #f8d7da; }   /* vermelho claro */
-    .slot-pending   { background: #fff3cd; }   /* amarelo claro */
-    .slot-free      { background: #f1f1f1; color: #555; } /* cinza para horários livres */
+.slot-confirmed   { background: #4e73df; color: #fff; }   /* azul */
+.slot-in_progress { background: #f6c23e; color: #000; }   /* amarelo */
+.slot-completed   { background: #1cc88a; color: #fff; }   /* verde */
+.slot-cancelled   { background: #e74a3b; color: #fff; }   /* vermelho */
+.slot-no_show     { background: #858796; color: #fff; }   /* cinza */
+.slot-pending     { background: #36b9cc; color: #fff; }   /* ciano *//* cinza para horários livres */
   }
 
   /* Mobile extra pequeno */
@@ -542,6 +555,8 @@
   .actions-menu.show .actions-dropdown {
     display: block;
   }
+  
+
 </style>
 
 

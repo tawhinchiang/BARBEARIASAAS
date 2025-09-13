@@ -27,34 +27,30 @@
         <td class="align-top {{#if cell.appointment}}js-appointment-cell{{/if}}"
             {{#if cell.appointment}}data-id="{{cell.appointment.id}}"{{/if}}>
 
-          {{#if cell.appointment}}
-            <div class="slot-{{cell.appointment.status}}">
-              <div class="fw-semibold text-uppercase">
-                {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+            {{#if cell.appointment}}
+              <div class="slot-{{cell.appointment.status}}">
+                <div class="fw-semibold text-uppercase small">
+                  {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+                </div>
+                <div class="text-muted tiny">
+                  {{cell.appointment.serviceType.name}} ({{cell.appointment.serviceType.duration}} min)
+                </div>
+                <div class="fw-bold mt-1 small">
+                  {{formatCurrency cell.appointment.totalPrice}}
+                </div>
               </div>
-              <div class="text-muted small">
-                {{cell.appointment.serviceType.name}} ({{cell.appointment.serviceType.duration}} min)
+            {{else}}
+              <div class="slot-free text-center">
+                {{!-- <span>Disponível</span><br> --}}
+                <button class="btn btn-outline-success btn-sm js-open-schedule mt-1"
+                        data-barber="{{cell.barber.id}}"
+                        data-date="{{../dateRaw}}"
+                        data-time="{{slot.time}}">
+                  Agendar
+                </button>
               </div>
-              <div class="fw-bold mt-1">
-                {{formatCurrency cell.appointment.totalPrice}}
-              </div>
-              <div class="d-flex align-items-center gap-2 mt-1">
-                <span class="status-badge status-{{cell.appointment.status}}">
-                  {{statusText cell.appointment.status}}
-                </span>
-              </div>
-            </div>
-          {{else}}
-            <div class="slot-free d-flex flex-column align-items-start">
-              <div class="text-success fw-semibold">Disponível</div>
-              <button class="btn btn-outline-success btn-sm js-open-schedule mt-1"
-                      data-barber="{{cell.barber.id}}"
-                      data-date="{{../dateRaw}}"
-                      data-time="{{slot.time}}">
-                Agendar
-              </button>
-            </div>
-          {{/if}}
+            {{/if}}
+
         </td>
       {{/each}}
     </tr>
