@@ -14,7 +14,7 @@
 
 <thead>
   <tr>
-    <th class="text-center align-middle" style="width:100px;">Horário</th>
+    {{!-- <th class="text-center align-middle" style="width:100px;">Horário</th> --}}
     {{#each barbers}}
       <th class="text-start align-middle">
         <div class="d-flex align-items-center">
@@ -47,9 +47,9 @@
               <span class="fw-semibold text-truncate">
                 {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
               </span>
-              <span class="text-truncate">
+              {{!-- <span class="text-truncate">
                 {{cell.appointment.serviceType.name}} ({{cell.appointment.serviceType.duration}} min)
-              </span>
+              </span> --}}
               <span class="fw-bold">
                 {{formatCurrency cell.appointment.totalPrice}}
               </span>
