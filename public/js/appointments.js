@@ -35,15 +35,22 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function changeDay(offset) {
-    const url = new URL(window.location.href);
-    const currentDate = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + offset);
+  const url = new URL(window.location.href);
 
-    const formatted = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    url.searchParams.set('date', formatted);
-    window.location.href = url.toString(); // recarrega com nova data
-  }
+  // pega startDate atual ou hoje
+  const currentDate = url.searchParams.get('startDate') || new Date().toISOString().split('T')[0];
+  const newDate = new Date(currentDate);
+  newDate.setDate(newDate.getDate() + offset);
+
+  const formatted = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // atualiza a querystring
+  url.searchParams.set('startDate', formatted);
+  url.searchParams.delete('endDate'); // garante que não trave em intervalo
+
+  window.location.href = url.toString();
+}
+
     // 2. Configura alternância da visualização
   const toggleBtn = document.getElementById('toggleView');
   if (!toggleBtn) {

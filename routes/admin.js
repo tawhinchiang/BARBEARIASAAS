@@ -2,13 +2,13 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { User, Appointment, Client, Barber, ServiceType } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
-const {buildTimeSlots } =require('../utils/schedule.js')
+const { buildTimeSlots } = require('../utils/schedule.js')
 const {
   disconnectWhatsApp,
   initializeWhatsApp,
   getWhatsAppStatus,
   getLastQRCode,
-  sendWhatsAppMessage            
+  sendWhatsAppMessage
 } = require('../utils/whatsapp');
 const { isAuthenticated, isAuthenticatedApi } = require('../middleware/auth');
 const router = express.Router();
@@ -17,7 +17,7 @@ const { Op, literal } = require('sequelize');
 const fs = require('fs'); // se ainda não tiver no topo
 const todayStr = new Date().toLocaleDateString('en-CA');
 const { generateTimeSlots, getBlockedTimesWithDuration } = require('../utils/timeSlots');
- // ajuste conforme o banco usado
+// ajuste conforme o banco usado
 
 // admin.js (rotas admin) – helper no topo do arquivo
 function buildOrder(sort) {
@@ -28,13 +28,13 @@ function buildOrder(sort) {
                          ELSE 99
                        END`;
   switch (sort) {
-    case 'date_asc':  return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
-    case 'date_desc': return [['appointmentDate','DESC'],['appointmentTime','DESC'], [literal(statusOrder),'ASC']];
-    case 'value_asc': return [['totalPrice','ASC']];
-    case 'value_desc':return [['totalPrice','DESC']];
-    case 'barber_asc':return [[literal('"barber"."name"'),'ASC']];
-    case 'barber_desc':return [[literal('"barber"."name"'),'DESC']];
-    default:          return [['appointmentDate','ASC'],['appointmentTime','ASC'], [literal(statusOrder),'ASC']];
+    case 'date_asc': return [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
+    case 'date_desc': return [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC'], [literal(statusOrder), 'ASC']];
+    case 'value_asc': return [['totalPrice', 'ASC']];
+    case 'value_desc': return [['totalPrice', 'DESC']];
+    case 'barber_asc': return [[literal('"barber"."name"'), 'ASC']];
+    case 'barber_desc': return [[literal('"barber"."name"'), 'DESC']];
+    default: return [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
   }
 }
 // Helper para paginação numerada com "…"
@@ -243,79 +243,79 @@ router.get('/dashboard', async (req, res) => {
     });
 
     // Bloco Novo e Corrigido
-// Substitua pelo Bloco Novo e Mais Robusto
-const topBarbersRaw = await Appointment.findAll({
-  attributes: [
-    [require('sequelize').col('barber.id'), 'barberId'], // Seleciona o ID do barbeiro diretamente
-    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
-    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-  ],
-  where: {
-    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-    status: { [Op.in]: ['completed'] }
-  },
-  include: [{
-    model: Barber,
-    as: 'barber',
-    attributes: ['name'] // Apenas o nome é necessário para o resultado
-  }],
-  group: [
-    require('sequelize').col('barber.id'), // Agrupa pelo ID e nome do barbeiro
-    require('sequelize').col('barber.name')
-  ],
-  order: [
-    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
-  ],
-  limit: 5,
-  raw: true,
-  nest: true
-});
+    // Substitua pelo Bloco Novo e Mais Robusto
+    const topBarbersRaw = await Appointment.findAll({
+      attributes: [
+        [require('sequelize').col('barber.id'), 'barberId'], // Seleciona o ID do barbeiro diretamente
+        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+      ],
+      where: {
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+        status: { [Op.in]: ['completed'] }
+      },
+      include: [{
+        model: Barber,
+        as: 'barber',
+        attributes: ['name'] // Apenas o nome é necessário para o resultado
+      }],
+      group: [
+        require('sequelize').col('barber.id'), // Agrupa pelo ID e nome do barbeiro
+        require('sequelize').col('barber.name')
+      ],
+      order: [
+        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+      ],
+      limit: 5,
+      raw: true,
+      nest: true
+    });
 
 
-  const topBarbers = topBarbersRaw.map(item => ({
-  name: item.barber?.name || 'Barbeiro Desconhecido', // <-- Usa o nome do barbeiro da inclusão
-  appointmentCount: item.appointmentCount,
-  totalRevenue: item.totalRevenue
-}));
+    const topBarbers = topBarbersRaw.map(item => ({
+      name: item.barber?.name || 'Barbeiro Desconhecido', // <-- Usa o nome do barbeiro da inclusão
+      appointmentCount: item.appointmentCount,
+      totalRevenue: item.totalRevenue
+    }));
 
-   // Substitua pelo Bloco Novo e Mais Robusto
-const topServicesRaw = await Appointment.findAll({
-  attributes: [
-    [require('sequelize').col('serviceType.id'), 'serviceTypeId'], // Seleciona o ID do serviço
-    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
-    [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
-  ],
-  where: {
-    appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
-    status: 'completed'
-  },
-  include: [{
-    model: ServiceType,
-    as: 'serviceType',
-    attributes: ['name', 'duration', 'price'] // Atributos necessários
-  }],
-  group: [
-    require('sequelize').col('serviceType.id'), // Agrupa por todas as colunas não agregadas
-    require('sequelize').col('serviceType.name'),
-    require('sequelize').col('serviceType.duration'),
-    require('sequelize').col('serviceType.price')
-  ],
-  order: [
-    [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
-  ],
-  limit: 5,
-  raw: true,
-  nest: true
-});
+    // Substitua pelo Bloco Novo e Mais Robusto
+    const topServicesRaw = await Appointment.findAll({
+      attributes: [
+        [require('sequelize').col('serviceType.id'), 'serviceTypeId'], // Seleciona o ID do serviço
+        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'appointmentCount'],
+        [require('sequelize').fn('SUM', require('sequelize').col('totalPrice')), 'totalRevenue']
+      ],
+      where: {
+        appointmentDate: { [Op.between]: [startOfMonth, endOfMonth] },
+        status: 'completed'
+      },
+      include: [{
+        model: ServiceType,
+        as: 'serviceType',
+        attributes: ['name', 'duration', 'price'] // Atributos necessários
+      }],
+      group: [
+        require('sequelize').col('serviceType.id'), // Agrupa por todas as colunas não agregadas
+        require('sequelize').col('serviceType.name'),
+        require('sequelize').col('serviceType.duration'),
+        require('sequelize').col('serviceType.price')
+      ],
+      order: [
+        [require('sequelize').fn('COUNT', require('sequelize').col('Appointment.id')), 'DESC']
+      ],
+      limit: 5,
+      raw: true,
+      nest: true
+    });
 
-const topServices = topServicesRaw.map(item => ({
-  name: item.serviceType?.name || 'Serviço Desconhecido', // <-- Usa o nome do serviço da inclusão
-  duration: item.serviceType?.duration || 0,
-  price: item.serviceType?.price || '0.00',
-  appointmentCount: item.appointmentCount,
-  totalRevenue: item.totalRevenue,
-  percentage: 0
-}));
+    const topServices = topServicesRaw.map(item => ({
+      name: item.serviceType?.name || 'Serviço Desconhecido', // <-- Usa o nome do serviço da inclusão
+      duration: item.serviceType?.duration || 0,
+      price: item.serviceType?.price || '0.00',
+      appointmentCount: item.appointmentCount,
+      totalRevenue: item.totalRevenue,
+      percentage: 0
+    }));
     const formattedRecentAppointments = todayAppointments.map(app => {
       const [year, month, day] = app.appointmentDate.split('-');
       const localDate = new Date(year, month - 1, day);
@@ -364,7 +364,7 @@ const topServices = topServicesRaw.map(item => ({
 // Listagem e gerenciamento de agendamentos - COM ORDENAÇÃO E FILTROS COMPLETOS
 router.get('/appointments', async (req, res) => {
   try {
-      log('Acessando listagem de agendamentos', {
+    log('Acessando listagem de agendamentos', {
       user: req.session.user,
       query: req.query
     });
@@ -378,7 +378,7 @@ router.get('/appointments', async (req, res) => {
 
     // ✅ Data inicial: hoje (se não vier na query)
     if (startDate && endDate) {
-    whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
+      whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
     } else if (startDate) {
       // força mostrar só aquele dia
       whereClause.appointmentDate = startDate;
@@ -408,8 +408,8 @@ router.get('/appointments', async (req, res) => {
                            ELSE 99
                          END`;
 
-   const order = buildOrder(sort);
-    
+    const order = buildOrder(sort);
+
 
     const { count, rows: appointments } = await Appointment.findAndCountAll({
       where: whereClause,
@@ -422,14 +422,14 @@ router.get('/appointments', async (req, res) => {
       limit,
       offset
     });
-     const totalPages = Math.max(1, Math.ceil(count / limit));
+    const totalPages = Math.max(1, Math.ceil(count / limit));
     const pages = buildPages(page, totalPages);
     const prevPage = page > 1 ? page - 1 : 1;
     const nextPage = page < totalPages ? page + 1 : totalPages;
- 
-   const barbers = await Barber.findAll({
-  where: { isActive: true, ...(barberId && { id: barberId }) }
-});
+
+    const barbers = await Barber.findAll({
+      where: { isActive: true, ...(barberId && { id: barberId }) }
+    });
     const formattedAppointments = appointments.map(app => {
       const plain = app.toJSON();
       const serviceType = plain.serviceType || {};
@@ -457,64 +457,64 @@ router.get('/appointments', async (req, res) => {
         }
       };
     });
-   
 
 
-let freeSlots = [];
-for (const barber of barbers) {
-  // Determinar data base (ou intervalo se quiser mais dias)
-  const date = startDate || todayStr;
 
-  // Parse do workingHours do barbeiro
-  let parsed = {};
-  try {
-    parsed = typeof barber.workingHours === 'string'
-      ? JSON.parse(barber.workingHours)
-      : barber.workingHours || {};
-  } catch (err) {
-    parsed = {};
-  }
+    let freeSlots = [];
+    for (const barber of barbers) {
+      // Determinar data base (ou intervalo se quiser mais dias)
+      const date = startDate || todayStr;
 
-  const selectedDate = new Date(date + 'T00:00:00');
-  const dayOfWeek = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][selectedDate.getDay()];
+      // Parse do workingHours do barbeiro
+      let parsed = {};
+      try {
+        parsed = typeof barber.workingHours === 'string'
+          ? JSON.parse(barber.workingHours)
+          : barber.workingHours || {};
+      } catch (err) {
+        parsed = {};
+      }
 
-  const workingPeriods = [];
-  if (parsed[dayOfWeek]) {
-    const cfg = parsed[dayOfWeek];
-    if (cfg.morning && cfg.morning !== 'closed') workingPeriods.push(cfg.morning);
-    if (cfg.afternoon && cfg.afternoon !== 'closed') workingPeriods.push(cfg.afternoon);
-  }
+      const selectedDate = new Date(date + 'T00:00:00');
+      const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
 
-  // Agendamentos do barbeiro nesta data
-  const barberAppointments = appointments.filter(a => a.barberId === barber.id);
-  const bookedTimes = getBlockedTimesWithDuration(barberAppointments);
+      const workingPeriods = [];
+      if (parsed[dayOfWeek]) {
+        const cfg = parsed[dayOfWeek];
+        if (cfg.morning && cfg.morning !== 'closed') workingPeriods.push(cfg.morning);
+        if (cfg.afternoon && cfg.afternoon !== 'closed') workingPeriods.push(cfg.afternoon);
+      }
 
-  // Gerar slots livres
-  workingPeriods.forEach(period => {
-    const [start, end] = period.split('-');
-    const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
-    slots.forEach(time => {
-      freeSlots.push({
-        id: null,
-        barber,
-        barberId: barber.id,
-        appointmentDateFormatted: formatDateYYYYMMDD(date),
-        appointmentTimeFormatted: time,
-        client: { firstName: '', lastName: '' },
-        serviceType: { name: 'Livre', duration: '' },
-        totalPrice: 0,
-        status: 'free'
+      // Agendamentos do barbeiro nesta data
+      const barberAppointments = appointments.filter(a => a.barberId === barber.id);
+      const bookedTimes = getBlockedTimesWithDuration(barberAppointments);
+
+      // Gerar slots livres
+      workingPeriods.forEach(period => {
+        const [start, end] = period.split('-');
+        const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
+        slots.forEach(time => {
+          freeSlots.push({
+            id: null,
+            barber,
+            barberId: barber.id,
+            appointmentDateFormatted: formatDateYYYYMMDD(date),
+            appointmentTimeFormatted: time,
+            client: { firstName: '', lastName: '' },
+            serviceType: { name: 'Livre', duration: '' },
+            totalPrice: 0,
+            status: 'free'
+          });
+        });
       });
-    });
-  });
-}
+    }
 
-// Mesclar
-const merged = [...formattedAppointments, ...freeSlots];
-// Ordenar pela hora
-merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
-const timeSlots = buildTimeSlots(merged, barbers, 30);
-
+    // Mesclar
+    const merged = [...formattedAppointments, ...freeSlots];
+    // Ordenar pela hora
+    merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
+    const timeSlots = buildTimeSlots(merged, barbers, 30);
+    const currentDate = startDate || todayStr;
     res.render('admin/appointments', {
       title: 'Gerenciar Agendamentos',
       pageTitle: 'Agendamentos',
@@ -523,18 +523,19 @@ const timeSlots = buildTimeSlots(merged, barbers, 30);
       user: req.session.user,
       appointments: merged,
       timeSlots,
-      barbers,
+      barbers, 
+      currentDateRaw: currentDate,
       filters: { startDate, endDate, barberId, status, sort, limit },
-       selectedLimit: limit,
-       pagination: {
-      currentPage: page,
-      totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1,
-      nextPage,
-      prevPage,
-      pages   
-    }
+      selectedLimit: limit,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+        nextPage,
+        prevPage,
+        pages
+      }
     });
   } catch (error) {
     console.error('[DEBUG ERRO]', error);
@@ -565,14 +566,14 @@ router.get('/appointments/partial', async (req, res) => {
     const p = Math.max(parseInt(page) || 1, 1);
     const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-    const DEFAULT_STATUSES = ['in_progress','confirmed','completed'];
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
     const todayStr = new Date().toLocaleDateString('en-CA');
-
+    const currentDate = startDate || todayStr;
     const where = {};
     if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
     else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
     else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
-    else where.appointmentDate = { [Op.gte]: todayStr };
+    else  where.appointmentDate = currentDate;
 
     if (barberId) where.barberId = Number(barberId);
     where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
@@ -602,67 +603,67 @@ router.get('/appointments/partial', async (req, res) => {
     });
 
 
-const barbers = await Barber.findAll({
-  where: { isActive: true, ...(barberId && { id: barberId }) }
-});
-
-let freeSlots = [];
-for (const barber of barbers) {
-  // Determinar data base (ou intervalo se quiser mais dias)
-  const date = startDate || todayStr;
-
-  // Parse do workingHours do barbeiro
-  let parsed = {};
-  try {
-    parsed = typeof barber.workingHours === 'string'
-      ? JSON.parse(barber.workingHours)
-      : barber.workingHours || {};
-  } catch (err) {
-    parsed = {};
-  }
-
-  const selectedDate = new Date(date + 'T00:00:00');
-  const dayOfWeek = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][selectedDate.getDay()];
-
-  const workingPeriods = [];
-  if (parsed[dayOfWeek]) {
-    const cfg = parsed[dayOfWeek];
-    if (cfg.morning && cfg.morning !== 'closed') workingPeriods.push(cfg.morning);
-    if (cfg.afternoon && cfg.afternoon !== 'closed') workingPeriods.push(cfg.afternoon);
-  }
-
-  // Agendamentos do barbeiro nesta data
-  const barberAppointments = rows.filter(a => a.barberId === barber.id);
-  const bookedTimes = getBlockedTimesWithDuration(barberAppointments);
-
-  // Gerar slots livres
-  workingPeriods.forEach(period => {
-    const [start, end] = period.split('-');
-    const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
-    slots.forEach(time => {
-      freeSlots.push({
-        id: null,
-        barber,
-        barberId: barber.id,
-        appointmentDateFormatted: formatDateYYYYMMDD(date),
-        appointmentTimeFormatted: time,
-        client: { firstName: '', lastName: '' },
-        serviceType: { name: 'Livre', duration: '' },
-        totalPrice: 0,
-        status: 'free'
-      });
+    const barbers = await Barber.findAll({
+      where: { isActive: true, ...(barberId && { id: barberId }) }
     });
-  });
-}
 
-// Mesclar
-const merged = [...formattedAppointments, ...freeSlots];
-// Ordenar pela hora
-merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
-const timeSlots = buildTimeSlots(merged, barbers, 30);
+    let freeSlots = [];
+    for (const barber of barbers) {
+      // Determinar data base (ou intervalo se quiser mais dias)
+      const date = startDate || todayStr;
+
+      // Parse do workingHours do barbeiro
+      let parsed = {};
+      try {
+        parsed = typeof barber.workingHours === 'string'
+          ? JSON.parse(barber.workingHours)
+          : barber.workingHours || {};
+      } catch (err) {
+        parsed = {};
+      }
+
+      const selectedDate = new Date(date + 'T00:00:00');
+      const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][selectedDate.getDay()];
+
+      const workingPeriods = [];
+      if (parsed[dayOfWeek]) {
+        const cfg = parsed[dayOfWeek];
+        if (cfg.morning && cfg.morning !== 'closed') workingPeriods.push(cfg.morning);
+        if (cfg.afternoon && cfg.afternoon !== 'closed') workingPeriods.push(cfg.afternoon);
+      }
+
+      // Agendamentos do barbeiro nesta data
+      const barberAppointments = rows.filter(a => a.barberId === barber.id);
+      const bookedTimes = getBlockedTimesWithDuration(barberAppointments);
+
+      // Gerar slots livres
+      workingPeriods.forEach(period => {
+        const [start, end] = period.split('-');
+        const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
+        slots.forEach(time => {
+          freeSlots.push({
+            id: null,
+            barber,
+            barberId: barber.id,
+            appointmentDateFormatted: formatDateYYYYMMDD(date),
+            appointmentTimeFormatted: time,
+            client: { firstName: '', lastName: '' },
+            serviceType: { name: 'Livre', duration: '' },
+            totalPrice: 0,
+            status: 'free'
+          });
+        });
+      });
+    }
+
+    // Mesclar
+    const merged = [...formattedAppointments, ...freeSlots];
+    // Ordenar pela hora
+    merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
+    const timeSlots = buildTimeSlots(merged, barbers, 30);
 
     // Renderiza partial em string
-    res.render('partials/appointments-table-rows', { layout: false, appointments: merged,timeSlots }, (err, html) => {
+    res.render('partials/appointments-table-rows', { layout: false, appointments: merged, timeSlots }, (err, html) => {
       if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
       const hasNext = (p * l) < count;
       res.json({ html, hasNext, nextPage: p + 1 });
@@ -679,14 +680,14 @@ router.get('/appointments/partial-cards', async (req, res) => {
     const p = Math.max(parseInt(page) || 1, 1);
     const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-    const DEFAULT_STATUSES = ['in_progress','confirmed','completed'];
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
     const todayStr = new Date().toLocaleDateString('en-CA');
-
+    const currentDate = startDate || todayStr;
     const where = {};
     if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
     else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
     else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
-    else where.appointmentDate = { [Op.gte]: todayStr };
+    else where.appointmentDate = currentDate;
 
     if (barberId) where.barberId = Number(barberId);
     where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
@@ -754,7 +755,7 @@ router.get('/reports', async (req, res) => {
     const { startDate, endDate, barberId, status, sort } = req.query;
 
     // paginação
-    const page  = Math.max(parseInt(req.query.page)  || 1, 1);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100);
     const offset = (page - 1) * limit;
 
@@ -764,13 +765,13 @@ router.get('/reports', async (req, res) => {
     const todayStr = new Date().toLocaleDateString('en-CA');
     const whereClause = {};
 
-    if (startDate && endDate)       whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
-    else if (startDate)             whereClause.appointmentDate = { [Op.gte]: startDate };
-    else if (endDate)               whereClause.appointmentDate = { [Op.lte]: endDate };
-    else                            whereClause.appointmentDate = { [Op.gte]: todayStr };
+    if (startDate && endDate) whereClause.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate) whereClause.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate) whereClause.appointmentDate = { [Op.lte]: endDate };
+    else whereClause.appointmentDate = { [Op.gte]: todayStr };
 
     if (barberId) whereClause.barberId = Number(barberId);
-    if (status)   whereClause.status   = status;
+    if (status) whereClause.status = status;
 
     const order = buildOrder(sort);
 
@@ -787,9 +788,9 @@ router.get('/reports', async (req, res) => {
     });
 
     const totalPages = Math.max(1, Math.ceil(count / limit));
-    const pages      = buildPages(page, totalPages);
-    const prevPage   = page > 1 ? page - 1 : 1;
-    const nextPage   = page < totalPages ? page + 1 : totalPages;
+    const pages = buildPages(page, totalPages);
+    const prevPage = page > 1 ? page - 1 : 1;
+    const nextPage = page < totalPages ? page + 1 : totalPages;
 
     const formatted = rows.map(app => {
       const j = app.toJSON();
@@ -840,10 +841,10 @@ router.get('/reports', async (req, res) => {
       adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       layout: 'admin',
       user: req.session.user,
-      appointments: formatted, 
+      appointments: formatted,
       barbers,
       view,
-      stats, 
+      stats,
       filters: { startDate, endDate, barberId, status, sort, limit },
       selectedLimit: limit,
       pagination: {
@@ -899,40 +900,40 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
 
 
     // ---- ORDENAR COMO /appointments ----
-const statusOrder = `CASE "Appointment"."status"
+    const statusOrder = `CASE "Appointment"."status"
                        WHEN 'in_progress' THEN 1
                        WHEN 'confirmed'   THEN 2
                        WHEN 'completed'   THEN 3
                        ELSE 99
                      END`;
 
-let order = [
-  ['appointmentDate', 'ASC'],
-  ['appointmentTime', 'ASC'],
-  [literal(statusOrder), 'ASC']
-];
+    let order = [
+      ['appointmentDate', 'ASC'],
+      ['appointmentTime', 'ASC'],
+      [literal(statusOrder), 'ASC']
+    ];
 
-if (sort === 'date_asc') {
-  order = [
-    ['appointmentDate', 'ASC'],
-    ['appointmentTime', 'ASC'],
-    [literal(statusOrder), 'ASC']
-  ];
-} else if (sort === 'date_desc') {
-  order = [
-    ['appointmentDate', 'DESC'],
-    ['appointmentTime', 'DESC'],
-    [literal(statusOrder), 'ASC']
-  ];
-} else if (sort === 'value_desc') {
-  order = [['totalPrice', 'DESC']];
-} else if (sort === 'value_asc') {
-  order = [['totalPrice', 'ASC']];
-} else if (sort === 'barber_asc') {
-  order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];  // 👈 alias correto
-} else if (sort === 'barber_desc') {
-  order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
-}
+    if (sort === 'date_asc') {
+      order = [
+        ['appointmentDate', 'ASC'],
+        ['appointmentTime', 'ASC'],
+        [literal(statusOrder), 'ASC']
+      ];
+    } else if (sort === 'date_desc') {
+      order = [
+        ['appointmentDate', 'DESC'],
+        ['appointmentTime', 'DESC'],
+        [literal(statusOrder), 'ASC']
+      ];
+    } else if (sort === 'value_desc') {
+      order = [['totalPrice', 'DESC']];
+    } else if (sort === 'value_asc') {
+      order = [['totalPrice', 'ASC']];
+    } else if (sort === 'barber_asc') {
+      order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];  // 👈 alias correto
+    } else if (sort === 'barber_desc') {
+      order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
+    }
 
     // Buscar dados com Sequelize
     const appointments = await Appointment.findAll({
@@ -954,7 +955,7 @@ if (sort === 'date_asc') {
     const filename = `relatorio-${Date.now()}.${format}`;
     const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
 
-    
+
 
 
     if (format === 'pdf') {
@@ -968,18 +969,18 @@ if (sort === 'date_asc') {
           else console.log(`Arquivo PDF excluído: ${filename}`);
         });
       });
-} else if (format === 'csv') {
-  const filePath = await generateCSV(appointments, filename);
-  return res.download(filePath, filename, (err) => {
-    if (err) console.error('Erro ao enviar CSV:', err);
-    fs.unlink(filePath, (err) => {
-      if (err) console.error('Erro ao excluir CSV temporário:', err);
-      else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
-    });
-  });
-} else {
-  return res.status(400).json({ error: 'Formato inválido.' });
-}
+    } else if (format === 'csv') {
+      const filePath = await generateCSV(appointments, filename);
+      return res.download(filePath, filename, (err) => {
+        if (err) console.error('Erro ao enviar CSV:', err);
+        fs.unlink(filePath, (err) => {
+          if (err) console.error('Erro ao excluir CSV temporário:', err);
+          else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
+        });
+      });
+    } else {
+      return res.status(400).json({ error: 'Formato inválido.' });
+    }
 
   } catch (error) {
     console.error('[EXPORT ERROR]', error);
@@ -987,84 +988,6 @@ if (sort === 'date_asc') {
   }
 });
 
-// router.get('/appointments/schedule', async (req, res, next) => {
-//   try {
-//     const date = req.query.date || new Date().toISOString().slice(0,10);
-//     const step = Number(req.query.step || 30);
-//     const onlyBarberId = req.query.barberId ? Number(req.query.barberId) : null;
-
-//     // 1) Barbeiros
-//     const barbers = await getBarbers(); // [{id,name,workingHours:{monday:{morning,afternoon},...}}]
-//     const activeBarbers = barbers.filter(b => !onlyBarberId || b.id === onlyBarberId);
-
-//     // 2) Períodos do dia por barbeiro + limites globais (para alinhar a grade entre colunas)
-//     let globalStart = Infinity, globalEnd = -Infinity;
-//     const periodsByBarber = {};
-//     for (const b of activeBarbers) {
-//       const periods = getDayPeriods(b.workingHours, date);
-//       periodsByBarber[b.id] = periods;
-//       const starts = periods.map(p => p[0]);
-//       const ends = periods.map(p => p[1]);
-//       if (starts.length) globalStart = Math.min(globalStart, ...starts);
-//       if (ends.length)   globalEnd   = Math.max(globalEnd,   ...ends);
-//     }
-//     // Se algum barbeiro não tem expediente definido, define jan/fev default 08–18 (opcional)
-//     if (!Number.isFinite(globalStart) || !Number.isFinite(globalEnd)) {
-//       globalStart = toMin('08:00'); globalEnd = toMin('18:00');
-//     }
-
-//     // 3) Agendamentos do dia (qualquer status que bloqueie horário)
-//     // Ajuste a função abaixo para retornar [{barberId, startTime:"HH:mm", endTime:"HH:mm", status, ...}]
-//     const appts = await getAppointmentsByDate(date);
-
-//     // 4) Mapa de intervalos ocupados por barbeiro
-//     const bookedByBarber = new Map();
-//     for (const b of activeBarbers) bookedByBarber.set(b.id, []);
-//     for (const a of appts) {
-//       // Defina quais status bloqueiam (confirmado, em_atendimento, concluído etc.)
-//       if (['confirmed','in_progress','completed'].includes(a.status)) {
-//         const s = toMin(a.startTime);
-//         const e = toMin(a.endTime || a.startTime); // se não tiver endTime, calcule por duração do serviço
-//         bookedByBarber.get(a.barberId)?.push([s,e,{ appointment:a }]);
-//       }
-//     }
-
-//     // 5) Monta a matriz de slots (linhas = horas, colunas = barbeiros)
-//     const rows = [];
-//     for (let t = globalStart; t < globalEnd; t += step) {
-//       const row = { time: fromMin(t), cells: [] };
-//       for (const b of activeBarbers) {
-//         const periods = periodsByBarber[b.id] || [];
-//         const inside = inAnyPeriod(t, periods);
-//         if (!inside) {
-//           row.cells.push({ barberId: b.id, status: 'off' });
-//           continue;
-//         }
-//         const blocks = bookedByBarber.get(b.id) || [];
-//         const hit = blocks.find(([bs,be]) => overlaps([t, t+step], [bs,be]));
-//         if (hit) {
-//           const info = hit[2] || {};
-//           row.cells.push({ barberId: b.id, status: 'booked', appointment: info.appointment });
-//         } else {
-//           row.cells.push({ barberId: b.id, status: 'free' });
-//         }
-//       }
-//       rows.push(row);
-//     }
-
-//     // 6) Renderiza view nova
-//     res.render('admin/appointments-schedule', {
-//       layout: 'admin',
-//       pageTitle: 'Grade de horários',
-//       date,
-//       step,
-//       barbers: activeBarbers,
-//       slots: rows
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// });
 
 router.get('/appointments/:id', async (req, res) => {
   // const { id } = req.params;
@@ -1227,10 +1150,10 @@ router.post('/api/appointments/:id/cancel', async (req, res) => {
 
     const { reason } = req.body; // Motivo opcional
     await appointment.update({
-    status: 'cancelled',
-    cancelReason: reason || null,
-    cancelledAt: new Date()
-  });
+      status: 'cancelled',
+      cancelReason: reason || null,
+      cancelledAt: new Date()
+    });
     res.json({ success: true, reason });
   } catch (error) {
     logError('Erro ao cancelar agendamento', error);
@@ -1302,15 +1225,15 @@ router.put('/appointments/:id', async (req, res) => {
     if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
 
     // atualiza campos básicos
-    appointment.serviceTypeId   = serviceTypeId;
-    appointment.barberId        = barberId;
+    appointment.serviceTypeId = serviceTypeId;
+    appointment.barberId = barberId;
     appointment.appointmentDate = appointmentDate;
     appointment.appointmentTime = appointmentTime;
 
     // garante que o PREÇO e a DURAÇÃO acompanhem o serviço selecionado
     const service = await ServiceType.findByPk(serviceTypeId);
     if (service) {
-      appointment.totalPrice      = service.price;
+      appointment.totalPrice = service.price;
       appointment.serviceDuration = service.duration;
     }
 
@@ -1363,16 +1286,16 @@ router.post('/whatsapp/disconnect', async (req, res) => {
   }
 });
 
-function toMin(t) { const [h,m] = t.split(':').map(Number); return h*60 + m; }
-function fromMin(min) { const h = String(Math.floor(min/60)).padStart(2,'0'); const m = String(min%60).padStart(2,'0'); return `${h}:${m}`; }
+function toMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+function fromMin(min) { const h = String(Math.floor(min / 60)).padStart(2, '0'); const m = String(min % 60).padStart(2, '0'); return `${h}:${m}`; }
 function parsePeriod(str) { // "08:00-12:00" -> [480,720]
   if (!str || !str.includes('-')) return null;
-  const [a,b] = str.split('-').map(toMin);
-  return [Math.min(a,b), Math.max(a,b)];
+  const [a, b] = str.split('-').map(toMin);
+  return [Math.min(a, b), Math.max(a, b)];
 }
 function dayKey(dateStr) {
   const d = new Date(dateStr);
-  return ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][d.getDay()];
+  return ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][d.getDay()];
 }
 function getDayPeriods(workingHours, dateStr) {
   const wk = workingHours || {};
@@ -1386,9 +1309,9 @@ function getDayPeriods(workingHours, dateStr) {
   return out; // array de [start,end] em minutos
 }
 function inAnyPeriod(min, periods) {
-  return periods.some(([s,e]) => min >= s && min < e);
+  return periods.some(([s, e]) => min >= s && min < e);
 }
-function overlaps([s1,e1],[s2,e2]) {
+function overlaps([s1, e1], [s2, e2]) {
   return s1 < e2 && s2 < e1;
 }
 
