@@ -1322,27 +1322,11 @@ function closeActionPanel() {
 document.addEventListener('DOMContentLoaded', () => {
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-  // --- Encaixe ---
-  document.addEventListener('click', e => {
-    const fitinBtn = e.target.closest('.js-open-fitin');
-    if (fitinBtn) {
-      document.getElementById('fitInMode').value = 'fitin';
-      document.querySelector('#fitInModal .modal-title').textContent = 'Novo Encaixe';
-      document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Encaixe';
-
-      const openBtn = document.getElementById('openFitInBtn');
-      if (openBtn) openBtn.click();
-      return;
-    }
-  });
-
-  // --- Agendamento Normal ---
   if (isMobile) {
     // Clique simples no mobile
     document.addEventListener('click', e => {
       const scheduleBtn = e.target.closest('.js-open-schedule');
       if (!scheduleBtn) return;
-
       abrirModalAgendamento(scheduleBtn);
     });
   } else {
@@ -1350,7 +1334,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('dblclick', e => {
       const scheduleBtn = e.target.closest('.js-open-schedule');
       if (!scheduleBtn) return;
-
       abrirModalAgendamento(scheduleBtn);
     });
   }
@@ -1374,6 +1357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 200);
   }
 });
+
 
 
 
