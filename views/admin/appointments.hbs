@@ -497,10 +497,10 @@
   /* --- Desktop mantém tabela normal --- */
   @media (min-width: 769px) {
   .admin-table {
-    display: table !important;          /* 🔥 garante que volte a tabela */
+    display: table !important;
     width: 100% !important;
     border-collapse: collapse;
-    table-layout: auto;                 /* cada coluna se ajusta */
+    table-layout: auto;
   }
 
   .admin-table thead {
@@ -512,16 +512,16 @@
   }
 
   .admin-table tr {
-    display: table-row !important;      /* 🔥 reseta flex do mobile */
+    display: table-row !important;
   }
 
   .admin-table td,
   .admin-table th {
-    display: table-cell !important;     /* 🔥 volta ao padrão */
+    display: table-cell !important;
     vertical-align: middle;
     padding: 0.5rem;
     white-space: normal;
-    word-break: break-word;             /* quebra nomes longos */
+    word-break: break-word;
   }
 
   .admin-table td > div {
@@ -529,10 +529,27 @@
     justify-content: space-between;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: wrap;                    /* permite quebrar texto */
-    width: 100%;                        /* ocupa toda a célula */
+    flex-wrap: wrap;
+    width: 100%;
+    border-radius: 0.25rem;
+    padding: 0.3rem 0.4rem;
+  }
+
+  /* 🔥 Status → pinta fundo no desktop também */
+  .admin-table td .slot-confirmed   { background: #4e73df; color: #fff; }
+  .admin-table td .slot-in_progress { background: #f6c23e; color: #000; }
+  .admin-table td .slot-completed   { background: #1cc88a; color: #fff; }
+  .admin-table td .slot-cancelled   { background: #e74a3b; color: #fff; }
+  .admin-table td .slot-no_show     { background: #858796; color: #fff; }
+  .admin-table td .slot-pending     { background: #36b9cc; color: #fff; }
+
+  /* Opcional: slot livre mantém borda discreta */
+  .admin-table td .slot-free {
+    border: 1px solid #ccc;
+    background: transparent;
   }
 }
+
 
   .admin-table-wrapper {
     overflow-x: auto;
