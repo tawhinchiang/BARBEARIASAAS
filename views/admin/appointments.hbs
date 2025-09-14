@@ -433,36 +433,12 @@
     display: table !important;
     width: 100% !important;
     border-collapse: collapse;
-    table-layout: fixed;
+    table-layout: fixed; /* garante colunas uniformes */
   }
 
-  .admin-table tr {
-    height: 44px; /* 🔥 altura padrão das linhas */
-  }
-
-  .admin-table td,
-  .admin-table th {
-    display: table-cell !important;
-    vertical-align: middle;
-    padding: 0.3rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    height: 44px; /* 🔥 força td acompanhar a linha */
-  }
-
-  .admin-table td > div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.6rem;
+  .admin-table-wrapper {
+    overflow-x: auto; /* 🔥 ativa scroll horizontal se não couber */
     width: 100%;
-    border-radius: 0.25rem;
-    padding: 0.35rem 0.6rem;
-    font-size: 0.8rem;
-    line-height: 1.2;
-    height: 100%;     /* 🔥 ocupa toda a altura da célula */
-    box-sizing: border-box;
   }
 
   /* Coluna do horário */
@@ -475,11 +451,35 @@
     color: #fff;
   }
 
-  /* Colunas dos barbeiros */
+  /* Colunas dos barbeiros → mais largas */
   .admin-table td:not(:first-child),
   .admin-table th:not(:first-child) {
-    min-width: 300px;
-    max-width: 400px;
+    min-width: 300px;   /* 🔥 largura mínima maior */
+    max-width: 400px;   /* 🔥 limite confortável */
+  }
+
+  .admin-table td,
+  .admin-table th {
+    display: table-cell !important;
+    vertical-align: middle;
+    padding: 0.5rem;
+    white-space: nowrap;  /* 🔥 mantém tudo em uma linha */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .admin-table td > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    border-radius: 0.25rem;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    min-height: 44px;
+    box-sizing: border-box;
   }
 
   /* Slots livres */
@@ -490,7 +490,7 @@
     justify-content: center;
     align-items: center;
     color: #888;
-    height: 100%; /* 🔥 acompanha a linha */
+    min-height: 44px;
   }
 
   /* Status coloridos */
@@ -501,7 +501,6 @@
   .admin-table td .slot-no_show     { background: #858796; color: #fff; }
   .admin-table td .slot-pending     { background: #36b9cc; color: #fff; }
 }
-
 
 
 
