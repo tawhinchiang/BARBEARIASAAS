@@ -500,7 +500,7 @@
     display: table !important;
     width: 100% !important;
     border-collapse: collapse;
-    table-layout: auto;
+    table-layout: fixed;  /* 🔥 largura fixa e proporcional */
   }
 
   .admin-table thead {
@@ -515,6 +515,22 @@
     display: table-row !important;
   }
 
+  /* Coluna do horário (fixa menor) */
+  .admin-table td:first-child,
+  .admin-table th:first-child {
+    width: 80px;               /* 🔥 largura fixa para horário */
+    text-align: center;
+    font-weight: bold;
+    background: #222;
+    color: #fff;
+  }
+
+  /* Demais colunas (barbeiros = tamanho igual) */
+  .admin-table td:not(:first-child),
+  .admin-table th:not(:first-child) {
+    width: auto;
+  }
+
   .admin-table td,
   .admin-table th {
     display: table-cell !important;
@@ -522,21 +538,22 @@
     padding: 0.3rem;
     white-space: normal;
     word-break: break-word;
+    text-align: center;
   }
 
-  /* 🔥 Card dentro das células: altura fixa e só expande se necessário */
+  /* 🔥 Card dentro das células */
   .admin-table td > div {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 0.4rem;
-    flex-wrap: wrap;             /* permite quebra quando necessário */
+    flex-wrap: wrap;
     width: 100%;
     border-radius: 0.25rem;
     padding: 0.25rem 0.4rem;
-    font-size: 0.75rem;         
+    font-size: 0.75rem;
     line-height: 1.2;
-    min-height: 36px;            
+    min-height: 38px;        /* altura padrão */
     box-sizing: border-box;
   }
 
@@ -547,9 +564,10 @@
     font-size: 0.7rem;
     justify-content: center;
     color: #888;
+    min-height: 38px;
   }
 
-  /* 🔥 Status → cores no desktop também */
+  /* 🔥 Status → cores */
   .admin-table td .slot-confirmed   { background: #4e73df; color: #fff; }
   .admin-table td .slot-in_progress { background: #f6c23e; color: #000; }
   .admin-table td .slot-completed   { background: #1cc88a; color: #fff; }
