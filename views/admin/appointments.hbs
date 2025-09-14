@@ -494,8 +494,8 @@
     }
   }
 
-  /* --- Desktop mantém tabela normal --- */
-  @media (min-width: 769px) {
+/* --- Desktop mantém tabela normal --- */
+@media (min-width: 769px) {
   .admin-table {
     display: table !important;
     width: 100% !important;
@@ -519,36 +519,45 @@
   .admin-table th {
     display: table-cell !important;
     vertical-align: middle;
-    padding: 0.5rem;
+    padding: 0.3rem;
     white-space: normal;
     word-break: break-word;
   }
 
+  /* 🔥 Card dentro das células: altura fixa e só expande se necessário */
   .admin-table td > div {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    gap: 0.4rem;
+    flex-wrap: wrap;             /* permite quebra quando necessário */
     width: 100%;
     border-radius: 0.25rem;
-    padding: 0.3rem 0.4rem;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;         
+    line-height: 1.2;
+    min-height: 36px;            
+    box-sizing: border-box;
   }
 
-  /* 🔥 Status → pinta fundo no desktop também */
+  /* Livre */
+  .admin-table td .slot-free {
+    border: 1px solid #ccc;
+    background: transparent;
+    font-size: 0.7rem;
+    justify-content: center;
+    color: #888;
+  }
+
+  /* 🔥 Status → cores no desktop também */
   .admin-table td .slot-confirmed   { background: #4e73df; color: #fff; }
   .admin-table td .slot-in_progress { background: #f6c23e; color: #000; }
   .admin-table td .slot-completed   { background: #1cc88a; color: #fff; }
   .admin-table td .slot-cancelled   { background: #e74a3b; color: #fff; }
   .admin-table td .slot-no_show     { background: #858796; color: #fff; }
   .admin-table td .slot-pending     { background: #36b9cc; color: #fff; }
-
-  /* Opcional: slot livre mantém borda discreta */
-  .admin-table td .slot-free {
-    border: 1px solid #ccc;
-    background: transparent;
-  }
 }
+
 
 
   .admin-table-wrapper {
