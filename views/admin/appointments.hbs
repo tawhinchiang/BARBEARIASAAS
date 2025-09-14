@@ -99,20 +99,7 @@
       <div class="row">
         <div class="col-12">
 
-            {{!-- <div class="admin-table"> --}}
-              {{!-- <div class="admin-table-wrapper"> --}}
-
-                {{!-- {{#if appointments.length}} --}}
-                {{!-- Controles da TABELA: seletor de itens por página --}}
-                {{!-- <div class="d-flex align-items-center justify-content-end mb-2 gap-2">
-                <label for="pageSize" class="mb-0 small text-muted">Itens por página:</label>
-                <select id="pageSize" class="form-select form-select-sm" style="width:auto">
-                  <option value="10"  {{#if (eq selectedLimit 10)}}selected{{/if}}>10</option>
-                  <option value="20"  {{#if (eq selectedLimit 20)}}selected{{/if}}>20</option>
-                  <option value="50"  {{#if (eq selectedLimit 50)}}selected{{/if}}>50</option>
-                  <option value="100" {{#if (eq selectedLimit 100)}}selected{{/if}}>100</option>
-                </select>
-                </div> --}}
+            
 
                 <table class="table table-hover admin-table">
                  
@@ -120,62 +107,7 @@
                       {{> appointments-table-rows}}
                   </tbody>
                 </table>
-                  {{!-- {{#if pagination.totalPages}} --}}
-                  {{!-- <div class="d-flex flex-column flex-md-row align-items-center justify-content-between mt-3 gap-2">
-                  <div class="text-muted small ms-2">
-                  Página {{pagination.currentPage}} de {{pagination.totalPages}} 
-                  </div>
-
-              {{!-- <div class="pagination-wrapper">
-                <nav aria-label="Paginação de agendamentos">
-                  <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
-                      <a class="page-link" href="#" data-page="1" aria-label="Primeira">«</a>
-                    </li>
-
-                    <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
-                      <a class="page-link" href="#" data-page="{{pagination.prevPage}}" aria-label="Anterior">‹</a>
-                    </li>
-
-                    {{#each pagination.pages}}
-                      {{#if (eq this '...')}}
-                        <li class="page-item disabled"><span class="page-link">…</span></li>
-                      {{else}}
-                        <li class="page-item {{#if (eq ../pagination.currentPage this)}}active{{/if}}">
-                          <a class="page-link" href="#" data-page="{{this}}">{{this}}</a>
-                        </li>
-                      {{/if}}
-                    {{/each}}
-
-                    <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
-                      <a class="page-link" href="#" data-page="{{pagination.nextPage}}" aria-label="Próxima">›</a>
-                    </li>
-
-                    <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
-                      <a class="page-link" href="#" data-page="{{pagination.totalPages}}" aria-label="Última">»</a>
-                    </li>
-                  </ul>
-                </nav>
-              </div> 
-
-                  </div> --}}
-                  {{!-- {{/if}} --}}
-
-
-                {{!-- <div class="text-center my-3">
-
-                </div> --}}
-                {{!-- {{else}}
-                <div class="text-center py-5">
-                  <div class="display-1 text-muted mb-3">
-                    <i class="fas fa-calendar-times"></i>
-                  </div>
-                  <h5 class="text-muted">Nenhum agendamento encontrado</h5>
-                  <p class="text-muted">Ajuste os filtros ou aguarde novos agendamentos.</p>
-                </div>
-                {{/if}} --}}
-              {{!-- </div> --}}
-            {{!-- </div> --}}
+                 
           </div>
         </div>
       </div>
@@ -200,7 +132,7 @@
   </div>
 
 </div>
-<!-- Painel Lateral de Ações -->
+
 <div id="actionPanel" class="action-slideout">
   <div class="action-slideout-header">
     <h5>Ações</h5>
@@ -210,7 +142,7 @@
     <!-- Conteúdo dinâmico -->
   </div>
 </div>
-<!-- Modal de Visualização -->
+
 <div class="modal fade appointment-view-modal" id="viewModal" tabindex="-1">
   <div class="modal-dialog modal-lg  modal-dialog-centered">
     <div class="modal-content">
@@ -225,7 +157,7 @@
     </div>
   </div>
 </div>
-<!-- Modal de Edição -->
+
 <div class="modal fade" id="editModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
@@ -500,7 +432,7 @@
     display: table !important;
     width: 100% !important;
     border-collapse: collapse;
-    table-layout: fixed; /* 🔥 garante colunas uniformes */
+    table-layout: fixed; 
   }
 
   .admin-table thead {
@@ -515,48 +447,48 @@
     display: table-row !important;
   }
 
-  /* Coluna do horário */
+ 
   .admin-table td:first-child,
   .admin-table th:first-child {
-    width: 80px; /* largura fixa só para horário */
+    width: 80px; 
     text-align: center;
     font-weight: bold;
     background: #222;
     color: #fff;
   }
 
-  /* Colunas dos barbeiros */
+  
   .admin-table td:not(:first-child),
   .admin-table th:not(:first-child) {
-    min-width: 200px;   /* 🔥 largura mínima confortável */
-    max-width: 350px;   /* 🔥 limita para não estourar */
+    min-width: 280px;   
+    max-width: 500px;   
   }
 
   .admin-table td,
   .admin-table th {
     display: table-cell !important;
     vertical-align: middle;
-    padding: 0.3rem;
-    white-space: normal;   /* 🔥 permite quebra */
-    word-break: break-word; /* 🔥 força quebra quando necessário */
+    padding: 0.4rem 0.5rem;
+    white-space: normal;     
+    word-break: break-word;  
   }
 
   .admin-table td > div {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 0.4rem;
-    flex-wrap: wrap;        /* 🔥 quebra itens embaixo */
+    gap: 0.6rem;
+    flex-wrap: wrap;        
     width: 100%;
     border-radius: 0.25rem;
-    padding: 0.25rem 0.4rem;
+    padding: 0.35rem 0.6rem;
     font-size: 0.8rem;
     line-height: 1.3;
-    min-height: 40px;       /* altura mínima padronizada */
+    min-height: 44px;      
     box-sizing: border-box;
   }
 
-  /* Slots livres */
+ 
   .admin-table td .slot-free {
     border: 1px solid #ccc;
     background: transparent;
@@ -564,10 +496,10 @@
     justify-content: center;
     align-items: center;
     color: #888;
-    min-height: 40px;
+    min-height: 44px;
   }
 
-  /* Status coloridos */
+
   .admin-table td .slot-confirmed   { background: #4e73df; color: #fff; }
   .admin-table td .slot-in_progress { background: #f6c23e; color: #000; }
   .admin-table td .slot-completed   { background: #1cc88a; color: #fff; }
@@ -578,12 +510,13 @@
 
 
 
+
   .admin-table-wrapper {
     overflow-x: auto;
     width: 100%;
   }
 
-  /* Dropdown de ações */
+  
   .actions-menu {
     position: relative;
     display: flex;
