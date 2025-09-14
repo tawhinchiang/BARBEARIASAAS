@@ -357,23 +357,24 @@ function initModals() {
         timeInput.showPicker?.();
       });
 
-      const updateMinTime = () => {
-        const hoje = new Date();
-        const dataSelecionada = new Date(dateInput.value);
+const updateMinTime = () => {
+  const hoje = new Date();
+  const dataSelecionada = new Date(dateInput.value + 'T00:00:00'); 
 
-        const isHoje =
-          dataSelecionada.getFullYear() === hoje.getFullYear() &&
-          dataSelecionada.getMonth() === hoje.getMonth() &&
-          dataSelecionada.getDate() === hoje.getDate();
+  const isHoje =
+    dataSelecionada.getFullYear() === hoje.getFullYear() &&
+    dataSelecionada.getMonth() === hoje.getMonth() &&
+    dataSelecionada.getDate() === hoje.getDate();
 
-        if (isHoje) {
-          const horas = String(hoje.getHours()).padStart(2, '0');
-          const minutos = String(hoje.getMinutes()).padStart(2, '0');
-          timeInput.min = `${horas}:${minutos}`;
-        } else {
-          timeInput.min = "00:00"; // libera todos os horários se não for hoje
-        }
-      };
+  if (isHoje) {
+    const horas = String(hoje.getHours()).padStart(2, '0');
+    const minutos = String(hoje.getMinutes()).padStart(2, '0');
+    timeInput.min = `${horas}:${minutos}`;
+  } else {
+    timeInput.min = "00:00"; // libera todos os horários se não for hoje
+  }
+};
+
 
       // Atualiza quando abrir o modal
       updateMinTime();
