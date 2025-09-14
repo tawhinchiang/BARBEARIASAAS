@@ -11,7 +11,46 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('[ADMIN] Página de agendamentos carregada');
     restoreSavedView();
 
- 
+   // Gestos de interação para abrir o painel lateral
+ if (!window._gestureHandlersInstalled) {
+  window._gestureHandlersInstalled = true;
+
+
+  document.addEventListener('dblclick', (e) => {
+    const cell = e.target.closest('.js-appointment-cell[data-id]');
+    if (cell) {
+      const id = cell.dataset.id;
+      console.log('[GESTURE] Duplo clique na célula ID:', id);
+      openActionPanel(id);
+    }
+  });
+}
+
+  const prevBtn = document.getElementById('prevDay');
+  const nextBtn = document.getElementById('nextDay');
+  
+  if (prevBtn && nextBtn) {
+    prevBtn.addEventListener('click', () => changeDay(-1));
+    nextBtn.addEventListener('click', () => changeDay(1));
+  }
+
+  function changeDay(offset) {
+  const url = new URL(window.location.href);
+
+  // pega startDate atual ou hoje
+  const currentDate = url.searchParams.get('startDate') || new Date().toISOString().split('T')[0];
+  const newDate = new Date(currentDate);
+  newDate.setDate(newDate.getDate() + offset);
+
+  const formatted = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // atualiza a querystring
+  url.searchParams.set('startDate', formatted);
+  url.searchParams.delete('endDate'); // garante que não trave em intervalo
+
+  window.location.href = url.toString();
+}
+
     // 2. Configura alternância da visualização
   const toggleBtn = document.getElementById('toggleView');
   if (!toggleBtn) {
@@ -68,16 +107,19 @@ if (fitInForm) {
     submitBtn.disabled = true;
     submitBtn.innerHTML = `
       <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      Confirmando Encaixe...
+      Salvando...
     `;
 
     try {
+      const mode = document.getElementById('fitInMode')?.value || 'fitin'; 
+      const isEncaixe = mode === 'fitin';
+
       const payload = {
         serviceId: document.getElementById('fitInService').value,
         barberId: document.getElementById('fitInBarber').value,
         appointmentDate: document.getElementById('fitInDate').value,
         appointmentTime: document.getElementById('fitInTime').value,
-        isEncaixe: true,
+        isEncaixe,
         fitInNote: document.getElementById('fitInNote').value,
         clientData: {
           firstName: document.getElementById('fitInFirstName').value.trim(),
@@ -98,29 +140,34 @@ if (fitInForm) {
 
       const data = await res.json();
       if (data.success) {
-        notify({ type: 'success', message: 'Encaixe criado com sucesso!' });
+        notify({
+          type: 'success',
+          message: isEncaixe
+            ? 'Encaixe criado com sucesso!'
+            : 'Agendamento criado com sucesso!'
+        });
 
-       
         const fitInModalEl = document.getElementById('fitInModal');
         const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
         if (fitInModal) fitInModal.hide();
 
-        // Pequeno delay só para garantir que o modal feche antes do reload
         setTimeout(() => location.reload(), 600);
-      }
- else {
-        notify({ type: 'error', message: data.error || 'Erro ao criar encaixe.' });
+      } else {
+        notify({
+          type: 'error',
+          message: data.error || 'Erro ao criar agendamento.'
+        });
       }
     } catch (err) {
-      console.error('[ERRO] Criando encaixe:', err);
-      notify({ type: 'error', message: 'Erro ao criar encaixe.' });
+      console.error('[ERRO] Criando agendamento:', err);
+      notify({ type: 'error', message: 'Erro ao criar agendamento.' });
     } finally {
-      // 🔓 Restaura o botão
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalHtml;
     }
   });
 }
+
 
 
 
@@ -273,6 +320,8 @@ function initFitInTimePicker() {
 
 });
 
+
+
   function populateFitInSelects() {
   loadSelectOptions('fitInService', '/api/services');
   loadSelectOptions('fitInBarber', '/api/barbers');
@@ -289,49 +338,69 @@ function initModals() {
     if (e.target === modalElement) viewAppointmentModal.hide();
   });
 
+  const fitInModalEl = document.getElementById('fitInModal');
+  if (fitInModalEl) {
+    if (fitInModalEl.parentElement !== document.body) {
+      document.body.appendChild(fitInModalEl);
+      console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
+    }
 
-const fitInModalEl = document.getElementById('fitInModal');
-if (fitInModalEl) {
-  // move modal para o body se estiver aninhado (resolve problemas de stacking/context)
-  if (fitInModalEl.parentElement !== document.body) {
-    document.body.appendChild(fitInModalEl);
-    console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
+    const fitInModal = new bootstrap.Modal(fitInModalEl);
+    fitInModalEl.addEventListener('show.bs.modal', () => {
+      populateFitInSelects();
+
+      const timeInput = document.getElementById('fitInTime');
+      const dateInput = document.getElementById('fitInDate');
+
+      // Força abrir picker no clique
+      timeInput.addEventListener('click', () => {
+        timeInput.showPicker?.();
+      });
+
+const updateMinTime = () => {
+  const hoje = new Date();
+  const dataSelecionada = new Date(dateInput.value + 'T00:00:00'); 
+
+  const isHoje =
+    dataSelecionada.getFullYear() === hoje.getFullYear() &&
+    dataSelecionada.getMonth() === hoje.getMonth() &&
+    dataSelecionada.getDate() === hoje.getDate();
+
+  if (isHoje) {
+    const horas = String(hoje.getHours()).padStart(2, '0');
+    const minutos = String(hoje.getMinutes()).padStart(2, '0');
+    timeInput.min = `${horas}:${minutos}`;
+  } else {
+    timeInput.min = "00:00"; // libera todos os horários se não for hoje
   }
+};
 
-  // cria modal bootstrap e listeners (mantém populateFill etc)
-  const fitInModal = new bootstrap.Modal(fitInModalEl);
-  fitInModalEl.addEventListener('show.bs.modal', () => {
-    populateFitInSelects();
- const timeInput = document.getElementById('fitInTime');
- timeInput.addEventListener('click', () => {
-  timeInput.showPicker?.(); // Método nativo moderno
-});
-  const agora = new Date();
-  
-  const horas = String(agora.getHours()).padStart(2, '0');
-  const minutos = String(agora.getMinutes()).padStart(2, '0');
 
-  timeInput.min = `${horas}:${minutos}`;
-  });
+      // Atualiza quando abrir o modal
+      updateMinTime();
 
-  const openFitInBtn = document.getElementById('openFitInBtn');
-  if (openFitInBtn) {
-    openFitInBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      try {
-        fitInModal.show();
-      } catch (err) {
-        console.error('[DEBUG] Erro ao abrir fitInModal:', err);
-      }
+      // Atualiza quando trocar a data
+      dateInput.addEventListener('change', updateMinTime);
     });
-  }
-}
 
+    const openFitInBtn = document.getElementById('openFitInBtn');
+    if (openFitInBtn) {
+      openFitInBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        try {
+          fitInModal.show();
+        } catch (err) {
+          console.error('[DEBUG] Erro ao abrir fitInModal:', err);
+        }
+      });
+    }
+  }
 
   if (window.Inputmask) {
     Inputmask({ mask: "(99) 99999-9999" }).mask("#fitInPhone");
   }
 }
+
 
 function gerarSlotsHorarios(intervaloMinutos = 30) {
   const agora = new Date();
@@ -1187,71 +1256,61 @@ function attachActionPanelListeners() {
 // Função para abrir o painel lateral
 async function openActionPanel(id) {
   const panel = document.getElementById('actionPanel');
-  const body = document.getElementById('actionPanelBody');
-  if (!panel || !body) return;
-
-  console.log('[DEBUG] Abrindo painel lateral para o ID:', id);
+  const body  = document.getElementById('actionPanelBody');
+  if (!panel || !body) { 
+    console.warn('[PAINEL] Markup ausente (#actionPanel / #actionPanelBody).');
+    return; 
+  }
 
   try {
     const res = await fetch(`/admin/appointments/${id}`);
+    if (!res.ok) throw new Error('Falha ao carregar agendamento');
     const { appointment } = await res.json();
     const status = appointment.status;
 
-    // Funções comuns sempre visíveis
     let html = `
-      <button class="btn btn-outline-light w-100 mb-2 js-view-appointment" onclick="viewAppointment(${id})">
+      <button class="btn btn-outline-light w-100 mb-2" onclick="viewAppointment(${id})">
         <i class="fas fa-eye me-2"></i> Ver Detalhes
       </button>
-      <button class="btn btn-outline-primary w-100 mb-2 js-edit-appointment" onclick="editAppointment(${id})">
+      <button class="btn btn-outline-primary w-100 mb-2" onclick="editAppointment(${id})">
         <i class="fas fa-pen me-2"></i> Editar
       </button>
     `;
 
-    // Regras específicas por status
     if (status === 'pending') {
       html += `
-        <button class="btn btn-outline-success w-100 mb-2 js-confirm-appointment" onclick="confirmAppointment(${id})">
+        <button class="btn btn-outline-success w-100 mb-2" onclick="confirmAppointment(${id})">
           <i class="fas fa-check-circle me-2"></i> Confirmar
-        </button>
-      `;
-    }
-    if (status === 'confirmed'|| status === 'in_progress') {
-      html += `
-        <button class="btn btn-outline-warning w-100 mb-2 js-no-show-appointment" onclick="markNoShow(${id})">
-          <i class="fas fa-user-slash me-2"></i> Não Compareceu
         </button>
       `;
     }
     if (status === 'confirmed' || status === 'in_progress') {
       html += `
-        <button class="btn btn-outline-warning w-100 mb-2 js-complete-appointment" onclick="completeAppointment(${id})">
+        <button class="btn btn-outline-warning w-100 mb-2" onclick="markNoShow(${id})">
+          <i class="fas fa-user-slash me-2"></i> Não Compareceu
+        </button>
+        <button class="btn btn-outline-warning w-100 mb-2" onclick="completeAppointment(${id})">
           <i class="fas fa-check me-2"></i> Concluir
         </button>
       `;
     }
-    
     if (status !== 'cancelled' && status !== 'completed') {
       html += `
-        <button class="btn btn-outline-danger w-100 mb-2 js-cancel-appointment" onclick="cancelAppointment(${id})">
+        <button class="btn btn-outline-danger w-100 mb-2" onclick="cancelAppointment(${id})">
           <i class="fas fa-times-circle me-2"></i> Cancelar
         </button>
       `;
     }
 
-    // // WhatsApp é sempre visível
-    // html += `
-    //   <button class="btn btn-outline-secondary w-100 js-send-whatsapp" onclick="sendWhatsApp(${id})">
-    //     <i class="fab fa-whatsapp me-2"></i> Enviar WhatsApp
-    //   </button>
-    // `;
-
     body.innerHTML = html;
     panel.classList.add('show');
   } catch (err) {
-    console.error('[PAINEL] Erro ao carregar agendamento:', err);
-    notify({ type:'error', message:'Erro ao carregar detalhes do agendamento' });
+    console.error('[PAINEL] Erro:', err);
+    notify({ type: 'error', message: 'Erro ao carregar detalhes do agendamento' });
   }
 }
+window.openActionPanel = openActionPanel;
+
 
 
 
@@ -1260,6 +1319,48 @@ function closeActionPanel() {
   const panel = document.getElementById('actionPanel');
   panel.classList.remove('show');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  if (isMobile) {
+    // Clique simples no mobile
+    document.addEventListener('click', e => {
+      const scheduleBtn = e.target.closest('.js-open-schedule');
+      if (!scheduleBtn) return;
+      abrirModalAgendamento(scheduleBtn);
+    });
+  } else {
+    // Duplo clique no desktop
+    document.addEventListener('dblclick', e => {
+      const scheduleBtn = e.target.closest('.js-open-schedule');
+      if (!scheduleBtn) return;
+      abrirModalAgendamento(scheduleBtn);
+    });
+  }
+
+  function abrirModalAgendamento(scheduleBtn) {
+    document.getElementById('fitInMode').value = 'normal';
+    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
+    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
+
+    const barberId = scheduleBtn.dataset.barber;
+    const date = scheduleBtn.dataset.date;
+    const time = scheduleBtn.dataset.time;
+
+    const openBtn = document.getElementById('openFitInBtn');
+    if (openBtn) openBtn.click();
+
+    setTimeout(() => {
+      document.getElementById('fitInBarber').value = barberId;
+      document.getElementById('fitInDate').value = date;
+      document.getElementById('fitInTime').value = time;
+    }, 200);
+  }
+});
+
+
+
 
 
 

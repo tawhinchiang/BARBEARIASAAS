@@ -205,9 +205,29 @@ router.post('/api/appointments', async (req, res) => {
   }
     const fullName = `${client.firstName} ${client.lastName}`;
     const priceNum = Number(serviceType.price);
-    const priceFormatted = Number.isNaN(priceNum) ? '0.00' : priceNum.toFixed(2);
+    const priceFormatted = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(priceNum);
 
-    const msg = `Olá, ${fullName}! 👋\n\nSeu agendamento foi confirmado com sucesso:\n🗓️ *Data:* ${appointmentDate}\n⏰ *Horário:*  ${timeHHmm}\n✂️ *Serviço:* ${serviceType.name}\n💈 *Barbeiro:* ${barber.name}\n💰 *Valor:* R$ ${priceFormatted}\n\nAgradecemos pela preferência!`;
+// Data formatada no padrão brasileiro
+const appointmentDateBR = moment(appointmentDate, 'YYYY-MM-DD').format('DD/MM/YYYY');
+
+// Link dinâmico com base no host da requisição
+const baseUrl = `${req.protocol}://${req.headers.host}`;
+
+const msg = `✅ Seu agendamento foi confirmado com sucesso! 
+
+❕ Informações 👇
+
+🛠 Serviço: ${serviceType.name}
+👤 Profissional: ${barber.name}
+📅 Data: ${appointmentDateBR}
+🕗 Hora: ${timeHHmm}
+💰 Valor:${priceFormatted}
+Para realizar o cancelamento, clique no link abaixo, acesse a aba de 'Histórico', selecione seu agendamento e clique na opção Cancelar ⬇
+
+${baseUrl}`;
 
    
    log(`Tentando enviar WhatsApp para: ${cleanPhone} (normalizado)`);
@@ -282,6 +302,7 @@ router.post('/', async (req, res, next) => {
   req.url = '/api/appointments';
   next();
 });
+
 
 module.exports = router;
 
