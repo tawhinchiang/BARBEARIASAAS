@@ -500,7 +500,7 @@
     display: table !important;
     width: 100% !important;
     border-collapse: collapse;
-    table-layout: fixed;  /* 🔥 largura fixa e proporcional */
+    table-layout: fixed; /* 🔥 garante colunas uniformes */
   }
 
   .admin-table thead {
@@ -515,59 +515,59 @@
     display: table-row !important;
   }
 
-  /* Coluna do horário (fixa menor) */
+  /* Coluna do horário */
   .admin-table td:first-child,
   .admin-table th:first-child {
-    width: 100px;               /* 🔥 largura fixa para horário */
+    width: 80px; /* largura fixa só para horário */
     text-align: center;
     font-weight: bold;
     background: #222;
     color: #fff;
   }
 
-  /* Demais colunas (barbeiros = tamanho igual) */
+  /* Colunas dos barbeiros */
   .admin-table td:not(:first-child),
   .admin-table th:not(:first-child) {
-    width: auto;
+    min-width: 200px;   /* 🔥 largura mínima confortável */
+    max-width: 260px;   /* 🔥 limita para não estourar */
   }
 
   .admin-table td,
   .admin-table th {
     display: table-cell !important;
     vertical-align: middle;
-    padding: 0.3rem;
-    white-space: normal;
-    word-break: break-word;
-    text-align: center;
+    padding: 0.4rem;
+    white-space: normal;   /* 🔥 permite quebra */
+    word-break: break-word; /* 🔥 força quebra quando necessário */
   }
 
-  /* 🔥 Card dentro das células */
   .admin-table td > div {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 0.4rem;
-    flex-wrap: wrap;
+    flex-wrap: wrap;        /* 🔥 quebra itens embaixo */
     width: 100%;
     border-radius: 0.25rem;
     padding: 0.25rem 0.4rem;
-    font-size: 0.75rem;
-    line-height: 1.2;
-    min-height: 38px;        /* altura padrão */
+    font-size: 0.8rem;
+    line-height: 1.3;
+    min-height: 40px;       /* altura mínima padronizada */
     box-sizing: border-box;
   }
 
-  /* Livre */
+  /* Slots livres */
   .admin-table td .slot-free {
     border: 1px solid #ccc;
     background: transparent;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     justify-content: center;
+    align-items: center;
     color: #888;
-    min-height: 38px;
+    min-height: 40px;
   }
 
-  /* 🔥 Status → cores */
+  /* Status coloridos */
   .admin-table td .slot-confirmed   { background: #4e73df; color: #fff; }
   .admin-table td .slot-in_progress { background: #f6c23e; color: #000; }
   .admin-table td .slot-completed   { background: #1cc88a; color: #fff; }
