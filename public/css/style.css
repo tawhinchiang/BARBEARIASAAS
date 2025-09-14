@@ -1729,6 +1729,17 @@ canvas {
 #actionPanel.show {
   right: 0;
 }
+/* 🔥 Encaixes: roxo/lilás */
+.slot-fitin {
+  background: #6f42c1; /* lilás */
+  color: #fff;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  min-height: 44px; /* altura igual aos outros */
+  box-sizing: border-box;
+}
 
 .action-slideout {
   background: var(--bg-light, #19191c);

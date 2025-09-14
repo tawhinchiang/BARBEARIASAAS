@@ -41,27 +41,43 @@
         <td class="align-top {{#if cell.appointment}}js-appointment-cell{{/if}}"
             {{#if cell.appointment}}data-id="{{cell.appointment.id}}"{{/if}}>
 
-          {{#if cell.appointment}}
-            <!-- Card para agendado -->
-            <div class="slot-{{cell.appointment.status}} d-flex justify-content-between align-items-center flex-wrap">
-              <span class="fw-semibold">
-                {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
-              </span>
-              <span>
-                {{cell.appointment.serviceType.name}}
-              </span>
-              <span class="fw-bold">
-                {{formatCurrency cell.appointment.totalPrice}}
-              </span>
-            </div>
-          {{else}}
-            <!-- Slot livre -->
-            <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
-                 data-barber="{{cell.barber.id}}"
-                 data-date="{{../dateRaw}}"
-                 data-time="{{slot.time}}">
-            </div>
-          {{/if}}
+{{#if cell.appointment}}
+  {{#if cell.appointment.isEncaixe}}
+    <!-- Card para ENCAIXE -->
+    <div class="slot-fitin d-flex justify-content-between align-items-center flex-wrap">
+      <span class="fw-semibold">
+        {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+      </span>
+      <span>
+        {{cell.appointment.serviceType.name}}
+      </span>
+      <span class="fw-bold">
+        {{formatCurrency cell.appointment.totalPrice}}
+      </span>
+    </div>
+  {{else}}
+    <!-- Card normal -->
+    <div class="slot-{{cell.appointment.status}} d-flex justify-content-between align-items-center flex-wrap">
+      <span class="fw-semibold">
+        {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+      </span>
+      <span>
+        {{cell.appointment.serviceType.name}}
+      </span>
+      <span class="fw-bold">
+        {{formatCurrency cell.appointment.totalPrice}}
+      </span>
+    </div>
+  {{/if}}
+{{else}}
+  <!-- Slot livre -->
+  <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
+       data-barber="{{cell.barber.id}}"
+       data-date="{{../dateRaw}}"
+       data-time="{{slot.time}}">
+  </div>
+{{/if}}
+
 
         </td>
       {{/each}}
