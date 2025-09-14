@@ -1724,6 +1724,7 @@ canvas {
   transition: right 0.3s ease-in-out;
   width: 350px;
   z-index: 1050;
+  
 }
 
 #actionPanel.show {
