@@ -37,38 +37,42 @@
 
   {{#unless hideNavbar}}
   <header class="navbar navbar-dark fixed-top admin-navbar">
-  <div class="container-fluid">
-  <!-- Hambúrguer à esquerda -->
-  <button id="sidebarToggle" class="navbar-toggler me-2" type="button" data-bs-toggle="offcanvas"
-    data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Abrir menu">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+    <div class="container-fluid">
+      <!-- Hambúrguer à esquerda -->
+      <button id="sidebarToggle" class="navbar-toggler me-2" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Abrir menu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-  <!-- Mobile: status do WhatsApp vem aqui -->
-  <div id="whatsapp-status-toast" class="d-flex d-md-none"></div>
-
-  <!-- Logo + título -->
-  <div class="brand-compact d-flex align-items-center gap-2">
-    <img src="{{BARBERSHOP_LOGO}}" alt="Logo" class="navbar-logo" loading="lazy">
-    <div class="title-stack">
-      <div class="navbar-title">
-        {{#if pageTitle}}{{pageTitle}}{{else}}{{title}}{{/if}}
+      <!-- Logo Título Subtítulo -->
+      <div class="brand-compact d-flex align-items-center gap-2">
+        <img src="{{BARBERSHOP_LOGO}}" alt="Logo" class="navbar-logo" loading="lazy">
+        <div class="title-stack">
+          <div class="navbar-title">
+            {{#if pageTitle}}{{pageTitle}}{{else}}{{title}}{{/if}}
+          </div>
+          {{#if pageSubtitle}}
+          <small class="navbar-subtitle">{{{pageSubtitle}}}</small>
+          {{/if}}
+        </div>
       </div>
-      {{#if pageSubtitle}}
-      <small class="navbar-subtitle">{{{pageSubtitle}}}</small>
-      {{/if}}
+     <div class="ms-auto d-flex align-items-center gap-2">
+    <!-- Desktop: toast flutuante -->
+    <div id="whatsapp-status-toast" class="d-none d-md-flex">
+      <span id="whatsapp-status-text"></span>
     </div>
-  </div>
 
-  <!-- Desktop: status + hora -->
-  <div class="ms-auto d-none d-md-flex align-items-center gap-2">
-    <div id="whatsapp-status-toast-desktop"></div>
+ 
+
     {{#if lastUpdate}}
-    <small class="text-muted">{{lastUpdate}}</small>
+    <small class="text-muted d-none d-md-inline">{{lastUpdate}}</small>
     {{/if}}
   </div>
-</div>
 
+            
+       
+      
+    </div>
   </header>
 
  {{!-- Só renderiza a fixa se for desktop --}}
@@ -275,30 +279,6 @@
 </html>
 
 <style>
-
-
-@media (min-width: 769px) {
-  /* No desktop esconde o compacto e mostra o toast grande */
-  #whatsapp-status-toast { display: none !important; }
-  #whatsapp-status-toast-desktop {
-    height: 44px;
-    padding: 0 1rem;
-    font-size: 0.95rem;
-    font-weight: 500;
-    border-radius: 8px;
-    background: #fff;
-    color: #212529;
-    border: 2px solid transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  #whatsapp-status-toast-desktop.success { border-color: #28a745; }
-  #whatsapp-status-toast-desktop.error { border-color: #dc3545; }
-}
-
   /* ===== ESTILOS ADMINISTRATIVOS PADRONIZADOS ===== */
 
   /* Wrapper que segura o toast fixo no topo */
@@ -600,26 +580,21 @@
 
   /* Responsividade */
   @media (max-width: 768px) {
-      #whatsapp-status-toast {
-    background: #fff;
-    border: 2px solid transparent;
-    border-radius: 6px;
+     #whatsapp-status-toast {
+    height: auto;
     padding: 2px 6px;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    margin-left: 8px;       /* 👈 afasta do hambúrguer */
+    line-height: 1.2;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
-    line-height: 1.2;
-    max-width: 120px;
+    margin-left: 6px;
+    background: #fff !important;
+    box-shadow: none;
   }
   #whatsapp-status-toast.success { border-color: #28a745; color: #28a745; }
   #whatsapp-status-toast.error { border-color: #dc3545; color: #dc3545; }
-
-  /* Esconde a versão desktop no mobile */
-  #whatsapp-status-toast-desktop { display: none !important; }
-    
-  
 }
 
     .admin-navbar .navbar-brand span { display: none; }
@@ -635,7 +610,7 @@
       padding: 0.75rem 0.5rem;
       font-size: 0.9rem;
     }
-  
+  }
 
   /* Animações */
   .fade-in { animation: fadeIn 0.5s ease-in; }
