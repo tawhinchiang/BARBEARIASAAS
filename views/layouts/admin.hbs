@@ -56,15 +56,19 @@
           {{/if}}
         </div>
       </div>
-      <!-- Lado direito (status / ações) -->
-      <div class="ms-auto d-flex align-items-center gap-2">
-        <div id="whatsapp-status-toast" class="d-none">
-          <span id="whatsapp-status-text"></span>
-        </div>
-        {{#if lastUpdate}}
-        <small class="text-muted d-none d-md-inline">{{lastUpdate}}</small>
-        {{/if}}
-      </div>
+     <div class="ms-auto d-flex align-items-center gap-2">
+    <!-- Desktop: toast flutuante -->
+    <div id="whatsapp-status-toast" class="d-none d-md-flex">
+      <span id="whatsapp-status-text"></span>
+    </div>
+
+ 
+
+    {{#if lastUpdate}}
+    <small class="text-muted d-none d-md-inline">{{lastUpdate}}</small>
+    {{/if}}
+  </div>
+
             
        
       
@@ -235,23 +239,35 @@
     // Status do WhatsApp (mantém os mesmos IDs que você já usa)
     async function checkWhatsAppStatus() {
       try {
-        const res = await fetch('/admin/api/whatsapp/status');
-        const data = await res.json();
+     const toast = document.getElementById('whatsapp-status-toast');
+      const text = document.getElementById('whatsapp-status-text');
+      const inline = document.getElementById('whatsapp-status-inline');
+      const inlineText = document.getElementById('whatsapp-status-text-inline');
 
-        const toast = document.getElementById('whatsapp-status-toast');
-        const text = document.getElementById('whatsapp-status-text');
-        if (!toast || !text) return;
+      if (!toast || !text || !inline || !inlineText) return;
 
-        toast.classList.remove('success', 'error', 'd-none', 'show');
+      toast.classList.remove('success', 'error', 'd-none', 'show');
+      inline.classList.remove('success', 'error');
 
-        if (data.isConnected) {
-          toast.classList.add('success', 'show');
-          text.innerText = 'WhatsApp está conectado ✅';
-          setTimeout(() => toast.classList.remove('show'), 7000);
-        } else {
-          toast.classList.add('error', 'show');
-          text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
-        }
+      if (data.isConnected) {
+        // Desktop
+        toast.classList.add('success', 'show');
+        text.innerText = 'WhatsApp está conectado ✅';
+        setTimeout(() => toast.classList.remove('show'), 7000);
+
+        // Mobile
+        inline.classList.add('success');
+        inlineText.innerText = 'WhatsApp ✅';
+      } else {
+        // Desktop
+        toast.classList.add('error', 'show');
+        text.innerHTML = 'WhatsApp desconectado! <a href="/admin/config" class="text-danger fw-bold text-decoration-underline">Reconectar</a>';
+
+        // Mobile
+        inline.classList.add('error');
+        inlineText.innerText = 'WhatsApp ❌';
+      }
+
       } catch (err) {
         console.error('[WHATSAPP STATUS ERROR]', err);
       }
@@ -275,13 +291,11 @@
     display: flex;
     justify-content: center;
     padding: 10px 16px;
-    pointer-events: none;
-    /* permite clicar no navbar abaixo */
+    pointer-events: none; /* permite clicar no navbar abaixo */
   }
 
   /* Layout administrativo */
   .admin-body {
-
     background: var(--bg-light);
     min-height: 100vh;
     display: flex;
@@ -295,7 +309,6 @@
   }
 
   /* Navbar administrativa */
- 
   .admin-navbar .navbar-brand .logo-icon {
     width: 35px;
     height: 35px;
@@ -474,7 +487,6 @@
   /* Status badges */
   .status-badge {
     width: 140px;
-    /* 👈 largura fixa */
     display: inline-block;
     text-align: center;
     border-radius: 20px;
@@ -484,28 +496,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* para evitar quebras se o texto for muito grande */
   }
 
-  .status-confirmed {
-    background: #007bff;
-    color: white;
-  }
-
-  .status-pending {
-    background: var(--warning-color);
-    color: var(--text-dark);
-  }
-
-  .status-cancelled {
-    background: var(--danger-color);
-    color: white;
-  }
-
-  .status-completed {
-    background: #28a745;
-    color: white;
-  }
+  .status-confirmed { background: #007bff; color: white; }
+  .status-pending { background: var(--warning-color); color: var(--text-dark); }
+  .status-cancelled { background: var(--danger-color); color: white; }
+  .status-completed { background: #28a745; color: white; }
 
   /* Avatars */
   .avatar-sm {
@@ -557,14 +553,7 @@
     background: var(--bg-gray);
   }
 
-  /* Responsivo: centralizar em mobile */
-  #whatsapp-status-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1rem;
-  }
-
+  /* Toast Desktop */
   #whatsapp-status-toast {
     height: 48px;
     padding: 0 1rem;
@@ -585,57 +574,37 @@
     max-width: 420px;
     width: auto;
   }
-
-  #whatsapp-status-toast.success {
-    border-color: #28a745;
-  }
-
-  #whatsapp-status-toast.error {
-    border-color: #dc3545;
-  }
-
-  #whatsapp-status-toast.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  #whatsapp-status-toast.success { border-color: #28a745; }
+  #whatsapp-status-toast.error { border-color: #dc3545; }
+  #whatsapp-status-toast.show { opacity: 1; transform: translateY(0); }
 
   /* Responsividade */
   @media (max-width: 768px) {
-    #whatsapp-status-container {
-      display: block !important;
-      width: 100%;
-      text-align: center;
-      margin-top: 10px;
-    }
+     #whatsapp-status-toast {
+    height: auto;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    background: #fff !important;
+    box-shadow: none;
+  }
+  #whatsapp-status-toast.success { border-color: #28a745; color: #28a745; }
+  #whatsapp-status-toast.error { border-color: #dc3545; color: #dc3545; }
+}
 
-    #whatsapp-status-toast {
-      display: inline-block;
-      max-width: 90%;
-      white-space: normal;
-    }
-
-    .admin-navbar .navbar-brand span {
-      display: none;
-    }
-
+    .admin-navbar .navbar-brand span { display: none; }
     .admin-footer .col-md-6:last-child {
       text-align: start !important;
       margin-top: 0.5rem;
     }
-
-    .admin-card {
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .admin-dashboard {
-      padding: 1rem 0;
-    }
-
-    .admin-filters {
-      padding: 1rem;
-    }
-
+    .admin-card { padding: 1.5rem; margin-bottom: 1rem; }
+    .admin-dashboard { padding: 1rem 0; }
+    .admin-filters { padding: 1rem; }
     .admin-table .table thead th,
     .admin-table .table tbody td {
       padding: 0.75rem 0.5rem;
@@ -644,20 +613,10 @@
   }
 
   /* Animações */
-  .fade-in {
-    animation: fadeIn 0.5s ease-in;
-  }
-
+  .fade-in { animation: fadeIn 0.5s ease-in; }
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   /* Notificações */
@@ -678,33 +637,8 @@
     opacity: 0;
     transform: translateY(-100%);
   }
-
-  /* Visível */
-  .admin-notification.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .admin-notification.success {
-    border-color: #28a745;
-    background: #ffffff;
-    border: 2px solid #28a745;
-    /* verde */
-    color: #212529;
-  }
-
-
-  .admin-notification.error {
-    background: #ffffff;
-    border: 2px solid #dc3545;
-    /* vermelho */
-    color: #212529;
-    border-color: #dc3545;
-  }
-
-  .admin-notification.warning {
-    border-color: var(--warning-color);
-    background: #fff3cd;
-    color: #664d03;
-  }
+  .admin-notification.show { opacity: 1; transform: translateY(0); }
+  .admin-notification.success { border-color: #28a745; background: #fff; color: #212529; }
+  .admin-notification.error { border-color: #dc3545; background: #fff; color: #212529; }
+  .admin-notification.warning { border-color: var(--warning-color); background: #fff3cd; color: #664d03; }
 </style>

@@ -3,40 +3,42 @@
   <div class="container-fluid">
 
 
-    <!-- Filtros Corrigidos -->
-    <div class="row mb-2 mt-5">
+    <!-- Filtros Suspensos -->
+    <div class="row mb-2 mt-4">
       <div class="col-12">
-         <div class="admin-card">
-          <form id="filterForm">
-            <div class="row">
-            
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Agenda</h5>
 
-              <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Data Inicial</label>
+          <button id="filterToggleBtn" class="btn btn-outline-primary btn-sm" type="button"
+            data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+            <i class="fas fa-filter me-1"></i> Filtros
+          </button>
+
+        </div>
+
+
+        <div class="collapse" id="filtersCollapse">
+          <div class="admin-card p-3">
+            <form id="filterForm">
+              <div class="row g-2 align-items-end">
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Data</label>
                   <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
                 </div>
-              </div>
-              {{!-- <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Data Final</label>
-                  <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.startDate}}">
-                </div>
-              </div> --}}
-              <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Barbeiro</label>
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Profissional</label>
                   <select class="form-control" name="barberId" id="barberId">
-                    <option value="">Todos os barbeiros</option>
+                    <option value="">Todos Os Profissionais</option>
                     {{#each barbers}}
                     <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
                     {{/each}}
                   </select>
                 </div>
-              </div>
-              <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Status</label>
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Status</label>
                   <select name="status" id="statusFilter" class="form-control">
                     <option value="">Todos os status</option>
                     <option value="confirmed" {{#eq filters.status 'confirmed' }}selected{{/eq}}>Confirmado</option>
@@ -48,43 +50,45 @@
                   </select>
                 </div>
 
-              </div>
-            </div>
-            <div class="row mt-3 align-items-center">
-              <div class="col-md-3">
-                <select class="form-control" name="sort" id="sort">
-                  <option value="">Ordenar por</option>
-                  <option value="date_desc" {{#eq filters.sort 'date_desc' }}selected{{/eq}}>Data/Hora (Mais recente)
-                  </option>
-                  <option value="date_asc" {{#eq filters.sort 'date_asc' }}selected{{/eq}}>Data/Hora (Mais antigo)
-                  </option>
-                  <option value="value_desc" {{#eq filters.sort 'value_desc' }}selected{{/eq}}>Valor (Maior primeiro)
-                  </option>
-                  <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
-                  </option>
-                  <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Barbeiro (A-Z)</option>
-                  <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Barbeiro (Z-A)</option>
-                </select>
-              </div>
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Ordenar por</label>
+                  <select class="form-control" name="sort" id="sort">
+                    <option value="">Ordenar por</option>
+                    <option value="date_desc" {{#eq filters.sort 'date_desc' }}selected{{/eq}}>Data/Hora (Mais recente)
+                    </option>
+                    <option value="date_asc" {{#eq filters.sort 'date_asc' }}selected{{/eq}}>Data/Hora (Mais antigo)
+                    </option>
+                    <option value="value_desc" {{#eq filters.sort 'value_desc' }}selected{{/eq}}>Valor (Maior primeiro)
+                    </option>
+                    <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
+                    </option>
+                    <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Profissional (A-Z)</option>
+                    <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Profissional (Z-A)
+                    </option>
+                  </select>
+                </div>
 
-              <div class="col-md-9 d-flex">
-                <button type="submit" class="btn btn-primary me-2">
-                  <i class="fas fa-filter"></i> Aplicar Filtros
-                </button>
-                <button type="button" class="btn btn-secondary me-2" onclick="clearFilters()">
-                  <i class="fas fa-times"></i> Limpar
-                </button>
-                <button id="openFitInBtn" type="button" class="btn btn-success me-2" data-bs-toggle="modal"
-                  data-bs-target="#fitInModal">
-                  <i class="fas fa-plus"></i> Encaixe
-                </button>
-              </div>
+                <div class="col-md-auto d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Aplicar
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Limpar
+                  </button>
+                  <button id="openFitInBtn" type="button" class="btn btn-success" data-bs-toggle="modal"
+                    data-bs-target="#fitInModal">
+                    <i class="fas fa-plus"></i> Encaixe
+                  </button>
+                </div>
 
-            </div>
-          </form>
+              </div>
+            </form>
+          </div>
         </div>
+
       </div>
     </div>
+
 
     {{!-- <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
     <div class="toggle-btn-wrapper mb-3">
@@ -99,36 +103,33 @@
       <div class="row">
         <div class="col-12">
 
-            
 
-                <table class="table table-hover admin-table">
-                 
-                   <tbody id="appointmentsTableBody">
-                      {{> appointments-table-rows}}
-                  </tbody>
-                </table>
-                 
-          </div>
+
+          <table class="table table-hover admin-table">
+
+            <tbody id="appointmentsTableBody">
+              {{> appointments-table-rows}}
+            </tbody>
+          </table>
+
         </div>
       </div>
+    </div>
 
     {{!-- <!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
     <div id="appointmentsCardView" class="view-mode hidden">
-        <div id="appointmentsCardsContainer">
-      {{> appointments-cards-grouped appointments=appointments }}
+      <div id="appointmentsCardsContainer">
+        {{> appointments-cards-grouped appointments=appointments }}
       </div>
       <div class="text-center my-3">
-          <button id="loadMoreCards"
-                  class="btn btn-outline-primary"
-                  data-page="2"
-                  data-limit="10"
-                  {{#unless pagination.hasNext}}hidden{{/unless}}>
-            Ver mais
-          </button>
+        <button id="loadMoreCards" class="btn btn-outline-primary" data-page="2" data-limit="10" {{#unless
+          pagination.hasNext}}hidden{{/unless}}>
+          Ver mais
+        </button>
       </div>
     </div> --}}
 
- 
+
   </div>
 
 </div>
@@ -169,7 +170,7 @@
         <div class="modal-body">
           <div id="edit-loading" class="d-flex justify-content-center align-items-center py-5" style="display: none;">
 
-          
+
             <input type="hidden" name="id" id="edit-id">
             <div class="row">
               <div class="col-md-6">
@@ -184,7 +185,7 @@
                 <label class="form-label">Serviço</label>
                 <select id="edit-service" class="form-control" required></select>
               </div>
-             
+
               <div class="col-md-6 mt-3">
                 <label class="form-label">Barbeiro</label>
                 <select id="edit-barber" class="form-control" required></select>
@@ -250,8 +251,8 @@
           <div class="mb-3 position-relative">
             <label for="fitInTime" class="form-label">Horário</label>
             <input type="time" id="fitInTime" name="fitInTime" class="form-control" step="60">
-            
-            
+
+
           </div>
 
 
@@ -291,6 +292,20 @@
 <style>
   /* --- Layout mobile (até tablets) --- */
   @media (max-width: 768px) {
+    #filterToggleBtn {
+    margin-top: 0.75rem;   /* espaço extra acima */
+  }
+
+  /* opcional: deixar o botão mais "clicável" */
+  #filterToggleBtn.btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* se quiser dar respiro no header inteiro */
+  .d-flex.justify-content-between.align-items-center.mb-2 {
+    margin-top: 0.75rem;
+  }
     .admin-card .d-flex {
       flex-direction: column;
       align-items: stretch;
@@ -376,10 +391,11 @@
     }
 
     /* Card dentro da célula → flexível, quebra quando necessário */
-    table.admin-table td:not(:first-child) > div {
+    table.admin-table td:not(:first-child)>div {
       flex: 1;
       display: flex;
-      flex-wrap: wrap;        /* ✅ permite quebrar linhas */
+      flex-wrap: wrap;
+      /* ✅ permite quebrar linhas */
       align-items: flex-start;
       justify-content: space-between;
       gap: 0.25rem;
@@ -390,7 +406,8 @@
       line-height: 1.3;
       max-width: 100%;
 
-      white-space: normal;    /* ✅ permite quebra */
+      white-space: normal;
+      /* ✅ permite quebra */
       overflow-wrap: break-word;
 
       min-height: 32px;
@@ -404,103 +421,154 @@
     }
 
     /* Status → cores no fundo */
-    .slot-confirmed   { background: #4e73df; color: #fff; }
-    .slot-in_progress { background: #f6c23e; color: #000; }
-    .slot-completed   { background: #1cc88a; color: #fff; }
-    .slot-cancelled   { background: #e74a3b; color: #fff; }
-    .slot-no_show     { background: #858796; color: #fff; }
-    .slot-pending     { background: #36b9cc; color: #fff; }
+    .slot-confirmed {
+      background: #4e73df;
+      color: #fff;
+    }
+
+    .slot-in_progress {
+      background: #f6c23e;
+      color: #000;
+    }
+
+    .slot-completed {
+      background: #1cc88a;
+      color: #fff;
+    }
+
+    .slot-cancelled {
+      background: #e74a3b;
+      color: #fff;
+    }
+
+    .slot-no_show {
+      background: #858796;
+      color: #fff;
+    }
+
+    .slot-pending {
+      background: #36b9cc;
+      color: #fff;
+    }
   }
 
   /* Extra pequeno (iPhones menores) */
-  @media (max-width: 576px) {W
-    .admin-table td:first-child {
+  @media (max-width: 576px) {
+    W .admin-table td:first-child {
       flex: 0 0 36px;
       font-size: 0.6rem;
       padding: 0.15rem;
     }
 
-    table.admin-table td:not(:first-child) > div {
+    table.admin-table td:not(:first-child)>div {
       font-size: 0.6rem;
       padding: 0.2rem 0.3rem;
     }
   }
 
 
-/* --- Desktop mantém tabela normal --- */
-@media (min-width: 769px) {
-  .admin-table {
-    display: table !important;
-    width: 100% !important;
-    border-collapse: collapse;
-    table-layout: fixed; /* garante colunas uniformes */
-  }
+  /* --- Desktop mantém tabela normal --- */
+  @media (min-width: 769px) {
+    .admin-table {
+      display: table !important;
+      width: 100% !important;
+      border-collapse: collapse;
+      table-layout: fixed;
+      /* garante colunas uniformes */
+    }
 
-  .admin-table-wrapper {
-    overflow-x: auto; /* 🔥 ativa scroll horizontal se não couber */
-    width: 100%;
-  }
+    .admin-table-wrapper {
+      overflow-x: auto;
+      /* 🔥 ativa scroll horizontal se não couber */
+      width: 100%;
+    }
 
-  /* Coluna do horário */
-  .admin-table td:first-child,
-  .admin-table th:first-child {
-    width: 80px;
-    text-align: center;
-    font-weight: bold;
-    background: #222;
-    color: #fff;
-  }
+    /* Coluna do horário */
+    .admin-table td:first-child,
+    .admin-table th:first-child {
+      width: 80px;
+      text-align: center;
+      font-weight: bold;
+      background: #222;
+      color: #fff;
+    }
 
-  /* Colunas dos barbeiros → mais largas */
-  .admin-table td:not(:first-child),
-  .admin-table th:not(:first-child) {
-    min-width: 300px;   /* 🔥 largura mínima maior */
-    max-width: 400px;   /* 🔥 limite confortável */
-  }
+    /* Colunas dos barbeiros → mais largas */
+    .admin-table td:not(:first-child),
+    .admin-table th:not(:first-child) {
+      min-width: 300px;
+      /* 🔥 largura mínima maior */
+      max-width: 400px;
+      /* 🔥 limite confortável */
+    }
 
-  .admin-table td,
-  .admin-table th {
-    display: table-cell !important;
-    vertical-align: middle;
-    padding: 0.5rem;
-    white-space: nowrap;  /* 🔥 mantém tudo em uma linha */
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+    .admin-table td,
+    .admin-table th {
+      display: table-cell !important;
+      vertical-align: middle;
+      padding: 0.5rem;
+      white-space: nowrap;
+      /* 🔥 mantém tudo em uma linha */
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-  .admin-table td > div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.6rem;
-    width: 100%;
-    border-radius: 0.25rem;
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-    line-height: 1.2;
-    min-height: 44px;
-    box-sizing: border-box;
-  }
+    .admin-table td>div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      border-radius: 0.25rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8rem;
+      line-height: 1.2;
+      min-height: 44px;
+      box-sizing: border-box;
+    }
 
-  /* Slots livres */
-  .admin-table td .slot-free {
-    border: 1px solid #ccc;
-    background: transparent;
-    font-size: 0.75rem;
-    justify-content: center;
-    align-items: center;
-    color: #888;
-    min-height: 44px;
-  }
+    /* Slots livres */
+    .admin-table td .slot-free {
+      border: 1px solid #ccc;
+      background: transparent;
+      font-size: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      color: #888;
+      min-height: 44px;
+    }
 
-  /* Status coloridos */
-  .admin-table td .slot-confirmed   { background: #4e73df; color: #fff; }
-  .admin-table td .slot-in_progress { background: #f6c23e; color: #000; }
-  .admin-table td .slot-completed   { background: #1cc88a; color: #fff; }
-  .admin-table td .slot-cancelled   { background: #e74a3b; color: #fff; }
-  .admin-table td .slot-no_show     { background: #858796; color: #fff; }
-  .admin-table td .slot-pending     { background: #36b9cc; color: #fff; }
-}
+    /* Status coloridos */
+    .admin-table td .slot-confirmed {
+      background: #4e73df;
+      color: #fff;
+    }
+
+    .admin-table td .slot-in_progress {
+      background: #f6c23e;
+      color: #000;
+    }
+
+    .admin-table td .slot-completed {
+      background: #1cc88a;
+      color: #fff;
+    }
+
+    .admin-table td .slot-cancelled {
+      background: #e74a3b;
+      color: #fff;
+    }
+
+    .admin-table td .slot-no_show {
+      background: #858796;
+      color: #fff;
+    }
+
+    .admin-table td .slot-pending {
+      background: #36b9cc;
+      color: #fff;
+    }
+  }
 
 
 
@@ -511,7 +579,7 @@
     width: 100%;
   }
 
-  
+
   .actions-menu {
     position: relative;
     display: flex;
