@@ -3,88 +3,90 @@
   <div class="container-fluid">
 
 
-    <!-- Filtros Corrigidos -->
-    <div class="row mb-2 mt-5">
-      <div class="col-12">
-         <div class="admin-card">
-          <form id="filterForm">
-            <div class="row">
-            
+<!-- Filtros Suspensos -->
+<div class="row mb-2 mt-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Agendamentos</h5>
+      <button class="btn btn-outline-primary btn-sm" type="button"
+              data-bs-toggle="collapse" 
+              data-bs-target="#filtersCollapse"
+              aria-expanded="false" 
+              aria-controls="filtersCollapse">
+        <i class="fas fa-filter me-1"></i> Filtros
+      </button>
+    </div>
 
-              <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Data Inicial</label>
-                  <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
-                </div>
-              </div>
-              {{!-- <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Data Final</label>
-                  <input type="date" name="endDate" id="endDate" class="form-control" value="{{filters.startDate}}">
-                </div>
-              </div> --}}
-              <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Barbeiro</label>
-                  <select class="form-control" name="barberId" id="barberId">
-                    <option value="">Todos os barbeiros</option>
-                    {{#each barbers}}
-                    <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
-                    {{/each}}
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="filter-group">
-                  <label class="form-label">Status</label>
-                  <select name="status" id="statusFilter" class="form-control">
-                    <option value="">Todos os status</option>
-                    <option value="confirmed" {{#eq filters.status 'confirmed' }}selected{{/eq}}>Confirmado</option>
-                    <option value="in_progress" {{#eq filters.status 'in_progress' }}selected{{/eq}}>Em andamento
-                    </option>
-                    <option value="completed" {{#eq filters.status 'completed' }}selected{{/eq}}>Concluído</option>
-                    <option value="cancelled" {{#eq filters.status 'cancelled' }}selected{{/eq}}>Cancelado</option>
-                    <option value="no_show" {{#eq filters.status 'no_show' }}selected{{/eq}}>Não compareceu</option>
-                  </select>
-                </div>
-
+    <div class="collapse" id="filtersCollapse">
+      <div class="admin-card">
+        <form id="filterForm">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
               </div>
             </div>
-            <div class="row mt-3 align-items-center">
-              <div class="col-md-3">
-                <select class="form-control" name="sort" id="sort">
-                  <option value="">Ordenar por</option>
-                  <option value="date_desc" {{#eq filters.sort 'date_desc' }}selected{{/eq}}>Data/Hora (Mais recente)
-                  </option>
-                  <option value="date_asc" {{#eq filters.sort 'date_asc' }}selected{{/eq}}>Data/Hora (Mais antigo)
-                  </option>
-                  <option value="value_desc" {{#eq filters.sort 'value_desc' }}selected{{/eq}}>Valor (Maior primeiro)
-                  </option>
-                  <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
-                  </option>
-                  <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Barbeiro (A-Z)</option>
-                  <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Barbeiro (Z-A)</option>
+
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Barbeiro</label>
+                <select class="form-control" name="barberId" id="barberId">
+                  <option value="">Todos os barbeiros</option>
+                  {{#each barbers}}
+                    <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
+                  {{/each}}
                 </select>
               </div>
-
-              <div class="col-md-9 d-flex">
-                <button type="submit" class="btn btn-primary me-2">
-                  <i class="fas fa-filter"></i> Aplicar Filtros
-                </button>
-                <button type="button" class="btn btn-secondary me-2" onclick="clearFilters()">
-                  <i class="fas fa-times"></i> Limpar
-                </button>
-                <button id="openFitInBtn" type="button" class="btn btn-success me-2" data-bs-toggle="modal"
-                  data-bs-target="#fitInModal">
-                  <i class="fas fa-plus"></i> Encaixe
-                </button>
-              </div>
-
             </div>
-          </form>
-        </div>
+
+            <div class="col-md-3">
+              <div class="filter-group">
+                <label class="form-label">Status</label>
+                <select name="status" id="statusFilter" class="form-control">
+                  <option value="">Todos os status</option>
+                  <option value="confirmed" {{#eq filters.status 'confirmed'}}selected{{/eq}}>Confirmado</option>
+                  <option value="in_progress" {{#eq filters.status 'in_progress'}}selected{{/eq}}>Em andamento</option>
+                  <option value="completed" {{#eq filters.status 'completed'}}selected{{/eq}}>Concluído</option>
+                  <option value="cancelled" {{#eq filters.status 'cancelled'}}selected{{/eq}}>Cancelado</option>
+                  <option value="no_show" {{#eq filters.status 'no_show'}}selected{{/eq}}>Não compareceu</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3 align-items-center">
+            <div class="col-md-3">
+              <select class="form-control" name="sort" id="sort">
+                <option value="">Ordenar por</option>
+                <option value="date_desc" {{#eq filters.sort 'date_desc'}}selected{{/eq}}>Data/Hora (Mais recente)</option>
+                <option value="date_asc" {{#eq filters.sort 'date_asc'}}selected{{/eq}}>Data/Hora (Mais antigo)</option>
+                <option value="value_desc" {{#eq filters.sort 'value_desc'}}selected{{/eq}}>Valor (Maior primeiro)</option>
+                <option value="value_asc" {{#eq filters.sort 'value_asc'}}selected{{/eq}}>Valor (Menor primeiro)</option>
+                <option value="barber_asc" {{#eq filters.sort 'barber_asc'}}selected{{/eq}}>Barbeiro (A-Z)</option>
+                <option value="barber_desc" {{#eq filters.sort 'barber_desc'}}selected{{/eq}}>Barbeiro (Z-A)</option>
+              </select>
+            </div>
+
+            <div class="col-md-9 d-flex">
+              <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-filter"></i> Aplicar
+              </button>
+              <button type="button" class="btn btn-secondary me-2" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Limpar
+              </button>
+              <button id="openFitInBtn" type="button" class="btn btn-success me-2" data-bs-toggle="modal"
+                      data-bs-target="#fitInModal">
+                <i class="fas fa-plus"></i> Encaixe
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
+</div>
+
 
     {{!-- <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
     <div class="toggle-btn-wrapper mb-3">

@@ -430,6 +430,9 @@ function initFilterForm() {
 
   filterForm.addEventListener('submit', function (e) {
     e.preventDefault();
+   
+    const collapseEl = document.getElementById('filtersCollapse');
+    if (collapseEl) bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
     const formData = new FormData(filterForm);
     const params = new URLSearchParams();
     const filtersToSave = {};
