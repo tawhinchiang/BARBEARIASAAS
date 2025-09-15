@@ -423,11 +423,7 @@ function gerarSlotsHorarios(intervaloMinutos = 30) {
 }
 
 
-document.getElementById('filterToggleBtn').addEventListener('click', () => {
-  const collapseEl = document.getElementById('filtersCollapse');
-  const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-  bsCollapse.toggle();
-});
+
 
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
@@ -437,7 +433,9 @@ function initFilterForm() {
     e.preventDefault();
    
     const collapseEl = document.getElementById('filtersCollapse');
-    if (collapseEl) bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+    if (collapseEl && collapseEl.classList.contains('show')) {
+      bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).hide();
+    }
 
     const formData = new FormData(filterForm);
     const params = new URLSearchParams();
