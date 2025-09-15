@@ -23,14 +23,14 @@
               <div class="row g-2 align-items-end">
 
                 <div class="col-md-auto">
-                  <label class="form-label mb-1">Data Inicial</label>
+                  <label class="form-label mb-1">Data</label>
                   <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
                 </div>
 
                 <div class="col-md-auto">
-                  <label class="form-label mb-1">Barbeiro</label>
+                  <label class="form-label mb-1">Profissional</label>
                   <select class="form-control" name="barberId" id="barberId">
-                    <option value="">Todos os barbeiros</option>
+                    <option value="">Todos Os Profissionais</option>
                     {{#each barbers}}
                     <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
                     {{/each}}
@@ -62,8 +62,8 @@
                     </option>
                     <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
                     </option>
-                    <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Barbeiro (A-Z)</option>
-                    <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Barbeiro (Z-A)
+                    <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Profissional (A-Z)</option>
+                    <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Profissional (Z-A)
                     </option>
                   </select>
                 </div>

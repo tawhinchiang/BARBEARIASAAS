@@ -2832,12 +2832,7 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 
 
 @media (max-width: 768px) {
-  #whatsapp-status-toast {
-    height: auto;             
-    padding: 0.4rem 0.75rem;   
-    font-size: 0.8rem;         
-    align-self: center;        
-  }
+ 
   .card-wrapper {
     max-width: 100% !important;
   }

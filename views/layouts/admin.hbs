@@ -62,10 +62,7 @@
       <span id="whatsapp-status-text"></span>
     </div>
 
-    <!-- Mobile: badge inline -->
-    <div id="whatsapp-status-inline" class="d-flex d-md-none align-items-center">
-      <span id="whatsapp-status-text-inline"></span>
-    </div>
+ 
 
     {{#if lastUpdate}}
     <small class="text-muted d-none d-md-inline">{{lastUpdate}}</small>
@@ -583,27 +580,22 @@
 
   /* Responsividade */
   @media (max-width: 768px) {
-    /* Esconde toast no mobile */
-    #whatsapp-status-toast {
-      display: none !important;
-    }
-
-    /* Mostra badge inline */
-    #whatsapp-status-inline {
-      background: #fff;
-      border: 2px solid transparent;
-      border-radius: 6px;
-      padding: 2px 6px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      white-space: nowrap;
-      margin-left: 6px;
-      display: inline-flex;
-      align-items: center;
-      line-height: 1.2;
-    }
-    #whatsapp-status-inline.success { border-color: #28a745; color: #28a745; }
-    #whatsapp-status-inline.error { border-color: #dc3545; color: #dc3545; }
+     #whatsapp-status-toast {
+    height: auto;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    background: #fff !important;
+    box-shadow: none;
+  }
+  #whatsapp-status-toast.success { border-color: #28a745; color: #28a745; }
+  #whatsapp-status-toast.error { border-color: #dc3545; color: #dc3545; }
+}
 
     .admin-navbar .navbar-brand span { display: none; }
     .admin-footer .col-md-6:last-child {
