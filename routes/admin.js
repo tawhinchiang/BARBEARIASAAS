@@ -372,7 +372,7 @@ router.get('/appointments', async (req, res) => {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100); // 5–100 itens por página
     const offset = (page - 1) * limit;
-
+    const todayStr = new Date().toLocaleDateString('en-CA');
     const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
     let whereClause = {};
 

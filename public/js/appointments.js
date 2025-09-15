@@ -10,8 +10,15 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 document.addEventListener('DOMContentLoaded', function () {
     console.log('[ADMIN] Página de agendamentos carregada');
     restoreSavedView();
+const filterBtn = document.getElementById('filterToggleBtn');
+if (filterBtn) {
+  filterBtn.addEventListener('click', () => {
+    const collapseEl = document.getElementById('filtersCollapse');
+    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+    bsCollapse.toggle(); 
+  });
+}
 
-   // Gestos de interação para abrir o painel lateral
  if (!window._gestureHandlersInstalled) {
   window._gestureHandlersInstalled = true;
 
@@ -24,15 +31,16 @@ document.addEventListener('DOMContentLoaded', function () {
       openActionPanel(id);
     }
   });
-}
-
-  const prevBtn = document.getElementById('prevDay');
-  const nextBtn = document.getElementById('nextDay');
-  
-  if (prevBtn && nextBtn) {
-    prevBtn.addEventListener('click', () => changeDay(-1));
-    nextBtn.addEventListener('click', () => changeDay(1));
   }
+
+
+  document.querySelectorAll('.prevDay').forEach(btn => {
+  btn.addEventListener('click', () => changeDay(-1));
+  });
+
+  document.querySelectorAll('.nextDay').forEach(btn => {
+    btn.addEventListener('click', () => changeDay(1));
+  });
 
   function changeDay(offset) {
   const url = new URL(window.location.href);
@@ -424,12 +432,21 @@ function gerarSlotsHorarios(intervaloMinutos = 30) {
 
 
 
+// Controle manual do toggle dos filtros
+
+
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
   if (!filterForm) return;
 
   filterForm.addEventListener('submit', function (e) {
     e.preventDefault();
+   
+    const collapseEl = document.getElementById('filtersCollapse');
+    if (collapseEl && collapseEl.classList.contains('show')) {
+      bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).hide();
+    }
+
     const formData = new FormData(filterForm);
     const params = new URLSearchParams();
     const filtersToSave = {};
