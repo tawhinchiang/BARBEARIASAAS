@@ -26,13 +26,13 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 }
 
-  const prevBtn = document.getElementById('prevDay');
-  const nextBtn = document.getElementById('nextDay');
-  
-  if (prevBtn && nextBtn) {
-    prevBtn.addEventListener('click', () => changeDay(-1));
-    nextBtn.addEventListener('click', () => changeDay(1));
-  }
+ document.querySelectorAll('.prevDay').forEach(btn => {
+  btn.addEventListener('click', () => changeDay(-1));
+});
+
+document.querySelectorAll('.nextDay').forEach(btn => {
+  btn.addEventListener('click', () => changeDay(1));
+});
 
   function changeDay(offset) {
   const url = new URL(window.location.href);
@@ -423,6 +423,11 @@ function gerarSlotsHorarios(intervaloMinutos = 30) {
 }
 
 
+document.getElementById('filterToggleBtn').addEventListener('click', () => {
+  const collapseEl = document.getElementById('filtersCollapse');
+  const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+  bsCollapse.toggle();
+});
 
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
@@ -433,6 +438,7 @@ function initFilterForm() {
    
     const collapseEl = document.getElementById('filtersCollapse');
     if (collapseEl) bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+
     const formData = new FormData(filterForm);
     const params = new URLSearchParams();
     const filtersToSave = {};
