@@ -292,6 +292,20 @@
 <style>
   /* --- Layout mobile (até tablets) --- */
   @media (max-width: 768px) {
+    #filterToggleBtn {
+    margin-top: 0.75rem;   /* espaço extra acima */
+  }
+
+  /* opcional: deixar o botão mais "clicável" */
+  #filterToggleBtn.btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* se quiser dar respiro no header inteiro */
+  .d-flex.justify-content-between.align-items-center.mb-2 {
+    margin-top: 0.75rem;
+  }
     .admin-card .d-flex {
       flex-direction: column;
       align-items: stretch;

@@ -2229,11 +2229,7 @@ body.sidebar-collapsed .admin-sidenav .sidenav-footer {
   border-left-color: var(--confirmed-color);
 }
 
-@media (max-width: 768px) {
-  .admin-offcanvas {
-    width: 100%;
-  }
-}
+
 
 
 .navbar-dark .navbar-toggler-icon {
@@ -2740,7 +2736,108 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 }
 
+
+
+@media (max-width: 480px) {
+  .calendar-container {
+    padding: 0.5rem;
+  }
+
+  .calendar-day-header {
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .calendar-day {
+    min-height: 35px;
+    padding: 0.1rem;
+    font-size: 0.8rem;
+  }
+
+  .calendar-nav {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .calendar-title {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  .admin-card,
+  .admin-filters,
+  .admin-table {
+    padding: 1rem;
+  }
+
+  .actions-dropdown {
+    width: 100%;
+    position: static;
+  }
+
+  .actions-menu {
+    width: 100%;
+  }
+
+  .action-item {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+
+  @media (max-width: 576px) {
+    .status-badge {
+      min-width: 90px;
+      font-size: 0.75rem;
+    }
+  }
+
+  .btn,
+  .form-control {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 992px) {
+  #servicesCardContainer .service-card {
+    flex: 1 1 calc(50% - 1rem);
+  }
+}
+
+@media (max-width: 576px) {
+  #servicesCardContainer .service-card {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .services-grid {
+    grid-template-columns: 1fr !important;
+    padding: 0;
+    gap: 1rem;
+  }
+
+  .service-card {
+    width: 100% !important;
+  }
+}
+
+
+
 @media (max-width: 768px) {
+  #whatsapp-status-toast {
+    height: auto;             
+    padding: 0.4rem 0.75rem;   
+    font-size: 0.8rem;         
+    align-self: center;        
+  }
   .card-wrapper {
     max-width: 100% !important;
   }
@@ -2839,100 +2936,9 @@ body.sidebar-collapsed .sidenav-footer .btn i {
     margin: 0;
     box-sizing: border-box;
   }
-}
-
-@media (max-width: 480px) {
-  .calendar-container {
-    padding: 0.5rem;
-  }
-
-  .calendar-day-header {
-    padding: 0.25rem;
-    font-size: 0.7rem;
-  }
-
-  .calendar-day {
-    min-height: 35px;
-    padding: 0.1rem;
-    font-size: 0.8rem;
-  }
-
-  .calendar-nav {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .calendar-title {
-    font-size: 1.2rem;
-  }
-}
-
-@media (max-width: 576px) {
-  h2 {
-    font-size: 1.25rem;
-  }
-
-  .admin-card,
-  .admin-filters,
-  .admin-table {
-    padding: 1rem;
-  }
-
-  .actions-dropdown {
-    width: 100%;
-    position: static;
-  }
-
-  .actions-menu {
+  .admin-offcanvas {
     width: 100%;
   }
-
-  .action-item {
-    display: block;
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
-
-
-  @media (max-width: 576px) {
-    .status-badge {
-      min-width: 90px;
-      font-size: 0.75rem;
-    }
-  }
-
-  .btn,
-  .form-control {
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 992px) {
-  #servicesCardContainer .service-card {
-    flex: 1 1 calc(50% - 1rem);
-  }
-}
-
-@media (max-width: 576px) {
-  #servicesCardContainer .service-card {
-    flex: 1 1 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .services-grid {
-    grid-template-columns: 1fr !important;
-    padding: 0;
-    gap: 1rem;
-  }
-
-  .service-card {
-    width: 100% !important;
-  }
-}
-
-@media (max-width: 768px) {
   .toggle-btn-wrapper {
     justify-content: center;
     margin-bottom: 1rem;
