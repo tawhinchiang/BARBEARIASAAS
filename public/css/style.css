@@ -54,6 +54,7 @@
 }
 /* ===== Tema Claro Cliente ===== */
 .client-body.theme-light {
+    
   --bg-dark: #f8f9fa;
   --bg-gray: #e9ecef;
   --bg-light: #ffffff;
@@ -71,6 +72,7 @@
   --sidebar-hover: rgba(0, 0, 0, .05);
   --sidebar-active: rgba(0, 0, 0, .1);
 }
+
 
 * {
   box-sizing: border-box;
@@ -3441,4 +3443,59 @@ body.modal-open {
   #fitInModal .modal-footer {
     justify-content: space-between; /* distribui os botões */
   }
+}
+/* ===== Correções Tema Claro ===== */
+
+/* Logo */
+.client-body.theme-light .logo-icon,
+.client-body.theme-light .logo-text {
+  color: #000 !important;
+}
+
+/* Cards de serviços */
+.client-body.theme-light .service-card {
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #dee2e6 !important;
+}
+.client-body.theme-light .service-card:hover {
+  background: #f8f9fa !important;
+}
+
+/* Navbar inferior */
+.client-body.theme-light .bottom-barber-navbar {
+  background: #fff !important;
+  border-top: 1px solid #dee2e6 !important;
+}
+.client-body.theme-light .bottom-barber-navbar .nav-button {
+  color: #000 !important;
+}
+.client-body.theme-light .bottom-barber-navbar .nav-button.active {
+  color: #0d6efd !important; /* azul bootstrap */
+}
+
+/* Modal de horários */
+.client-body.theme-light #meuModal .modal-content {
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #dee2e6 !important;
+}
+.client-body.theme-light #meuModal .modal-header {
+  color: #000 !important;
+  border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* Outros modais (serviços, barbeiros, etc) */
+.client-body.theme-light #serviceModal .modal-content,
+.client-body.theme-light #barberModal .modal-content,
+.client-body.theme-light #fitInModal .modal-content {
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #dee2e6 !important;
+}
+.client-body.theme-light #serviceModal .modal-header,
+.client-body.theme-light #barberModal .modal-header,
+.client-body.theme-light #fitInModal .modal-header {
+  color: #000 !important;
+  border-bottom: 1px solid #dee2e6 !important;
 }
