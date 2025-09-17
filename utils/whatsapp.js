@@ -1,7 +1,7 @@
 const whatsapp = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const SafeLocalAuth = require('./CustomLocalAuth');
-const { formatBrazilianPhoneForWhatsApp, generatePhoneVariations, cleanPhone } = require('./smartphoneformatter');
+const {cleanPhone } = require('./smartphoneformatter');
 const deleteSession = require('../utils/deleteSession');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -440,44 +440,54 @@ async function sendWhatsAppMessage(phone, message) {
 }
 
 
-  async function sendWhatsAppMessageDebug(phone, message) {
+async function sendWhatsAppMessageDebug(phone, message) {
   console.log(`[DEBUG] 🔬 Debug ativado para: ${phone}`);
   try {
     await ensureClientReady();
     await waitWhatsAppReady(30000);
-    const baseFormatted = await formatBrazilianPhoneForWhatsApp(client, phone);
-    const rawVars = [baseFormatted, ...generatePhoneVariations(cleanPhone(phone))].filter(Boolean);
-    const variations = Array.from(new Set(
-      rawVars.flatMap(v => (v.startsWith('+') ? [v, v.slice(1)] : [v, `+${v}`]))
-    ));
 
-    if (DEBUG) console.log(`[DEBUG] Variações geradas:`, variations);
+    const cleaned = cleanPhone(phone);
+    const numberId = await client.getNumberId(cleaned);
 
-    for (const variation of variations) {
-      try {
-        const contactId = await client.getNumberId(variation);
-        if (contactId) {
-          const msg = await sendMessageWithTimeout(contactId._serialized, message, TIMEOUTS.send);
-          const ackInfo = await waitForAck(msg, { minAck: ACK_SUCCESS_LEVEL, timeoutMs: TIMEOUTS.ack });
-          if (ackInfo.delivered) {
-            console.log(`[DEBUG] ✅ ENTREGUE (ack=${ackInfo.ack}) com ${variation}`);
-            return { ok: true, delivered: true, ack: ackInfo.ack, used: variation };
-          } else {
-            console.warn(`[DEBUG] ⚠️ Sem ACK de entrega (ack=${ackInfo.ack}) com ${variation}`);
-          }
-        }
-      } catch (err) {
-        console.log(`[DEBUG] ❌ Falhou com ${variation}: ${err.message}`);
-      }
+    if (!numberId) {
+      console.warn(`[DEBUG] ⚠️ Número não registrado no WhatsApp: ${cleaned}`);
+      return { ok: false, delivered: false, error: 'not-registered' };
     }
 
-    console.log(`[DEBUG] 💥 Nenhuma variação funcionou`);
-    return { ok: false, delivered: false };
+    const jid = numberId._serialized;
+    console.log(`[DEBUG] ✅ JID resolvido: ${jid}`);
+
+    const msgObj = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
+    console.log(`[DEBUG] 📤 Enviado para ${jid}`);
+
+    const ackInfo = await waitForAck(msgObj, {
+      minAck: ACK_SUCCESS_LEVEL,
+      timeoutMs: TIMEOUTS.ack
+    });
+
+    const ackCode = toAckCode(msgObj, ackInfo);
+    const delivered = !!(ackInfo && (ackInfo.delivered || ackCode >= ACK_SUCCESS_LEVEL));
+
+    console.log(`[DEBUG] 📨 ACK ${ackLabel(ackCode)} (${ackCode}) | delivered=${delivered}`);
+
+    return { ok: true, delivered, ack: ackCode, used: jid };
+
   } catch (err) {
-    console.error(`[DEBUG] 💥 Erro geral:`, err.message);
-    return { ok: false, delivered: false };
+    const msg = String(err.message || '').toLowerCase();
+    console.error(`[DEBUG] 💥 Erro geral: ${msg}`);
+
+    if (msg.includes('timeout no envio')) {
+      return { ok: false, delivered: false, error: 'send-timeout' };
+    }
+
+    if (msg.includes('timeout')) {
+      console.warn(`[DEBUG] ⚠️ Timeout esperando ACK para ${phone}, possivelmente enviado sem confirmação`);
+      return { ok: true, delivered: false, ack: 0, used: phone, note: 'timeout-but-sent' };
+    }
+
+    return { ok: false, delivered: false, error: msg };
   }
-  }
+}
 
 
 
