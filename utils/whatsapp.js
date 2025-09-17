@@ -389,7 +389,7 @@ async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.se
   });
 }
 
-async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
+async function sendWhatsAppMessage(phone, message, maxRetries = 2) {
   console.log(`[WHATSAPP] 🚀 Enviando para: ${phone}`);
 
   // Garante cliente operacional
@@ -440,40 +440,41 @@ async function sendWhatsAppMessage(phone, message, maxRetries = 3) {
     }
 
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const msgObj = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
-        console.log(`[WHATSAPP] 📤 Enviado para ${jid} (tentativa ${attempt})`);
-       const minAck = ACK_SUCCESS_LEVEL; // 1=server, 2=device...
-       const ackInfo = await waitForAck(msgObj, { minAck, timeoutMs: TIMEOUTS.ack });
-       const ackCode = toAckCode(msgObj, ackInfo);
-       const delivered = !!(ackInfo && (ackInfo.delivered || ackCode >= minAck));
-       console.log(`[WHATSAPP] 📨 ACK ${ackLabel(ackCode)} (${ackCode}) para ${jid} | delivered=${delivered}`);
+   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const msgObj = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
+            console.log(`[WHATSAPP] 📤 Enviado para ${jid} (tentativa ${attempt})`);
 
-       // Sucesso de envio: ok=true SEMPRE que o WhatsApp aceitou a mensagem
-      return { ok: true, delivered, ack: ackCode, used: jid };
+            const minAck = ACK_SUCCESS_LEVEL; // 1=server, 2=device...
+            const ackInfo = await waitForAck(msgObj, { minAck, timeoutMs: TIMEOUTS.ack });
+            const ackCode = toAckCode(msgObj, ackInfo);
+            const delivered = !!(ackInfo && (ackInfo.delivered || ackCode >= minAck));
 
-      } catch (err) {
-      console.error(`[WHATSAPP] ❌ Falha ${jid} (tentativa ${attempt}): ${err.message}`);
-      const msg = String(err.message || '');
-      const fatal = /not.*registered|invalid.*jid|not-authorized/i.test(msg);
-       if (!fatal) {
-        
-         if (attempt < Math.min(maxRetries, 2)) {
-           const waitTime = attempt * TIMEOUTS.retryBase;
-           console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
-           await delay(waitTime);
-         } else {
-           // sai do laço de variações: provavelmente já enviou e só demorou
-           return { ok: true, delivered: false, ack: 0, used: jid, note: 'send-timeout-likely-sent' };
-         }
-       } else if (attempt < maxRetries) {
-         const waitTime = attempt * TIMEOUTS.retryBase;
-         console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms (erro fatal)...`);
-         await delay(waitTime);
-       }
-      }
-      }
+            console.log(`[WHATSAPP] 📨 ACK ${ackLabel(ackCode)} (${ackCode}) para ${jid} | delivered=${delivered}`);
+
+            // 🔧 CORREÇÃO: se a mensagem foi aceita pelo servidor, não retentar
+            if (ackCode >= 1) {
+              return { ok: true, delivered, ack: ackCode, used: jid };
+            }
+
+        }catch (err) {
+            console.error(`[WHATSAPP] ❌ Falha ${jid} (tentativa ${attempt}): ${err.message}`);
+            const msg = String(err.message || '');
+            const fatal = /not.*registered|invalid.*jid|not-authorized/i.test(msg);
+
+            // 🔧 CORREÇÃO: não retentar se já houve envio (timeout não significa falha total)
+            if (msg.includes('Timeout') && attempt === 1) {
+              return { ok: true, delivered: false, ack: 0, used: jid, note: 'timeout-but-sent' };
+            }
+
+            if (!fatal && attempt < maxRetries) {
+              const waitTime = attempt * TIMEOUTS.retryBase;
+              console.log(`[WHATSAPP] ⏳ Retentando em ${waitTime}ms...`);
+              await delay(waitTime);
+            }
+        }
+    }
+
     }
     // se todas as tentativas de envio falharem para esta variação, cai para próxima variação
   
