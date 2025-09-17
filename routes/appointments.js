@@ -157,7 +157,7 @@ router.post('/api/appointments', async (req, res) => {
 
     // CORREÇÃO CRÍTICA: Usar a nova função de normalização
     const cleanPhone = normalizePhone(phone);
-    log(`Telefone normalizado: ${phone} -> ${cleanPhone}`);
+   
 
     let client = await Client.findOne({ where: { phone: cleanPhone } });
 
@@ -230,7 +230,7 @@ Para realizar o cancelamento, clique no link abaixo, acesse a aba de 'Histórico
 ${baseUrl}`;
 
    
-   log(`Tentando enviar WhatsApp para: ${cleanPhone} (normalizado)`);
+   
    const sent = await sendWhatsAppMessage(cleanPhone, msg);
     
   // Marcar como enviado se o WhatsApp aceitou (ok=true).
