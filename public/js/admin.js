@@ -1,5 +1,25 @@
 // JavaScript para área administrativa - Frontend
 document.addEventListener('DOMContentLoaded', function () {
+  // Verifica se há tema salvo no localStorage
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('theme-light');
+  }
+
+  // Botão de toggle (coloque um botão com id="themeToggle" no HBS)
+  const btnToggle = document.getElementById('themeToggle');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      document.body.classList.toggle('theme-light');
+
+      // Salvar preferência
+      if (document.body.classList.contains('theme-light')) {
+        localStorage.setItem('theme', 'light');
+      } else {
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+  }
   // ======= Inicialização específica de /admin/reports =======
 if (window.location.pathname.startsWith('/admin/reports')) {
   const filterForm = document.getElementById('filterForm'); // se você tiver um form de filtros na view

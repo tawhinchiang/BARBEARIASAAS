@@ -35,6 +35,23 @@
 
   --confirmed-color: #6f42c1;
 }
+.theme-light {
+  --bg-light: #ffffff;
+  --bg-dark: #f1f3f5;
+  --bg-gray: #e9ecef;
+  --border-color: #dee2e6;
+  --primary-color: #000000;
+  --secondary-color: #f8f9fa;
+  --text-dark: #000000;
+  --text-light: #ffffff;
+  --text-muted: #6c757d;
+  --nav-bg: #f8f9fa;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #212529;
+  --sidebar-text-muted: #495057;
+  --sidebar-hover: rgba(0,0,0,.05);
+  --sidebar-active: rgba(0,0,0,.08);
+}
 
 * {
   box-sizing: border-box;

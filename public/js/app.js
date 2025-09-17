@@ -38,6 +38,26 @@ function logError(message, error = null) {
 const isHistoryPage = window.location.pathname.includes('/history');
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Verifica se há tema salvo no localStorage
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('theme-light');
+  }
+
+  // Botão de toggle (coloque um botão com id="themeToggle" no HBS)
+  const btnToggle = document.getElementById('themeToggle');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => {
+      document.body.classList.toggle('theme-light');
+
+      // Salvar preferência
+      if (document.body.classList.contains('theme-light')) {
+        localStorage.setItem('theme', 'light');
+      } else {
+        localStorage.setItem('theme', 'dark');
+      }
+    });
+  }
   if (isHistoryPage) {
     log('Histórico detectado - Inicializando somente transição suave.');
     setupSmoothPageTransition();
