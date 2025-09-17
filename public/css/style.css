@@ -52,6 +52,25 @@
   --sidebar-hover: rgba(0,0,0,.05);
   --sidebar-active: rgba(0,0,0,.08);
 }
+/* ===== Tema Claro Cliente ===== */
+.client-body.theme-light {
+  --bg-dark: #f8f9fa;
+  --bg-gray: #e9ecef;
+  --bg-light: #ffffff;
+  --border-color: #dee2e6;
+  --text-dark: #212529;
+  --text-light: #ffffff;
+  --text-muted: #6c757d;
+  --primary-color: #0d6efd;
+  --secondary-color: #6c757d;
+  --nav-bg: #ffffff;
+  --nav-border: rgba(0, 0, 0, 0.1);
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #212529;
+  --sidebar-text-muted: #6c757d;
+  --sidebar-hover: rgba(0, 0, 0, .05);
+  --sidebar-active: rgba(0, 0, 0, .1);
+}
 
 * {
   box-sizing: border-box;
