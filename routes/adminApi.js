@@ -74,6 +74,46 @@ router.post('/appointments/:id/whatsapp', async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+// Bloquear horário manualmente
+router.post('/appointments/block', async (req, res) => {
+  try {
+    const { barberId, appointmentDate, appointmentTime, reason } = req.body;
+
+    if (!barberId || !appointmentDate || !appointmentTime) {
+      return res.status(400).json({ success: false, error: 'Campos obrigatórios: barbeiro, data e hora' });
+    }
+
+    const { Appointment } = require('../models');
+
+    const appointment = await Appointment.create({
+      barberId,
+      appointmentDate,
+      appointmentTime,
+      clientId: null,
+      serviceTypeId: null,
+      serviceDuration: 20, // pode usar default do sistema
+      totalPrice: 0,
+      status: 'blocked',
+      isBlock: true,
+      blockReason: reason || null
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('appointment_blocked', {
+        id: appointment.id,
+        time: appointment.appointmentTime,
+        date: appointment.appointmentDate,
+        barberId
+      });
+    }
+
+    return res.json({ success: true, appointment });
+  } catch (err) {
+    console.error('[ADMIN API] Erro ao bloquear horário:', err);
+    return res.status(500).json({ success: false, error: 'Erro interno ao bloquear horário' });
+  }
+});
 
 // POST /admin/appointments/:id/cancel
 router.post('/appointments/:id/cancel', async (req, res) => {
