@@ -390,7 +390,7 @@ async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.se
 }
 
 async function sendWhatsAppMessage(phone, message) {
-  console.log(`[WHATSAPP] 🚀 Enviando para: ${phone}`);
+  
 
   await ensureClientReady();
   await waitWhatsAppReady(30000);
@@ -448,7 +448,7 @@ async function sendWhatsAppMessageDebug(phone, message) {
 
     const cleaned = cleanPhone(phone);
     const numberId = await client.getNumberId(cleaned);
-    
+
     if (!numberId) {
       console.warn(`[DEBUG] ⚠️ Número não registrado no WhatsApp: ${cleaned}`);
       return { ok: false, delivered: false, error: 'not-registered' };
