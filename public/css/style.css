@@ -3406,3 +3406,14 @@ body.modal-open {
     justify-content: space-between; /* distribui os botões */
   }
 }
+.slot-blocked {
+  background: #6c757d; /* cinza */
+  color: #fff;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  min-height: 44px;
+  box-sizing: border-box;
+  text-align: center;
+}
