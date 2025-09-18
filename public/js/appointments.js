@@ -19,19 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  if (!window._gestureHandlersInstalled) {
-    window._gestureHandlersInstalled = true;
+  // Clique em agendamento existente (independente do dispositivo)
+document.addEventListener('click', e => {
+  const cell = e.target.closest('.js-appointment-cell[data-id]');
+  if (!cell) return;
 
+  const id = cell.dataset.id;
+  console.log('[CLICK] Clique em agendamento ID:', id);
+  openActionPanel(id);
+});
 
-    document.addEventListener('dblclick', (e) => {
-      const cell = e.target.closest('.js-appointment-cell[data-id]');
-      if (cell) {
-        const id = cell.dataset.id;
-        console.log('[GESTURE] Duplo clique na célula ID:', id);
-        openActionPanel(id);
-      }
-    });
-  }
 
 
   document.querySelectorAll('.prevDay').forEach(btn => {
@@ -328,31 +325,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-  if (isMobile) {
-  // Clique simples no mobile
-  document.addEventListener('click', e => {
-    const scheduleBtn = e.target.closest('.js-open-schedule');
-    if (!scheduleBtn) return;
+// Clique em slots livres
+document.addEventListener('click', e => {
+  const scheduleBtn = e.target.closest('.slot-free.js-open-schedule');
+  if (!scheduleBtn) return;
 
-    openActionPanelForEmptySlot({
-      barberId: scheduleBtn.dataset.barber,
-      date: scheduleBtn.dataset.date,
-      time: scheduleBtn.dataset.time
-    });
+  openActionPanelForEmptySlot({
+    barberId: scheduleBtn.dataset.barber,
+    date: scheduleBtn.dataset.date,
+    time: scheduleBtn.dataset.time
   });
-} else {
-  // Duplo clique no desktop
-  document.addEventListener('dblclick', e => {
-    const scheduleBtn = e.target.closest('.js-open-schedule');
-    if (!scheduleBtn) return;
+});
 
-    openActionPanelForEmptySlot({
-      barberId: scheduleBtn.dataset.barber,
-      date: scheduleBtn.dataset.date,
-      time: scheduleBtn.dataset.time
-    });
-  });
-}
+// Clique em slots bloqueados
+document.addEventListener('click', e => {
+  const blockedBtn = e.target.closest('.slot-blocked.js-open-blocked');
+  if (!blockedBtn) return;
+
+  const appointmentId = blockedBtn.dataset.id;
+  if (appointmentId) {
+    openActionPanelForBlockedSlot(appointmentId);
+  }
+});
 
 
 
@@ -464,6 +458,61 @@ function openActionPanelForEmptySlot({ barberId, date, time }) {
   panel.classList.add('show');
 }
 
+async function openActionPanelForBlockedSlot(appointmentId) {
+  console.log('[DEBUG] Abrindo painel slot bloqueado:', appointmentId);
+
+  const panel = document.getElementById('actionPanel');
+  if (!panel) return;
+
+  panel.innerHTML = `
+    <div class="action-slideout-header">
+      <h5>Horário bloqueado</h5>
+      <button type="button" class="btn-close" aria-label="Fechar"></button>
+    </div>
+    <div class="action-slideout-body">
+      <button class="btn btn-warning w-100" id="actionUnblockSlot">
+        <i class="fa fa-unlock"></i> Desbloquear horário
+      </button>
+    </div>
+  `;
+
+  panel.querySelector('.btn-close').addEventListener('click', () => {
+    panel.classList.remove('show');
+  });
+
+  panel.querySelector('#actionUnblockSlot').addEventListener('click', async () => {
+    const ok = await confirmDialog({
+      title: 'Desbloquear horário',
+      message: 'Deseja liberar este horário para novos agendamentos?',
+      confirmText: 'Desbloquear',
+      variant: 'warning'
+    });
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/admin/api/appointments/${appointmentId}/unblock`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
+        credentials: 'include'
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        notify({ type: 'success', message: 'Horário desbloqueado com sucesso!' });
+        reloadWithFade();
+      } else {
+        notify({ type: 'error', message: result.error || 'Erro ao desbloquear horário' });
+      }
+    } catch (err) {
+      console.error('[ERRO] Desbloquear slot:', err);
+      notify({ type: 'error', message: 'Falha ao desbloquear horário' });
+    }
+  });
+
+  panel.classList.add('show');
+}
 
 function populateFitInSelects() {
   loadSelectOptions('fitInService', '/api/services');

@@ -3407,3 +3407,8 @@ body.modal-open {
   }
 }
 
+.slot-free,
+.slot-blocked,
+.js-appointment-cell {
+  cursor: pointer;
+}
