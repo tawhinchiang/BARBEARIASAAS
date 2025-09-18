@@ -47,7 +47,7 @@ function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr
 
      slots.push({
       time: slot,
-      date: selectedDateStr 
+      date: selectedDateStr || new Date().toISOString().slice(0, 10)
     });
   }
 
