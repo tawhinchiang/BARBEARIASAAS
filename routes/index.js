@@ -207,7 +207,7 @@ if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
     where: {
       barberId,
       appointmentDate: date,
-      status: { [Op.notIn]: ['cancelled', 'no_show'] }
+      status: { [Op.notIn]: ['cancelled', 'no_show', 'blocked'] }
     },
     attributes: ['appointmentTime', 'serviceDuration', 'status']
   });
@@ -220,7 +220,7 @@ let availableTimes = [];
 workingPeriods.forEach(period => {
   const [start, end] = period.split('-');
   const slots = generateTimeSlots(start, end, bookedTimes, date, requiredDuration);
-  availableTimes = availableTimes.concat(slots);
+   availableTimes = availableTimes.concat(slots.map(s => s.time));
 });
 
    
