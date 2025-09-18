@@ -3407,7 +3407,7 @@ body.modal-open {
   }
 }
 .slot-blocked {
-  background: #6c757d; /* cinza */
+  background: #888888; /* cinza */
   color: #fff;
   border-radius: 0.25rem;
   padding: 0.35rem 0.6rem;
