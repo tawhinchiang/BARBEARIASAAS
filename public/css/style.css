@@ -1723,7 +1723,7 @@ canvas {
   top: 0;
   transition: right 0.3s ease-in-out;
   width: 350px;
-  z-index: 1090;
+  z-index: 2000 !important;
 }
 
 #actionPanel.show {

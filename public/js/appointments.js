@@ -355,6 +355,11 @@ document.addEventListener('DOMContentLoaded', function () {
 }
 
 
+
+
+
+});
+
   function abrirModalAgendamento(scheduleBtn) {
     document.getElementById('fitInMode').value = 'normal';
     document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
@@ -374,12 +379,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 200);
   }
 
-
-
-});
-
-
 function openActionPanelForEmptySlot({ barberId, date, time }) {
+  console.log('[DEBUG] Abrindo painel slot livre:', { barberId, date, time });
+
   closeAllMenus?.(); 
   const panel = document.getElementById('actionPanel');
   if (!panel) return;
