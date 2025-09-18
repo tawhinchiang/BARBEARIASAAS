@@ -160,6 +160,37 @@ router.post('/appointments/:id/cancel', async (req, res) => {
   }
 });
 
+// DELETE /admin/appointments/:id/unblock
+router.delete('/appointments/:id/unblock', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findByPk(id);
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: 'Agendamento não encontrado' });
+    }
+
+    if (appointment.status !== 'blocked') {
+      return res.status(400).json({ success: false, error: 'Este agendamento não está bloqueado' });
+    }
+
+    await appointment.destroy(); // remove do banco
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('appointment_unblocked', {
+        id,
+        barberId: appointment.barberId,
+        date: appointment.appointmentDate,
+        time: appointment.appointmentTime
+      });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[ADMIN API] Erro ao desbloquear horário:', err);
+    return res.status(500).json({ success: false, error: 'Erro interno ao desbloquear horário' });
+  }
+});
 
 // DELETE /admin/appointments/:id
 router.delete('/appointments/:id', async (req, res) => {
