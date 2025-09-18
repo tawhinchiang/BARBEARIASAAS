@@ -373,7 +373,7 @@ router.get('/appointments', async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100); // 5–100 itens por página
     const offset = (page - 1) * limit;
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+   const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
     let whereClause = {};
 
     // ✅ Data inicial: hoje (se não vier na query)
@@ -566,7 +566,7 @@ router.get('/appointments/partial', async (req, res) => {
     const p = Math.max(parseInt(page) || 1, 1);
     const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
     const todayStr = new Date().toLocaleDateString('en-CA');
     const currentDate = startDate || todayStr;
     const where = {};
@@ -684,7 +684,7 @@ router.get('/appointments/partial-cards', async (req, res) => {
     const p = Math.max(parseInt(page) || 1, 1);
     const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed'];
+   const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
     const todayStr = new Date().toLocaleDateString('en-CA');
     const currentDate = startDate || todayStr;
     const where = {};
