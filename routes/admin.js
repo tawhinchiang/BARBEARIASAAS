@@ -493,20 +493,22 @@ router.get('/appointments', async (req, res) => {
       workingPeriods.forEach(period => {
         const [start, end] = period.split('-');
         const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
-        slots.forEach(slot => {
+        slots.forEach(time => {
           freeSlots.push({
             id: null,
             barber,
             barberId: barber.id,
-            appointmentDate: slot.date, 
-            appointmentTime: slot.time, 
+            appointmentDate:date, 
+            appointmentTime: time, 
             appointmentDateFormatted: formatDateYYYYMMDD(date),
-            appointmentTimeFormatted: slot.time,
+            appointmentTimeFormatted: time,
             client: { firstName: '', lastName: '' },
             serviceType: { name: 'Livre', duration: '' },
             totalPrice: 0,
             status: 'free'
           });
+          console.log('[DEBUG freeSlots]', JSON.stringify(freeSlots.slice(0,3), null, 2));
+
         });
       });
     }
@@ -638,20 +640,22 @@ router.get('/appointments/partial', async (req, res) => {
       workingPeriods.forEach(period => {
         const [start, end] = period.split('-');
         const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
-        slots.forEach(slot => {
+        slots.forEach(time => {
           freeSlots.push({
             id: null,
             barber,
             barberId: barber.id,
-            appointmentDate: slot.date, 
-            appointmentTime: slot.time, 
+            appointmentDate:date, 
+            appointmentTime:time, 
             appointmentDateFormatted: formatDateYYYYMMDD(date),
-            appointmentTimeFormatted: slot.time,
+            appointmentTimeFormatted:time,
             client: { firstName: '', lastName: '' },
             serviceType: { name: 'Livre', duration: '' },
             totalPrice: 0,
             status: 'free'
           });
+          console.log('[DEBUG freeSlots]', JSON.stringify(freeSlots.slice(0,3), null, 2));
+
         });
       });
     }
