@@ -5,14 +5,13 @@ function buildTimeSlots(appointments, barbers, step = 30) {
   return times.map(time => {
     const cells = barbers.map(barber => {
       const appt = appointments.find(
-        a =>
-          String(a.barberId) === String(barber.id) &&
-          a.appointmentTimeFormatted === time
+        a => String(a.barberId) === String(barber.id) &&
+             a.appointmentTimeFormatted === time
       );
 
       return {
         barber,
-        appointment: appt ? appt : null,
+        appointment: appt && appt.status !== 'free' ? appt : null,
         status: appt ? appt.status : 'free',
         time,
         appointmentDate: appt ? appt.appointmentDate : null,

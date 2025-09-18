@@ -3412,3 +3412,11 @@ body.modal-open {
 .js-appointment-cell {
   cursor: pointer;
 }
+.slot-blocked {
+  background-color: #616161; /* cinza escuro */
+  border: 1px solid #555;
+  color: #ccc;
+  border-radius: 0.25rem;
+  text-align: center;
+  min-height: 44px;
+}
