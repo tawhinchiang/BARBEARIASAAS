@@ -78,12 +78,12 @@
     </div>
   {{/if}}
 {{else}}
-  <!-- Slot livre -->
-  <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
-       data-barber="{{cell.barber.id}}"
-       data-date="{{slot.date}}"
-       data-time="{{slot.time}}">
-  </div>
+ <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
+     data-barber="{{cell.barber.id}}"
+     data-date="{{cell.appointmentDate}}"
+     data-time="{{cell.appointmentTime}}">
+</div>
+
 {{/if}}
 
 
