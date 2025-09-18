@@ -493,15 +493,15 @@ router.get('/appointments', async (req, res) => {
       workingPeriods.forEach(period => {
         const [start, end] = period.split('-');
         const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
-        slots.forEach(time => {
+        slots.forEach(slot => {
           freeSlots.push({
             id: null,
             barber,
             barberId: barber.id,
-            appointmentDate:date, 
-            appointmentTime: time, 
+            appointmentDate: slot.date, 
+            appointmentTime: slot.time, 
             appointmentDateFormatted: formatDateYYYYMMDD(date),
-            appointmentTimeFormatted: time,
+            appointmentTimeFormatted: slot.time,
             client: { firstName: '', lastName: '' },
             serviceType: { name: 'Livre', duration: '' },
             totalPrice: 0,
@@ -640,15 +640,15 @@ router.get('/appointments/partial', async (req, res) => {
       workingPeriods.forEach(period => {
         const [start, end] = period.split('-');
         const slots = generateTimeSlots(start, end, bookedTimes, date, 30); // step 30 min ou service.duration
-        slots.forEach(time => {
+        slots.forEach(slot => {
           freeSlots.push({
             id: null,
             barber,
             barberId: barber.id,
-            appointmentDate:date, 
-            appointmentTime:time, 
+            appointmentDate: slot.date, 
+            appointmentTime: slot.time, 
             appointmentDateFormatted: formatDateYYYYMMDD(date),
-            appointmentTimeFormatted:time,
+            appointmentTimeFormatted: slot.time,
             client: { firstName: '', lastName: '' },
             serviceType: { name: 'Livre', duration: '' },
             totalPrice: 0,
