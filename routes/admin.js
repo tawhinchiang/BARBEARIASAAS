@@ -507,7 +507,7 @@ router.get('/appointments', async (req, res) => {
             totalPrice: 0,
             status: 'free'
           });
-          console.log('[DEBUG freeSlots]', JSON.stringify(freeSlots.slice(0,3), null, 2));
+          
 
         });
       });
@@ -654,7 +654,7 @@ router.get('/appointments/partial', async (req, res) => {
             totalPrice: 0,
             status: 'free'
           });
-          console.log('[DEBUG freeSlots]', JSON.stringify(freeSlots.slice(0,3), null, 2));
+          
 
         });
       });
