@@ -50,7 +50,12 @@
             {{#if cell.appointment}}data-id="{{cell.appointment.id}}"{{/if}}>
 
 {{#if cell.appointment}}
-  {{#if cell.appointment.isEncaixe}}
+{{#if (eq cell.appointment.status "blocked")}}
+    <!-- Card para BLOQUEADO -->
+    <div class="slot-blocked d-flex justify-content-center align-items-center">
+      <span class="text-muted fw-bold">Bloqueado</span>
+    </div>
+  {{else if cell.appointment.isEncaixe}}
     <!-- Card para ENCAIXE -->
     <div class="slot-fitin d-flex justify-content-between align-items-center flex-wrap">
       <span class="fw-semibold">

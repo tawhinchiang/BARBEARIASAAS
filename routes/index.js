@@ -207,7 +207,7 @@ if (parsed && typeof parsed === 'object' && parsed[dayOfWeek]) {
     where: {
       barberId,
       appointmentDate: date,
-      status: { [Op.notIn]: ['cancelled', 'no_show', 'blocked'] }
+      status: { [Op.notIn]: ['cancelled', 'no_show',] } // Excluir status que não bloqueiam
     },
     attributes: ['appointmentTime', 'serviceDuration', 'status']
   });

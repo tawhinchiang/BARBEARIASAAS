@@ -110,9 +110,15 @@ router.post('/appointments/block', async (req, res) => {
 
     return res.json({ success: true, appointment });
   } catch (err) {
-    console.error('[ADMIN API] Erro ao bloquear horário:', err);
-    return res.status(500).json({ success: false, error: 'Erro interno ao bloquear horário' });
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      error: 'Horário já está bloqueado.'
+    });
   }
+  console.error('[ADMIN API] Erro ao bloquear horário:', err);
+  return res.status(500).json({ success: false, error: 'Erro interno' });
+}
 });
 
 // POST /admin/appointments/:id/cancel
