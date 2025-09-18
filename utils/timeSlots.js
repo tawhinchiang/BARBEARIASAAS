@@ -45,7 +45,10 @@ function generateTimeSlots(startTime, endTime, bookedTimes = [], selectedDateStr
       if (slotDate < now) continue;
     }
 
-    slots.push(slot);
+     slots.push({
+      time: slot,
+      date: selectedDateStr 
+    });
   }
 
   return slots;
