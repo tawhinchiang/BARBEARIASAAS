@@ -48,7 +48,7 @@
     {{#each slot.cells as |cell|}}
     <td class="align-top
     {{#if cell.appointment}}
-      {{#unless (eq cell.appointment.status " blocked")}}js-appointment-cell{{/unless}} {{/if}}" {{#if
+      {{#unless (eq cell.appointment.status "blocked")}}js-appointment-cell{{/unless}} {{/if}}" {{#if
       cell.appointment}}data-id="{{cell.appointment.id}}" {{/if}}>
 
       {{#if cell.appointment}}
