@@ -326,40 +326,61 @@ document.addEventListener('DOMContentLoaded', function () {
 
   }
 
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
+  if (isMobile) {
+  // Clique simples no mobile
+  document.addEventListener('click', e => {
+    const scheduleBtn = e.target.closest('.js-open-schedule');
+    if (!scheduleBtn) return;
 
-// Clique (desktop: duplo, mobile: simples) em células da agenda
-document.addEventListener('dblclick', handleSlotClick); // desktop
-document.addEventListener('click', (e) => {
-  if (window.innerWidth < 768) handleSlotClick(e); // mobile: 1 clique
-});
-
-function handleSlotClick(e) {
-  const cell = e.target.closest('td');
-  if (!cell) return;
-
-  // caso tenha agendamento (tem data-id)
-  if (cell.dataset.id) {
-    openActionPanel(cell.dataset.id);
-    return;
-  }
-
-  // caso não tenha agendamento mas contenha .slot-free
-  const free = cell.querySelector('.slot-free');
-  if (free) {
     openActionPanelForEmptySlot({
-      barberId: free.dataset.barber,
-      date: free.dataset.date,
-      time: free.dataset.time
+      barberId: scheduleBtn.dataset.barber,
+      date: scheduleBtn.dataset.date,
+      time: scheduleBtn.dataset.time
     });
-  }
+  });
+} else {
+  // Duplo clique no desktop
+  document.addEventListener('dblclick', e => {
+    const scheduleBtn = e.target.closest('.js-open-schedule');
+    if (!scheduleBtn) return;
+
+    openActionPanelForEmptySlot({
+      barberId: scheduleBtn.dataset.barber,
+      date: scheduleBtn.dataset.date,
+      time: scheduleBtn.dataset.time
+    });
+  });
 }
 
+
+  function abrirModalAgendamento(scheduleBtn) {
+    document.getElementById('fitInMode').value = 'normal';
+    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
+    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
+
+    const barberId = scheduleBtn.dataset.barber;
+    const date = scheduleBtn.dataset.date;
+    const time = scheduleBtn.dataset.time;
+
+    const openBtn = document.getElementById('openFitInBtn');
+    if (openBtn) openBtn.click();
+
+    setTimeout(() => {
+      document.getElementById('fitInBarber').value = barberId;
+      document.getElementById('fitInDate').value = date;
+      document.getElementById('fitInTime').value = time;
+    }, 200);
+  }
+
+
+
 });
 
-function openActionPanelForEmptySlot({ barberId, date, time }) {
-  closeAllMenus?.(); // se existir no seu projeto
 
+function openActionPanelForEmptySlot({ barberId, date, time }) {
+  closeAllMenus?.(); 
   const panel = document.getElementById('actionPanel');
   if (!panel) return;
 
@@ -1449,44 +1470,6 @@ function closeActionPanel() {
   panel.classList.remove('show');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-  if (isMobile) {
-    // Clique simples no mobile
-    document.addEventListener('click', e => {
-      const scheduleBtn = e.target.closest('.js-open-schedule');
-      if (!scheduleBtn) return;
-      abrirModalAgendamento(scheduleBtn);
-    });
-  } else {
-    // Duplo clique no desktop
-    document.addEventListener('dblclick', e => {
-      const scheduleBtn = e.target.closest('.js-open-schedule');
-      if (!scheduleBtn) return;
-      abrirModalAgendamento(scheduleBtn);
-    });
-  }
-
-  function abrirModalAgendamento(scheduleBtn) {
-    document.getElementById('fitInMode').value = 'normal';
-    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
-    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
-
-    const barberId = scheduleBtn.dataset.barber;
-    const date = scheduleBtn.dataset.date;
-    const time = scheduleBtn.dataset.time;
-
-    const openBtn = document.getElementById('openFitInBtn');
-    if (openBtn) openBtn.click();
-
-    setTimeout(() => {
-      document.getElementById('fitInBarber').value = barberId;
-      document.getElementById('fitInDate').value = date;
-      document.getElementById('fitInTime').value = time;
-    }, 200);
-  }
-});
 
 
 
