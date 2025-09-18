@@ -24,77 +24,78 @@
 
     <!-- ✅ Colunas por barbeiro -->
     {{#each barbers}}
-      <th class="text-start align-middle">
-        <div class="d-flex align-items-center">
-          <div class="avatar-sm me-2">
-            <img src="{{photo}}" alt="Foto de {{name}}" class="avatar-img">
-          </div>
-          <span class="fw-semibold">{{name}}</span>
+    <th class="text-start align-middle">
+      <div class="d-flex align-items-center">
+        <div class="avatar-sm me-2">
+          <img src="{{photo}}" alt="Foto de {{name}}" class="avatar-img">
         </div>
-      </th>
+        <span class="fw-semibold">{{name}}</span>
+      </div>
+    </th>
     {{/each}}
   </tr>
 </thead>
 
 <tbody>
   {{#each timeSlots as |slot|}}
-    <tr>
-      <!-- Coluna fixa do horário -->
-      <td class="text-center fw-semibold align-middle" style="width:100px;">
-        {{slot.time}}
-      </td>
+  <tr>
+    <!-- Coluna fixa do horário -->
+    <td class="text-center fw-semibold align-middle" style="width:100px;">
+      {{slot.time}}
+    </td>
 
-      <!-- Colunas por barbeiro -->
-      {{#each slot.cells as |cell|}}
-        <td class="align-top {{#if cell.appointment}}js-appointment-cell{{/if}}"
-            {{#if cell.appointment}}data-id="{{cell.appointment.id}}"{{/if}}>
+    <!-- Colunas por barbeiro -->
+    {{#each slot.cells as |cell|}}
+    <td class="align-top
+    {{#if cell.appointment}}
+      {{#unless (eq cell.appointment.status " blocked")}}js-appointment-cell{{/unless}} {{/if}}" {{#if
+      cell.appointment}}data-id="{{cell.appointment.id}}" {{/if}}>
 
-{{#if cell.appointment}}
-{{#if (eq cell.appointment.status "blocked")}}
-    <!-- Card para BLOQUEADO -->
-    <div class="slot-blocked d-flex justify-content-center align-items-center">
-      <span class="text-muted fw-bold">Bloqueado</span>
-    </div>
-  {{else if cell.appointment.isEncaixe}}
-    <!-- Card para ENCAIXE -->
-    <div class="slot-fitin d-flex justify-content-between align-items-center flex-wrap">
-      <span class="fw-semibold">
-        {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
-      </span>
-      <span>
-        {{cell.appointment.serviceType.name}}
-      </span>
-      <span class="fw-bold">
-        {{formatCurrency cell.appointment.totalPrice}}
-      </span>
-    </div>
-  {{else}}
-    <!-- Card normal -->
-    <div class="slot-{{cell.appointment.status}} d-flex justify-content-between align-items-center flex-wrap">
-      <span class="fw-semibold">
-        {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
-      </span>
-      <span>
-        {{cell.appointment.serviceType.name}}
-      </span>
-      <span class="fw-bold">
-        {{formatCurrency cell.appointment.totalPrice}}
-      </span>
-    </div>
-  {{/if}}
-{{else}}
- <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
-     data-barber="{{cell.barber.id}}"
-     data-date="{{cell.appointmentDate}}"
-     data-time="{{cell.time}}">
-</div>
-
-
-{{/if}}
+      {{#if cell.appointment}}
+      {{#if (eq cell.appointment.status "blocked")}}
+      <!-- Card para BLOQUEADO -->
+     <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center"
+           data-id="{{cell.appointment.id}}">
+        <span class="text-muted fw-bold">Bloqueado</span>
+      </div>
+      {{else if cell.appointment.isEncaixe}}
+      <!-- Card para ENCAIXE -->
+      <div class="slot-fitin d-flex justify-content-between align-items-center flex-wrap">
+        <span class="fw-semibold">
+          {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+        </span>
+        <span>
+          {{cell.appointment.serviceType.name}}
+        </span>
+        <span class="fw-bold">
+          {{formatCurrency cell.appointment.totalPrice}}
+        </span>
+      </div>
+      {{else}}
+      <!-- Card normal -->
+      <div class="slot-{{cell.appointment.status}} d-flex justify-content-between align-items-center flex-wrap">
+        <span class="fw-semibold">
+          {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+        </span>
+        <span>
+          {{cell.appointment.serviceType.name}}
+        </span>
+        <span class="fw-bold">
+          {{formatCurrency cell.appointment.totalPrice}}
+        </span>
+      </div>
+      {{/if}}
+      {{else}}
+      <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
+        data-barber="{{cell.barber.id}}" data-date="{{cell.appointmentDate}}" data-time="{{cell.time}}">
+      </div>
 
 
-        </td>
-      {{/each}}
-    </tr>
+      {{/if}}
+
+
+    </td>
+    {{/each}}
+  </tr>
   {{/each}}
 </tbody>
