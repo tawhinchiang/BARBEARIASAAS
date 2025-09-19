@@ -3420,3 +3420,9 @@ body.modal-open {
   text-align: center;
   min-height: 44px;
 }
+@media (max-width: 576px) {
+  #actionPanel {
+    width: 85% !important;   /* ocupa 85% da tela no mobile */
+    max-width: 320px;        /* limite para não ficar exagerado */
+  }
+}

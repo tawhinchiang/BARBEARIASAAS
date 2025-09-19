@@ -20,14 +20,21 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Clique em agendamento existente (independente do dispositivo)
+// Clique em agendamento existente
 document.addEventListener('click', e => {
   const cell = e.target.closest('.js-appointment-cell[data-id]');
   if (!cell) return;
+
+  // ⚠️ IGNORAR slots bloqueados e slots livres
+  if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) {
+    return; // deixa os outros listeners cuidarem
+  }
 
   const id = cell.dataset.id;
   console.log('[CLICK] Clique em agendamento ID:', id);
   openActionPanel(id);
 });
+
 
 
 
