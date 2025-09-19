@@ -2843,8 +2843,8 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 
 @media (max-width: 768px) {
     #actionPanel {
-    width: 40% !important;   /* ocupa 85% da tela no mobile */
-    max-width: 200px;        /* limite para não ficar exagerado */
+    width: 50% !important;   /* ocupa 85% da tela no mobile */
+           /* limite para não ficar exagerado */
   }
 
  

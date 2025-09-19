@@ -330,22 +330,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
   }
 
-  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+function bindTap(selector, handler) {
+  let touchMoved = false;
 
-function bindClickAndTouch(selector, handler) {
-  ['click', 'touchend'].forEach(evt => {
-    document.addEventListener(evt, e => {
-      const el = e.target.closest(selector);
-      if (!el) return;
+  document.addEventListener('touchstart', e => {
+    touchMoved = false;
+  });
 
-      e.preventDefault(); // evita duplo disparo (click+touchend)
-      handler(el);
-    });
+  document.addEventListener('touchmove', e => {
+    touchMoved = true;
+  });
+
+  document.addEventListener('touchend', e => {
+    if (touchMoved) return; // ignora scroll
+    const el = e.target.closest(selector);
+    if (el) handler(el);
+  });
+
+  // fallback para desktop
+  document.addEventListener('click', e => {
+    const el = e.target.closest(selector);
+    if (el) handler(el);
   });
 }
 
 // Slots livres
-bindClickAndTouch('.slot-free.js-open-schedule', (el) => {
+bindTap('.slot-free.js-open-schedule', (el) => {
   openActionPanelForEmptySlot({
     barberId: el.dataset.barber,
     date: el.dataset.date,
@@ -354,14 +364,10 @@ bindClickAndTouch('.slot-free.js-open-schedule', (el) => {
 });
 
 // Slots bloqueados
-bindClickAndTouch('.slot-blocked.js-open-blocked', (el) => {
+bindTap('.slot-blocked.js-open-blocked', (el) => {
   const appointmentId = el.dataset.id;
   if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
 });
-
-
-
-
 
 
 
