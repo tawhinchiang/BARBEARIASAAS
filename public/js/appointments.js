@@ -333,21 +333,15 @@ document.addEventListener('DOMContentLoaded', function () {
 function bindTap(selector, handler) {
   let touchMoved = false;
 
-  document.addEventListener('touchstart', () => {
-    touchMoved = false;
-  });
-
-  document.addEventListener('touchmove', () => {
-    touchMoved = true;
-  });
+  document.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
+  document.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
 
   document.addEventListener('touchend', e => {
-    if (touchMoved) return; // ignora scroll
+    if (touchMoved) return;
     const el = e.target.closest(selector);
     if (el) handler(el);
   });
 
-  // fallback para desktop
   document.addEventListener('click', e => {
     const el = e.target.closest(selector);
     if (el) handler(el);
@@ -355,10 +349,10 @@ function bindTap(selector, handler) {
 }
 
 // ==============================
-// Slots livres
+// Slots livres e bloqueados (mobile + desktop)
 // ==============================
 
-// Clique no próprio div do slot livre
+// Clique direto no slot livre
 bindTap('.slot-free.js-open-schedule', (el) => {
   openActionPanelForEmptySlot({
     barberId: el.dataset.barber,
@@ -367,33 +361,27 @@ bindTap('.slot-free.js-open-schedule', (el) => {
   });
 });
 
-// Fallback: clique no <td> que contém o slot livre
-bindTap('td:has(.slot-free.js-open-schedule)', (td) => {
-  const el = td.querySelector('.slot-free.js-open-schedule');
-  if (!el) return;
-  openActionPanelForEmptySlot({
-    barberId: el.dataset.barber,
-    date: el.dataset.date,
-    time: el.dataset.time
-  });
-});
-
-// ==============================
-// Slots bloqueados
-// ==============================
-
-// Clique no próprio div do slot bloqueado
+// Clique direto no slot bloqueado
 bindTap('.slot-blocked.js-open-blocked', (el) => {
   const appointmentId = el.dataset.id;
   if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
 });
 
-// Fallback: clique no <td> que contém o slot bloqueado
-bindTap('td:has(.slot-blocked.js-open-blocked)', (td) => {
-  const el = td.querySelector('.slot-blocked.js-open-blocked');
-  if (!el) return;
-  const appointmentId = el.dataset.id;
-  if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
+// Fallback: clique no <td> (resolve tanto livres quanto bloqueados)
+bindTap('td', (td) => {
+  const free = td.querySelector('.slot-free.js-open-schedule');
+  const blocked = td.querySelector('.slot-blocked.js-open-blocked');
+
+  if (free) {
+    openActionPanelForEmptySlot({
+      barberId: free.dataset.barber,
+      date: free.dataset.date,
+      time: free.dataset.time
+    });
+  } else if (blocked) {
+    const appointmentId = blocked.dataset.id;
+    if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
+  }
 });
 
 

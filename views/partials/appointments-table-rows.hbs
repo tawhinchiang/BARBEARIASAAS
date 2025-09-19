@@ -54,8 +54,8 @@
       {{#if cell.appointment}}
       {{#if (eq cell.appointment.status "blocked")}}
       <!-- Card para BLOQUEADO -->
-      <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center"
-        data-id="{{cell.appointment.id}}">
+      <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center" role="button"
+        tabindex="0" data-id="{{cell.appointment.id}}">
         <span class="text-muted fw-bold">Bloqueado</span>
       </div>
       {{else if cell.appointment.isEncaixe}}
