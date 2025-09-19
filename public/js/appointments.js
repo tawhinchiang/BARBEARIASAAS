@@ -331,22 +331,31 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 function bindTap(selector, handler) {
-  let touchMoved = false;
-
-  document.addEventListener('touchstart', () => { touchMoved = false; }, { passive: true });
-  document.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
-
-  document.addEventListener('touchend', e => {
-    if (touchMoved) return;
+  document.addEventListener('touchstart', (e) => {
     const el = e.target.closest(selector);
-    if (el) handler(el);
+    if (!el) return;
+
+    let touchMoved = false;
+
+    const onTouchMove = () => { touchMoved = true; };
+    const onTouchEnd = () => {
+      if (!touchMoved) handler(el);
+
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onTouchEnd);
   });
 
-  document.addEventListener('click', e => {
+  // fallback para desktop
+  document.addEventListener('click', (e) => {
     const el = e.target.closest(selector);
     if (el) handler(el);
   });
 }
+
 
 // ==============================
 // Slots livres e bloqueados (mobile + desktop)
