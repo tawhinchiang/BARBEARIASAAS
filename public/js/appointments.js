@@ -333,11 +333,11 @@ document.addEventListener('DOMContentLoaded', function () {
 function bindTap(selector, handler) {
   let touchMoved = false;
 
-  document.addEventListener('touchstart', e => {
+  document.addEventListener('touchstart', () => {
     touchMoved = false;
   });
 
-  document.addEventListener('touchmove', e => {
+  document.addEventListener('touchmove', () => {
     touchMoved = true;
   });
 
@@ -354,7 +354,11 @@ function bindTap(selector, handler) {
   });
 }
 
+// ==============================
 // Slots livres
+// ==============================
+
+// Clique no próprio div do slot livre
 bindTap('.slot-free.js-open-schedule', (el) => {
   openActionPanelForEmptySlot({
     barberId: el.dataset.barber,
@@ -363,12 +367,34 @@ bindTap('.slot-free.js-open-schedule', (el) => {
   });
 });
 
+// Fallback: clique no <td> que contém o slot livre
+bindTap('td:has(.slot-free.js-open-schedule)', (td) => {
+  const el = td.querySelector('.slot-free.js-open-schedule');
+  if (!el) return;
+  openActionPanelForEmptySlot({
+    barberId: el.dataset.barber,
+    date: el.dataset.date,
+    time: el.dataset.time
+  });
+});
+
+// ==============================
 // Slots bloqueados
+// ==============================
+
+// Clique no próprio div do slot bloqueado
 bindTap('.slot-blocked.js-open-blocked', (el) => {
   const appointmentId = el.dataset.id;
   if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
 });
 
+// Fallback: clique no <td> que contém o slot bloqueado
+bindTap('td:has(.slot-blocked.js-open-blocked)', (td) => {
+  const el = td.querySelector('.slot-blocked.js-open-blocked');
+  if (!el) return;
+  const appointmentId = el.dataset.id;
+  if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
+});
 
 
 });
