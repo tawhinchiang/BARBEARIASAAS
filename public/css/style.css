@@ -241,12 +241,7 @@ mark {
   }
 }
 
-@media (max-width: 576px) {
-  .admin-body #servicesContainer>.col {
-    flex: 1 1 100%;
-    max-width: 100%;
-  }
-}
+
 
 .services-grid {
   display: grid;
@@ -2765,6 +2760,25 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 }
 
 @media (max-width: 576px) {
+   #servicesCardContainer .service-card {
+    flex: 1 1 100%;
+  }
+    .admin-body #servicesContainer>.col {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  
+  #fitInModal .modal-footer .btn {
+    flex: 1 1 auto;          /* deixa dividir espaço igualmente */
+    min-width: unset;        /* remove largura mínima */
+    padding: 0.6rem 0.8rem;  /* padding menor */
+    font-size: 0.9rem;       /* fonte menor */
+  }
+
+  #fitInModal .modal-footer {
+    justify-content: space-between; /* distribui os botões */
+  }
+
   h2 {
     font-size: 1.25rem;
   }
@@ -2792,12 +2806,12 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 
 
-  @media (max-width: 576px) {
+  
     .status-badge {
       min-width: 90px;
       font-size: 0.75rem;
     }
-  }
+  
 
   .btn,
   .form-control {
@@ -2811,11 +2825,7 @@ body.sidebar-collapsed .sidenav-footer .btn i {
   }
 }
 
-@media (max-width: 576px) {
-  #servicesCardContainer .service-card {
-    flex: 1 1 100%;
-  }
-}
+
 
 @media (max-width: 480px) {
   .services-grid {
@@ -2832,6 +2842,11 @@ body.sidebar-collapsed .sidenav-footer .btn i {
 
 
 @media (max-width: 768px) {
+    #actionPanel {
+    width: 40% !important;   /* ocupa 85% da tela no mobile */
+    max-width: 200px;        /* limite para não ficar exagerado */
+  }
+
  
   .card-wrapper {
     max-width: 100% !important;
@@ -3394,18 +3409,7 @@ body.modal-open {
   min-width: 120px; /* opcional, para manter tamanhos iguais */
 }
 /* Botões do modal de encaixe mais compactos no mobile */
-@media (max-width: 576px) {
-  #fitInModal .modal-footer .btn {
-    flex: 1 1 auto;          /* deixa dividir espaço igualmente */
-    min-width: unset;        /* remove largura mínima */
-    padding: 0.6rem 0.8rem;  /* padding menor */
-    font-size: 0.9rem;       /* fonte menor */
-  }
 
-  #fitInModal .modal-footer {
-    justify-content: space-between; /* distribui os botões */
-  }
-}
 
 .slot-free,
 .slot-blocked,
@@ -3420,9 +3424,4 @@ body.modal-open {
   text-align: center;
   min-height: 44px;
 }
-@media (max-width: 576px) {
-  #actionPanel {
-    width: 85% !important;   /* ocupa 85% da tela no mobile */
-    max-width: 320px;        /* limite para não ficar exagerado */
-  }
-}
+

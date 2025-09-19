@@ -48,14 +48,14 @@
     {{#each slot.cells as |cell|}}
     <td class="align-top
     {{#if cell.appointment}}
-      {{#unless (eq cell.appointment.status "blocked")}}js-appointment-cell{{/unless}} {{/if}}" {{#if
+      {{#unless (eq cell.appointment.status " blocked")}}js-appointment-cell{{/unless}} {{/if}}" {{#if
       cell.appointment}}data-id="{{cell.appointment.id}}" {{/if}}>
 
       {{#if cell.appointment}}
       {{#if (eq cell.appointment.status "blocked")}}
       <!-- Card para BLOQUEADO -->
-     <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center"
-           data-id="{{cell.appointment.id}}">
+      <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center"
+        data-id="{{cell.appointment.id}}">
         <span class="text-muted fw-bold">Bloqueado</span>
       </div>
       {{else if cell.appointment.isEncaixe}}
@@ -86,8 +86,8 @@
       </div>
       {{/if}}
       {{else}}
-      <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center"
-        data-barber="{{cell.barber.id}}" data-date="{{cell.appointmentDate}}" data-time="{{cell.time}}">
+      <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center" role="button"
+        tabindex="0" data-barber="{{cell.barber.id}}" data-date="{{cell.appointmentDate}}" data-time="{{cell.time}}">
       </div>
 
 

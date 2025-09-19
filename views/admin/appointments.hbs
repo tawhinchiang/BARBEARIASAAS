@@ -425,10 +425,16 @@
   min-height: 44px;
   box-sizing: border-box;
   text-align: center;
+  cursor: pointer;       /* força Safari a entender como botão */
+      user-select: none;
+      touch-action: manipulation;  
 }
     .slot-free {
       background: transparent;
-      border: 1px solid #ccc;
+      border: 0.5px solid #222222;
+      cursor: pointer;       /* força Safari a entender como botão */
+      user-select: none;
+      touch-action: manipulation;  
     }
 
     /* Status → cores no fundo */

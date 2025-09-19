@@ -20,20 +20,20 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Clique em agendamento existente (independente do dispositivo)
-// Clique em agendamento existente
-document.addEventListener('click', e => {
-  const cell = e.target.closest('.js-appointment-cell[data-id]');
-  if (!cell) return;
+  // Clique em agendamento existente
+  document.addEventListener('click', e => {
+    const cell = e.target.closest('.js-appointment-cell[data-id]');
+    if (!cell) return;
 
-  // ⚠️ IGNORAR slots bloqueados e slots livres
-  if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) {
-    return; // deixa os outros listeners cuidarem
-  }
+    // ⚠️ IGNORAR slots bloqueados e slots livres
+    if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) {
+      return; // deixa os outros listeners cuidarem
+    }
 
-  const id = cell.dataset.id;
-  console.log('[CLICK] Clique em agendamento ID:', id);
-  openActionPanel(id);
-});
+    const id = cell.dataset.id;
+    console.log('[CLICK] Clique em agendamento ID:', id);
+    openActionPanel(id);
+  });
 
 
 
@@ -330,30 +330,36 @@ document.addEventListener('click', e => {
 
   }
 
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-// Clique em slots livres
-document.addEventListener('click', e => {
-  const scheduleBtn = e.target.closest('.slot-free.js-open-schedule');
-  if (!scheduleBtn) return;
+function bindClickAndTouch(selector, handler) {
+  ['click', 'touchend'].forEach(evt => {
+    document.addEventListener(evt, e => {
+      const el = e.target.closest(selector);
+      if (!el) return;
 
+      e.preventDefault(); // evita duplo disparo (click+touchend)
+      handler(el);
+    });
+  });
+}
+
+// Slots livres
+bindClickAndTouch('.slot-free.js-open-schedule', (el) => {
   openActionPanelForEmptySlot({
-    barberId: scheduleBtn.dataset.barber,
-    date: scheduleBtn.dataset.date,
-    time: scheduleBtn.dataset.time
+    barberId: el.dataset.barber,
+    date: el.dataset.date,
+    time: el.dataset.time
   });
 });
 
-// Clique em slots bloqueados
-document.addEventListener('click', e => {
-  const blockedBtn = e.target.closest('.slot-blocked.js-open-blocked');
-  if (!blockedBtn) return;
-
-  const appointmentId = blockedBtn.dataset.id;
-  if (appointmentId) {
-    openActionPanelForBlockedSlot(appointmentId);
-  }
+// Slots bloqueados
+bindClickAndTouch('.slot-blocked.js-open-blocked', (el) => {
+  const appointmentId = el.dataset.id;
+  if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
 });
+
+
 
 
 
@@ -361,29 +367,29 @@ document.addEventListener('click', e => {
 
 });
 
-  function abrirModalAgendamento(scheduleBtn) {
-    document.getElementById('fitInMode').value = 'normal';
-    document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
-    document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
+function abrirModalAgendamento(scheduleBtn) {
+  document.getElementById('fitInMode').value = 'normal';
+  document.querySelector('#fitInModal .modal-title').textContent = 'Novo Agendamento';
+  document.querySelector('#fitInForm button[type="submit"]').textContent = 'Salvar Agendamento';
 
-    const barberId = scheduleBtn.dataset.barber;
-    const date = scheduleBtn.dataset.date;
-    const time = scheduleBtn.dataset.time;
+  const barberId = scheduleBtn.dataset.barber;
+  const date = scheduleBtn.dataset.date;
+  const time = scheduleBtn.dataset.time;
 
-    const openBtn = document.getElementById('openFitInBtn');
-    if (openBtn) openBtn.click();
+  const openBtn = document.getElementById('openFitInBtn');
+  if (openBtn) openBtn.click();
 
-    setTimeout(() => {
-      document.getElementById('fitInBarber').value = barberId;
-      document.getElementById('fitInDate').value = date;
-      document.getElementById('fitInTime').value = time;
-    }, 200);
-  }
+  setTimeout(() => {
+    document.getElementById('fitInBarber').value = barberId;
+    document.getElementById('fitInDate').value = date;
+    document.getElementById('fitInTime').value = time;
+  }, 200);
+}
 
 function openActionPanelForEmptySlot({ barberId, date, time }) {
   console.log('[DEBUG] Abrindo painel slot livre:', { barberId, date, time });
 
-  closeAllMenus?.(); 
+  closeAllMenus?.();
   const panel = document.getElementById('actionPanel');
   if (!panel) return;
 
