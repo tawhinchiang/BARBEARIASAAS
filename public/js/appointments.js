@@ -19,25 +19,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Clique em agendamento existente (independente do dispositivo)
-  // Clique em agendamento existente
+
 document.addEventListener('click', e => {
   const cell = e.target.closest('.js-appointment-cell[data-id]');
   if (!cell) return;
 
- 
-  if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) {
-    return;
-  }
+  
+  if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) return;
 
   const id = cell.dataset.id;
 
-  
-  if (typeof closeActionPanel === 'function') closeActionPanel();
 
-  console.log('[CLICK] Clique em agendamento ID:', id);
+ 
   openActionPanel(id);
 });
+
 
 
 
