@@ -1251,18 +1251,7 @@ body.modal-open {
   max-width: 100%;
 }
 
-#editModal .modal-content {
-  background-color: var(--bg-light);
-  border: 1px solid var(--border-color);
-  border-radius: 1rem;
-  box-shadow: var(--shadow);
-  color: var(--text-dark);
-  display: flex;
-  flex-direction: column;
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
+
 
 #editModal .modal-header {
   border-bottom: 1px solid var(--border-color);
@@ -1314,28 +1303,21 @@ body.modal-open {
   overflow-y: auto;
 }
 #meuModal.show { display: flex !important; }
-#editModal .modal-dialog {
-  
-  margin: 0 auto;              
-  display: block;             
-  max-width: 900px;
+
+
+
+
+
+#editModal .modal-body {
+  flex-grow: 1;
+  overflow: auto !important;    
+  padding: 1rem 1.5rem;
+  position: relative;
+  z-index: 1;
+  max-height: none !important;
 }
 
-#editModal .modal-dialog.modal-dialog-centered {
-  display: flex !important;
-  align-items: center !important;
-  min-height: calc(100% - var(--bs-modal-margin) * 2);
-}
-#editModal .modal-content {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - var(--bs-modal-margin) * 2) !important;
-  overflow: hidden !important;                 /* volta a esconder excedente */
-}
-#editModal .modal-body {
-  overflow: auto !important;                   /* rola o conteúdo interno */
-  max-height: none !important;                 /* altura se adapta ao container */
-}
+#editModal input, #editModal select, #editModal textarea { font-size: 16px; }
 .select2-container--bootstrap-5 .select2-selection {
   background-color: var(--bg-gray);
   border: 1px solid var(--border-color);
@@ -1376,15 +1358,7 @@ body.modal-open {
   z-index: 9999 !important;
 }
 
-#editModal .modal-body {
-  flex-grow: 1;
-  overflow: visible !important;
-  padding: 1rem 1.5rem;
-  position: relative;
-  z-index: 1;
-  max-height: none !important;
-  overflow-y: visible !important;
-}
+
 
 
 canvas {
@@ -3444,3 +3418,48 @@ body.modal-open {
   min-height: 44px;
 }
 
+
+#editModal .modal-dialog {
+  margin: .5rem auto;       
+  max-width: 900px;
+  
+}
+
+
+#editModal .modal-dialog.modal-dialog-centered {
+  display: flex;              
+  align-items: center;
+  min-height: calc(100dvh - var(--bs-modal-margin) * 2);
+}
+
+
+@supports not (height: 100dvh) {
+  #editModal .modal-dialog.modal-dialog-centered {
+    min-height: calc(var(--screen-vh, 100vh) - var(--bs-modal-margin) * 2);
+  }
+}
+
+
+
+#editModal .modal-content {
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+  color: var(--text-dark);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--bs-modal-margin) * 2);
+  overflow: hidden;
+}
+
+
+@supports not (height: 100dvh) {
+  #editModal .modal-content {
+    max-height: calc(var(--screen-vh, 100vh) - var(--bs-modal-margin) * 2);
+  }
+}
+
+
+#editModal { z-index: 3000 !important; }
+.modal-backdrop.show { z-index: 2990 !important; }

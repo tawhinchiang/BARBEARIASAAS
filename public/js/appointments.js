@@ -1616,7 +1616,13 @@ function closeActionPanel() {
 
 
 
-
+(function fixMobileVh() {
+  const set = () =>
+    document.documentElement.style.setProperty('--screen-vh', `${window.innerHeight}px`);
+  set();
+  window.addEventListener('resize', set);
+  window.addEventListener('orientationchange', set);
+})();
 
 // Tornando acessível globalmente
 window.openActionPanel = openActionPanel;
