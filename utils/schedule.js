@@ -8,15 +8,18 @@ function buildTimeSlots(appointments, barbers, step = 30) {
         a => String(a.barberId) === String(barber.id) &&
              a.appointmentTimeFormatted === time
       );
+
       return {
         barber,
         appointment: appt && appt.status !== 'free' ? appt : null,
         status: appt ? appt.status : 'free',
-        time
+        time,
+        appointmentDate: appt ? appt.appointmentDate : null,
+        appointmentTime: appt ? appt.appointmentTime : time
       };
     });
     return { time, cells };
   });
 }
 
-module.exports = { buildTimeSlots };   // ✅ named export
+module.exports = { buildTimeSlots };

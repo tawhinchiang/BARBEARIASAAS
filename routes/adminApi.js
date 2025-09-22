@@ -74,6 +74,52 @@ router.post('/appointments/:id/whatsapp', async (req, res) => {
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+// Bloquear horário manualmente
+router.post('/appointments/block', async (req, res) => {
+  try {
+    const { barberId, appointmentDate, appointmentTime, reason } = req.body;
+
+    if (!barberId || !appointmentDate || !appointmentTime) {
+      return res.status(400).json({ success: false, error: 'Campos obrigatórios: barbeiro, data e hora' });
+    }
+
+    const { Appointment } = require('../models');
+
+    const appointment = await Appointment.create({
+      barberId,
+      appointmentDate,
+      appointmentTime,
+      clientId: null,
+      serviceTypeId: null,
+      serviceDuration: 20, // pode usar default do sistema
+      totalPrice: 0,
+      status: 'blocked',
+      isBlock: true,
+      blockReason: reason || null
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('appointment_blocked', {
+        id: appointment.id,
+        time: appointment.appointmentTime,
+        date: appointment.appointmentDate,
+        barberId
+      });
+    }
+
+    return res.json({ success: true, appointment });
+  } catch (err) {
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    return res.status(400).json({
+      success: false,
+      error: 'Horário já está bloqueado.'
+    });
+  }
+  console.error('[ADMIN API] Erro ao bloquear horário:', err);
+  return res.status(500).json({ success: false, error: 'Erro interno' });
+}
+});
 
 // POST /admin/appointments/:id/cancel
 router.post('/appointments/:id/cancel', async (req, res) => {
@@ -114,6 +160,37 @@ router.post('/appointments/:id/cancel', async (req, res) => {
   }
 });
 
+// DELETE /admin/appointments/:id/unblock
+router.delete('/appointments/:id/unblock', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findByPk(id);
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, error: 'Agendamento não encontrado' });
+    }
+
+    if (appointment.status !== 'blocked') {
+      return res.status(400).json({ success: false, error: 'Este agendamento não está bloqueado' });
+    }
+
+    await appointment.destroy(); // remove do banco
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('appointment_unblocked', {
+        id,
+        barberId: appointment.barberId,
+        date: appointment.appointmentDate,
+        time: appointment.appointmentTime
+      });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[ADMIN API] Erro ao desbloquear horário:', err);
+    return res.status(500).json({ success: false, error: 'Erro interno ao desbloquear horário' });
+  }
+});
 
 // DELETE /admin/appointments/:id
 router.delete('/appointments/:id', async (req, res) => {

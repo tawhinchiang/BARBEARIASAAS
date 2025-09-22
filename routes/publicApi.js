@@ -25,5 +25,17 @@ router.get('/barbers', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao buscar barbeiros' });
   }
 });
+router.post('/log-touch', async (req, res) => {
+  const log = {
+    time: new Date().toISOString(),
+    selector: req.body.selector,
+    userAgent: req.body.userAgent,
+    platform: req.body.platform,
+  };
+
+  console.log('[TOUCH LOG] Interação detectada:', log);
+  res.json({ ok: true });
+});
+
 
 module.exports = router;
