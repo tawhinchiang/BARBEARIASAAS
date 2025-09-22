@@ -920,8 +920,21 @@ async function viewAppointment(appointmentId) {
 async function editAppointment(appointmentId) {
   closeAllMenus();
 
-  const globalLoader = document.getElementById('global-loading');
-  globalLoader.classList.remove('d-none');
+  const globalLoader = document.getElementById('global-loading'); 
+  const modalEl = document.getElementById('editModal');
+  const loadingEl = modalEl?.querySelector('#edit-loading');
+  const fieldsEl  = modalEl?.querySelector('#edit-fields');
+
+  
+  loadingEl?.classList.remove('d-none');
+  loadingEl?.classList.add('d-flex');
+  fieldsEl?.classList.add('d-none');
+
+  
+  if (typeof closeActionPanel === 'function') closeActionPanel();
+
+  
+  globalLoader?.classList.remove('d-none');
 
   try {
     await new Promise(requestAnimationFrame);
@@ -937,17 +950,32 @@ async function editAppointment(appointmentId) {
 
     await loadSelectOptions('edit-service', '/api/services', appointment.serviceType.id);
     await loadSelectOptions('edit-barber', '/api/barbers', appointment.barber.id);
-     if (typeof closeActionPanel === 'function') closeActionPanel();
-    await new Promise(requestAnimationFrame)
+
+    
+    loadingEl?.classList.add('d-none');
+    loadingEl?.classList.remove('d-flex');
+    fieldsEl?.classList.remove('d-none');
+
+    
+    const editModalElement = document.getElementById('editModal');
+    if (editModalElement && editModalElement.parentElement !== document.body) {
+      document.body.appendChild(editModalElement);
+    }
+
+   
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);
     notify({ type: 'error', message: 'Erro ao carregar dados do agendamento' });
 
+    
+    loadingEl?.classList.add('d-none');
+    loadingEl?.classList.remove('d-flex');
   } finally {
-    globalLoader.classList.add('d-none');
+    globalLoader?.classList.add('d-none');
   }
 }
+
 
 
 async function confirmAppointment(appointmentId) {
@@ -987,7 +1015,8 @@ async function confirmAppointment(appointmentId) {
 async function completeAppointment(appointmentId) {
   // console.log('[ADMIN] Concluindo agendamento:', appointmentId);
   closeAllMenus();
-
+  if (typeof closeActionPanel === 'function') closeActionPanel();
+    await new Promise(requestAnimationFrame)
   const ok = await confirmDialog({
     title: 'Concluir agendamento',
     message: 'Marcar este agendamento como concluído?',
@@ -1019,7 +1048,8 @@ async function completeAppointment(appointmentId) {
 
 async function cancelAppointment(appointmentId) {
   closeAllMenus();
-
+  if (typeof closeActionPanel === 'function') closeActionPanel();
+    await new Promise(requestAnimationFrame)
   const textareaId = 'cancel-reason-input';
   const ok = await confirmDialog({
     title: 'Cancelar agendamento',
@@ -1057,7 +1087,8 @@ async function cancelAppointment(appointmentId) {
 async function deleteAppointment(appointmentId) {
   // console.log('[ADMIN] Excluindo agendamento:', appointmentId);
   closeAllMenus();
-
+  if (typeof closeActionPanel === 'function') closeActionPanel();
+    await new Promise(requestAnimationFrame)
   const ok = await confirmDialog({
     title: 'Excluir agendamento',
     message: 'ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?',
