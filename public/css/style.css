@@ -1313,14 +1313,29 @@ body.modal-open {
   max-height: 300px;
   overflow-y: auto;
 }
-
+#meuModal.show { display: flex !important; }
 #editModal .modal-dialog {
-  margin: var(--modal-top) auto var(--modal-bottom);
-  display: flex;
-  flex-direction: column;
+  
+  margin: 0 auto;              
+  display: block;             
   max-width: 900px;
 }
 
+#editModal .modal-dialog.modal-dialog-centered {
+  display: flex !important;
+  align-items: center !important;
+  min-height: calc(100% - var(--bs-modal-margin) * 2);
+}
+#editModal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--bs-modal-margin) * 2) !important;
+  overflow: hidden !important;                 /* volta a esconder excedente */
+}
+#editModal .modal-body {
+  overflow: auto !important;                   /* rola o conteúdo interno */
+  max-height: none !important;                 /* altura se adapta ao container */
+}
 .select2-container--bootstrap-5 .select2-selection {
   background-color: var(--bg-gray);
   border: 1px solid var(--border-color);
@@ -1834,9 +1849,7 @@ canvas {
   z-index: 20001 !important;
 } */
 
-.modal.show {
-  display: flex !important;
-}
+
 
 .barber-card .list-group {
   margin: 0;
