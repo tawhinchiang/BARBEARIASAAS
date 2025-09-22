@@ -401,47 +401,68 @@ function abrirModalAgendamento(scheduleBtn) {
     document.getElementById('fitInTime').value = time;
   }, 200);
 }
-
-function openActionPanelForEmptySlot({ barberId, date, time }) {
-  console.log('[DEBUG] Abrindo painel slot livre:', { barberId, date, time });
-
-  closeAllMenus?.();
+function ensureActionPanelSkeleton() {
   const panel = document.getElementById('actionPanel');
-  if (!panel) return;
+  if (!panel) return null;
 
+  // tenta achar estrutura existente
+  let header = panel.querySelector('.action-slideout-header');
+  let titleEl = panel.querySelector('.action-slideout-header h5');
+  let body = panel.querySelector('#actionPanelBody');
+
+  // se já existe, reutiliza
+  if (header && titleEl && body) {
+    return { panel, header, titleEl, body };
+  }
+
+  // (re)cria estrutura mínima
   panel.innerHTML = `
     <div class="action-slideout-header">
-      <h5>Ações para ${time}</h5>
+      <h5></h5>
       <button type="button" class="btn-close" aria-label="Fechar"></button>
     </div>
-    <div class="action-slideout-body">
-      <button class="btn btn-primary w-100 mb-2" id="actionNewAppointment">
-        <i class="fa fa-calendar-plus"></i> Agendar horário
-      </button>
-      <button class="btn btn-danger w-100" id="actionBlockSlot">
-        <i class="fa fa-ban"></i> Bloquear horário
-      </button>
-    </div>
+    <div id="actionPanelBody" class="action-slideout-body"></div>
   `;
 
   panel.querySelector('.btn-close').addEventListener('click', () => {
     panel.classList.remove('show');
   });
 
-  // ação: agendar
-  panel.querySelector('#actionNewAppointment').addEventListener('click', () => {
+  header = panel.querySelector('.action-slideout-header');
+  titleEl = header.querySelector('h5');
+  body = panel.querySelector('#actionPanelBody');
+
+  return { panel, header, titleEl, body };
+}
+
+
+function openActionPanelForEmptySlot({ barberId, date, time }) {
+  console.log('[DEBUG] Abrindo painel slot livre:', { barberId, date, time });
+
+  closeAllMenus?.();
+  const s = ensureActionPanelSkeleton();
+  if (!s) return;
+  const { panel, titleEl, body } = s;
+
+  titleEl.textContent = `Ações para ${time}`;
+  body.innerHTML = `
+    <button class="btn btn-primary w-100 mb-2" id="actionNewAppointment">
+      <i class="fa fa-calendar-plus"></i> Agendar horário
+    </button>
+    <button class="btn btn-danger w-100" id="actionBlockSlot">
+      <i class="fa fa-ban"></i> Bloquear horário
+    </button>
+  `;
+
+  body.querySelector('#actionNewAppointment').addEventListener('click', () => {
     panel.classList.remove('show');
 
-    // pega o slot livre real no DOM
     const free = document.querySelector(
       `.slot-free[data-barber="${barberId}"][data-date="${date}"][data-time="${time}"]`
     );
-
     if (free) {
       abrirModalAgendamento(free);
     } else {
-      console.warn('❌ Slot livre não encontrado no DOM, usando fallback.');
-      // fallback: cria fakeBtn só pra não quebrar
       const fakeBtn = document.createElement('div');
       fakeBtn.dataset.barber = barberId;
       fakeBtn.dataset.date = date;
@@ -450,8 +471,7 @@ function openActionPanelForEmptySlot({ barberId, date, time }) {
     }
   });
 
-  // ação: bloquear
-  panel.querySelector('#actionBlockSlot').addEventListener('click', async () => {
+  body.querySelector('#actionBlockSlot').addEventListener('click', async () => {
     panel.classList.remove('show');
     const ok = await confirmDialog({
       title: 'Bloquear horário',
@@ -464,10 +484,7 @@ function openActionPanelForEmptySlot({ barberId, date, time }) {
     try {
       const res = await fetch('/admin/api/appointments/block', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(ADMIN_CSRF ? { 'X-CSRF-Token': ADMIN_CSRF } : {})
-        },
+        headers: { 'Content-Type': 'application/json', ...(ADMIN_CSRF ? { 'X-CSRF-Token': ADMIN_CSRF } : {}) },
         credentials: 'include',
         body: JSON.stringify({ barberId, appointmentDate: date, appointmentTime: time })
       });
@@ -487,37 +504,24 @@ function openActionPanelForEmptySlot({ barberId, date, time }) {
   panel.classList.add('show');
 }
 
+
 async function openActionPanelForBlockedSlot(appointmentId) {
   console.log('[DEBUG] Abrindo painel slot bloqueado:', appointmentId);
 
-  const panel = document.getElementById('actionPanel');
-  if (!panel) return;
+  const s = ensureActionPanelSkeleton();
+  if (!s) return;
+  const { panel, titleEl, body } = s;
 
-  panel.innerHTML = `
-    <div class="action-slideout-header">
-      <h5>Horário bloqueado</h5>
-      <button type="button" class="btn-close" aria-label="Fechar"></button>
-    </div>
-    <div class="action-slideout-body">
-      <button class="btn btn-warning w-100" id="actionUnblockSlot">
-        <i class="fa fa-unlock"></i> Desbloquear horário
-      </button>
-    </div>
+  titleEl.textContent = 'Horário bloqueado';
+  body.innerHTML = `
+    <button class="btn btn-warning w-100" id="actionUnblockSlot">
+      <i class="fa fa-unlock"></i> Desbloquear horário
+    </button>
   `;
 
-  panel.querySelector('.btn-close').addEventListener('click', () => {
-    panel.classList.remove('show');
-  });
-
-  panel.querySelector('#actionUnblockSlot').addEventListener('click', async () => {
-      if (typeof closeActionPanel === 'function') {
-        closeActionPanel();
-      } else {
-        panel.classList.remove('show');
-      }
-
-  // Pequena pausa para aplicar a transição e evitar conflito de foco/stacking
-  await new Promise(requestAnimationFrame);
+  body.querySelector('#actionUnblockSlot').addEventListener('click', async () => {
+    closeActionPanel?.(); // fecha antes do dialog
+    await new Promise(requestAnimationFrame);
 
     const ok = await confirmDialog({
       title: 'Desbloquear horário',
@@ -530,10 +534,7 @@ async function openActionPanelForBlockedSlot(appointmentId) {
     try {
       const res = await fetch(`/admin/api/appointments/${appointmentId}/unblock`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-        },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
         credentials: 'include'
       });
       const result = await res.json();
@@ -551,6 +552,7 @@ async function openActionPanelForBlockedSlot(appointmentId) {
 
   panel.classList.add('show');
 }
+
 
 function populateFitInSelects() {
   loadSelectOptions('fitInService', '/api/services');
@@ -1494,18 +1496,17 @@ function attachActionPanelListeners() {
 
 // Função para abrir o painel lateral
 async function openActionPanel(id) {
-  const panel = document.getElementById('actionPanel');
-  const body = document.getElementById('actionPanelBody');
-  if (!panel || !body) {
-    console.warn('[PAINEL] Markup ausente (#actionPanel / #actionPanelBody).');
-    return;
-  }
+  const s = ensureActionPanelSkeleton();
+  if (!s) return;
+  const { panel, titleEl, body } = s;
 
   try {
     const res = await fetch(`/admin/appointments/${id}`);
     if (!res.ok) throw new Error('Falha ao carregar agendamento');
     const { appointment } = await res.json();
     const status = appointment.status;
+
+    titleEl.textContent = 'Ações do agendamento';
 
     let html = `
       <button class="btn btn-outline-light w-100 mb-2" onclick="viewAppointment(${id})">
@@ -1548,6 +1549,7 @@ async function openActionPanel(id) {
     notify({ type: 'error', message: 'Erro ao carregar detalhes do agendamento' });
   }
 }
+
 window.openActionPanel = openActionPanel;
 
 
