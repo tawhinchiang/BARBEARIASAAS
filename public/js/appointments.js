@@ -21,19 +21,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Clique em agendamento existente (independente do dispositivo)
   // Clique em agendamento existente
-  document.addEventListener('click', e => {
-    const cell = e.target.closest('.js-appointment-cell[data-id]');
-    if (!cell) return;
+document.addEventListener('click', e => {
+  const cell = e.target.closest('.js-appointment-cell[data-id]');
+  if (!cell) return;
 
-    // ⚠️ IGNORAR slots bloqueados e slots livres
-    if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) {
-      return; // deixa os outros listeners cuidarem
-    }
+ 
+  if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) {
+    return;
+  }
 
-    const id = cell.dataset.id;
-    console.log('[CLICK] Clique em agendamento ID:', id);
-    openActionPanel(id);
-  });
+  const id = cell.dataset.id;
+
+  
+  if (typeof closeActionPanel === 'function') closeActionPanel();
+
+  console.log('[CLICK] Clique em agendamento ID:', id);
+  openActionPanel(id);
+});
 
 
 
@@ -510,6 +514,15 @@ async function openActionPanelForBlockedSlot(appointmentId) {
   });
 
   panel.querySelector('#actionUnblockSlot').addEventListener('click', async () => {
+      if (typeof closeActionPanel === 'function') {
+        closeActionPanel();
+      } else {
+        panel.classList.remove('show');
+      }
+
+  // Pequena pausa para aplicar a transição e evitar conflito de foco/stacking
+  await new Promise(requestAnimationFrame);
+
     const ok = await confirmDialog({
       title: 'Desbloquear horário',
       message: 'Deseja liberar este horário para novos agendamentos?',
@@ -1563,7 +1576,19 @@ window.closeActionPanel = closeActionPanel;
 
 document.addEventListener('click', function (e) {
   const panel = document.getElementById('actionPanel');
-  if (panel?.classList.contains('show') && !panel.contains(e.target) && !e.target.closest('.js-open-action-panel')) {
-    closeActionPanel();
-  }
+  if (!panel || !panel.classList.contains('show')) return;
+
+  
+  if (panel.contains(e.target)) return;
+
+  
+  const isOpenTrigger =
+    e.target.closest('.js-open-action-panel') ||                         
+    e.target.closest('.slot-free.js-open-schedule') ||                   
+    e.target.closest('.slot-blocked.js-open-blocked') ||                 
+    e.target.closest('.js-appointment-cell[data-id]');                   
+
+  if (isOpenTrigger) return;
+
+  closeActionPanel();
 });

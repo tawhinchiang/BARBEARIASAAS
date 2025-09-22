@@ -173,6 +173,30 @@ const attackDetection = (req, res, next) => {
   
   next();
 };
+// Bloqueio de paths típicos de scanners (WordPress, Joomla, etc.)
+const blockScanners = (req, res, next) => {
+  const badPaths = [
+    'wp-includes',
+    'xmlrpc.php',
+    'wlwmanifest.xml',
+    'wordpress',
+    'wp-admin',
+    'wp-login.php',
+    'joomla',
+    'phpmyadmin'
+  ];
+
+  if (badPaths.some(p => req.url.toLowerCase().includes(p))) {
+    console.warn('[SECURITY] Scanner detectado e bloqueado:', {
+      ip: req.ip,
+      url: req.url,
+      userAgent: req.headers['user-agent']
+    });
+    return res.status(403).send('Forbidden');
+  }
+
+  next();
+};
 
 // Middleware de logging de segurança
 const securityLogger = (req, res, next) => {
@@ -236,6 +260,7 @@ module.exports = {
   attackDetection,
   securityLogger,
   csrfValidation,
-  generateCSRFToken
+  generateCSRFToken,
+  blockScanners 
 };
 

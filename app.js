@@ -15,7 +15,8 @@ const {
   attackDetection,
   securityLogger,
   csrfValidation,
-  generateCSRFToken
+  generateCSRFToken,
+  blockScanners 
 } = require('./middleware/security');
 const compression = require('compression');
 console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
@@ -117,8 +118,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 log('Middlewares básicos configurados');
 
-app.use(securityLogger);        // se quiser registrar requisições sensíveis
-app.use(attackDetection);       // para detectar SQLi, XSS, etc
+app.use(securityLogger);       
+app.use(attackDetection);  
+app.use(blockScanners);
+
 // Configurar sessões
 const sessionStore = new SequelizeStore({
   db: sequelize,
