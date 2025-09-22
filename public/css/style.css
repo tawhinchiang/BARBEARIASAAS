@@ -3440,8 +3440,15 @@ body.modal-open {
 }
 
 
+
+.modal-backdrop.show { z-index: 1040 !important; }
+
+
 #editModal { z-index: 3000 !important; }
-.modal-backdrop.show { z-index: 2990 !important; }
+
+
+#viewModal { z-index: 3000 !important; }
+
 
 
 /* 🔧 Ajuste de responsividade do Edit Modal */
