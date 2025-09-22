@@ -187,6 +187,52 @@ document.addEventListener('DOMContentLoaded', function () {
   initFilterForm();
   initTableListeners();
   // attachActionPanelListeners();
+  // iOS-safe: delegação por click para slots livres/bloqueados + fallback no <td>
+(function wireSlotClicks() {
+  const handleFree = (el) => {
+    openActionPanelForEmptySlot({
+      barberId: el.dataset.barber,
+      date: el.dataset.date,
+      time: el.dataset.time
+    });
+  };
+
+  const handleBlocked = (el) => {
+    const appointmentId = el.dataset.id;
+    if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
+  };
+
+  document.addEventListener('click', (e) => {
+    // 1) clique direto no slot livre
+    const free = e.target.closest('.slot-free.js-open-schedule');
+    if (free) {
+      handleFree(free);
+      return;
+    }
+
+    // 2) clique direto no slot bloqueado
+    const blocked = e.target.closest('.slot-blocked.js-open-blocked');
+    if (blocked) {
+      handleBlocked(blocked);
+      return;
+    }
+
+    // 3) fallback: clique no <td> que contenha um dos slots
+    const td = e.target.closest('td');
+    if (!td) return;
+
+    const freeInside = td.querySelector('.slot-free.js-open-schedule');
+    if (freeInside) {
+      handleFree(freeInside);
+      return;
+    }
+
+    const blockedInside = td.querySelector('.slot-blocked.js-open-blocked');
+    if (blockedInside) {
+      handleBlocked(blockedInside);
+    }
+  }, { passive: true });
+})();
 
 
   // Executa tarefas mais leves logo
@@ -330,86 +376,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   }
 
-function bindTap(selector, handler) {
-  document.addEventListener('touchstart', (e) => {
-    const el = e.target.closest(selector);
-    if (!el) return;
-
-    let touchMoved = false;
-
-    const onTouchMove = () => { touchMoved = true; };
-    const onTouchEnd = () => {
-      if (!touchMoved) {
-        handler(el);
-
-        // Envia log para backend
-        fetch('/api/log-touch', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-          },
-          body: JSON.stringify({
-            selector,
-            time: new Date().toISOString(),
-            userAgent: navigator.userAgent,
-            platform: navigator.platform
-          })
-        });
-      }
 
 
-      document.removeEventListener('touchmove', onTouchMove);
-      document.removeEventListener('touchend', onTouchEnd);
-    };
 
-    document.addEventListener('touchmove', onTouchMove, { passive: true });
-    document.addEventListener('touchend', onTouchEnd);
-  });
-
-  // fallback para desktop
-  document.addEventListener('click', (e) => {
-    const el = e.target.closest(selector);
-    if (el) handler(el);
-  });
-}
-
-
-// ==============================
-// Slots livres e bloqueados (mobile + desktop)
-// ==============================
-
-// Clique direto no slot livre
-bindTap('.slot-free.js-open-schedule', (el) => {
-  openActionPanelForEmptySlot({
-    barberId: el.dataset.barber,
-    date: el.dataset.date,
-    time: el.dataset.time
-  });
-});
-
-// Clique direto no slot bloqueado
-bindTap('.slot-blocked.js-open-blocked', (el) => {
-  const appointmentId = el.dataset.id;
-  if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
-});
-
-// Fallback: clique no <td> (resolve tanto livres quanto bloqueados)
-bindTap('td', (td) => {
-  const free = td.querySelector('.slot-free.js-open-schedule');
-  const blocked = td.querySelector('.slot-blocked.js-open-blocked');
-
-  if (free) {
-    openActionPanelForEmptySlot({
-      barberId: free.dataset.barber,
-      date: free.dataset.date,
-      time: free.dataset.time
-    });
-  } else if (blocked) {
-    const appointmentId = blocked.dataset.id;
-    if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
-  }
-});
 
 
 });

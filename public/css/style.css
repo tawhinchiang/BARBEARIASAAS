@@ -3412,7 +3412,13 @@ body.modal-open {
 
 
 .slot-free,
-.slot-blocked,
+.slot-blocked {
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  touch-action: manipulation; /* reduz atraso de click no iOS */
+  pointer-events: auto;
+}
+
 .js-appointment-cell {
   cursor: pointer;
 }
