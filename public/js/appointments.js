@@ -563,7 +563,21 @@ function initModals() {
   viewAppointmentModal = modalElement ? new bootstrap.Modal(modalElement) : null;
 
   const editModalElement = document.getElementById('editModal');
-  editModal = editModalElement ? new bootstrap.Modal(editModalElement) : null;
+  if (editModalElement) {
+    
+    if (editModalElement.parentElement !== document.body) {
+      document.body.appendChild(editModalElement);
+      console.log('[DEBUG] #editModal movido para <body>');
+    }
+
+    
+    editModalElement.addEventListener('show.bs.modal', () => {
+      try { closeActionPanel(); } catch (_) {}
+    });
+
+    editModal = new bootstrap.Modal(editModalElement);
+  }
+  
 
   modalElement?.querySelector('.btn-close')?.addEventListener('click', () => viewAppointmentModal.hide());
   modalElement?.addEventListener('click', (e) => {
@@ -852,8 +866,12 @@ async function viewAppointment(appointmentId) {
       : '0.00';
 
     const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = ''; // limpa
-
+    modalContent.innerHTML = ''; 
+  
+    if (typeof closeActionPanel === 'function') {
+      closeActionPanel();
+      await new Promise(requestAnimationFrame); 
+    }
     const row = document.createElement('div');
     row.className = 'row';
 
@@ -919,7 +937,8 @@ async function editAppointment(appointmentId) {
 
     await loadSelectOptions('edit-service', '/api/services', appointment.serviceType.id);
     await loadSelectOptions('edit-barber', '/api/barbers', appointment.barber.id);
-
+     if (typeof closeActionPanel === 'function') closeActionPanel();
+    await new Promise(requestAnimationFrame)
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);

@@ -167,46 +167,51 @@
           <h5 class="modal-title">Editar Agendamento</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
+
         <div class="modal-body">
+          <!-- loader -->
           <div id="edit-loading" class="d-flex justify-content-center align-items-center py-5" style="display: none;">
+            <span class="spinner-border"></span>
+          </div>
 
-
-            <input type="hidden" name="id" id="edit-id">
-            <div class="row">
-              <div class="col-md-6">
-                <label class="form-label">Nome</label>
-                <input type="text" id="edit-client-name" class="form-control" disabled>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Telefone</label>
-                <input type="text" id="edit-client-phone" class="form-control" disabled>
-              </div>
-              <div class="col-md-6 mt-3">
-                <label class="form-label">Serviço</label>
-                <select id="edit-service" class="form-control" required></select>
-              </div>
-
-              <div class="col-md-6 mt-3">
-                <label class="form-label">Barbeiro</label>
-                <select id="edit-barber" class="form-control" required></select>
-              </div>
-              <div class="col-md-6 mt-3">
-                <label class="form-label">Data</label>
-                <input type="date" id="edit-date" class="form-control" required>
-              </div>
-              <div class="col-md-6 mt-3">
-                <label class="form-label">Horário</label>
-                <input type="time" id="edit-time" class="form-control" required>
-              </div>
+          <!-- formulário -->
+          <input type="hidden" name="id" id="edit-id">
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label">Nome</label>
+              <input type="text" id="edit-client-name" class="form-control" disabled>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Telefone</label>
+              <input type="text" id="edit-client-phone" class="form-control" disabled>
+            </div>
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Serviço</label>
+              <select id="edit-service" class="form-control" required></select>
+            </div>
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Barbeiro</label>
+              <select id="edit-barber" class="form-control" required></select>
+            </div>
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Data</label>
+              <input type="date" id="edit-date" class="form-control" required>
+            </div>
+            <div class="col-md-6 mt-3">
+              <label class="form-label">Horário</label>
+              <input type="time" id="edit-time" class="form-control" required>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
       </form>
     </div>
   </div>
 </div>
+
 <!-- Modal de Encaixe -->
 <div class="modal fade" id="fitInModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
