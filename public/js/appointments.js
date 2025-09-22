@@ -339,7 +339,25 @@ function bindTap(selector, handler) {
 
     const onTouchMove = () => { touchMoved = true; };
     const onTouchEnd = () => {
-      if (!touchMoved) handler(el);
+      if (!touchMoved) {
+        handler(el);
+
+        // Envia log para backend
+        fetch('/api/log-touch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+          },
+          body: JSON.stringify({
+            selector,
+            time: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            platform: navigator.platform
+          })
+        });
+      }
+
 
       document.removeEventListener('touchmove', onTouchMove);
       document.removeEventListener('touchend', onTouchEnd);
