@@ -1,0 +1,104 @@
+<div class="container py-4">
+  <h2 class="mb-4">
+    <i class="fas fa-cash-register me-2"></i> Caixa
+  </h2>
+
+  <!-- Status atual -->
+  <div id="cashierStatus" class="mb-3">
+    {{!-- Aqui via JS você vai preencher se está aberto ou fechado --}}
+  </div>
+
+  <!-- Botões de ações -->
+  <div class="mb-4">
+    <button id="btnOpenCashier" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#openCashierModal">
+      <i class="fas fa-door-open me-1"></i> Abrir Caixa
+    </button>
+
+    <button id="btnAddExpense" class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#expenseModal" disabled>
+      <i class="fas fa-minus-circle me-1"></i> Lançar Despesa
+    </button>
+
+    <button id="btnCloseCashier" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#closeCashierModal" disabled>
+      <i class="fas fa-door-closed me-1"></i> Fechar Caixa
+    </button>
+  </div>
+
+  <!-- Resumo da sessão atual -->
+  <div id="cashierSummary" class="row g-3">
+    <!-- preenchido via JS com /admin/cashier/session/current -->
+  </div>
+</div>
+
+<!-- Modal Abrir Caixa -->
+<div class="modal fade" id="openCashierModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="fas fa-door-open me-2"></i> Abrir Caixa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Valor inicial em dinheiro</label>
+        <input type="number" id="openingAmount" class="form-control" step="0.01" min="0" value="0.00">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" id="confirmOpenCashier">Abrir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lançar Despesa -->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title"><i class="fas fa-minus-circle me-2"></i> Lançar Despesa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Descrição</label>
+        <input type="text" id="expenseDescription" class="form-control mb-2">
+
+        <label class="form-label">Valor</label>
+        <input type="number" id="expenseAmount" class="form-control mb-2" step="0.01" min="0.01">
+
+        <label class="form-label">Método</label>
+        <select id="expenseMethod" class="form-select">
+          <option value="cash">Dinheiro</option>
+          <option value="pix">Pix</option>
+          <option value="card">Cartão</option>
+          <option value="other">Outro</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-warning" id="confirmAddExpense">Lançar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Fechar Caixa -->
+<div class="modal fade" id="closeCashierModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fas fa-door-closed me-2"></i> Fechar Caixa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Valor contado em dinheiro</label>
+        <input type="number" id="countedCash" class="form-control mb-2" step="0.01" min="0">
+
+        <label class="form-label">Observações</label>
+        <textarea id="closeNotes" class="form-control"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger" id="confirmCloseCashier">Fechar Caixa</button>
+      </div>
+    </div>
+  </div>
+</div>

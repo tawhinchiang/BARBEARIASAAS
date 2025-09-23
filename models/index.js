@@ -7,6 +7,8 @@ const Appointment = require('./Appointment');
 const SystemConfig = require('./SystemConfig');
 const VerificationCode = require('./VerificationCode');
 const Payment = require('./Payment');
+const CashSession = require('./CashSession');
+const Expense = require('./Expense');
 // Definir associações entre os modelos
 Client.hasMany(Appointment, { foreignKey: 'clientId', as: 'appointments' });
 Appointment.belongsTo(Client, { foreignKey: 'clientId', as: 'client' });
@@ -19,6 +21,11 @@ Appointment.belongsTo(ServiceType, { foreignKey: 'serviceTypeId', as: 'serviceTy
 
 Appointment.hasMany(Payment, { foreignKey: 'appointmentId', as: 'payments' });
 Payment.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
+
+// Relação CashSession ↔ Expense
+CashSession.hasMany(Expense, { foreignKey: 'cashSessionId', as: 'expenses' });
+Expense.belongsTo(CashSession, { foreignKey: 'cashSessionId', as: 'cashSession' });
+
 // Função para sincronizar o banco de dados
 const syncDatabase = async (force = false) => {
   try {
@@ -44,6 +51,8 @@ module.exports = {
   Appointment,
   SystemConfig,
   Payment,
+  CashSession,
+  Expense,
   syncDatabase,
   VerificationCode
 };

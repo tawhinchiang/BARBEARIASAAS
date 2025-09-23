@@ -305,7 +305,7 @@ router.post('/', async (req, res, next) => {
 });
 // POST /admin/appointments/:id/checkout
 router.post('/admin/appointments/:id/checkout', async (req, res) => {
-  const { Payment, Appointment } = require('../models');
+ 
   const t = await Appointment.sequelize.transaction();
 
   try {
@@ -322,7 +322,8 @@ router.post('/admin/appointments/:id/checkout', async (req, res) => {
         appointmentId,
         method: p.method,
         amount: p.amount,
-        notes: p.notes || null
+        notes: p.notes || null,
+        cashSessionId: openSession ? openSession.id : null
       }, { transaction: t });
 
       totalPago += parseFloat(newPayment.amount);
