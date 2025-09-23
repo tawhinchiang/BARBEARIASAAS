@@ -214,39 +214,59 @@ router.get('/dashboard', async (req, res) => {
       where: { isActive: true }
     });
     // Receita dos últimos 7 dias
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(today.getDate() - 6);
+    const fromYMDLocal = (s) => {
+  const [y, m, d] = String(s).split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+   // ===== Receita dos últimos 7 dias (corrigido fuso horário/local) =====
+const baseLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+baseLocal.setDate(baseLocal.getDate() - 6);
 
-    const datesToTrack = [];
-    for (let i = 0; i < 7; i++) {
-      const temp = new Date(sevenDaysAgo);
-      temp.setDate(sevenDaysAgo.getDate() + i);
-      datesToTrack.push(formatDateYYYYMMDD(temp));
-    }
+// Gera as 7 datas em 'YYYY-MM-DD' SEM usar new Date('YYYY-MM-DD')
+const datesToTrack = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(baseLocal.getFullYear(), baseLocal.getMonth(), baseLocal.getDate() + i);
+  return formatDateYYYYMMDD(d);
+});
 
-    const appointmentsForRevenue = await Appointment.findAll({
-      attributes: ['appointmentDate', 'totalPrice'],
-      where: {
-        appointmentDate: { [Op.in]: datesToTrack },
-        status: { [Op.in]: ['completed'] }
-      },
-      raw: true
-    });
+const appointmentsForRevenue = await Appointment.findAll({
+  attributes: ['appointmentDate', 'totalPrice'],
+  where: {
+    appointmentDate: { [Op.in]: datesToTrack },
+    status: { [Op.in]: ['completed'] }
+  },
+  raw: true
+});
 
-    const revenueChartLabels = [];
-    const revenueChartData = [];
-    datesToTrack.forEach(dateStr => {
-      const dayName = diasSemana[new Date(dateStr).getDay()];
-      revenueChartLabels.push(dayName);
-      revenueChartData.push(0);
-    });
+// Labels por dia da semana, calculados em "local time"
+const revenueChartLabels = datesToTrack.map(dateStr => {
+  const dayName = diasSemana[fromYMDLocal(dateStr).getDay()];
+  return dayName;
+});
 
-    appointmentsForRevenue.forEach(item => {
-      const index = datesToTrack.indexOf(formatDateYYYYMMDD(new Date(item.appointmentDate)));
-      if (index !== -1) {
-        revenueChartData[index] += parseFloat(item.totalPrice || 0);
-      }
-    });
+// Dados iniciam em zero
+const revenueChartData = datesToTrack.map(() => 0);
+
+// Soma por dia SEM reparsear como UTC
+appointmentsForRevenue.forEach(({ appointmentDate, totalPrice }) => {
+let key;
+if (typeof appointmentDate === 'string') {
+  key = appointmentDate;
+} else {
+  // força conversão em local time
+  key = formatDateYYYYMMDD(new Date(
+    appointmentDate.getFullYear(),
+    appointmentDate.getMonth(),
+    appointmentDate.getDate()
+  ));
+}
+
+
+  const idx = datesToTrack.indexOf(key);
+  if (idx !== -1) {
+    revenueChartData[idx] += Number(totalPrice || 0);
+  }
+});
+
 
     // Bloco Novo e Corrigido
     // Substitua pelo Bloco Novo e Mais Robusto
