@@ -1608,11 +1608,17 @@ async function submitCheckout(appointmentId) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
   const rows = document.querySelectorAll('#checkoutPaymentsTable tr'); // exemplo
 
-  const payments = Array.from(rows).map(row => ({
-    method: row.querySelector('.method-select').value,
-    amount: parseFloat(row.querySelector('.amount-input').value),
+ const payments = Array.from(rows).map(row => {
+  const methodEl = row.querySelector('.method-select');
+  const amountEl = row.querySelector('.amount-input');
+
+  return {
+    method: methodEl ? methodEl.value : 'cash',
+    amount: amountEl ? parseFloat(amountEl.value) : 0,
     notes: row.querySelector('.notes-input')?.value || ''
-  }));
+  };
+});
+
 
   const resp = await fetch(`/admin/appointments/${appointmentId}/checkout`, {
     method: 'POST',
@@ -1639,25 +1645,25 @@ function openCheckoutModal(appointmentId) {
   document.getElementById('checkoutAppointmentId').value = appointmentId;
 
   // Resetar valores do modal
-  document.querySelector('#checkoutPaymentsTable tbody').innerHTML = `
-    <tr>
-      <td>
-        <select class="form-select method-select">
-          <option value="cash">Dinheiro</option>
-          <option value="pix">Pix</option>
-          <option value="credit_card">Cartão Crédito</option>
-          <option value="debit_card">Cartão Débito</option>
-          <option value="voucher">Voucher</option>
-        </select>
-      </td>
-      <td>
-        <input type="number" class="form-control amount-input" min="0.01" step="0.01" value="0.00">
-      </td>
-      <td>
-        <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
-      </td>
-    </tr>
-  `;
+ document.querySelector('#checkoutPaymentsTable tbody').innerHTML = `
+  <tr>
+    <td>
+      <select class="form-select method-select">
+        <option value="cash">Dinheiro</option>
+        <option value="pix">Pix</option>
+        <option value="credit_card">Cartão Crédito</option>
+        <option value="debit_card">Cartão Débito</option>
+        <option value="voucher">Voucher</option>
+      </select>
+    </td>
+    <td>
+      <input type="number" class="form-control amount-input" min="0.01" step="0.01" value="0.00">
+    </td>
+    <td>
+      <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
+    </td>
+  </tr>
+`;
 
   // Abrir modal
   const bsModal = new bootstrap.Modal(modal);
