@@ -213,6 +213,47 @@
     </div>
   </div>
 </div>
+<!-- Modal de CheckoutPayment -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-cash-register me-2"></i> Finalizar e Receber
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="checkoutAppointmentId">
+
+        <table class="table table-sm" id="checkoutPaymentsTable">
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th>Valor</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Linhas preenchidas dinamicamente pelo JS -->
+          </tbody>
+        </table>
+
+        <button type="button" class="btn btn-outline-primary btn-sm" id="addPaymentRow">
+          <i class="fas fa-plus me-1"></i> Adicionar Pagamento
+        </button>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="finalizarCheckoutBtn">
+          <i class="fas fa-check me-1"></i> Finalizar e Receber
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <!-- Modal de Encaixe -->

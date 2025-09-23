@@ -1663,6 +1663,36 @@ function openCheckoutModal(appointmentId) {
   const bsModal = new bootstrap.Modal(modal);
   bsModal.show();
 }
+// Adicionar nova linha de pagamento
+document.getElementById('addPaymentRow')?.addEventListener('click', () => {
+  const tbody = document.querySelector('#checkoutPaymentsTable tbody');
+  if (!tbody) return;
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>
+      <select class="form-select method-select">
+        <option value="cash">Dinheiro</option>
+        <option value="pix">Pix</option>
+        <option value="credit_card">Cartão Crédito</option>
+        <option value="debit_card">Cartão Débito</option>
+        <option value="voucher">Voucher</option>
+      </select>
+    </td>
+    <td><input type="number" class="form-control amount-input" min="0.01" step="0.01" value="0.00"></td>
+    <td><input type="text" class="form-control notes-input" placeholder="Obs. opcional"></td>
+  `;
+  tbody.appendChild(row);
+});
+
+// Finalizar checkout
+document.getElementById('finalizarCheckoutBtn')?.addEventListener('click', () => {
+  const appointmentId = document.getElementById('checkoutAppointmentId').value;
+  if (appointmentId) {
+    submitCheckout(appointmentId);
+    const modalEl = document.getElementById('checkoutModal');
+    bootstrap.Modal.getInstance(modalEl)?.hide();
+  }
+});
 
 
 window.openActionPanel = openActionPanel;
