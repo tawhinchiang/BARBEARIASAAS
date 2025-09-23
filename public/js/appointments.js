@@ -1585,7 +1585,7 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-    if (status !== 'cancelled' && status !== 'completed') {
+    if (status !== 'cancelled'){
       html += `
         <button class="btn btn-outline-danger w-100 mb-2" onclick="cancelAppointment(${id})">
           <i class="fas fa-times-circle me-2"></i> Cancelar
