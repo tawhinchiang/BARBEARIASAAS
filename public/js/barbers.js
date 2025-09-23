@@ -290,11 +290,31 @@ window.editBarber = function (id) {
 
 
 
-window.toggleBarber = function (id) {
-  if (!confirm('Deseja alternar o status deste barbeiro?')) return;
-  fetch(`/admin/barbers/${id}/toggle`, { method: 'PATCH' })
-    .then(res => res.json())
-    .then(data => data.success ? location.reload() : alert(data.error || 'Erro ao atualizar'));
+window.toggleBarber = async function (id) {
+  const ok = await confirmDialog({
+    title: 'Alterar Status do Barbeiro',
+    message: 'Deseja ativar ou desativar este barbeiro?',
+    confirmText: 'Sim, confirmar',
+    cancelText: 'Cancelar',
+    variant: 'warning'
+  });
+
+  if (!ok) return; // usuário desistiu
+
+  try {
+    const res = await fetch(`/admin/barbers/${id}/toggle`, { method: 'PATCH' });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      notify({ type: 'success', message: 'Status do barbeiro atualizado com sucesso!' });
+      setTimeout(() => location.reload(), 600);
+    } else {
+      notify({ type: 'error', message: data.error || 'Erro ao atualizar status.' });
+    }
+  } catch (err) {
+    console.error('[BARBERS] Erro ao alternar status:', err);
+    notify({ type: 'error', message: 'Falha na comunicação com o servidor.' });
+  }
 };
 
 window.deleteBarber = function (id) {

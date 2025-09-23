@@ -1052,12 +1052,13 @@ async function cancelAppointment(appointmentId) {
     await new Promise(requestAnimationFrame)
   const textareaId = 'cancel-reason-input';
   const ok = await confirmDialog({
-    title: 'Cancelar agendamento',
+    title: 'Deseja Cancelar agendamento?',
     message: `
       <label class="form-label">Motivo do cancelamento (opcional):</label>
       <textarea id="${textareaId}" class="form-control" rows="3" placeholder="Ex.: cliente solicitou"></textarea>
     `,
-    confirmText: 'Cancelar',
+      confirmText: 'SIM',
+      cancelText: 'Não',
     variant: 'danger'
   });
   if (!ok) return;
