@@ -81,6 +81,17 @@ dayOfWeek: function(date) {
   add: function(a, b) {
     return Number(a) + Number(b);
   },
+  paymentStatusText: (status) => ({
+  pending: 'Pendente',
+  partial: 'Parcial',
+  paid: 'Pago'
+}[status] || status),
+
+paymentStatusClass: (status) => ({
+  pending: 'warning',
+  partial: 'info',
+  paid: 'success'
+}[status] || 'secondary'),
 
   statusText: function(status) {
   const statusMap = {

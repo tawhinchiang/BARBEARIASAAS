@@ -83,6 +83,9 @@
         <span class="fw-bold">
           {{formatCurrency cell.appointment.totalPrice}}
         </span>
+        <span class="badge bg-{{paymentStatusClass cell.appointment.paymentStatus}}">
+          {{paymentStatusText cell.appointment.paymentStatus}}
+        </span>
       </div>
       {{/if}}
       {{else}}

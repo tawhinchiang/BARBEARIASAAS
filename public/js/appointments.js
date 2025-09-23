@@ -1575,16 +1575,17 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-    if (status === 'confirmed' || status === 'in_progress') {
-      html += `
-        <button class="btn btn-outline-warning w-100 mb-2" onclick="markNoShow(${id})">
-          <i class="fas fa-user-slash me-2"></i> Não Compareceu
-        </button>
-        <button class="btn btn-outline-warning w-100 mb-2" onclick="completeAppointment(${id})">
-          <i class="fas fa-check me-2"></i> Concluir
-        </button>
-      `;
-    }
+ if (status === 'confirmed' || status === 'in_progress') {
+  html += `
+    <button class="btn btn-outline-warning w-100 mb-2" onclick="markNoShow(${id})">
+      <i class="fas fa-user-slash me-2"></i> Não Compareceu
+    </button>
+    <button class="btn btn-success w-100 mb-2" onclick="openCheckoutModal(${id})">
+      <i class="fas fa-cash-register me-2"></i> Finalizar e Receber
+    </button>
+  `;
+}
+
     if (status !== 'cancelled'){
       html += `
         <button class="btn btn-outline-danger w-100 mb-2" onclick="cancelAppointment(${id})">
@@ -1600,6 +1601,69 @@ async function openActionPanel(id) {
     notify({ type: 'error', message: 'Erro ao carregar detalhes do agendamento' });
   }
 }
+
+
+//Finalizar e Receber
+async function submitCheckout(appointmentId) {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  const rows = document.querySelectorAll('#checkoutPaymentsTable tr'); // exemplo
+
+  const payments = Array.from(rows).map(row => ({
+    method: row.querySelector('.method-select').value,
+    amount: parseFloat(row.querySelector('.amount-input').value),
+    notes: row.querySelector('.notes-input')?.value || ''
+  }));
+
+  const resp = await fetch(`/admin/appointments/${appointmentId}/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({ payments })
+  });
+
+  const data = await resp.json();
+  if (data.success) {
+    notify({ type: 'success', message: 'Pagamento registrado com sucesso!' });
+    refreshAppointmentsTable();
+  } else {
+    notify({ type: 'error', message: data.error });
+  }
+}
+function openCheckoutModal(appointmentId) {
+  const modal = document.getElementById('checkoutModal');
+  if (!modal) {
+    notify({ type: 'error', message: 'Modal de checkout não encontrado!' });
+    return;
+  }
+
+  // Preencher hidden field para saber qual appointment está sendo pago
+  document.getElementById('checkoutAppointmentId').value = appointmentId;
+
+  // Resetar valores do modal
+  document.querySelector('#checkoutPaymentsTable tbody').innerHTML = `
+    <tr>
+      <td>
+        <select class="form-select method-select">
+          <option value="cash">Dinheiro</option>
+          <option value="pix">Pix</option>
+          <option value="credit_card">Cartão Crédito</option>
+          <option value="debit_card">Cartão Débito</option>
+          <option value="voucher">Voucher</option>
+        </select>
+      </td>
+      <td>
+        <input type="number" class="form-control amount-input" min="0.01" step="0.01" value="0.00">
+      </td>
+      <td>
+        <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
+      </td>
+    </tr>
+  `;
+
+  // Abrir modal
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+}
+
 
 window.openActionPanel = openActionPanel;
 

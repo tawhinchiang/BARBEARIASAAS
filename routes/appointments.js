@@ -4,8 +4,9 @@ const normalizePhone = require('../utils/normalizePhone'); // Usando versão cor
 const moment = require('moment-timezone');
 const TZ = process.env.TZ || 'America/Sao_Paulo';
 const { QueryTypes } = require('sequelize');
-const { Client, Barber, ServiceType, Appointment } = require('../models');
+const { Client, Barber, ServiceType, Appointment,Payment} = require('../models');
 const sequelize = require('../config/database'); 
+
 
 const router = express.Router();
 
@@ -301,6 +302,52 @@ ${baseUrl}`;
 router.post('/', async (req, res, next) => {
   req.url = '/api/appointments';
   next();
+});
+// POST /admin/appointments/:id/checkout
+router.post('/admin/appointments/:id/checkout', async (req, res) => {
+  const { Payment, Appointment } = require('../models');
+  const t = await Appointment.sequelize.transaction();
+
+  try {
+    const appointmentId = req.params.id;
+    const { payments } = req.body; // array [{ method, amount, notes }]
+
+    const appointment = await Appointment.findByPk(appointmentId, { transaction: t });
+    if (!appointment) throw new Error('Agendamento não encontrado');
+
+    // Salvar pagamentos
+    let totalPago = 0;
+    for (const p of payments) {
+      const newPayment = await Payment.create({
+        appointmentId,
+        method: p.method,
+        amount: p.amount,
+        notes: p.notes || null
+      }, { transaction: t });
+
+      totalPago += parseFloat(newPayment.amount);
+    }
+
+    // Atualizar status de pagamento
+    let paymentStatus = 'pending';
+    if (totalPago >= parseFloat(appointment.totalPrice)) {
+      paymentStatus = 'paid';
+    } else if (totalPago > 0) {
+      paymentStatus = 'partial';
+    }
+
+    await appointment.update({
+      status: 'completed',
+      paymentStatus
+    }, { transaction: t });
+
+    await t.commit();
+    res.json({ success: true, appointmentId, paymentStatus });
+  } catch (err) {
+    await t.rollback();
+    console.error('[CHECKOUT ERROR]', err);
+    res.status(400).json({ success: false, error: err.message });
+  }
 });
 
 
