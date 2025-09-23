@@ -206,7 +206,13 @@ router.get('/dashboard', async (req, res) => {
       group: ['status'],
       raw: true
     });
+     const inProgressCount = await Appointment.count({
+      where: { status: 'in_progress' }
+    });
 
+    const activeBarbersCount = await Barber.count({
+      where: { isActive: true }
+    });
     // Receita dos últimos 7 dias
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(today.getDate() - 6);
@@ -346,15 +352,22 @@ router.get('/dashboard', async (req, res) => {
       topBarbers,
       topServices,
       revenueChartLabels,
+      inProgressCount,
+      activeBarbersCount,
       revenueChartData
     });
   } catch (error) {
     logError('Erro no dashboard', error);
     res.render('admin/dashboard', {
-      title: 'Dashboard Administrativo',
       layout: 'admin',
-      user: req.session.user,
-      error: 'Erro ao carregar dados'
+      title: 'Dashboard',
+      todayAppointmentsCount: 0,
+      monthlyRevenue: 0,
+      recentAppointments: [],
+      topBarbers: [],
+      topServices: [],
+      inProgressCount: 0,
+      activeBarbersCount: 0
     });
   }
 });
