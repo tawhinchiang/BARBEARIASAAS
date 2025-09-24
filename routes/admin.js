@@ -1284,8 +1284,8 @@ router.put('/appointments/:id', async (req, res) => {
 
 // ===== ROTAS DE BARBEIROS =====
 router.use('/barbers', require('./barbers'));
-
-
+// ===== ROTAS DE caixa =====
+router.use('/cashier', require('./cashier'));
 // ===== ROTAS DE SERVIÇOS =====
 router.use('/services', require('./services'));
 

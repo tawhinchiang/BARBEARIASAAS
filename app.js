@@ -186,13 +186,14 @@ app.use('/', require('./routes/appointments'));
 // Rotas de histórico (CORS padrão)
 app.use('/history', require('./routes/history'));
 
+
 // ÁREA ADMINISTRATIVA - CORS MAIS RESTRITIVO
 app.use('/admin', cors(createCorsConfig('admin')), require('./routes/admin'));
 
 // APIs ADMINISTRATIVAS - CORS MUITO RESTRITIVO
 app.use('/admin/api', cors(createCorsConfig('admin')), require('./routes/adminApi'));
-// Rotas de caixa - CORS padrão
-app.use('/admin', require('./routes/cashier'));
+
+
 // Rota específica para DevTools (sem CORS)
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   res.status(204).end();

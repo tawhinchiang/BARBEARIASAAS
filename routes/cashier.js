@@ -20,7 +20,7 @@ function ensureAdmin(req, res, next) {
 router.use(isAuthenticated);
 router.use(ensureAdmin);
 
-router.get('/cashier', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     res.render('cashier', { 
       layout: 'admin',     
@@ -33,7 +33,7 @@ router.get('/cashier', async (req, res) => {
 });
 
 
-router.post('/cashier/open', async (req, res) => {
+router.post('/open', async (req, res) => {
   try {
     const { openingAmount, userId } = req.body;
 
@@ -82,7 +82,7 @@ router.post('/expenses', async (req, res) => {
 });
 
 
-router.post('/cashier/close', async (req, res) => {
+router.post('/close', async (req, res) => {
   try {
     const { countedCash, notes, userId } = req.body;
 
@@ -107,7 +107,7 @@ router.post('/cashier/close', async (req, res) => {
 });
 
 
-router.get('/cashier/session/current', async (req, res) => {
+router.get('/session/current', async (req, res) => {
   try {
     const session = await CashSession.findOne({
       where: { status: 'open' },
@@ -148,7 +148,7 @@ router.get('/cashier/session/current', async (req, res) => {
 });
 
 
-router.get('/cashier/sessions', async (req, res) => {
+router.get('/sessions', async (req, res) => {
   try {
     const sessions = await CashSession.findAll({
       order: [['openedAt', 'DESC']],
