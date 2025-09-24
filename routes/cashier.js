@@ -7,10 +7,10 @@ const { isAuthenticated } = require('../middleware/auth');
 
 // Middleware de admin
 function ensureAdmin(req, res, next) {
-  if (!req.user) {
+  if (!req.session.user) {
     return res.redirect('/admin/login');
   }
-  if (req.user.role !== 'admin') {
+  if (req.session.user.role !== 'admin') {
     return res.status(403).send('Acesso negado: apenas administradores');
   }
   next();
