@@ -20,10 +20,10 @@ function ensureAdmin(req, res, next) {
 router.use(isAuthenticated);
 router.use(ensureAdmin);
 
-router.get('/admin/cashier', async (req, res) => {
+router.get('/cashier', async (req, res) => {
   try {
     res.render('cashier', { 
-      layout: 'admin',     // ✅ corrige layout
+      layout: 'admin',     
       title: 'Caixa' 
     });
   } catch (err) {
@@ -33,7 +33,7 @@ router.get('/admin/cashier', async (req, res) => {
 });
 
 
-router.post('/admin/cashier/open', async (req, res) => {
+router.post('/cashier/open', async (req, res) => {
   try {
     const { openingAmount, userId } = req.body;
 
@@ -55,11 +55,8 @@ router.post('/admin/cashier/open', async (req, res) => {
   }
 });
 
-/**
- * 🔹 Registrar despesa
- * POST /admin/expenses
- */
-router.post('/admin/expenses', async (req, res) => {
+
+router.post('/expenses', async (req, res) => {
   try {
     const { description, amount, method, userId } = req.body;
 
@@ -84,11 +81,8 @@ router.post('/admin/expenses', async (req, res) => {
   }
 });
 
-/**
- * 🔹 Fechar caixa
- * POST /admin/cashier/close
- */
-router.post('/admin/cashier/close', async (req, res) => {
+
+router.post('/cashier/close', async (req, res) => {
   try {
     const { countedCash, notes, userId } = req.body;
 
@@ -112,11 +106,8 @@ router.post('/admin/cashier/close', async (req, res) => {
   }
 });
 
-/**
- * 🔹 Sessão atual + resumo
- * GET /admin/cashier/session/current
- */
-router.get('/admin/cashier/session/current', async (req, res) => {
+
+router.get('/cashier/session/current', async (req, res) => {
   try {
     const session = await CashSession.findOne({
       where: { status: 'open' },
@@ -156,11 +147,8 @@ router.get('/admin/cashier/session/current', async (req, res) => {
   }
 });
 
-/**
- * 🔹 Histórico de sessões
- * GET /admin/cashier/sessions
- */
-router.get('/admin/cashier/sessions', async (req, res) => {
+
+router.get('/cashier/sessions', async (req, res) => {
   try {
     const sessions = await CashSession.findAll({
       order: [['openedAt', 'DESC']],

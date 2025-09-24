@@ -192,7 +192,7 @@ app.use('/admin', cors(createCorsConfig('admin')), require('./routes/admin'));
 // APIs ADMINISTRATIVAS - CORS MUITO RESTRITIVO
 app.use('/admin/api', cors(createCorsConfig('admin')), require('./routes/adminApi'));
 // Rotas de caixa - CORS padrão
-app.use('/', require('./routes/cashier'));
+app.use('/admin', require('./routes/cashier'));
 // Rota específica para DevTools (sem CORS)
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   res.status(204).end();
