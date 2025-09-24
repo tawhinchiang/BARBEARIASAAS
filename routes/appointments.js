@@ -4,7 +4,8 @@ const normalizePhone = require('../utils/normalizePhone'); // Usando versão cor
 const moment = require('moment-timezone');
 const TZ = process.env.TZ || 'America/Sao_Paulo';
 const { QueryTypes } = require('sequelize');
-const { Client, Barber, ServiceType, Appointment,Payment} = require('../models');
+const { Client, Barber, ServiceType, Appointment, Payment, CashSession } = require('../models');
+
 const sequelize = require('../config/database'); 
 
 
