@@ -314,6 +314,7 @@ router.post('/admin/appointments/:id/checkout', async (req, res) => {
 
     const appointment = await Appointment.findByPk(appointmentId, { transaction: t });
     if (!appointment) throw new Error('Agendamento não encontrado');
+    const openSession = await CashSession.findOne({ where: { status: 'open' } });
 
     // Salvar pagamentos
     let totalPago = 0;
