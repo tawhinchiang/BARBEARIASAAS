@@ -147,13 +147,26 @@ router.get('/admin/cashier/sessions', async (req, res) => {
     res.status(500).json({ success: false, error: 'Erro ao listar sessões' });
   }
 });
-router.get('/admin/cashier', async (req, res) => {
+// Middleware para garantir que só admin acesse
+function ensureAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).render('errors/403', { layout: 'main', title: 'Acesso Negado' });
+  }
+  next();
+}
+
+router.get('/admin/cashier', ensureAdmin, async (req, res) => {
   try {
-    res.render('cashier', { layout: 'main', title: 'Caixa' });
+    res.render('cashier', {
+      layout: 'admin',    // usa o layout de administrador
+      title: 'Caixa',
+      user: req.user      // passa o usuário para handlebars
+    });
   } catch (err) {
     console.error('[CAIXA VIEW ERROR]', err);
     res.status(500).send('Erro ao carregar tela de caixa');
   }
 });
+
 
 module.exports = router;
