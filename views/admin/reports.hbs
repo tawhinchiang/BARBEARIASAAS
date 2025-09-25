@@ -136,6 +136,57 @@
     </div>
   </div>
     {{/if}}
+    {{#if cashier.length}}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="admin-card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Resumo do Caixa</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Abertura</th>
+                <th>Fechamento</th>
+                <th>Valor Inicial</th>
+                <th>Entradas</th>
+                <th>Despesas</th>
+                <th>Saldo Esperado</th>
+                <th>Contado</th>
+                <th>Diferença</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each cashier}}
+              <tr>
+                <td>{{openedAt}}</td>
+                <td>{{closedAt}}</td>
+                <td>R$ {{openingAmount}}</td>
+                <td>R$ {{totalEntradas}}</td>
+                <td>R$ {{totalDespesas}}</td>
+                <td>R$ {{saldoEsperado}}</td>
+                <td>{{#if countedCash}}R$ {{countedCash}}{{else}}-{{/if}}</td>
+                <td>
+                  {{#if diferenca}}
+                    <span class="{{#if (lt diferenca 0)}}text-danger{{else}}text-success{{/if}}">
+                      R$ {{diferenca}}
+                    </span>
+                  {{else}}
+                    -
+                  {{/if}}
+                </td>
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{/if}}
 
     {{#if appointments.length}}
     <div class="row mb-4">

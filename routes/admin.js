@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { User, Appointment, Client, Barber, ServiceType } = require('../models');
+const { User, Appointment, Client, Barber, ServiceType, CashSession, Expense, Payment } = require('../models');
 const { generatePDF, generateCSV, gerarResumoDoRelatorio } = require('../utils/reportGenerator');
 const { buildTimeSlots } = require('../utils/schedule.js')
 const {
@@ -206,7 +206,7 @@ router.get('/dashboard', async (req, res) => {
       group: ['status'],
       raw: true
     });
-     const inProgressCount = await Appointment.count({
+    const inProgressCount = await Appointment.count({
       where: { status: 'in_progress' }
     });
 
@@ -215,57 +215,57 @@ router.get('/dashboard', async (req, res) => {
     });
     // Receita dos últimos 7 dias
     const fromYMDLocal = (s) => {
-  const [y, m, d] = String(s).split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
-   // ===== Receita dos últimos 7 dias (corrigido fuso horário/local) =====
-const baseLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-baseLocal.setDate(baseLocal.getDate() - 6);
+      const [y, m, d] = String(s).split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+    // ===== Receita dos últimos 7 dias (corrigido fuso horário/local) =====
+    const baseLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    baseLocal.setDate(baseLocal.getDate() - 6);
 
-// Gera as 7 datas em 'YYYY-MM-DD' SEM usar new Date('YYYY-MM-DD')
-const datesToTrack = Array.from({ length: 7 }, (_, i) => {
-  const d = new Date(baseLocal.getFullYear(), baseLocal.getMonth(), baseLocal.getDate() + i);
-  return formatDateYYYYMMDD(d);
-});
+    // Gera as 7 datas em 'YYYY-MM-DD' SEM usar new Date('YYYY-MM-DD')
+    const datesToTrack = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(baseLocal.getFullYear(), baseLocal.getMonth(), baseLocal.getDate() + i);
+      return formatDateYYYYMMDD(d);
+    });
 
-const appointmentsForRevenue = await Appointment.findAll({
-  attributes: ['appointmentDate', 'totalPrice'],
-  where: {
-    appointmentDate: { [Op.in]: datesToTrack },
-    status: { [Op.in]: ['completed'] }
-  },
-  raw: true
-});
+    const appointmentsForRevenue = await Appointment.findAll({
+      attributes: ['appointmentDate', 'totalPrice'],
+      where: {
+        appointmentDate: { [Op.in]: datesToTrack },
+        status: { [Op.in]: ['completed'] }
+      },
+      raw: true
+    });
 
-// Labels por dia da semana, calculados em "local time"
-const revenueChartLabels = datesToTrack.map(dateStr => {
-  const dayName = diasSemana[fromYMDLocal(dateStr).getDay()];
-  return dayName;
-});
+    // Labels por dia da semana, calculados em "local time"
+    const revenueChartLabels = datesToTrack.map(dateStr => {
+      const dayName = diasSemana[fromYMDLocal(dateStr).getDay()];
+      return dayName;
+    });
 
-// Dados iniciam em zero
-const revenueChartData = datesToTrack.map(() => 0);
+    // Dados iniciam em zero
+    const revenueChartData = datesToTrack.map(() => 0);
 
-// Soma por dia SEM reparsear como UTC
-appointmentsForRevenue.forEach(({ appointmentDate, totalPrice }) => {
-let key;
-if (typeof appointmentDate === 'string') {
-  key = appointmentDate;
-} else {
-  // força conversão em local time
-  key = formatDateYYYYMMDD(new Date(
-    appointmentDate.getFullYear(),
-    appointmentDate.getMonth(),
-    appointmentDate.getDate()
-  ));
-}
+    // Soma por dia SEM reparsear como UTC
+    appointmentsForRevenue.forEach(({ appointmentDate, totalPrice }) => {
+      let key;
+      if (typeof appointmentDate === 'string') {
+        key = appointmentDate;
+      } else {
+        // força conversão em local time
+        key = formatDateYYYYMMDD(new Date(
+          appointmentDate.getFullYear(),
+          appointmentDate.getMonth(),
+          appointmentDate.getDate()
+        ));
+      }
 
 
-  const idx = datesToTrack.indexOf(key);
-  if (idx !== -1) {
-    revenueChartData[idx] += Number(totalPrice || 0);
-  }
-});
+      const idx = datesToTrack.indexOf(key);
+      if (idx !== -1) {
+        revenueChartData[idx] += Number(totalPrice || 0);
+      }
+    });
 
 
     // Bloco Novo e Corrigido
@@ -406,7 +406,7 @@ router.get('/appointments', async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 5), 100); // 5–100 itens por página
     const offset = (page - 1) * limit;
     const todayStr = new Date().toLocaleDateString('en-CA');
-   const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
     let whereClause = {};
 
     // ✅ Data inicial: hoje (se não vier na query)
@@ -531,8 +531,8 @@ router.get('/appointments', async (req, res) => {
             id: null,
             barber,
             barberId: barber.id,
-            appointmentDate: date, 
-            appointmentTime: slot.time, 
+            appointmentDate: date,
+            appointmentTime: slot.time,
             appointmentDateFormatted: formatDateYYYYMMDD(date),
             appointmentTimeFormatted: slot.time,
             client: { firstName: '', lastName: '' },
@@ -540,7 +540,7 @@ router.get('/appointments', async (req, res) => {
             totalPrice: 0,
             status: 'free'
           });
-          
+
 
         });
       });
@@ -560,7 +560,7 @@ router.get('/appointments', async (req, res) => {
       user: req.session.user,
       appointments: merged,
       timeSlots,
-      barbers, 
+      barbers,
       currentDateRaw: currentDate,
       filters: { startDate, endDate, barberId, status, sort, limit },
       selectedLimit: limit,
@@ -606,7 +606,7 @@ router.get('/appointments/partial', async (req, res) => {
     if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
     else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
     else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
-    else  where.appointmentDate = currentDate;
+    else where.appointmentDate = currentDate;
 
     if (barberId) where.barberId = Number(barberId);
     where.status = status ? status : { [Op.in]: DEFAULT_STATUSES };
@@ -678,8 +678,8 @@ router.get('/appointments/partial', async (req, res) => {
             id: null,
             barber,
             barberId: barber.id,
-            appointmentDate: date, 
-            appointmentTime: slot.time, 
+            appointmentDate: date,
+            appointmentTime: slot.time,
             appointmentDateFormatted: formatDateYYYYMMDD(date),
             appointmentTimeFormatted: slot.time,
             client: { firstName: '', lastName: '' },
@@ -687,7 +687,7 @@ router.get('/appointments/partial', async (req, res) => {
             totalPrice: 0,
             status: 'free'
           });
-          
+
 
         });
       });
@@ -717,7 +717,7 @@ router.get('/appointments/partial-cards', async (req, res) => {
     const p = Math.max(parseInt(page) || 1, 1);
     const l = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
 
-   const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
+    const DEFAULT_STATUSES = ['in_progress', 'confirmed', 'completed', 'blocked'];
     const todayStr = new Date().toLocaleDateString('en-CA');
     const currentDate = startDate || todayStr;
     const where = {};
@@ -787,6 +787,9 @@ router.post('/appointments/:id/status', async (req, res) => {
 
 // Relatórios administrativos - CORRIGIDA
 // /admin/reports – LISTAGEM COM PAGINAÇÃO + VIEW MODE
+// -------------------- RELATÓRIOS ADMINISTRATIVOS --------------------
+
+// /admin/reports – LISTAGEM COM PAGINAÇÃO + VIEW MODE
 router.get('/reports', async (req, res) => {
   try {
     const { startDate, endDate, barberId, status, sort } = req.query;
@@ -812,6 +815,7 @@ router.get('/reports', async (req, res) => {
 
     const order = buildOrder(sort);
 
+    // Buscar agendamentos
     const { count, rows } = await Appointment.findAndCountAll({
       where: whereClause,
       include: [
@@ -843,10 +847,44 @@ router.get('/reports', async (req, res) => {
       };
     });
 
-    // barbeiros para filtro (mantém consistência)
+    // Caixa: filtro por período
+    const cashierWhere = {};
+    if (startDate && endDate) {
+      cashierWhere.openedAt = { [Op.between]: [startDate, endDate] };
+    } else if (startDate) {
+      cashierWhere.openedAt = { [Op.gte]: startDate };
+    } else if (endDate) {
+      cashierWhere.openedAt = { [Op.lte]: endDate };
+    }
+
+    const cashierSessions = await CashSession.findAll({
+      where: cashierWhere,
+      include: [
+        { model: Expense, as: 'expenses' },
+        { model: Payment, as: 'payments' }
+      ],
+      order: [['openedAt', 'ASC']]
+    });
+
+    const cashierFormatted = cashierSessions.map(cs => {
+      const totalEntradas = cs.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const totalDespesas = cs.expenses.reduce((s, e) => s + Number(e.amount), 0);
+      const saldoEsperado = Number(cs.openingAmount) + totalEntradas - totalDespesas;
+      const diferenca = cs.countedCash !== null ? Number(cs.countedCash) - saldoEsperado : null;
+
+      return {
+        ...cs.toJSON(),
+        totalEntradas,
+        totalDespesas,
+        saldoEsperado,
+        diferenca
+      };
+    });
+
+    // barbeiros para filtro
     const barbers = await Barber.findAll({ where: { isActive: true } });
 
-    // --- Estatísticas para os gráficos ---
+    // Estatísticas para gráficos
     let stats = {
       total: count,
       totalRevenue: 0,
@@ -863,11 +901,7 @@ router.get('/reports', async (req, res) => {
 
     rows.forEach(a => {
       stats.totalRevenue += Number(a.totalPrice) || 0;
-
-      if (stats.byStatus[a.status] !== undefined) {
-        stats.byStatus[a.status]++;
-      }
-
+      if (stats.byStatus[a.status] !== undefined) stats.byStatus[a.status]++;
       const barberName = a.barber?.name || 'Não informado';
       stats.byBarber[barberName] = (stats.byBarber[barberName] || 0) + 1;
     });
@@ -879,6 +913,7 @@ router.get('/reports', async (req, res) => {
       layout: 'admin',
       user: req.session.user,
       appointments: formatted,
+      cashierSessions: cashierFormatted,   // 👈 adicionado
       barbers,
       view,
       stats,
@@ -907,113 +942,98 @@ router.get('/reports', async (req, res) => {
 });
 
 
-
-// Exportar relatórios (PDF/CSV) - CORRIGIDA
-// Exemplo da rota corrigida
+// /admin/reports/export – Exportar relatórios (PDF/CSV)
 router.post('/reports/export', isAuthenticated, async (req, res) => {
   try {
     const { format, startDate, endDate, barberId, status, sort } = req.body;
 
-    // Construção do filtro base
+    // Filtro agendamentos
     const where = {};
+    if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
+    else if (startDate) where.appointmentDate = { [Op.gte]: startDate };
+    else if (endDate) where.appointmentDate = { [Op.lte]: endDate };
 
-    if (startDate && endDate) {
-      where.appointmentDate = {
-        [Op.between]: [startDate, endDate]
-      };
-    } else if (startDate) {
-      where.appointmentDate = { [Op.gte]: startDate };
-    } else if (endDate) {
-      where.appointmentDate = { [Op.lte]: endDate };
-    }
+    if (status) where.status = status;
+    if (barberId) where.barberId = Number(barberId);
 
-    if (typeof status === 'string' && status.trim() !== '') {
-      where.status = status;
-    }
-
-    if (typeof barberId === 'string' && barberId.trim() !== '') {
-      where.barberId = Number(barberId);
-    }
-
-
-    // ---- ORDENAR COMO /appointments ----
+    // Ordem
     const statusOrder = `CASE "Appointment"."status"
-                       WHEN 'in_progress' THEN 1
-                       WHEN 'confirmed'   THEN 2
-                       WHEN 'completed'   THEN 3
-                       ELSE 99
-                     END`;
+                           WHEN 'in_progress' THEN 1
+                           WHEN 'confirmed'   THEN 2
+                           WHEN 'completed'   THEN 3
+                           ELSE 99
+                         END`;
+    let order = [['appointmentDate', 'ASC'], ['appointmentTime', 'ASC'], [literal(statusOrder), 'ASC']];
+    if (sort === 'date_desc') order = [['appointmentDate', 'DESC'], ['appointmentTime', 'DESC'], [literal(statusOrder), 'ASC']];
+    else if (sort === 'value_desc') order = [['totalPrice', 'DESC']];
+    else if (sort === 'value_asc') order = [['totalPrice', 'ASC']];
+    else if (sort === 'barber_asc') order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];
+    else if (sort === 'barber_desc') order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
 
-    let order = [
-      ['appointmentDate', 'ASC'],
-      ['appointmentTime', 'ASC'],
-      [literal(statusOrder), 'ASC']
-    ];
-
-    if (sort === 'date_asc') {
-      order = [
-        ['appointmentDate', 'ASC'],
-        ['appointmentTime', 'ASC'],
-        [literal(statusOrder), 'ASC']
-      ];
-    } else if (sort === 'date_desc') {
-      order = [
-        ['appointmentDate', 'DESC'],
-        ['appointmentTime', 'DESC'],
-        [literal(statusOrder), 'ASC']
-      ];
-    } else if (sort === 'value_desc') {
-      order = [['totalPrice', 'DESC']];
-    } else if (sort === 'value_asc') {
-      order = [['totalPrice', 'ASC']];
-    } else if (sort === 'barber_asc') {
-      order = [[{ model: Barber, as: 'barber' }, 'name', 'ASC']];  // 👈 alias correto
-    } else if (sort === 'barber_desc') {
-      order = [[{ model: Barber, as: 'barber' }, 'name', 'DESC']];
-    }
-
-    // Buscar dados com Sequelize
+    // Buscar agendamentos
     const appointments = await Appointment.findAll({
       where,
       order,
       include: [
         { model: Client, as: 'client' },
-        {
-          model: Barber,
-          as: 'barber',
-          attributes: ['id', 'name'],
-          required: !!barberId  // Só força o JOIN se estiver filtrando por barbeiro
-        },
+        { model: Barber, as: 'barber', attributes: ['id', 'name'], required: !!barberId },
         { model: ServiceType, as: 'serviceType' }
       ]
     });
 
-    // Gerar relatório com os filtros aplicados
+    // Filtro caixa
+    const cashierWhere = {};
+    if (startDate && endDate) cashierWhere.openedAt = { [Op.between]: [startDate, endDate] };
+    else if (startDate) cashierWhere.openedAt = { [Op.gte]: startDate };
+    else if (endDate) cashierWhere.openedAt = { [Op.lte]: endDate };
+
+    const cashierSessions = await CashSession.findAll({
+      where: cashierWhere,
+      include: [
+        { model: Expense, as: 'expenses' },
+        { model: Payment, as: 'payments' }
+      ],
+      order: [['openedAt', 'ASC']]
+    });
+
+    const cashierFormatted = cashierSessions.map(cs => {
+      const totalEntradas = cs.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const totalDespesas = cs.expenses.reduce((s, e) => s + Number(e.amount), 0);
+      const saldoEsperado = Number(cs.openingAmount) + totalEntradas - totalDespesas;
+      const diferenca = cs.countedCash !== null ? Number(cs.countedCash) - saldoEsperado : null;
+
+      return {
+        ...cs.toJSON(),
+        totalEntradas,
+        totalDespesas,
+        saldoEsperado,
+        diferenca
+      };
+    });
+
+    // Resumo simples
+    const reportInfo = {
+      periodo: `${startDate || '...'} até ${endDate || '...'}`,
+      barbeiro: barberId || 'Todos',
+      totalAgendamentos: appointments.length,
+      totalReceita: appointments.reduce((s, a) => s + Number(a.totalPrice || 0), 0),
+      totalEntradasCaixa: cashierFormatted.reduce((s, cs) => s + cs.totalEntradas, 0),
+      totalDespesasCaixa: cashierFormatted.reduce((s, cs) => s + cs.totalDespesas, 0)
+    };
+
     const filename = `relatorio-${Date.now()}.${format}`;
-    const reportInfo = gerarResumoDoRelatorio(appointments, startDate, endDate, barberId); // você precisa montar esse resumo
-
-
-
 
     if (format === 'pdf') {
-      const filePath = await generatePDF(appointments, reportInfo, filename);
-      return res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error('Erro ao enviar PDF:', err);
-        }
-        fs.unlink(filePath, (err) => {
-          if (err) console.error('Erro ao excluir PDF temporário:', err);
-          else console.log(`Arquivo PDF excluído: ${filename}`);
-        });
+      const filePath = await generatePDF({ appointments, cashier: cashierFormatted }, reportInfo, filename);
+      return res.download(filePath, filename, err => {
+        if (err) console.error('Erro ao enviar PDF:', err);
+        fs.unlink(filePath, err => { if (err) console.error('Erro ao excluir PDF temporário:', err); });
       });
     } else if (format === 'csv') {
-      const filePath = await generateCSV(appointments, filename);
-      return res.download(filePath, filename, (err) => {
+      const filePath = await generateCSV({ appointments, cashier: cashierFormatted }, filename);
+      return res.download(filePath, filename, err => {
         if (err) console.error('Erro ao enviar CSV:', err);
-        fs.unlink(filePath, (err) => {
-          if (err) console.error('Erro ao excluir CSV temporário:', err);
-          else console.log(`🧹 Arquivo CSV excluído: ${filename}`);
-        });
+        fs.unlink(filePath, err => { if (err) console.error('Erro ao excluir CSV temporário:', err); });
       });
     } else {
       return res.status(400).json({ error: 'Formato inválido.' });
@@ -1024,6 +1044,7 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
     res.status(500).json({ error: 'Erro ao gerar relatório.' });
   }
 });
+
 
 
 router.get('/appointments/:id', async (req, res) => {
