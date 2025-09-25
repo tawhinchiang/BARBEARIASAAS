@@ -114,7 +114,7 @@ document.getElementById('confirmAddExpense')?.addEventListener('click', async ()
     return;
   }
 
-  const data = await apiFetch('/admin/expenses', {
+  const data = await apiFetch('/admin/cashier/expenses', {
     method: 'POST',
     body: JSON.stringify({ description, amount, method })
   });
