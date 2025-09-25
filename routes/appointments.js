@@ -318,6 +318,9 @@ router.post('/admin/appointments/:id/checkout', async (req, res) => {
     const openSession = await CashSession.findOne({ where: { status: 'open' } });
 
     // Salvar pagamentos
+    if (!openSession) {
+      return res.status(400).json({ success: false, error: 'Nenhum caixa aberto. Abra um caixa antes de registrar pagamentos.' });
+    }
     let totalPago = 0;
     for (const p of payments) {
       const newPayment = await Payment.create({
@@ -325,7 +328,7 @@ router.post('/admin/appointments/:id/checkout', async (req, res) => {
         method: p.method,
         amount: p.amount,
         notes: p.notes || null,
-        cashSessionId: openSession ? openSession.id : null
+        cashSessionId: openSession.id 
       }, { transaction: t });
 
       totalPago += parseFloat(newPayment.amount);
