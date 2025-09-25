@@ -26,6 +26,10 @@ Payment.belongsTo(Appointment, { foreignKey: 'appointmentId', as: 'appointment' 
 CashSession.hasMany(Expense, { foreignKey: 'cashSessionId', as: 'expenses' });
 Expense.belongsTo(CashSession, { foreignKey: 'cashSessionId', as: 'cashSession' });
 
+// Relação CashSession ↔ Payment
+CashSession.hasMany(Payment, { foreignKey: 'cashSessionId', as: 'payments' });
+Payment.belongsTo(CashSession, { foreignKey: 'cashSessionId', as: 'cashSession' });
+
 // Função para sincronizar o banco de dados
 const syncDatabase = async (force = false) => {
   try {
