@@ -2,17 +2,11 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-// Gerar relatório em PDF
-// Substituir toda a função generatePDF por este novo conteúdo:
-
-
-
-// ==================================================
-// PDF
-// ==================================================
 // ==================================================
 // PDF (layout 100% em LINHAS, colunas fixas)
 // ==================================================
+console.log('[REPORT] appointments:', appointments?.length, 'cashier:', cashier?.length);
+
 async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {}, filename) {
   return new Promise((resolve, reject) => {
     try {
@@ -42,6 +36,67 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       };
 
       // -----------------------------
+      // Normalizadores (evitam campos em branco por chaves diferentes)
+      // -----------------------------
+      function normalizeAppointment(a = {}) {
+        const appointmentDate =
+          a.appointmentDate ?? a.appointment_date ?? a.date ?? a.data ?? null;
+        const appointmentTime =
+          a.appointmentTime ?? a.appointment_time ?? a.time ?? a.hora ?? '';
+
+        const totalPrice =
+          a.totalPrice ?? a.total_price ?? a.valor ?? a.price ?? 0;
+
+        const status = a.status ?? a.situacao ?? a.estado ?? 'pending';
+
+        const client = a.client ?? a.cliente ?? {};
+        const firstName = client.firstName ?? client.nome ?? a.clientName ?? a.cliente_nome ?? '';
+        const lastName  = client.lastName  ?? client.sobrenome ?? '';
+
+        const barberObj = a.barber ?? a.barbeiro ?? {};
+        const barberName = barberObj.name ?? a.barberName ?? a.barbeiro_nome ?? '';
+
+        const svcObj = a.serviceType ?? a.servico ?? {};
+        const serviceName = svcObj.name ?? a.serviceName ?? a.servico_nome ?? '';
+
+        return {
+          appointmentDate,
+          appointmentTime,
+          totalPrice: Number(totalPrice || 0),
+          status,
+          client: { firstName, lastName },
+          barber: { name: barberName },
+          serviceType: { name: serviceName }
+        };
+      }
+
+      function normalizeCashier(c = {}) {
+        const openedAt   = c.openedAt   ?? c.opened_at   ?? c.abertura   ?? null;
+        const closedAt   = c.closedAt   ?? c.closed_at   ?? c.fechamento ?? null;
+        const openingAmount = c.openingAmount ?? c.inicial ?? c.valorInicial ?? 0;
+
+        const totalEntradas = c.totalEntradas ?? c.entradas ?? c.total_in ?? c.total_incoming ?? 0;
+        const totalDespesas = c.totalDespesas ?? c.despesas ?? c.total_out ?? c.total_expenses ?? 0;
+        const saldoEsperado = c.saldoEsperado ?? c.esperado ?? c.expected ?? 0;
+        const countedCash   = c.countedCash   ?? c.contado  ?? c.counted  ?? 0;
+        const diferenca     = c.diferenca     ?? c.difference ?? c.diff ?? 0;
+
+        return {
+          openedAt, closedAt,
+          openingAmount: Number(openingAmount || 0),
+          totalEntradas: Number(totalEntradas || 0),
+          totalDespesas: Number(totalDespesas || 0),
+          saldoEsperado: Number(saldoEsperado || 0),
+          countedCash: Number(countedCash || 0),
+          diferenca: Number(diferenca || 0)
+        };
+      }
+
+      // Aplica normalização
+      const appts = (appointments || []).map(normalizeAppointment);
+      const cash  = (cashier || []).map(normalizeCashier);
+
+      // -----------------------------
       // Grid e tipografia
       // -----------------------------
       const P = { // posições horizontais “fixas” (colunas)
@@ -53,7 +108,6 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       };
       const WIDTH = 540; // largura útil aproximada
       const LINE_H = 14; // altura de cada linha
-      const SEP_Y = 8;   // espaço extra entre blocos
 
       let pageNumber = 1;
 
@@ -67,7 +121,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
       function hr(y = doc.y, padTop = 6, padBottom = 6) {
         doc.moveTo(P.L, y + padTop).lineTo(P.L + WIDTH, y + padTop).lineWidth(0.5).strokeColor('#dddddd').stroke();
-        doc.moveDown( (padBottom + padTop) / LINE_H );
+        doc.moveDown((padBottom + padTop) / LINE_H);
       }
 
       function ensureSpace(lines = 1) {
@@ -144,12 +198,19 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // ===============================
       addHeader();
 
+      // ——————————————————————————————————————————
+      // DEBUG opcional (remova após validar)
+      // setFont.small(); doc.fillColor('#666');
+      // doc.text(`DEBUG · agendamentos: ${appts.length}  |  caixa: ${cash.length}`, P.L, doc.y, { width: WIDTH });
+      // doc.moveDown(0.6);
+      // ——————————————————————————————————————————
+
       // ===============================
       // SEÇÃO: AGENDAMENTOS (LINHAS)
       // ===============================
       section('Agendamentos');
 
-      if (!appointments.length) {
+      if (!appts.length) {
         setFont.small(); doc.fillColor('#444');
         doc.text('Nenhum agendamento no período.', P.L, doc.y, { width: WIDTH });
         doc.moveDown(1.2);
@@ -157,27 +218,26 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         // Totais
         let totalApt = 0;
         let qtPorStatus = {};
-        appointments.forEach(a => {
+        appts.forEach(a => {
           const valor = Number(a.totalPrice || 0);
           totalApt += (a.status !== 'cancelled') ? valor : 0;
           qtPorStatus[a.status] = (qtPorStatus[a.status] || 0) + 1;
         });
 
         // Resumo de topo (em linhas)
-        row('Total de Agendamentos', appointments.length);
+        row('Total de Agendamentos', appts.length);
         row('Receita (não cancelados)', fmtMoney(totalApt));
         row('Distribuição por Status', Object.entries(qtPorStatus).map(([s,q])=>`${getStatusText(s)}: ${q}`).join('  ·  '));
         doc.moveDown(0.6);
 
         // Listagem em linhas (não tabela)
-        appointments.forEach((apt, idx) => {
+        appts.forEach((apt, idx) => {
           ensureSpace(3);
-          const data  = apt.appointmentDate ? new Date(apt.appointmentDate) : null;
           const dataBR = fmtDate(apt.appointmentDate);
           const hora = (apt.appointmentTime || '').slice(0,5);
 
           setFont.bold(); doc.fillColor('#000');
-          doc.text(`${idx+1}. ${clip(apt.client?.firstName + ' ' + apt.client?.lastName, 46)}  ·  ${clip(apt.serviceType?.name, 40)}`, P.L, doc.y, { width: WIDTH });
+          doc.text(`${idx+1}. ${clip((apt.client?.firstName + ' ' + (apt.client?.lastName || '')).trim(), 46)}  ·  ${clip(apt.serviceType?.name, 40)}`, P.L, doc.y, { width: WIDTH });
           setFont.small(); doc.fillColor('#333');
           doc.text(`${clip(apt.barber?.name, 36)}  ·  ${getStatusText(apt.status)}  ·  ${dataBR} ${hora ? ('às ' + hora) : ''}  ·  ${fmtMoney(apt.totalPrice)}`,
                    P.L, doc.y, { width: WIDTH });
@@ -191,15 +251,15 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // ===============================
       section('Relatório de Caixa');
 
-      // Agregados corretos (corrige variáveis indefinidas do código antigo)
+      // Agregados corretos (em cima dos dados normalizados)
       const sum = (arr, key) => arr.reduce((acc, it) => acc + Number(it?.[key] || 0), 0);
-      const totalEntradas  = sum(cashier, 'totalEntradas');
-      const totalDespesas  = sum(cashier, 'totalDespesas');
-      const totalEsperado  = sum(cashier, 'saldoEsperado');
-      const totalContado   = sum(cashier, 'countedCash');
-      const totalDiferenca = sum(cashier, 'diferenca');
-      const aberturaPrim   = cashier[0]?.openedAt;
-      const fechamentoUlt  = cashier[cashier.length - 1]?.closedAt;
+      const totalEntradas  = sum(cash, 'totalEntradas');
+      const totalDespesas  = sum(cash, 'totalDespesas');
+      const totalEsperado  = sum(cash, 'saldoEsperado');
+      const totalContado   = sum(cash, 'countedCash');
+      const totalDiferenca = sum(cash, 'diferenca');
+      const aberturaPrim   = cash[0]?.openedAt;
+      const fechamentoUlt  = cash[cash.length - 1]?.closedAt;
 
       // Resumo do caixa em linhas
       row('Abertura (primeira)', fmtDateTime(aberturaPrim));
@@ -211,7 +271,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       hr();
 
       // Detalhamento de cada fechamento de caixa (em linhas)
-      cashier.forEach((cs, i) => {
+      cash.forEach((cs, i) => {
         ensureSpace(4);
         setFont.bold(); doc.fillColor('#000');
         doc.text(`#${String(i+1).padStart(2,'0')} Caixa`, P.L, doc.y, { width: WIDTH });
@@ -255,28 +315,28 @@ function generateCSV({ appointments, cashier }, filename) {
     }
 
     const aptHeaders = ['Data', 'Hora', 'Cliente', 'Telefone', 'Barbeiro', 'Serviço', 'Status', 'Valor'];
-    const aptRows = appointments.map(apt => [
-      new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
-      apt.appointmentTime || '',
-      escapeCSV(`${apt.client?.firstName || ''} ${apt.client?.lastName || ''}`),
-      escapeCSV(apt.client?.phone || ''),
-      escapeCSV(apt.barber?.name || ''),
-      escapeCSV(apt.serviceType?.name || ''),
+    const aptRows = (appointments || []).map(apt => [
+      new Date(apt.appointmentDate ?? apt.appointment_date ?? apt.date ?? apt.data ?? null).toLocaleDateString('pt-BR'),
+      (apt.appointmentTime ?? apt.appointment_time ?? apt.time ?? apt.hora ?? '') || '',
+      escapeCSV(`${(apt.client?.firstName ?? apt.client?.nome ?? apt.clientName ?? apt.cliente_nome ?? '')} ${(apt.client?.lastName ?? apt.client?.sobrenome ?? '')}`.trim()),
+      escapeCSV(apt.client?.phone ?? apt.cliente?.telefone ?? ''),
+      escapeCSV(apt.barber?.name ?? apt.barbeiro?.nome ?? apt.barberName ?? apt.barbeiro_nome ?? ''),
+      escapeCSV(apt.serviceType?.name ?? apt.servico?.nome ?? apt.serviceName ?? apt.servico_nome ?? ''),
       getStatusText(apt.status),
-      parseFloat(apt.totalPrice || 0).toFixed(2)
+      parseFloat(apt.totalPrice ?? apt.total_price ?? apt.valor ?? 0).toFixed(2)
     ]);
 
     const cashierHeaders = ['Abertura', 'Fechamento', 'Inicial', 'Entradas', 'Despesas', 'Esperado', 'Contado', 'Diferença'];
     const fmt = v => (v != null ? Number(v).toFixed(2) : '');
-    const cashierRows = cashier.map(cs => [
-      cs.openedAt || '',
-      cs.closedAt || '',
-      fmt(cs.openingAmount),
-      fmt(cs.totalEntradas),
-      fmt(cs.totalDespesas),
-      fmt(cs.saldoEsperado),
-      fmt(cs.countedCash),
-      fmt(cs.diferenca)
+    const cashierRows = (cashier || []).map(cs => [
+      (cs.openedAt ?? cs.opened_at ?? cs.abertura ?? '') || '',
+      (cs.closedAt ?? cs.closed_at ?? cs.fechamento ?? '') || '',
+      fmt(cs.openingAmount ?? cs.inicial ?? cs.valorInicial),
+      fmt(cs.totalEntradas ?? cs.entradas ?? cs.total_in ?? cs.total_incoming),
+      fmt(cs.totalDespesas ?? cs.despesas ?? cs.total_out ?? cs.total_expenses),
+      fmt(cs.saldoEsperado ?? cs.esperado ?? cs.expected),
+      fmt(cs.countedCash ?? cs.contado ?? cs.counted),
+      fmt(cs.diferenca ?? cs.difference ?? cs.diff)
     ]);
 
     const csvContent = [
@@ -324,7 +384,7 @@ function gerarResumoDoRelatorio(appointments, cashier, startDate, endDate, barbe
   // ===============================
   // Resumo dos agendamentos
   // ===============================
-  appointments.forEach(apt => {
+  (appointments || []).forEach(apt => {
     const status = apt.status;
     resumo.statusCounts[status] = (resumo.statusCounts[status] || 0) + 1;
 
@@ -350,18 +410,17 @@ function gerarResumoDoRelatorio(appointments, cashier, startDate, endDate, barbe
   // ===============================
   // Resumo do caixa
   // ===============================
-  cashier.forEach(cs => {
-    resumo.totalEntradas += Number(cs.totalEntradas) || 0;
-    resumo.totalDespesas += Number(cs.totalDespesas) || 0;
-    resumo.totalSaldoEsperado += Number(cs.saldoEsperado) || 0;
-    resumo.totalDiferenca += Number(cs.diferenca) || 0;
+  (cashier || []).forEach(cs => {
+    resumo.totalEntradas += Number(cs.totalEntradas ?? cs.entradas ?? 0) || 0;
+    resumo.totalDespesas += Number(cs.totalDespesas ?? cs.despesas ?? 0) || 0;
+    resumo.totalSaldoEsperado += Number(cs.saldoEsperado ?? cs.esperado ?? 0) || 0;
+    resumo.totalDiferenca += Number(cs.diferenca ?? cs.difference ?? 0) || 0;
   });
 
   resumo.periodo = `${startDate || 'início'} até ${endDate || 'hoje'}`;
 
   return resumo;
 }
-
 
 // ==================================================
 // Util
@@ -383,4 +442,3 @@ module.exports = {
   generateCSV,
   gerarResumoDoRelatorio
 };
-
