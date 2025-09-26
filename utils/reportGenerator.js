@@ -5,7 +5,7 @@ const path = require('path');
 // ==================================================
 // PDF (layout 100% em LINHAS, colunas fixas)
 // ==================================================
-console.log('[REPORT] appointments:', appointments?.length, 'cashier:', cashier?.length);
+// console.log('[REPORT] appointments:', appointments?.length, 'cashier:', cashier?.length);
 
 async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {}, filename) {
   return new Promise((resolve, reject) => {
