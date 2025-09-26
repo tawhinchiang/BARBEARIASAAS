@@ -106,7 +106,8 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         C3: 330,  // Valor 2
         C4: 470   // Valor 3 (quando necessário)
       };
-      const WIDTH = 540; // largura útil aproximada
+     const WIDTH = doc.page.width - doc.page.margins.left - doc.page.margins.right; // 100% da área útil
+ 
       const LINE_H = 14; // altura de cada linha
 
       let pageNumber = 1;
@@ -192,6 +193,50 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         setFont.h2(); doc.fillColor('#000'); doc.text(title, P.L, doc.y, { width: WIDTH });
         hr(doc.y, 4, 2);
       }
+      // ===============================
+// Layout fixo (colunas) para AGENDAMENTOS
+// ===============================
+const AG_COLS = [
+  { key: 'data',     label: 'Data',     x: P.L + 0,   w: 58,  align: 'left'  },
+  { key: 'hora',     label: 'Hora',     x: P.L + 58,  w: 36,  align: 'left'  },
+  { key: 'cliente',  label: 'Cliente',  x: P.L + 94,  w: 130, align: 'left'  },
+  { key: 'barbeiro', label: 'Barbeiro', x: P.L + 224, w: 100, align: 'left'  },
+  { key: 'servico',  label: 'Serviço',  x: P.L + 324, w: 130, align: 'left'  },
+  { key: 'status',   label: 'Status',   x: P.L + 454, w: 55,  align: 'left'  },
+  { key: 'valor',    label: 'Valor',    x: P.L + 509, w: 30,  align: 'right' }
+];
+// Soma = 58+36+130+100+130+55+30 = 539 (bate com WIDTH de A4 com margens 28)
+
+function drawAgHeader(y) {
+  setFont.label(); doc.fillColor('#666');
+  AG_COLS.forEach(c => {
+    doc.text(c.label, c.x, y, {
+      width: c.w,
+      align: c.align,
+      lineBreak: false,
+      ellipsis: true
+    });
+  });
+  // linha fina abaixo do header
+  doc.moveTo(P.L, y + LINE_H - 2).lineTo(P.L + WIDTH, y + LINE_H - 2)
+     .lineWidth(0.5).strokeColor('#dddddd').stroke();
+}
+
+function drawAgRow(y, rowObj) {
+  setFont.small(); doc.fillColor('#111');
+  AG_COLS.forEach(c => {
+    const v = String(rowObj[c.key] ?? '—');
+    doc.text(v, c.x, y, {
+      width: c.w,
+      align: c.align,
+      lineBreak: false,   // não quebrar linha
+      ellipsis: true      // cortar com reticências
+    });
+  });
+  // separador discreto por linha
+  doc.moveTo(P.L, y + LINE_H - 3).lineTo(P.L + WIDTH, y + LINE_H - 3)
+     .lineWidth(0.3).strokeColor('#efefef').stroke();
+}
 
       // ===============================
       // Cabeçalho (título geral)
@@ -208,43 +253,77 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // ===============================
       // SEÇÃO: AGENDAMENTOS (LINHAS)
       // ===============================
-      section('Agendamentos');
+section('Agendamentos');
 
-      if (!appts.length) {
-        setFont.small(); doc.fillColor('#444');
-        doc.text('Nenhum agendamento no período.', P.L, doc.y, { width: WIDTH });
-        doc.moveDown(1.2);
-      } else {
-        // Totais
-        let totalApt = 0;
-        let qtPorStatus = {};
-        appts.forEach(a => {
-          const valor = Number(a.totalPrice || 0);
-          totalApt += (a.status !== 'cancelled') ? valor : 0;
-          qtPorStatus[a.status] = (qtPorStatus[a.status] || 0) + 1;
-        });
+let y = doc.y; // base da seção
+const TOP_PAD = 2;
+y += TOP_PAD;
 
-        // Resumo de topo (em linhas)
-        row('Total de Agendamentos', appts.length);
-        row('Receita (não cancelados)', fmtMoney(totalApt));
-        row('Distribuição por Status', Object.entries(qtPorStatus).map(([s,q])=>`${getStatusText(s)}: ${q}`).join('  ·  '));
-        doc.moveDown(0.6);
+// quebra segura com reimpressão do header das colunas
+function ensurePageFor(lines = 1) {
+  const need = lines * LINE_H + 20;
+  if (y + need > doc.page.height - doc.page.margins.bottom) {
+    addFooter();
+    doc.addPage();
+    pageNumber++;
+    addHeader();
+    section('Agendamentos');
+    y = doc.y + TOP_PAD;
+    drawAgHeader(y);  // reimprime header na nova página
+    y += LINE_H;
+  }
+}
 
-        // Listagem em linhas (não tabela)
-        appts.forEach((apt, idx) => {
-          ensureSpace(3);
-          const dataBR = fmtDate(apt.appointmentDate);
-          const hora = (apt.appointmentTime || '').slice(0,5);
+if (!appts.length) {
+  setFont.small(); doc.fillColor('#444');
+  doc.text('Nenhum agendamento no período.', P.L, y, { width: WIDTH });
+  y += LINE_H * 2;
+} else {
+  // Resumo compacto no topo
+  setFont.label(); doc.fillColor('#111');
+  doc.text('Total de Agendamentos', P.C1, y, { width: 150, lineBreak: false });
+  setFont.bold();  doc.text(String(appts.length), P.C2, y, { width: 100, lineBreak: false }); 
+  y += LINE_H;
 
-          setFont.bold(); doc.fillColor('#000');
-          doc.text(`${idx+1}. ${clip((apt.client?.firstName + ' ' + (apt.client?.lastName || '')).trim(), 46)}  ·  ${clip(apt.serviceType?.name, 40)}`, P.L, doc.y, { width: WIDTH });
-          setFont.small(); doc.fillColor('#333');
-          doc.text(`${clip(apt.barber?.name, 36)}  ·  ${getStatusText(apt.status)}  ·  ${dataBR} ${hora ? ('às ' + hora) : ''}  ·  ${fmtMoney(apt.totalPrice)}`,
-                   P.L, doc.y, { width: WIDTH });
-          doc.moveDown(0.6);
-          hr(doc.y - 8, 2, 4);
-        });
-      }
+  setFont.label(); doc.text('Receita (não cancelados)', P.C1, y, { width: 150, lineBreak: false });
+  const totalApt = appts.reduce((acc, a) => acc + (a.status !== 'cancelled' ? Number(a.totalPrice||0) : 0), 0);
+  setFont.bold();  doc.text(fmtMoney(totalApt), P.C2, y, { width: 100, lineBreak: false }); 
+  y += LINE_H;
+
+  const qtPorStatus = appts.reduce((acc, a) => (acc[a.status]=(acc[a.status]||0)+1, acc), {});
+  setFont.label(); doc.text('Distribuição por Status', P.C1, y, { width: 150, lineBreak: false });
+  setFont.bold();  doc.text(
+    Object.entries(qtPorStatus).map(([s,q])=>`${getStatusText(s)}: ${q}`).join('  ·  '),
+    P.C2, y, { width: WIDTH - (P.C2 - P.L), lineBreak: false, ellipsis: true }
+  );
+  y += LINE_H + 4;
+
+  // Cabeçalho de colunas
+  drawAgHeader(y);
+  y += LINE_H;
+
+  // Uma linha por agendamento
+  appts.forEach((apt) => {
+    ensurePageFor(1);
+
+    const linha = {
+      data:     fmtDate(apt.appointmentDate),
+      hora:     (apt.appointmentTime || '').slice(0,5),
+      cliente:  ((apt.client?.firstName || '') + ' ' + (apt.client?.lastName || '')).trim(),
+      barbeiro: apt.barber?.name || '',
+      servico:  apt.serviceType?.name || '',
+      status:   getStatusText(apt.status),
+      valor:    fmtMoney(apt.totalPrice)
+    };
+
+    drawAgRow(y, linha);
+    y += LINE_H; // avança exata altura da linha
+  });
+
+  y += 6; // pequeno respiro
+}
+doc.moveDown(0.2);
+
 
       // ===============================
       // SEÇÃO: CAIXA (LINHAS)
@@ -276,7 +355,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         setFont.bold(); doc.fillColor('#000');
         doc.text(`#${String(i+1).padStart(2,'0')} Caixa`, P.L, doc.y, { width: WIDTH });
         setFont.small(); doc.fillColor('#444');
-        doc.text(`Período: ${fmtDateTime(cs.openedAt)}  →  ${fmtDateTime(cs.closedAt)}`, P.L, doc.y, { width: WIDTH });
+        doc.text(`Período: ${fmtDateTime(cs.openedAt)}  -  ${fmtDateTime(cs.closedAt)}`, P.L, doc.y, { width: WIDTH });
         doc.moveDown(0.3);
 
         row3('Inicial', fmtMoney(cs.openingAmount), 'Entradas', fmtMoney(cs.totalEntradas), 'Despesas', fmtMoney(cs.totalDespesas));
