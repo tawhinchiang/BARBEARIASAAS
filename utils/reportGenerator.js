@@ -10,177 +10,227 @@ const path = require('path');
 // ==================================================
 // PDF
 // ==================================================
-async function generatePDF({ appointments, cashier }, reportInfo, filename) {
+// ==================================================
+// PDF (layout 100% em LINHAS, colunas fixas)
+// ==================================================
+async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {}, filename) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 30 });
-      const filePath = path.join(__dirname, '..', 'reports', filename);
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 28, left: 28, right: 28, bottom: 32 }
+      });
 
+      const filePath = path.join(__dirname, '..', 'reports', filename);
       if (!fs.existsSync(path.dirname(filePath))) {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
       }
-
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
-      // ==================================================
-      // TÍTULO
-      // ==================================================
-      doc.fontSize(22).fillColor('#333').text('Relatório Geral', { align: 'center' });
-      doc.moveDown(1.5);
+      // -----------------------------
+      // Helpers de formatação
+      // -----------------------------
+      const fmtMoney = (v) =>
+        Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-      // ==================================================
-      // SEÇÃO 1: AGENDAMENTOS
-      // ==================================================
-      doc.fontSize(16).fillColor('#000').text('Agendamentos', { align: 'left' });
-      doc.moveDown(0.5);
-
-      const leftMargin = 30;
-      const tableWidth = 550;
-      const colWidths = [60, 50, 95, 80, 150, 60, 55];
-      const headers = ['Data', 'Hora', 'Cliente', 'Barbeiro', 'Serviço', 'Status', 'Valor'];
-      let currentY = doc.y;
-      const rowHeight = 22;
-
-      const formatarValor = (valor) =>
-        (valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-      const abreviar = (texto, limite) =>
-        texto && texto.length > limite ? texto.slice(0, limite - 3) + '...' : texto || '';
-
-      const drawTableHeader = () => {
-        let x = leftMargin;
-        doc.fillColor('#e0e0e0').rect(x, currentY, tableWidth, rowHeight).fill();
-        headers.forEach((header, i) => {
-          doc.fillColor('#000').fontSize(10).text(header, x + 5, currentY + 6, {
-            width: colWidths[i] - 10,
-            align: 'center',
-            lineBreak: false,
-          });
-          x += colWidths[i];
-        });
-        currentY += rowHeight;
+      const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+      const fmtDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
+      const clip = (txt, max) => {
+        const s = String(txt ?? '').trim();
+        return s.length > max ? s.slice(0, max - 1) + '…' : s;
       };
 
-      const drawRow = (rowData) => {
-        let x = leftMargin;
-        rowData.forEach((data, i) => {
-          doc.rect(x, currentY, colWidths[i], rowHeight).stroke();
-          doc.fontSize(9).fillColor('#000').text(data, x + 3, currentY + 6, {
-            width: colWidths[i] - 6,
-            align: i === colWidths.length - 1 ? 'right' : 'left',
-            lineBreak: false,
-          });
-          x += colWidths[i];
-        });
-        currentY += rowHeight;
+      // -----------------------------
+      // Grid e tipografia
+      // -----------------------------
+      const P = { // posições horizontais “fixas” (colunas)
+        L: 28,    // margem esquerda
+        C1: 28,   // Label principal
+        C2: 190,  // Valor 1
+        C3: 330,  // Valor 2
+        C4: 470   // Valor 3 (quando necessário)
+      };
+      const WIDTH = 540; // largura útil aproximada
+      const LINE_H = 14; // altura de cada linha
+      const SEP_Y = 8;   // espaço extra entre blocos
+
+      let pageNumber = 1;
+
+      const setFont = {
+        h1() { doc.font('Helvetica-Bold').fontSize(14); },
+        h2() { doc.font('Helvetica-Bold').fontSize(10); },
+        label() { doc.font('Helvetica').fontSize(8); },
+        bold() { doc.font('Helvetica-Bold').fontSize(8); },
+        small() { doc.font('Helvetica').fontSize(7); },
       };
 
-      drawTableHeader();
-      let totalValor = 0;
+      function hr(y = doc.y, padTop = 6, padBottom = 6) {
+        doc.moveTo(P.L, y + padTop).lineTo(P.L + WIDTH, y + padTop).lineWidth(0.5).strokeColor('#dddddd').stroke();
+        doc.moveDown( (padBottom + padTop) / LINE_H );
+      }
 
-      appointments.forEach((apt) => {
-        if (currentY + rowHeight + 30 > doc.page.height - 100) {
+      function ensureSpace(lines = 1) {
+        const need = lines * LINE_H + 20; // margem de segurança
+        if (doc.y + need > doc.page.height - doc.page.margins.bottom) {
+          addFooter(); // footer antes de quebrar
           doc.addPage();
-          currentY = 50;
-          drawTableHeader();
+          pageNumber++;
+          addHeader(); // header após quebrar
         }
+      }
 
-        const valor = parseFloat(apt.totalPrice || 0);
-        totalValor += valor;
+      function addHeader() {
+        const titulo = clip(reportInfo?.title || 'Relatório Geral', 70);
+        const periodo = reportInfo?.period || '';
+        const barber = reportInfo?.barber || '';
 
-        drawRow([
-          new Date(apt.appointmentDate).toLocaleDateString('pt-BR'),
-          apt.appointmentTime || '',
-          abreviar(`${apt.client?.firstName || ''} ${apt.client?.lastName || ''}`, 16),
-          abreviar(apt.barber?.name, 18),
-          abreviar(apt.serviceType?.name, 40),
-          getStatusText(apt.status),
-          formatarValor(valor),
-        ]);
-      });
+        setFont.h1();
+        doc.fillColor('#111').text(titulo, P.L, doc.y, { width: WIDTH, align: 'left' });
+        setFont.small();
+        const meta = [
+          periodo ? `Período: ${periodo}` : null,
+          barber ? `Barbeiro: ${barber}` : null
+        ].filter(Boolean).join('   |   ');
+        if (meta) doc.fillColor('#444').text(meta, P.L, doc.y, { width: WIDTH, align: 'left' });
+        hr(doc.y, 6, 6);
+      }
 
-      doc.font('Helvetica-Bold').fontSize(10);
-      const totalText = `Total Geral Agendamentos: ${formatarValor(totalValor)}`;
-      doc.text(totalText, leftMargin, currentY + 8);
-      currentY += 40;
+      function addFooter() {
+        const footerY = doc.page.height - doc.page.margins.bottom + 8;
+        doc.font('Helvetica').fontSize(7).fillColor('#666');
+        doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, P.L, footerY, { width: WIDTH, align: 'left' });
+        doc.text(`Página ${pageNumber}`, P.L, footerY, { width: WIDTH, align: 'right' });
+      }
 
-      // ==================================================
-      // SEÇÃO 2: CAIXA
-      // ==================================================
-      doc.addPage();
-      doc.fontSize(16).fillColor('#000').text('Relatório de Caixa', { align: 'left' });
-      doc.moveDown(0.5);
+      // Linha Label: Valor (coluna fixa)
+      function row(label, value, y = doc.y, colLabel = P.C1, colValue = P.C2) {
+        ensureSpace(1);
+        setFont.label(); doc.fillColor('#111'); doc.text(clip(label, 44), colLabel, y, { width: P.C2 - colLabel - 6, align: 'left' });
+        setFont.bold(); doc.fillColor('#000'); doc.text(String(value ?? '—'), colValue, y, { width: P.C3 - colValue - 6, align: 'left' });
+        doc.moveDown(1);
+      }
 
-      const colWidthsC = [90, 90, 70, 70, 70, 70, 70, 70];
-      const headersC = [
-        'Abertura',
-        'Fechamento',
-        'Inicial',
-        'Entradas',
-        'Despesas',
-        'Esperado',
-        'Contado',
-        'Diferença',
-      ];
-      currentY = doc.y;
-      const rowHeightC = 22;
+      // Linha com múltiplos valores (até 3 colunas)
+      function row3(l1, v1, l2, v2, l3, v3) {
+        ensureSpace(1);
+        const baseY = doc.y;
+        setFont.label(); doc.fillColor('#111'); doc.text(clip(l1, 28), P.C1, baseY, { width: P.C2 - P.C1 - 6 });
+        setFont.bold();  doc.text(String(v1 ?? '—'), P.C2, baseY, { width: P.C3 - P.C2 - 6 });
 
-      // header caixa
-      let x = leftMargin;
-      headersC.forEach((h, i) => {
-        doc.rect(x, currentY, colWidthsC[i], rowHeightC).stroke();
-        doc.fontSize(9).text(h, x + 2, currentY + 6, { width: colWidthsC[i] - 4, align: 'center' });
-        x += colWidthsC[i];
-      });
-      currentY += rowHeightC;
+        setFont.label(); doc.text(clip(l2, 28), P.C3, baseY, { width: P.C4 - P.C3 - 6 });
+        setFont.bold();  doc.text(String(v2 ?? '—'), P.C4 - 95, baseY, { width: 95 });
 
-      const fmt = (v) =>
-        v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-';
+        if (l3) {
+          doc.moveDown(1);
+          ensureSpace(1);
+          const y2 = baseY + LINE_H; // próxima linha
+          setFont.label(); doc.text(clip(l3, 28), P.C1, y2, { width: P.C2 - P.C1 - 6 });
+          setFont.bold();  doc.text(String(v3 ?? '—'), P.C2, y2, { width: P.C3 - P.C2 - 6 });
+          doc.moveDown(1);
+        } else {
+          doc.moveDown(1);
+        }
+      }
 
-      cashier.forEach((cs) => {
-        let x = leftMargin;
-        const row = [
-          cs.openedAt ? new Date(cs.openedAt).toLocaleString('pt-BR') : '-',
-          cs.closedAt ? new Date(cs.closedAt).toLocaleString('pt-BR') : '-',
-          fmt(cs.openingAmount),
-          fmt(cs.totalEntradas),
-          fmt(cs.totalDespesas),
-          fmt(cs.saldoEsperado),
-          fmt(cs.countedCash),
-          fmt(cs.diferenca),
-        ];
-        row.forEach((cell, i) => {
-          doc.rect(x, currentY, colWidthsC[i], rowHeightC).stroke();
-          doc.fontSize(8).text(cell, x + 2, currentY + 6, { width: colWidthsC[i] - 4, align: 'center' });
-          x += colWidthsC[i];
+      function section(title) {
+        ensureSpace(2);
+        setFont.h2(); doc.fillColor('#000'); doc.text(title, P.L, doc.y, { width: WIDTH });
+        hr(doc.y, 4, 2);
+      }
+
+      // ===============================
+      // Cabeçalho (título geral)
+      // ===============================
+      addHeader();
+
+      // ===============================
+      // SEÇÃO: AGENDAMENTOS (LINHAS)
+      // ===============================
+      section('Agendamentos');
+
+      if (!appointments.length) {
+        setFont.small(); doc.fillColor('#444');
+        doc.text('Nenhum agendamento no período.', P.L, doc.y, { width: WIDTH });
+        doc.moveDown(1.2);
+      } else {
+        // Totais
+        let totalApt = 0;
+        let qtPorStatus = {};
+        appointments.forEach(a => {
+          const valor = Number(a.totalPrice || 0);
+          totalApt += (a.status !== 'cancelled') ? valor : 0;
+          qtPorStatus[a.status] = (qtPorStatus[a.status] || 0) + 1;
         });
-        currentY += rowHeightC;
+
+        // Resumo de topo (em linhas)
+        row('Total de Agendamentos', appointments.length);
+        row('Receita (não cancelados)', fmtMoney(totalApt));
+        row('Distribuição por Status', Object.entries(qtPorStatus).map(([s,q])=>`${getStatusText(s)}: ${q}`).join('  ·  '));
+        doc.moveDown(0.6);
+
+        // Listagem em linhas (não tabela)
+        appointments.forEach((apt, idx) => {
+          ensureSpace(3);
+          const data  = apt.appointmentDate ? new Date(apt.appointmentDate) : null;
+          const dataBR = fmtDate(apt.appointmentDate);
+          const hora = (apt.appointmentTime || '').slice(0,5);
+
+          setFont.bold(); doc.fillColor('#000');
+          doc.text(`${idx+1}. ${clip(apt.client?.firstName + ' ' + apt.client?.lastName, 46)}  ·  ${clip(apt.serviceType?.name, 40)}`, P.L, doc.y, { width: WIDTH });
+          setFont.small(); doc.fillColor('#333');
+          doc.text(`${clip(apt.barber?.name, 36)}  ·  ${getStatusText(apt.status)}  ·  ${dataBR} ${hora ? ('às ' + hora) : ''}  ·  ${fmtMoney(apt.totalPrice)}`,
+                   P.L, doc.y, { width: WIDTH });
+          doc.moveDown(0.6);
+          hr(doc.y - 8, 2, 4);
+        });
+      }
+
+      // ===============================
+      // SEÇÃO: CAIXA (LINHAS)
+      // ===============================
+      section('Relatório de Caixa');
+
+      // Agregados corretos (corrige variáveis indefinidas do código antigo)
+      const sum = (arr, key) => arr.reduce((acc, it) => acc + Number(it?.[key] || 0), 0);
+      const totalEntradas  = sum(cashier, 'totalEntradas');
+      const totalDespesas  = sum(cashier, 'totalDespesas');
+      const totalEsperado  = sum(cashier, 'saldoEsperado');
+      const totalContado   = sum(cashier, 'countedCash');
+      const totalDiferenca = sum(cashier, 'diferenca');
+      const aberturaPrim   = cashier[0]?.openedAt;
+      const fechamentoUlt  = cashier[cashier.length - 1]?.closedAt;
+
+      // Resumo do caixa em linhas
+      row('Abertura (primeira)', fmtDateTime(aberturaPrim));
+      row('Fechamento (última)', fmtDateTime(fechamentoUlt));
+      row3('Entradas', fmtMoney(totalEntradas), 'Despesas', fmtMoney(totalDespesas), 'Saldo Esperado', fmtMoney(totalEsperado));
+      row3('Contado', fmtMoney(totalContado), 'Diferença', fmtMoney(totalDiferenca));
+
+      doc.moveDown(0.6);
+      hr();
+
+      // Detalhamento de cada fechamento de caixa (em linhas)
+      cashier.forEach((cs, i) => {
+        ensureSpace(4);
+        setFont.bold(); doc.fillColor('#000');
+        doc.text(`#${String(i+1).padStart(2,'0')} Caixa`, P.L, doc.y, { width: WIDTH });
+        setFont.small(); doc.fillColor('#444');
+        doc.text(`Período: ${fmtDateTime(cs.openedAt)}  →  ${fmtDateTime(cs.closedAt)}`, P.L, doc.y, { width: WIDTH });
+        doc.moveDown(0.3);
+
+        row3('Inicial', fmtMoney(cs.openingAmount), 'Entradas', fmtMoney(cs.totalEntradas), 'Despesas', fmtMoney(cs.totalDespesas));
+        row3('Esperado', fmtMoney(cs.saldoEsperado), 'Contado', fmtMoney(cs.countedCash), 'Diferença', fmtMoney(cs.diferenca));
+        doc.moveDown(0.2);
+        hr(doc.y - 6, 2, 6);
       });
 
-      // ==================================================
-      // RESUMO DO CAIXA
-      // ==================================================
-      doc.moveDown(1.5);
-      doc.fontSize(12).font('Helvetica-Bold').text('Resumo do Caixa', { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(10).font('Helvetica')
-        .text(`Total de Entradas: ${fmt(reportInfo.totalEntradas)}`)
-        .text(`Total de Despesas: ${fmt(reportInfo.totalDespesas)}`)
-        .text(`Saldo Esperado: ${fmt(reportInfo.totalSaldoEsperado)}`)
-        .text(`Diferença: ${fmt(reportInfo.totalDiferenca)}`);
-
-      // ==================================================
-      // RODAPÉ
-      // ==================================================
-      doc.fontSize(8).fillColor('gray').text(
-        `Relatório gerado em ${new Date().toLocaleString('pt-BR')} pelo Sistema de Gestão de Barbearias.`,
-        leftMargin,
-        doc.page.height - 40,
-        { align: 'center' }
-      );
-
+      // ===============================
+      // Rodapé final
+      // ===============================
+      addFooter();
       doc.end();
+
       stream.on('finish', () => resolve(filePath));
       stream.on('error', reject);
     } catch (err) {
