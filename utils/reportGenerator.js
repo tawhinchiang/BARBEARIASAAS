@@ -16,78 +16,45 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       });
 
       const filePath = path.join(__dirname, '..', 'reports', filename);
-      if (!fs.existsSync(path.dirname(filePath))) {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-      }
+      if (!fs.existsSync(path.dirname(filePath))) fs.mkdirSync(path.dirname(filePath), { recursive: true });
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
-      // -----------------------------
-      // Helpers
-      // -----------------------------
-      const fmtMoney = (v) =>
-        Number(v || 0).toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-
-      const fmtDate = (d) => {
+      // ---------- Helpers ----------
+      const fmtMoney = v => Number(v || 0).toLocaleString('pt-BR', {
+        style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2
+      });
+      const fmtDate = d => { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR'); };
+      const fmtDateTimeShort = d => {
         if (!d) return '—';
-        const dt = new Date(d);
-        if (isNaN(dt)) return '—';
-        return dt.toLocaleDateString('pt-BR');
-      };
-
-      const fmtDateTimeShort = (d) => {
-        if (!d) return '—';
-        const dt = new Date(d);
-        if (isNaN(dt)) return '—';
+        const dt = new Date(d); if (isNaN(dt)) return '—';
         const data = dt.toLocaleDateString('pt-BR');
         const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
         return `${data} ${hora}`;
       };
-
-      const clip = (txt, max) => {
-        const s = String(txt ?? '').trim();
-        return s.length > max ? s.slice(0, max - 1) + '…' : s;
-      };
-
+      const clip = (s, max) => { const t = String(s ?? '').trim(); return t.length > max ? t.slice(0, max - 1) + '…' : t; };
       const now = new Date();
       const impData = now.toLocaleDateString('pt-BR');
       const impHora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-      // -----------------------------
-      // Normalizadores
-      // -----------------------------
+      // ---------- Normalizadores ----------
       function normalizeAppointment(a = {}) {
         const appointmentDate = a.appointmentDate ?? a.appointment_date ?? a.date ?? a.data ?? null;
         const appointmentTime = a.appointmentTime ?? a.appointment_time ?? a.time ?? a.hora ?? '';
         const totalPrice      = a.totalPrice ?? a.total_price ?? a.valor ?? a.price ?? 0;
         const status          = (a.status ?? a.situacao ?? a.estado ?? 'pending') + '';
-
         const client = a.client ?? a.cliente ?? {};
         const firstName = client.firstName ?? client.nome ?? a.clientName ?? a.cliente_nome ?? '';
         const lastName  = client.lastName  ?? client.sobrenome ?? '';
-
         const barberObj  = a.barber ?? a.barbeiro ?? {};
         const barberName = barberObj.name ?? a.barberName ?? a.barbeiro_nome ?? '';
-
         const svcObj     = a.serviceType ?? a.servico ?? {};
         const serviceName= svcObj.name ?? a.serviceName ?? a.servico_nome ?? '';
-
         return {
-          appointmentDate,
-          appointmentTime,
-          totalPrice: Number(totalPrice || 0),
-          status,
-          client: { firstName, lastName },
-          barber: { name: barberName },
-          serviceType: { name: serviceName }
+          appointmentDate, appointmentTime, totalPrice: Number(totalPrice || 0), status,
+          client: { firstName, lastName }, barber: { name: barberName }, serviceType: { name: serviceName }
         };
       }
-
       function normalizeCashier(c = {}) {
         const openedAt       = c.openedAt ?? c.opened_at ?? c.abertura ?? null;
         const closedAt       = c.closedAt ?? c.closed_at ?? c.fechamento ?? null;
@@ -97,7 +64,6 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const saldoEsperado  = c.saldoEsperado ?? c.esperado ?? c.expected ?? 0;
         const countedCash    = c.countedCash ?? c.contado ?? c.counted ?? 0;
         const diferenca      = c.diferenca ?? c.difference ?? c.diff ?? 0;
-
         return {
           openedAt, closedAt,
           openingAmount: Number(openingAmount || 0),
@@ -108,17 +74,13 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           diferenca: Number(diferenca || 0)
         };
       }
+      const appts = (appointments || []).map(normalizeAppointment).filter(a => (a.status || '').toLowerCase() !== 'blocked');
+      const cash  = (cashier || []).map(normalizeCashier);
 
-      const apptsAll = (appointments || []).map(normalizeAppointment);
-      const appts    = apptsAll.filter(a => (a.status || '').toLowerCase() !== 'blocked');
-      const cash     = (cashier || []).map(normalizeCashier);
-
-      // -----------------------------
-      // Grid e tipografia
-      // -----------------------------
-      const P = { L: doc.page.margins.left }; // 28
+      // ---------- Grid/Tipografia ----------
+      const P = { L: doc.page.margins.left };
       const WIDTH  = doc.page.width - doc.page.margins.left - doc.page.margins.right; // 539pt
-      const LINE_H = 9; // <- mais compacto e consistente entre fontes
+      const LINE_H = 9; // compacto e consistente
 
       const setFont = {
         h1()   { doc.font('Helvetica-Bold').fontSize(12); },
@@ -127,133 +89,121 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         td()   { doc.font('Helvetica').fontSize(8);       },
         small(){ doc.font('Helvetica').fontSize(7);       },
       };
+      const hr = (y, color = '#dddddd', w = 0.5) => {
+        doc.save().moveTo(P.L, y).lineTo(P.L + WIDTH, y).lineWidth(w).strokeColor(color).stroke().restore();
+      };
 
-      function hr(y = doc.y, color = '#dddddd', w = 0.5) {
-        doc.save()
-          .moveTo(P.L, y)
-          .lineTo(P.L + WIDTH, y)
-          .lineWidth(w)
-          .strokeColor(color)
-          .stroke()
-          .restore();
-      }
-
-      // Cabeçalho neutro (4 linhas)
+      // ---------- Header medindo altura real ----------
       function addInstitutionalHeader() {
-        const y0 = doc.y; // trava Y do bloco
+        const l1 = (reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase();
+        const l2 = (reportInfo.headline2 || 'SISTEMA DE GESTÃO').toUpperCase();
+        const l3 = (reportInfo.headline3 || 'MÓDULO DE AGENDAMENTOS').toUpperCase();
+        const l4 = (reportInfo.headline4 || 'PERÍODO DO RELATÓRIO').toUpperCase();
+
         setFont.h1(); doc.fillColor('#000');
-        doc.text((reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase(), P.L, y0, { width: WIDTH, align: 'center', lineBreak: false });
+        let y = doc.y;
+        const h1h = doc.heightOfString(l1, { width: WIDTH, align: 'center' });
+        doc.text(l1, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
+        y += h1h;
 
         setFont.h2();
-        doc.text((reportInfo.headline2 || 'SISTEMA DE GESTÃO').toUpperCase(), P.L, y0 + LINE_H, { width: WIDTH, align: 'center', lineBreak: false });
-        doc.text((reportInfo.headline3 || 'MÓDULO DE AGENDAMENTOS').toUpperCase(), P.L, y0 + LINE_H*2, { width: WIDTH, align: 'center', lineBreak: false });
-        doc.text((reportInfo.headline4 || 'PERÍODO DO RELATÓRIO').toUpperCase(), P.L, y0 + LINE_H*3, { width: WIDTH, align: 'center', lineBreak: false });
+        const h2a = doc.heightOfString(l2, { width: WIDTH, align: 'center' });
+        doc.text(l2, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
+        y += h2a;
 
-        const sepY = y0 + LINE_H*3 + 3;
-        hr(sepY, '#dddddd', 0.5);
-        doc.y = sepY + 6; // posiciona abaixo da linha
+        const h2b = doc.heightOfString(l3, { width: WIDTH, align: 'center' });
+        doc.text(l3, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
+        y += h2b;
+
+        const h2c = doc.heightOfString(l4, { width: WIDTH, align: 'center' });
+        doc.text(l4, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
+        y += h2c + 3;
+
+        hr(y, '#dddddd', 0.5);
+        doc.y = y + 6; // começa a tabela abaixo da régua
       }
 
-      // ===============================
-      // TABELA: AGENDAMENTOS
-      // ===============================
+      // ---------- Tabela: Agendamentos ----------
+      // NOVAS larguras (VALOR=60; somatório=539)
       const COL_APT = [
-        { key: 'data',     label: 'DATA',         x: P.L + 0,   w: 58,  align: 'left'  },
-        { key: 'hora',     label: 'HORA',         x: P.L + 58,  w: 36,  align: 'left'  },
-        { key: 'cliente',  label: 'CLIENTE',      x: P.L + 94,  w: 130, align: 'left'  },
-        { key: 'barbeiro', label: 'PROFISSIONAL', x: P.L + 224, w: 102, align: 'left'  },
-        { key: 'servico',  label: 'SERVIÇO',      x: P.L + 326, w: 126, align: 'left'  },
-        { key: 'status',   label: 'STATUS',       x: P.L + 452, w: 57,  align: 'left'  },
-        { key: 'valor',    label: 'VALOR',        x: P.L + 509, w: 30,  align: 'right' }
-      ]; // soma = 539
+        { key: 'data',     label: 'DATA',         x: P.L +   0, w:  58, align: 'left'  },
+        { key: 'hora',     label: 'HORA',         x: P.L +  58, w:  36, align: 'left'  },
+        { key: 'cliente',  label: 'CLIENTE',      x: P.L +  94, w: 120, align: 'left'  },
+        { key: 'barbeiro', label: 'PROFISSIONAL', x: P.L + 214, w:  92, align: 'left'  },
+        { key: 'servico',  label: 'SERVIÇO',      x: P.L + 306, w: 116, align: 'left'  },
+        { key: 'status',   label: 'STATUS',       x: P.L + 422, w:  57, align: 'left'  },
+        { key: 'valor',    label: 'VALOR',        x: P.L + 479, w:  60, align: 'right' }
+      ]; // 58+36+120+92+116+57+60 = 539
 
-      function drawAptHeader() {
-        const y0 = doc.y; // trava o Y do header
-        setFont.th(); doc.fillColor('#000');
-        COL_APT.forEach(c => {
-          doc.text(c.label, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
-        });
-        hr(y0 + LINE_H - 2, '#dddddd', 0.5);
-      }
-
-      function drawAptRow(obj) {
-        const y0 = doc.y; // trava o Y da linha
-        setFont.td(); doc.fillColor('#111');
-        COL_APT.forEach(c => {
-          const v = String(obj[c.key] ?? '—');
-          doc.text(v, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
-        });
-        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior da linha
-      }
-
-      // ===============================
-      // TABELA: CAIXA
-      // ===============================
-      const COL_CASH = [
-        { key: 'abertura',  label: 'ABERTURA',   x: P.L + 0,   w: 100, align: 'left'  },
-        { key: 'fechamento',label: 'FECHAMENTO', x: P.L + 100, w: 100, align: 'left'  },
-        { key: 'inicial',   label: 'INICIAL',    x: P.L + 200, w: 56,  align: 'right' },
-        { key: 'entradas',  label: 'ENTRADAS',   x: P.L + 256, w: 56,  align: 'right' },
-        { key: 'despesas',  label: 'DESPESAS',   x: P.L + 312, w: 56,  align: 'right' },
-        { key: 'esperado',  label: 'ESPERADO',   x: P.L + 368, w: 56,  align: 'right' },
-        { key: 'contado',   label: 'CONTADO',    x: P.L + 424, w: 56,  align: 'right' },
-        { key: 'diferenca', label: 'DIFERENÇA',  x: P.L + 480, w: 59,  align: 'right' }
-      ]; // soma = 539
-
-      function drawCashHeader() {
+      const drawAptHeader = () => {
         const y0 = doc.y;
         setFont.th(); doc.fillColor('#000');
-        COL_CASH.forEach(c => {
-          doc.text(c.label, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
-        });
+        COL_APT.forEach(c => doc.text(c.label, c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
         hr(y0 + LINE_H - 2, '#dddddd', 0.5);
-      }
-
-      function drawCashRow(obj) {
+      };
+      const drawAptRow = (obj) => {
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
-        COL_CASH.forEach(c => {
-          const v = String(obj[c.key] ?? '—');
-          doc.text(v, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
-        });
+        COL_APT.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
         hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
-      }
+      };
 
-      // -----------------------------
-      // Quebra segura (sempre dentro da área útil)
-      // -----------------------------
+      // ---------- Tabela: Caixa ----------
+      const COL_CASH = [
+        { key: 'abertura',  label: 'ABERTURA',   x: P.L +   0, w: 100, align: 'left'  },
+        { key: 'fechamento',label: 'FECHAMENTO', x: P.L + 100, w: 100, align: 'left'  },
+        { key: 'inicial',   label: 'INICIAL',    x: P.L + 200, w:  56, align: 'right' },
+        { key: 'entradas',  label: 'ENTRADAS',   x: P.L + 256, w:  56, align: 'right' },
+        { key: 'despesas',  label: 'DESPESAS',   x: P.L + 312, w:  56, align: 'right' },
+        { key: 'esperado',  label: 'ESPERADO',   x: P.L + 368, w:  56, align: 'right' },
+        { key: 'contado',   label: 'CONTADO',    x: P.L + 424, w:  56, align: 'right' },
+        { key: 'diferenca', label: 'DIFERENÇA',  x: P.L + 480, w:  59, align: 'right' }
+      ];
+      const drawCashHeader = () => {
+        const y0 = doc.y;
+        setFont.th(); doc.fillColor('#000');
+        COL_CASH.forEach(c => doc.text(c.label, c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
+        hr(y0 + LINE_H - 2, '#dddddd', 0.5);
+      };
+      const drawCashRow = (obj) => {
+        const y0 = doc.y;
+        setFont.td(); doc.fillColor('#111');
+        COL_CASH.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
+        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+      };
+
+      // ---------- Quebra segura ----------
       function ensurePage(linesToWrite, headerDrawer) {
         const bottom = doc.page.height - doc.page.margins.bottom;
-        const need = linesToWrite * LINE_H + 4; // pequena folga
-
+        const need = linesToWrite * LINE_H + 4;
         if (doc.y + need > bottom) {
           doc.addPage();
           addInstitutionalHeader();
           if (typeof headerDrawer === 'function') {
-            drawAgain = headerDrawer;
             headerDrawer();
-            doc.y += LINE_H; // avança após o header da tabela
+            doc.y += LINE_H;
           }
         }
       }
 
-      // ===============================
-      // CONTEÚDO: Cabeçalho + Agendamentos
-      // ===============================
+      // ---------- Render ----------
       addInstitutionalHeader();
 
+      // Agendamentos
       drawAptHeader();
       doc.y += LINE_H;
 
+      // total só de concluídos (ajuste aqui se quiser incluir confirmed também)
+      const isRevenue = s => String(s).toLowerCase() === 'completed';
+
       if (!appts.length) {
-        setFont.td(); doc.fillColor('#444');
         const y0 = doc.y;
+        setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum agendamento no período.', P.L, y0, { width: WIDTH, align: 'left', lineBreak: false });
         hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
       } else {
         let totalApt = 0;
-
         appts.forEach(apt => {
           const linha = {
             data:     fmtDate(apt.appointmentDate),
@@ -264,9 +214,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
             status:   clip(getStatusText(apt.status), 14),
             valor:    fmtMoney(apt.totalPrice)
           };
-          if ((apt.status || '').toLowerCase() !== 'cancelled') {
-            totalApt += Number(apt.totalPrice || 0);
-          }
+          if (isRevenue(apt.status)) totalApt += Number(apt.totalPrice || 0);
 
           ensurePage(1, drawAptHeader);
           drawAptRow(linha);
@@ -276,20 +224,17 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         // TOTAL
         doc.y += 1;
         ensurePage(1, drawAptHeader);
-        hr(doc.y - 2, '#cccccc', 0.8); // borda superior do total
+        hr(doc.y - 2, '#cccccc', 0.8);
         setFont.th(); doc.fillColor('#000');
         const yTot = doc.y;
-        doc.text('TOTAL', P.L + 452, yTot, { width: 57, align: 'left', lineBreak: false });
-        doc.text(fmtMoney(totalApt), P.L + 509, yTot, { width: 30, align: 'right', lineBreak: false });
-        hr(yTot + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior do total
+        doc.text('TOTAL', P.L + 422, yTot, { width: 57, align: 'left', lineBreak: false }); // coluna STATUS (rótulo)
+        doc.text(fmtMoney(totalApt), P.L + 479, yTot, { width: 60, align: 'right', lineBreak: false }); // coluna VALOR
+        hr(yTot + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
       }
 
-      // ===============================
-      // CONTEÚDO: Caixa (Fluxo)
-      // ===============================
+      // Caixa
       doc.y += 4; hr(doc.y, '#dddddd', 0.5); doc.y += 6;
-
       setFont.h2(); doc.fillColor('#000');
       doc.text('FLUXO DE CAIXA', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
       doc.y += LINE_H;
@@ -298,14 +243,13 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       doc.y += LINE_H;
 
       if (!cash.length) {
-        setFont.td(); doc.fillColor('#444');
         const y0 = doc.y;
+        setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum registro de caixa no período.', P.L, y0, { width: WIDTH, lineBreak: false });
         hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
       } else {
         let totInicial = 0, totEntradas = 0, totDespesas = 0, totEsperado = 0, totContado = 0, totDif = 0;
-
         cash.forEach(cs => {
           const row = {
             abertura:   fmtDateTimeShort(cs.openedAt),
@@ -317,7 +261,6 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
             contado:    fmtMoney(cs.countedCash),
             diferenca:  fmtMoney(cs.diferenca),
           };
-
           totInicial  += Number(cs.openingAmount || 0);
           totEntradas += Number(cs.totalEntradas || 0);
           totDespesas += Number(cs.totalDespesas || 0);
@@ -332,7 +275,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
         // Totais do caixa
         doc.y += 1;
-        ensurePage(1, drawCashHeader);
+        ensurePage(2, drawCashHeader); // vamos imprimir 2 linhas (totais + resumos)
         hr(doc.y - 2, '#cccccc', 0.8);
         setFont.th(); doc.fillColor('#000');
         const yTot = doc.y;
@@ -345,25 +288,29 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.text(fmtMoney(totDif),      P.L + 480, yTot, { width: 59, align: 'right', lineBreak: false });
         hr(yTot + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
+
+        // Resumos abaixo da tabela: Resultado do período e Sobra/Falta
+        const resultadoPeriodo = totEntradas - totDespesas;           // visão simples
+        const sobraFalta       = totDif;                               // diferença total de caixa
+
+        setFont.td(); doc.fillColor('#000');
+        const yRes = doc.y + 2;
+        doc.text(`Resultado (Entradas - Despesas): ${fmtMoney(resultadoPeriodo)}`, P.L, yRes, { width: WIDTH/2, align: 'left',  lineBreak: false });
+        doc.text(`Sobra/Falta (Diferença total): ${fmtMoney(sobraFalta)}`,        P.L + WIDTH/2, yRes, { width: WIDTH/2, align: 'right', lineBreak: false });
+        hr(yRes + LINE_H, '#e5e5e5', 0.5);
+        doc.y = yRes + LINE_H + 2;
       }
 
-      // ===============================
-      // Rodapé em TODAS as páginas (dentro da área útil)
-      // ===============================
+      // ---------- Rodapé (todas as páginas) ----------
       const range = doc.bufferedPageRange();
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
         const num = i - range.start + 1;
         const total = range.count;
-
         const footerY = doc.page.height - doc.page.margins.bottom - 10;
         setFont.small(); doc.fillColor('#000');
-        doc.text(`Data da impressão ${impData} as ${impHora}`, P.L, footerY, {
-          width: WIDTH / 2, align: 'left', lineBreak: false
-        });
-        doc.text(`PÁGINA: ${num}/${total}`, P.L + WIDTH / 2, footerY, {
-          width: WIDTH / 2, align: 'right', lineBreak: false
-        });
+        doc.text(`Data da impressão ${impData} as ${impHora}`, P.L, footerY, { width: WIDTH/2, align: 'left',  lineBreak: false });
+        doc.text(`PÁGINA: ${num}/${total}`,                    P.L + WIDTH/2, footerY, { width: WIDTH/2, align: 'right', lineBreak: false });
       }
 
       doc.end();
@@ -374,6 +321,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
     }
   });
 }
+
 
 
 
