@@ -23,28 +23,50 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       doc.pipe(stream);
 
       // -----------------------------
-      // Helpers de formatação
+      // Helpers
       // -----------------------------
       const fmtMoney = (v) =>
-        Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
-      const fmtDateTime = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
+        Number(v || 0).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+
+      const fmtDate = (d) => {
+        if (!d) return '—';
+        const dt = new Date(d);
+        if (isNaN(dt)) return '—';
+        return dt.toLocaleDateString('pt-BR');
+      };
+
+      const fmtDateTimeShort = (d) => {
+        if (!d) return '—';
+        const dt = new Date(d);
+        if (isNaN(dt)) return '—';
+        // sem segundos (padroniza visual)
+        const data = dt.toLocaleDateString('pt-BR');
+        const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${data} ${hora}`;
+      };
+
       const clip = (txt, max) => {
         const s = String(txt ?? '').trim();
         return s.length > max ? s.slice(0, max - 1) + '…' : s;
       };
+
       const now = new Date();
       const impData = now.toLocaleDateString('pt-BR');
       const impHora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
       // -----------------------------
-      // Normalizadores (evitam campos em branco)
+      // Normalizadores
       // -----------------------------
       function normalizeAppointment(a = {}) {
         const appointmentDate = a.appointmentDate ?? a.appointment_date ?? a.date ?? a.data ?? null;
         const appointmentTime = a.appointmentTime ?? a.appointment_time ?? a.time ?? a.hora ?? '';
         const totalPrice      = a.totalPrice ?? a.total_price ?? a.valor ?? a.price ?? 0;
-        const status          = a.status ?? a.situacao ?? a.estado ?? 'pending';
+        const status          = (a.status ?? a.situacao ?? a.estado ?? 'pending') + '';
 
         const client = a.client ?? a.cliente ?? {};
         const firstName = client.firstName ?? client.nome ?? a.clientName ?? a.cliente_nome ?? '';
@@ -88,7 +110,10 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         };
       }
 
-      const appts = (appointments || []).map(normalizeAppointment);
+      // Normaliza e filtra o que polui o layout
+      const apptsAll = (appointments || []).map(normalizeAppointment);
+      // Remove “bloqueados” do relatório principal (evita linhas irrelevantes com R$ 0,00)
+      const appts = apptsAll.filter(a => (a.status || '').toLowerCase() !== 'blocked');
       const cash  = (cashier || []).map(normalizeCashier);
 
       // -----------------------------
@@ -96,7 +121,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // -----------------------------
       const P = { L: doc.page.margins.left }; // 28
       const WIDTH  = doc.page.width - doc.page.margins.left - doc.page.margins.right; // 539pt
-      const LINE_H = 12; // alta densidade
+      const LINE_H = 11; // mais compacto (reduz páginas)
 
       const setFont = {
         h1()   { doc.font('Helvetica-Bold').fontSize(12); },
@@ -110,7 +135,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.moveTo(P.L, y).lineTo(P.L + WIDTH, y).lineWidth(0.5).strokeColor('#dddddd').stroke();
       }
 
-      // Cabeçalho institucional neutro (4 linhas)
+      // Cabeçalho neutro (4 linhas)
       function addInstitutionalHeader() {
         setFont.h1(); doc.fillColor('#000');
         doc.text((reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
@@ -120,9 +145,9 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.text((reportInfo.headline3 || 'MÓDULO DE AGENDAMENTOS').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
         doc.text((reportInfo.headline4 || 'PERÍODO DO RELATÓRIO').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
 
-        const y = doc.y + 4;
+        const y = doc.y + 3;
         hr(y);
-        doc.moveDown(0.5);
+        doc.moveDown(0.35);
       }
 
       // ===============================
@@ -132,11 +157,12 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         { key: 'data',     label: 'DATA',     x: P.L + 0,   w: 58,  align: 'left'  },
         { key: 'hora',     label: 'HORA',     x: P.L + 58,  w: 36,  align: 'left'  },
         { key: 'cliente',  label: 'CLIENTE',  x: P.L + 94,  w: 130, align: 'left'  },
-        { key: 'barbeiro', label: 'BARBEIRO', x: P.L + 224, w: 100, align: 'left'  },
-        { key: 'servico',  label: 'SERVIÇO',  x: P.L + 324, w: 130, align: 'left'  },
-        { key: 'status',   label: 'STATUS',   x: P.L + 454, w: 55,  align: 'left'  },
+        { key: 'barbeiro', label: 'BARBEIRO', x: P.L + 224, w: 102, align: 'left'  },
+        { key: 'servico',  label: 'SERVIÇO',  x: P.L + 326, w: 126, align: 'left'  },
+        { key: 'status',   label: 'STATUS',   x: P.L + 452, w: 57,  align: 'left'  },
         { key: 'valor',    label: 'VALOR',    x: P.L + 509, w: 30,  align: 'right' }
-      ]; // soma = 539
+      ];
+      // soma = 58+36+130+102+126+57+30 = 539 (fecha na área útil)
 
       function drawAptHeader(y) {
         setFont.th(); doc.fillColor('#000');
@@ -159,15 +185,16 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // TABELA: CAIXA (colunas fixas)
       // ===============================
       const COL_CASH = [
-        { key: 'abertura',  label: 'ABERTURA',  x: P.L + 0,   w: 95, align: 'left'  },
-        { key: 'fechamento',label: 'FECHAMENTO',x: P.L + 95,  w: 95, align: 'left'  },
-        { key: 'inicial',   label: 'INICIAL',   x: P.L + 190, w: 50, align: 'right' },
-        { key: 'entradas',  label: 'ENTRADAS',  x: P.L + 240, w: 55, align: 'right' },
-        { key: 'despesas',  label: 'DESPESAS',  x: P.L + 295, w: 55, align: 'right' },
-        { key: 'esperado',  label: 'ESPERADO',  x: P.L + 350, w: 60, align: 'right' },
-        { key: 'contado',   label: 'CONTADO',   x: P.L + 410, w: 60, align: 'right' },
-        { key: 'diferenca', label: 'DIFERENÇA', x: P.L + 470, w: 69, align: 'right' }
-      ]; // soma = 539
+        { key: 'abertura',  label: 'ABERTURA',   x: P.L + 0,   w: 100, align: 'left'  },
+        { key: 'fechamento',label: 'FECHAMENTO', x: P.L + 100, w: 100, align: 'left'  },
+        { key: 'inicial',   label: 'INICIAL',    x: P.L + 200, w: 56,  align: 'right' },
+        { key: 'entradas',  label: 'ENTRADAS',   x: P.L + 256, w: 56,  align: 'right' },
+        { key: 'despesas',  label: 'DESPESAS',   x: P.L + 312, w: 56,  align: 'right' },
+        { key: 'esperado',  label: 'ESPERADO',   x: P.L + 368, w: 56,  align: 'right' },
+        { key: 'contado',   label: 'CONTADO',    x: P.L + 424, w: 56,  align: 'right' },
+        { key: 'diferenca', label: 'DIFERENÇA',  x: P.L + 480, w: 59,  align: 'right' }
+      ];
+      // soma = 100+100+56+56+56+56+56+59 = 539 (fecha certinho)
 
       function drawCashHeader(y) {
         setFont.th(); doc.fillColor('#000');
@@ -186,10 +213,10 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         });
       }
 
-      // quebra segura com reimpressão de header
+      // quebra segura com reimpressão de header da respectiva tabela
       function ensurePage(y, headerDrawer) {
         const bottom = doc.page.height - doc.page.margins.bottom;
-        const need = LINE_H + 12;
+        const need = LINE_H + 10;
         if (y + need > bottom) {
           doc.addPage();
           addInstitutionalHeader();
@@ -209,16 +236,15 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
       let y = doc.y + 2;
 
+      // Header de agendamentos
+      drawAptHeader(y);
+      y += LINE_H;
+
       if (!appts.length) {
         setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum agendamento no período.', P.L, y, { width: WIDTH, align: 'left', lineBreak: false });
-        y += LINE_H * 2;
-      } else {
-        // Header de agendamentos
-        drawAptHeader(y);
         y += LINE_H;
-
-        // Linhas
+      } else {
         let totalApt = 0;
         appts.forEach(apt => {
           const linha = {
@@ -227,30 +253,34 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
             cliente:  clip(((apt.client?.firstName || '') + ' ' + (apt.client?.lastName || '')).trim(), 28),
             barbeiro: clip(apt.barber?.name || '', 22),
             servico:  clip(apt.serviceType?.name || '', 28),
-            status:   clip(getStatusText(apt.status), 12),
+            status:   clip(getStatusText(apt.status), 14),
             valor:    fmtMoney(apt.totalPrice)
           };
-          if (apt.status !== 'cancelled') totalApt += Number(apt.totalPrice || 0);
+          if ((apt.status || '').toLowerCase() !== 'cancelled') {
+            totalApt += Number(apt.totalPrice || 0);
+          }
 
           y = ensurePage(y, drawAptHeader);
           drawAptRow(y, linha);
           y += LINE_H;
         });
 
-        // Linha de total
+        // deixa um pequeno espaço e GARANTE linha nova antes do total
+        y += 2;
         y = ensurePage(y, drawAptHeader);
+
         setFont.th(); doc.fillColor('#000');
-        doc.text('TOTAL', P.L + 454, y, { width: 55, align: 'left', lineBreak: false });
+        // “TOTAL” posicionado claramente na coluna de status e valor na coluna VALOR
+        doc.text('TOTAL', P.L + 452, y, { width: 57, align: 'left', lineBreak: false });
         doc.text(fmtMoney(totalApt), P.L + 509, y, { width: 30, align: 'right', lineBreak: false });
-        y += LINE_H + 6;
+        y += LINE_H;
       }
 
       // ===============================
-      // CONTEÚDO: Caixa (fluxo organizado)
+      // CONTEÚDO: Caixa (Fluxo)
       // ===============================
-      // (separador visual leve entre as tabelas)
-      hr(y);
-      y += 6;
+      // separador leve entre as tabelas
+      y += 4; hr(y); y += 6;
 
       setFont.h2(); doc.fillColor('#000');
       doc.text('FLUXO DE CAIXA', P.L, y, { width: WIDTH, align: 'left', lineBreak: false });
@@ -263,20 +293,20 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       if (!cash.length) {
         setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum registro de caixa no período.', P.L, y, { width: WIDTH, lineBreak: false });
-        y += LINE_H * 2;
+        y += LINE_H;
       } else {
         let totInicial = 0, totEntradas = 0, totDespesas = 0, totEsperado = 0, totContado = 0, totDif = 0;
 
         cash.forEach(cs => {
           const row = {
-            abertura:  fmtDateTime(cs.openedAt),
-            fechamento:fmtDateTime(cs.closedAt),
-            inicial:   fmtMoney(cs.openingAmount),
-            entradas:  fmtMoney(cs.totalEntradas),
-            despesas:  fmtMoney(cs.totalDespesas),
-            esperado:  fmtMoney(cs.saldoEsperado),
-            contado:   fmtMoney(cs.countedCash),
-            diferenca: fmtMoney(cs.diferenca),
+            abertura:   fmtDateTimeShort(cs.openedAt),
+            fechamento: fmtDateTimeShort(cs.closedAt),
+            inicial:    fmtMoney(cs.openingAmount),
+            entradas:   fmtMoney(cs.totalEntradas),
+            despesas:   fmtMoney(cs.totalDespesas),
+            esperado:   fmtMoney(cs.saldoEsperado),
+            contado:    fmtMoney(cs.countedCash),
+            diferenca:  fmtMoney(cs.diferenca),
           };
 
           totInicial  += Number(cs.openingAmount || 0);
@@ -292,21 +322,23 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         });
 
         // Totais do caixa
+        y += 2;
         y = ensurePage(y, drawCashHeader);
+
         setFont.th(); doc.fillColor('#000');
-        // células em branco para colunas de datas
-        doc.text('TOTAIS', P.L + 0,  y, { width: 190, align: 'left',  lineBreak: false });
-        doc.text(fmtMoney(totInicial),  P.L + 190, y, { width: 50, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totEntradas), P.L + 240, y, { width: 55, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totDespesas), P.L + 295, y, { width: 55, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totEsperado), P.L + 350, y, { width: 60, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totContado),  P.L + 410, y, { width: 60, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totDif),      P.L + 470, y, { width: 69, align: 'right', lineBreak: false });
+        // “TOTAIS” ocupa as duas primeiras colunas; numéricos alinhados à direita nas suas colunas
+        doc.text('TOTAIS', P.L + 0,  y, { width: 200, align: 'left',  lineBreak: false });
+        doc.text(fmtMoney(totInicial),  P.L + 200, y, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totEntradas), P.L + 256, y, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totDespesas), P.L + 312, y, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totEsperado), P.L + 368, y, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totContado),  P.L + 424, y, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totDif),      P.L + 480, y, { width: 59, align: 'right', lineBreak: false });
         y += LINE_H;
       }
 
       // ===============================
-      // Rodapé em TODAS as páginas: "Data da impressão ... as ..." + "PÁGINA: X/Y"
+      // Rodapé em TODAS as páginas
       // ===============================
       const range = doc.bufferedPageRange(); // { start, count }
       for (let i = range.start; i < range.start + range.count; i++) {
@@ -328,7 +360,6 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
     }
   });
 }
-
 // ==================================================
 // CSV (mantido)
 // ==================================================
