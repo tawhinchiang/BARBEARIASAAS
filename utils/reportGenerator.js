@@ -110,7 +110,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       }
 
       const apptsAll = (appointments || []).map(normalizeAppointment);
-      const appts    = apptsAll.filter(a => (a.status || '').toLowerCase() !== 'blocked'); // opcional
+      const appts    = apptsAll.filter(a => (a.status || '').toLowerCase() !== 'blocked');
       const cash     = (cashier || []).map(normalizeCashier);
 
       // -----------------------------
@@ -118,7 +118,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // -----------------------------
       const P = { L: doc.page.margins.left }; // 28
       const WIDTH  = doc.page.width - doc.page.margins.left - doc.page.margins.right; // 539pt
-      const LINE_H = 11; // densidade alta
+      const LINE_H = 9; // <- mais compacto e consistente entre fontes
 
       const setFont = {
         h1()   { doc.font('Helvetica-Bold').fontSize(12); },
@@ -140,15 +140,16 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
       // Cabeçalho neutro (4 linhas)
       function addInstitutionalHeader() {
+        const y0 = doc.y; // trava Y do bloco
         setFont.h1(); doc.fillColor('#000');
-        doc.text((reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
+        doc.text((reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase(), P.L, y0, { width: WIDTH, align: 'center', lineBreak: false });
 
         setFont.h2();
-        doc.text((reportInfo.headline2 || 'SISTEMA DE GESTÃO').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
-        doc.text((reportInfo.headline3 || 'MÓDULO DE AGENDAMENTOS').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
-        doc.text((reportInfo.headline4 || 'PERÍODO DO RELATÓRIO').toUpperCase(), P.L, doc.y, { width: WIDTH, align: 'center' });
+        doc.text((reportInfo.headline2 || 'SISTEMA DE GESTÃO').toUpperCase(), P.L, y0 + LINE_H, { width: WIDTH, align: 'center', lineBreak: false });
+        doc.text((reportInfo.headline3 || 'MÓDULO DE AGENDAMENTOS').toUpperCase(), P.L, y0 + LINE_H*2, { width: WIDTH, align: 'center', lineBreak: false });
+        doc.text((reportInfo.headline4 || 'PERÍODO DO RELATÓRIO').toUpperCase(), P.L, y0 + LINE_H*3, { width: WIDTH, align: 'center', lineBreak: false });
 
-        const sepY = doc.y + 3;
+        const sepY = y0 + LINE_H*3 + 3;
         hr(sepY, '#dddddd', 0.5);
         doc.y = sepY + 6; // posiciona abaixo da linha
       }
@@ -167,20 +168,22 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       ]; // soma = 539
 
       function drawAptHeader() {
+        const y0 = doc.y; // trava o Y do header
         setFont.th(); doc.fillColor('#000');
         COL_APT.forEach(c => {
-          doc.text(c.label, c.x, doc.y, { width: c.w, align: c.align || 'left', lineBreak: false, ellipsis: true });
+          doc.text(c.label, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
         });
-        hr(doc.y + LINE_H - 2, '#dddddd', 0.5);
+        hr(y0 + LINE_H - 2, '#dddddd', 0.5);
       }
 
       function drawAptRow(obj) {
+        const y0 = doc.y; // trava o Y da linha
         setFont.td(); doc.fillColor('#111');
         COL_APT.forEach(c => {
           const v = String(obj[c.key] ?? '—');
-          doc.text(v, c.x, doc.y, { width: c.w, align: c.align || 'left', lineBreak: false, ellipsis: true });
+          doc.text(v, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
         });
-        hr(doc.y + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior da linha
+        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior da linha
       }
 
       // ===============================
@@ -198,20 +201,22 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       ]; // soma = 539
 
       function drawCashHeader() {
+        const y0 = doc.y;
         setFont.th(); doc.fillColor('#000');
         COL_CASH.forEach(c => {
-          doc.text(c.label, c.x, doc.y, { width: c.w, align: c.align || 'left', lineBreak: false, ellipsis: true });
+          doc.text(c.label, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
         });
-        hr(doc.y + LINE_H - 2, '#dddddd', 0.5);
+        hr(y0 + LINE_H - 2, '#dddddd', 0.5);
       }
 
       function drawCashRow(obj) {
+        const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
         COL_CASH.forEach(c => {
           const v = String(obj[c.key] ?? '—');
-          doc.text(v, c.x, doc.y, { width: c.w, align: c.align || 'left', lineBreak: false, ellipsis: true });
+          doc.text(v, c.x, y0, { width: c.w, align: c.align || 'left', lineBreak: false });
         });
-        hr(doc.y + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior
+        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
       }
 
       // -----------------------------
@@ -225,6 +230,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           doc.addPage();
           addInstitutionalHeader();
           if (typeof headerDrawer === 'function') {
+            drawAgain = headerDrawer;
             headerDrawer();
             doc.y += LINE_H; // avança após o header da tabela
           }
@@ -241,8 +247,9 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
       if (!appts.length) {
         setFont.td(); doc.fillColor('#444');
-        doc.text('Nenhum agendamento no período.', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
-        hr(doc.y + LINE_H - 1, '#e5e5e5', 0.5);
+        const y0 = doc.y;
+        doc.text('Nenhum agendamento no período.', P.L, y0, { width: WIDTH, align: 'left', lineBreak: false });
+        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
       } else {
         let totalApt = 0;
@@ -267,13 +274,14 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         });
 
         // TOTAL
-        doc.y += 2;
+        doc.y += 1;
         ensurePage(1, drawAptHeader);
         hr(doc.y - 2, '#cccccc', 0.8); // borda superior do total
         setFont.th(); doc.fillColor('#000');
-        doc.text('TOTAL', P.L + 452, doc.y, { width: 57, align: 'left', lineBreak: false });
-        doc.text(fmtMoney(totalApt), P.L + 509, doc.y, { width: 30, align: 'right', lineBreak: false });
-        hr(doc.y + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior do total
+        const yTot = doc.y;
+        doc.text('TOTAL', P.L + 452, yTot, { width: 57, align: 'left', lineBreak: false });
+        doc.text(fmtMoney(totalApt), P.L + 509, yTot, { width: 30, align: 'right', lineBreak: false });
+        hr(yTot + LINE_H - 1, '#e5e5e5', 0.5); // borda inferior do total
         doc.y += LINE_H;
       }
 
@@ -291,8 +299,9 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
       if (!cash.length) {
         setFont.td(); doc.fillColor('#444');
-        doc.text('Nenhum registro de caixa no período.', P.L, doc.y, { width: WIDTH, lineBreak: false });
-        hr(doc.y + LINE_H - 1, '#e5e5e5', 0.5);
+        const y0 = doc.y;
+        doc.text('Nenhum registro de caixa no período.', P.L, y0, { width: WIDTH, lineBreak: false });
+        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
       } else {
         let totInicial = 0, totEntradas = 0, totDespesas = 0, totEsperado = 0, totContado = 0, totDif = 0;
@@ -322,43 +331,38 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         });
 
         // Totais do caixa
-        doc.y += 2;
+        doc.y += 1;
         ensurePage(1, drawCashHeader);
         hr(doc.y - 2, '#cccccc', 0.8);
         setFont.th(); doc.fillColor('#000');
-        doc.text('TOTAIS', P.L + 0,  doc.y, { width: 200, align: 'left',  lineBreak: false });
-        doc.text(fmtMoney(totInicial),  P.L + 200, doc.y, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totEntradas), P.L + 256, doc.y, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totDespesas), P.L + 312, doc.y, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totEsperado), P.L + 368, doc.y, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totContado),  P.L + 424, doc.y, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totDif),      P.L + 480, doc.y, { width: 59, align: 'right', lineBreak: false });
-        hr(doc.y + LINE_H - 1, '#e5e5e5', 0.5);
+        const yTot = doc.y;
+        doc.text('TOTAIS', P.L + 0,  yTot, { width: 200, align: 'left',  lineBreak: false });
+        doc.text(fmtMoney(totInicial),  P.L + 200, yTot, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totEntradas), P.L + 256, yTot, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totDespesas), P.L + 312, yTot, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totEsperado), P.L + 368, yTot, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totContado),  P.L + 424, yTot, { width: 56, align: 'right', lineBreak: false });
+        doc.text(fmtMoney(totDif),      P.L + 480, yTot, { width: 59, align: 'right', lineBreak: false });
+        hr(yTot + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
       }
 
       // ===============================
-      // Rodapé em TODAS as páginas (sem criar páginas extras)
+      // Rodapé em TODAS as páginas (dentro da área útil)
       // ===============================
-      const range = doc.bufferedPageRange(); // { start, count }
+      const range = doc.bufferedPageRange();
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
         const num = i - range.start + 1;
         const total = range.count;
 
-        // IMPORTANTE: dentro da área útil (senão o PDFKit quebra a página!)
         const footerY = doc.page.height - doc.page.margins.bottom - 10;
-
         setFont.small(); doc.fillColor('#000');
         doc.text(`Data da impressão ${impData} as ${impHora}`, P.L, footerY, {
-          width: WIDTH / 2,
-          align: 'left',
-          lineBreak: false
+          width: WIDTH / 2, align: 'left', lineBreak: false
         });
         doc.text(`PÁGINA: ${num}/${total}`, P.L + WIDTH / 2, footerY, {
-          width: WIDTH / 2,
-          align: 'right',
-          lineBreak: false
+          width: WIDTH / 2, align: 'right', lineBreak: false
         });
       }
 
@@ -370,6 +374,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
     }
   });
 }
+
 
 
 // ==================================================
