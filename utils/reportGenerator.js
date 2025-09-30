@@ -11,6 +11,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
     try {
       const doc = new PDFDocument({
         size: 'A4',
+        layout: 'landscape',  
         margins: { top: 28, left: 28, right: 28, bottom: 32 },
         bufferPages: true
       });
@@ -219,7 +220,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         small() { doc.font('Helvetica').fontSize(7); },
       };
       // Linha horizontal padrão: mais escura e um pouco mais grossa
-      const hr = (y, color = '#333333', w = 1.0) => {
+      const hr = (y, color = '#333333', w = 0.8) => {
         doc.save()
           .moveTo(P.L, y)
           .lineTo(P.L + WIDTH, y)
@@ -277,7 +278,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
         COL_APT.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
-        hr(y0 + LINE_H - 0.5);
+        hr(y0 + LINE_H - 1)
       };
 
       // -------------- Tabela: Caixa --------------
@@ -301,7 +302,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
         COL_CASH.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
-        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+        hr(y0 + LINE_H - 1);
       };
 
       // -------------- Quebra segura --------------
@@ -318,22 +319,23 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         }
       }
       function renderFiltersHeader() {
-        // 1) Fonte única de filtros (suporta nested e variações de nomes)
         const F = reportInfo.filters || reportInfo.filtros || {};
 
         // --- PERÍODO ---
+        // Se vier label pronto, usa ele. Senão, monta via start/end.
+        const periodLabel = F.periodLabel || F.period || reportInfo.periodLabel || reportInfo.periodo || reportInfo.period;
         const pStart =
           F.start || F.startDate || F.from || F.dateFrom || F.inicio || F.dataInicio ||
           reportInfo.periodStart || reportInfo.startDate || reportInfo.from || reportInfo.inicio || reportInfo.dataInicio;
-
         const pEnd =
           F.end || F.endDate || F.to || F.dateTo || F.fim || F.dataFim ||
           reportInfo.periodEnd || reportInfo.endDate || reportInfo.to || reportInfo.fim || reportInfo.dataFim;
 
-        const periodoStr = (pStart || pEnd) ? `${fmtDate(pStart)} - ${fmtDate(pEnd)}` : 'Todos';
+        const periodoStr = periodLabel
+          ? String(periodLabel)
+          : ((pStart || pEnd) ? `${fmtDate(pStart)} - ${fmtDate(pEnd)}` : 'Todos');
 
         // --- PROFISSIONAIS ---
-        // Pode vir como: nomes separados por vírgula, array de strings, array de objetos, array de ids
         let barbersRaw =
           F.barbers || F.profissionais || F.barbeiros || F.barberNames ||
           reportInfo.barbers || reportInfo.profissionais || reportInfo.barbeiros || reportInfo.barberNames;
@@ -344,7 +346,6 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           if (typeof barbersRaw === 'string') {
             arr = barbersRaw.split(',').map(s => s.trim()).filter(Boolean);
           } else if (Array.isArray(barbersRaw)) {
-            // array de objetos, ids ou strings
             arr = barbersRaw.map(b => {
               if (b && typeof b === 'object') return b.name || b.nome || b.fullName || b.label || b.text || '';
               return String(b || '');
@@ -352,7 +353,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           }
           if (arr && arr.length) profStr = arr.join(', ');
         }
-        // Fallback inteligente: se não veio filtro, mas TODOS os agendamentos são do(s) mesmo(s) barbeiro(s), mostra nomes únicos
+        // Fallback: deduz dos agendamentos
         if (profStr === 'Todos') {
           const setNames = new Set();
           (appointments || []).forEach(a => {
@@ -364,51 +365,56 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         }
 
         // --- STATUS ---
+        const statusLabel = F.statusLabel || reportInfo.statusLabel;
         let statusRaw =
+          statusLabel ||
           F.status || F.statuses || F.statusFilter || F.statusFilters ||
           reportInfo.status || reportInfo.statuses || reportInfo.filtrosStatus || reportInfo.statusFilter;
 
-        // normaliza para array de strings
         let arrStatus = [];
         if (typeof statusRaw === 'string') {
-          const s = statusRaw.trim().toLowerCase();
-          if (s && s !== 'all' && s !== 'todos' && s !== 'todas') arrStatus = s.split(',').map(x => x.trim());
+          const s = statusRaw.trim();
+          if (s && !/^todos?|todas?|all$/i.test(s)) {
+            // se já veio em português, mantém; se veio enum, traduz
+            const items = s.split(',').map(x => x.trim());
+            arrStatus = items.map(x => getStatusText(x.toLowerCase()));
+          }
         } else if (Array.isArray(statusRaw)) {
-          arrStatus = statusRaw.map(s => String(s || '').toLowerCase()).filter(Boolean);
-          // remove marcadores de "todos"
-          arrStatus = arrStatus.filter(s => !(s === 'all' || s === 'todos' || s === 'todas'));
+          arrStatus = statusRaw
+            .map(s => String(s || '').trim())
+            .filter(s => s && !/^todos?|todas?|all$/i.test(s))
+            .map(s => getStatusText(s.toLowerCase()));
         }
+        const statusStr = arrStatus.length ? arrStatus.join(', ') : 'Todos';
 
-        const statusStr = arrStatus.length
-          ? arrStatus.map(s => getStatusText(s)).join(', ')
-          : 'Todos';
-
-        // --- LAYOUT ---
+        // --- LAYOUT (sem linhas por item – removendo as setas da imagem) ---
         ensurePage(4, null);
         setFont.h2(); doc.fillColor('#000');
         doc.text('FILTROS APLICADOS', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
+        // linha só abaixo do título
         hr(doc.y + LINE_H - 2);
         doc.y += LINE_H;
 
         const labelW = 90;
         const valueW = WIDTH - labelW;
 
-        const row = (label, value) => {
+        const row = (label, value, drawLine = false) => {
           ensurePage(1, null);
           const y0 = doc.y;
           setFont.th(); doc.fillColor('#000');
           doc.text(label, P.L, y0, { width: labelW, align: 'left', lineBreak: false });
           setFont.td(); doc.fillColor('#111');
           doc.text(String(value || '—'), P.L + labelW, y0, { width: valueW, align: 'left', lineBreak: false });
-          hr(y0 + LINE_H - 1);
+          if (drawLine) hr(y0 + LINE_H - 1); // <— só se pedir
           doc.y += LINE_H;
         };
 
-        row('Período', periodoStr);
-        row('Profissionais', profStr);
-        row('Status', statusStr);
+        // desenha SEM a linha inferior em cada item (remove as setas)
+        row('Período', periodoStr, false);
+        row('Profissionais', profStr, false);
+        row('Status', statusStr, false);
 
-        doc.y += 4; // respiro antes da tabela
+        doc.y += 6; // respiro antes da tabela de agendamentos
       }
 
 
@@ -470,23 +476,23 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       const colLabelW = Math.floor(WIDTH * 0.75); // 75% para o nome
       const colValueW = WIDTH - colLabelW;        // 25% para o valor
 
-      // Cabeçalho
+      // Cabeçalho (sem linha embaixo)
       setFont.th(); doc.fillColor('#000');
       doc.text('MÉTODO', P.L, doc.y, { width: colLabelW, align: 'left', lineBreak: false });
-      doc.text('VALOR', P.L + colLabelW, doc.y, { width: colValueW, align: 'right', lineBreak: false });
-      hr(doc.y + LINE_H - 2); // linha do cabeçalho mais forte
+      doc.text('VALOR',  P.L + colLabelW, doc.y, { width: colValueW, align: 'right', lineBreak: false });
       doc.y += LINE_H;
 
-      // Linhas (uma por método, na ordem definida)
+      // Linhas (só traço ENTRE linhas, não depois da última)
       setFont.td(); doc.fillColor('#111');
-      PM_ORDER.forEach(k => {
+      PM_ORDER.forEach((k, idx) => {
         ensurePage(1, null);
         const y0 = doc.y;
         doc.text(PM_LABEL[k], P.L, y0, { width: colLabelW, align: 'left', lineBreak: false });
         doc.text(fmtMoney(Number(payTotals[k] || 0)), P.L + colLabelW, y0, { width: colValueW, align: 'right', lineBreak: false });
-        hr(y0 + LINE_H - 1);
+        if (idx < PM_ORDER.length - 1) hr(y0 + LINE_H - 1); // só entre linhas
         doc.y += LINE_H;
       });
+
 
       // Total geral recebido (soma das formas)
       ensurePage(1, null);
