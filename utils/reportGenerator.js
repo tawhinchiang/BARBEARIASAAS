@@ -20,7 +20,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
-      // ---------- Helpers ----------
+      // ---------------- Helpers ----------------
       const fmtMoney = v => Number(v || 0).toLocaleString('pt-BR', {
         style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2
       });
@@ -46,7 +46,6 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       })();
 
       // Normaliza método de pagamento para o conjunto fixo
-      // 1) ampliar normalizeMethod (apenas troque o bloco de if/return)
       function normalizeMethod(raw) {
         const s = String(raw || '')
           .toLowerCase()
@@ -61,7 +60,69 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         return 'other';
       }
 
-      // 2) substituir fromAppointments
+      // -------------- Normalizadores --------------
+      function normalizeAppointment(a = {}) {
+        const appointmentDate = a.appointmentDate ?? a.appointment_date ?? a.date ?? a.data ?? null;
+        const appointmentTime = a.appointmentTime ?? a.appointment_time ?? a.time ?? a.hora ?? '';
+        const totalPrice = a.totalPrice ?? a.total_price ?? a.valor ?? a.price ?? 0;
+        const status = (a.status ?? a.situacao ?? a.estado ?? 'pending') + '';
+        const client = a.client ?? a.cliente ?? {};
+        const firstName = client.firstName ?? client.nome ?? a.clientName ?? a.cliente_nome ?? '';
+        const lastName = client.lastName ?? client.sobrenome ?? '';
+        const barberObj = a.barber ?? a.barbeiro ?? {};
+        const barberName = barberObj.name ?? a.barberName ?? a.barbeiro_nome ?? '';
+        const svcObj = a.serviceType ?? a.servico ?? {};
+        const serviceName = svcObj.name ?? a.serviceName ?? a.servico_nome ?? '';
+        return {
+          appointmentDate, appointmentTime, totalPrice: Number(totalPrice || 0), status,
+          client: { firstName, lastName }, barber: { name: barberName }, serviceType: { name: serviceName },
+          // campos possíveis de pagamento
+          paymentMethod: a.paymentMethod ?? a.method ?? a.metodo ?? a.formaPagamento,
+          payment: a.payment,
+          payments: Array.isArray(a.payments) ? a.payments : (Array.isArray(a.pagamentos) ? a.pagamentos : undefined)
+        };
+      }
+      function normalizeCashier(c = {}) {
+        const openedAt = c.openedAt ?? c.opened_at ?? c.abertura ?? null;
+        const closedAt = c.closedAt ?? c.closed_at ?? c.fechamento ?? null;
+        const openingAmount = c.openingAmount ?? c.inicial ?? c.valorInicial ?? 0;
+        const totalEntradas = c.totalEntradas ?? c.entradas ?? c.total_in ?? c.total_incoming ?? 0;
+        const totalDespesas = c.totalDespesas ?? c.despesas ?? c.total_out ?? c.total_expenses ?? 0;
+        const saldoEsperado = c.saldoEsperado ?? c.esperado ?? c.expected ?? 0;
+        const countedCash = c.countedCash ?? c.contado ?? c.counted ?? 0;
+        const diferenca = c.diferenca ?? c.difference ?? c.diff ?? 0;
+        return {
+          openedAt, closedAt,
+          openingAmount: Number(openingAmount || 0),
+          totalEntradas: Number(totalEntradas || 0),
+          totalDespesas: Number(totalDespesas || 0),
+          saldoEsperado: Number(saldoEsperado || 0),
+          countedCash: Number(countedCash || 0),
+          diferenca: Number(diferenca || 0),
+          summary: c.summary || c.resumo // se vier consolidado no item
+        };
+      }
+
+      const appts = (appointments || []).map(normalizeAppointment).filter(a => (a.status || '').toLowerCase() !== 'blocked');
+      const cashArray = Array.isArray(cashier) ? cashier : (cashier ? [cashier] : []);
+      const cash = cashArray.map(normalizeCashier);
+
+      // -------------- Totais por método --------------
+      function fromCashierSummary(objOrArr) {
+        const root = Array.isArray(objOrArr)
+          ? (objOrArr.find(x => x && (x.summary || x.resumo)) || null)
+          : (objOrArr && (objOrArr.summary || objOrArr.resumo) ? objOrArr : null);
+        if (!root) return null;
+        const entradas = root.summary?.entradas || root.resumo?.entradas;
+        if (!entradas) return null;
+        const base = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
+        for (const k of Object.keys(entradas)) {
+          const nk = normalizeMethod(k);
+          base[nk] = (base[nk] || 0) + Number(entradas[k] || 0);
+        }
+        return base;
+      }
+
       function fromAppointments(apts) {
         const acc = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
 
@@ -110,81 +171,17 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         return acc;
       }
 
-      function normalizeCashier(c = {}) {
-        const openedAt = c.openedAt ?? c.opened_at ?? c.abertura ?? null;
-        const closedAt = c.closedAt ?? c.closed_at ?? c.fechamento ?? null;
-        const openingAmount = c.openingAmount ?? c.inicial ?? c.valorInicial ?? 0;
-        const totalEntradas = c.totalEntradas ?? c.entradas ?? c.total_in ?? c.total_incoming ?? 0;
-        const totalDespesas = c.totalDespesas ?? c.despesas ?? c.total_out ?? c.total_expenses ?? 0;
-        const saldoEsperado = c.saldoEsperado ?? c.esperado ?? c.expected ?? 0;
-        const countedCash = c.countedCash ?? c.contado ?? c.counted ?? 0;
-        const diferenca = c.diferenca ?? c.difference ?? c.diff ?? 0;
-        return {
-          openedAt, closedAt,
-          openingAmount: Number(openingAmount || 0),
-          totalEntradas: Number(totalEntradas || 0),
-          totalDespesas: Number(totalDespesas || 0),
-          saldoEsperado: Number(saldoEsperado || 0),
-          countedCash: Number(countedCash || 0),
-          diferenca: Number(diferenca || 0),
-          summary: c.summary || c.resumo // se vier consolidado no item
-        };
-      }
-
-      const appts = (appointments || []).map(normalizeAppointment).filter(a => (a.status || '').toLowerCase() !== 'blocked');
-      const cash = Array.isArray(cashier) ? cashier.map(normalizeCashier)
-        : [normalizeCashier(cashier || {})];
-
-      // ---------- Totais por método (coleta robusta) ----------
-      function fromCashierSummary(cashArr) {
-        // procura no objeto inteiro e/ou no primeiro item
-        const root = (cashArr && (cashArr.summary || cashArr.resumo)) ? cashArr
-          : (cashArr[0] && (cashArr[0].summary || cashArr[0].resumo)) ? cashArr[0]
-            : null;
-        if (!root) return null;
-        const entradas = (root.summary?.entradas || root.resumo?.entradas);
-        if (!entradas) return null;
-        const base = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
-        for (const k of Object.keys(entradas)) {
-          const nk = normalizeMethod(k);
-          base[nk] = (base[nk] || 0) + Number(entradas[k] || 0);
-        }
-        return base;
-      }
-
-      function fromAppointments(apts) {
-        const acc = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
-        apts.forEach(a => {
-          const isRevenue = String(a.status || '').toLowerCase() === 'completed';
-          if (!isRevenue) return;
-
-          const cands = [];
-          if (a.paymentMethod) cands.push(a.paymentMethod);
-          if (a.payment && a.payment.method) cands.push(a.payment.method);
-          if (Array.isArray(a.payments)) a.payments.forEach(p => p && p.method && cands.push(p.method));
-
-          if (!cands.length) {
-            acc.other += Number(a.totalPrice || 0);
-            return;
-          }
-          const per = Number(a.totalPrice || 0) / cands.length;
-          cands.forEach(m => {
-            const key = normalizeMethod(m);
-            acc[key] = (acc[key] || 0) + per;
-          });
-        });
-        return acc;
-      }
-
       const PM_ORDER = ['cash', 'credit', 'debit', 'pix', 'other'];
       const PM_LABEL = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
 
-      let payTotals = fromCashierSummary(cashier) || fromCashierSummary(cash) || fromAppointments(appts);
+      let payTotals = fromCashierSummary(cashArray) || fromAppointments(appts) || { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
+      const payGrand = PM_ORDER.reduce((s, k) => s + Number(payTotals[k] || 0), 0);
+      const allZeroPayments = payGrand === 0;
 
-      // ---------- Grid/Tipografia ----------
+      // -------------- Grid/Tipografia --------------
       const P = { L: doc.page.margins.left };
       const WIDTH = doc.page.width - doc.page.margins.left - doc.page.margins.right; // 539pt
-      const LINE_H = 12; // compacto e consistente
+      const LINE_H = 12;
 
       const setFont = {
         h1() { doc.font('Helvetica-Bold').fontSize(12); },
@@ -197,7 +194,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.save().moveTo(P.L, y).lineTo(P.L + WIDTH, y).lineWidth(w).strokeColor(color).stroke().restore();
       };
 
-      // ---------- Header medindo altura real ----------
+      // -------------- Cabeçalho --------------
       function addInstitutionalHeader() {
         const l1 = (reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase();
         const l2 = (reportInfo.headline2 || 'SISTEMA DE GESTÃO').toUpperCase();
@@ -207,27 +204,23 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         setFont.h1(); doc.fillColor('#000');
         let y = doc.y;
         const h1h = doc.heightOfString(l1, { width: WIDTH, align: 'center' });
-        doc.text(l1, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
-        y += h1h;
+        doc.text(l1, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h1h;
 
         setFont.h2();
         const h2a = doc.heightOfString(l2, { width: WIDTH, align: 'center' });
-        doc.text(l2, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
-        y += h2a;
+        doc.text(l2, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2a;
 
         const h2b = doc.heightOfString(l3, { width: WIDTH, align: 'center' });
-        doc.text(l3, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
-        y += h2b;
+        doc.text(l3, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2b;
 
         const h2c = doc.heightOfString(l4, { width: WIDTH, align: 'center' });
-        doc.text(l4, P.L, y, { width: WIDTH, align: 'center', lineBreak: false });
-        y += h2c + 3;
+        doc.text(l4, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2c + 3;
 
         hr(y, '#dddddd', 0.5);
-        doc.y = y + 6; // começa a tabela abaixo da régua
+        doc.y = y + 6;
       }
 
-      // ---------- Tabela: Agendamentos ----------
+      // -------------- Tabela: Agendamentos --------------
       const COL_APT = [
         { key: 'data', label: 'DATA', x: P.L + 0, w: 58, align: 'left' },
         { key: 'hora', label: 'HORA', x: P.L + 58, w: 36, align: 'left' },
@@ -236,7 +229,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         { key: 'servico', label: 'SERVIÇO', x: P.L + 306, w: 116, align: 'left' },
         { key: 'status', label: 'STATUS', x: P.L + 422, w: 57, align: 'left' },
         { key: 'valor', label: 'VALOR', x: P.L + 479, w: 60, align: 'right' }
-      ]; // soma 539
+      ];
 
       const drawAptHeader = () => {
         const y0 = doc.y;
@@ -251,7 +244,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
       };
 
-      // ---------- Tabela: Caixa ----------
+      // -------------- Tabela: Caixa --------------
       const COL_CASH = [
         { key: 'abertura', label: 'ABERTURA', x: P.L + 0, w: 100, align: 'left' },
         { key: 'fechamento', label: 'FECHAMENTO', x: P.L + 100, w: 100, align: 'left' },
@@ -275,7 +268,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
       };
 
-      // ---------- Quebra segura ----------
+      // -------------- Quebra segura --------------
       function ensurePage(linesToWrite, headerDrawer) {
         const bottom = doc.page.height - doc.page.margins.bottom;
         const need = linesToWrite * LINE_H + 4;
@@ -289,10 +282,10 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         }
       }
 
-      // ---------- Render ----------
+      // ============== RENDER ==============
       addInstitutionalHeader();
 
-      // Agendamentos
+      // ---- Agendamentos ----
       drawAptHeader();
       doc.y += LINE_H;
 
@@ -335,34 +328,70 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.y += LINE_H;
       }
 
-      // --- Totais por forma de pagamento (mini-tabela) ---
-      {
-        doc.y += 2;
-        ensurePage(2, drawAptHeader);
-        setFont.h2(); doc.fillColor('#000');
-        doc.text('TOTAIS POR FORMA DE PAGAMENTO', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
-        doc.y += LINE_H;
+      // ---- Totais por forma de pagamento (SEM reimprimir header de agendamentos) ----
+      doc.y += 4; // pequeno respiro
+      ensurePage(4, null); // não passar drawAptHeader aqui para não poluir a nova página
 
-        const colW = Math.floor(WIDTH / 5); // 5 colunas
-        const yHdr = doc.y;
+      setFont.h2(); doc.fillColor('#000');
+      doc.text('TOTAIS POR FORMA DE PAGAMENTO', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
+      doc.y += LINE_H;
+
+      if (allZeroPayments) {
+        setFont.td(); doc.fillColor('#444');
+        const y0 = doc.y;
+        doc.text('Sem dados de pagamentos no período.', P.L, y0, { width: WIDTH, align: 'left', lineBreak: false });
+        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+        doc.y += LINE_H + 2;
+      } else {
+        // desenho em 2 colunas (label à esquerda, valor à direita) para evitar quebras estranhas
+        const colW = Math.floor(WIDTH / 2);
+        const pairs = [
+          ['cash', 'credit'],
+          ['debit', 'pix'],
+          ['other', null],
+        ];
         setFont.th(); doc.fillColor('#000');
-        PM_ORDER.forEach((k, i) => {
-          doc.text(PM_LABEL[k], P.L + (i * colW), yHdr, { width: colW, align: 'center', lineBreak: false });
-        });
-        hr(yHdr + LINE_H - 2, '#dddddd', 0.5);
-
+        // Cabeçalho das duas colunas
+        doc.text('MÉTODO', P.L + 0, doc.y, { width: colW - 60, align: 'left', lineBreak: false });
+        doc.text('VALOR', P.L + colW - 60, doc.y, { width: 60, align: 'right', lineBreak: false });
+        doc.text('MÉTODO', P.L + colW + 0, doc.y, { width: colW - 60, align: 'left', lineBreak: false });
+        doc.text('VALOR', P.L + colW + colW - 60, doc.y, { width: 60, align: 'right', lineBreak: false });
+        hr(doc.y + LINE_H - 2, '#dddddd', 0.5);
         doc.y += LINE_H;
-        const yRow = doc.y;
+
         setFont.td(); doc.fillColor('#111');
-        PM_ORDER.forEach((k, i) => {
-          doc.text(fmtMoney((payTotals && payTotals[k]) || 0), P.L + (i * colW), yRow, { width: colW, align: 'center', lineBreak: false });
+        pairs.forEach(pair => {
+          ensurePage(1, null);
+          const [k1, k2] = pair;
+          const y0 = doc.y;
+
+          // Coluna esquerda
+          doc.text(PM_LABEL[k1], P.L + 0, y0, { width: colW - 60, align: 'left', lineBreak: false });
+          doc.text(fmtMoney(Number(payTotals[k1] || 0)), P.L + colW - 60, y0, { width: 60, align: 'right', lineBreak: false });
+
+          // Coluna direita (se existir)
+          if (k2) {
+            doc.text(PM_LABEL[k2], P.L + colW + 0, y0, { width: colW - 60, align: 'left', lineBreak: false });
+            doc.text(fmtMoney(Number(payTotals[k2] || 0)), P.L + colW + colW - 60, y0, { width: 60, align: 'right', lineBreak: false });
+          }
+
+          hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+          doc.y += LINE_H;
         });
-        hr(yRow + LINE_H - 1, '#e5e5e5', 0.5);
+
+        // Total geral recebido (soma das formas)
+        ensurePage(1, null);
+        hr(doc.y - 2, '#cccccc', 0.8);
+        setFont.th(); doc.fillColor('#000');
+        const yTG = doc.y;
+        doc.text('TOTAL RECEBIDO', P.L + 0, yTG, { width: WIDTH - 80, align: 'left', lineBreak: false });
+        doc.text(fmtMoney(payGrand), P.L + WIDTH - 80, yTG, { width: 80, align: 'right', lineBreak: false });
+        hr(yTG + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H + 4;
       }
 
-      // Caixa
-      doc.y += 4; hr(doc.y, '#dddddd', 0.5); doc.y += 6;
+      // ---- Caixa ----
+      doc.y += 2; hr(doc.y, '#dddddd', 0.5); doc.y += 6;
       setFont.h2(); doc.fillColor('#000');
       doc.text('FLUXO DE CAIXA', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
       doc.y += LINE_H;
@@ -370,7 +399,9 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       drawCashHeader();
       doc.y += LINE_H;
 
-      if (!cash.length || (cash.length === 1 && !cash[0].openedAt && !cash[0].closedAt && !cash[0].totalEntradas && !cash[0].totalDespesas)) {
+      const noCashData = !cash.length || (cash.length === 1 && !cash[0].openedAt && !cash[0].closedAt && !cash[0].totalEntradas && !cash[0].totalDespesas);
+
+      if (noCashData) {
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum registro de caixa no período.', P.L, y0, { width: WIDTH, lineBreak: false });
@@ -417,9 +448,9 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         hr(yTot + LINE_H - 1, '#e5e5e5', 0.5);
         doc.y += LINE_H;
 
-        // Resumos abaixo da tabela
-        const resultadoPeriodo = totEntradas - totDespesas;
-        const sobraFalta = totDif;
+        // Resumo final do caixa
+        const resultadoPeriodo = totEntradas - totDespesas;   // "lucro" operacional simples no período
+        const sobraFalta = totDif;                      // soma das diferenças (contado - esperado)
 
         setFont.td(); doc.fillColor('#000');
         const yRes = doc.y + 2;
@@ -429,7 +460,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.y = yRes + LINE_H + 2;
       }
 
-      // ---------- Rodapé (todas as páginas) ----------
+      // -------------- Rodapé (todas as páginas) --------------
       const range = doc.bufferedPageRange();
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
