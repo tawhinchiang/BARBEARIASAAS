@@ -977,7 +977,8 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
       include: [
         { model: Client, as: 'client' },
         { model: Barber, as: 'barber', attributes: ['id', 'name'], required: !!barberId },
-        { model: ServiceType, as: 'serviceType' }
+        { model: ServiceType, as: 'serviceType' },
+        { model: Payment, as: 'payments', attributes: ['method', 'amount'] }
       ]
     });
 
