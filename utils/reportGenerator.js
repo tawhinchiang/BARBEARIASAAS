@@ -24,7 +24,35 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       const fmtMoney = v => Number(v || 0).toLocaleString('pt-BR', {
         style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2
       });
-      const fmtDate = d => { if (!d) return '—'; const dt = new Date(d); return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR'); };
+      // Substituir a função atual:
+const fmtDate = d => {
+  if (!d) return '—';
+
+  // Se já for Date válido
+  if (d instanceof Date && !isNaN(d)) {
+    return d.toLocaleDateString('pt-BR');
+  }
+
+  const s = String(d);
+
+  // Caso 'YYYY-MM-DD' (DATA PURA, sem fuso) -> NÃO usar new Date()
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) {
+    const [, yy, mm, dd] = m;
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  // Caso ISO com hora -> pode usar Date normalmente
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    const dt = new Date(s);
+    return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR');
+  }
+
+  // Fallback seguro
+  const dt = new Date(s);
+  return isNaN(dt) ? s : dt.toLocaleDateString('pt-BR');
+};
+
       const fmtDateTimeShort = d => {
         if (!d) return '—';
         const dt = new Date(d); if (isNaN(dt)) return '—';
@@ -289,10 +317,52 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           }
         }
       }
+      function renderFiltersHeader() {
+  // Monta strings a partir de reportInfo; aceita vários nomes para compatibilidade
+  const pStart = reportInfo.periodStart || reportInfo.startDate || reportInfo.from || reportInfo.inicio || reportInfo.dataInicio;
+  const pEnd   = reportInfo.periodEnd   || reportInfo.endDate   || reportInfo.to   || reportInfo.fim    || reportInfo.dataFim;
+
+  const periodoStr = (pStart || pEnd) ? `${fmtDate(pStart)} - ${fmtDate(pEnd)}` : 'Todos';
+
+  const barbersRaw = reportInfo.barbers || reportInfo.profissionais || reportInfo.barbeiros || reportInfo.barberNames;
+  const profStr = Array.isArray(barbersRaw) ? barbersRaw.filter(Boolean).join(', ')
+                  : (barbersRaw || 'Todos');
+
+  const statusRaw = reportInfo.status || reportInfo.statuses || reportInfo.filtrosStatus;
+  const arrStatus = Array.isArray(statusRaw) ? statusRaw : (statusRaw ? [statusRaw] : []);
+  const statusStr = arrStatus.length ? arrStatus.map(s => getStatusText(String(s).toLowerCase())).join(', ') : 'Todos';
+
+  // Layout
+  ensurePage(4, null);
+  setFont.h2(); doc.fillColor('#000');
+  doc.text('FILTROS APLICADOS', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
+  hr(doc.y + LINE_H - 2);
+  doc.y += LINE_H;
+
+  const labelW = 90;                       // largura da coluna de rótulos
+  const valueW = WIDTH - labelW;
+
+  const row = (label, value) => {
+    ensurePage(1, null);
+    const y0 = doc.y;
+    setFont.th(); doc.fillColor('#000');
+    doc.text(label, P.L, y0, { width: labelW, align: 'left', lineBreak: false });
+    setFont.td(); doc.fillColor('#111');
+    doc.text(String(value || '—'), P.L + labelW, y0, { width: valueW, align: 'left', lineBreak: false });
+    hr(y0 + LINE_H - 1);
+    doc.y += LINE_H;
+  };
+
+  row('Período',       periodoStr);
+  row('Profissionais', profStr);
+  row('Status',        statusStr);
+
+  doc.y += 4; // respiro antes da tabela
+}
 
       // ============== RENDER ==============
       addInstitutionalHeader();
-
+      renderFiltersHeader();
       // ---- Agendamentos ----
       drawAptHeader();
       doc.y += LINE_H;
@@ -303,7 +373,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum agendamento no período.', P.L, y0, { width: WIDTH, align: 'left', lineBreak: false });
-        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+        hr(y0 + LINE_H - 1);
         doc.y += LINE_H;
       } else {
         let totalApt = 0;
@@ -377,7 +447,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       doc.y += LINE_H + 4;
 
       // ---- Caixa ----
-      doc.y += 2; hr(doc.y, '#dddddd', 0.5); doc.y += 6;
+      doc.y += 2; hr(doc.y); doc.y += 6;
       setFont.h2(); doc.fillColor('#000');
       doc.text('FLUXO DE CAIXA', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
       doc.y += LINE_H;
