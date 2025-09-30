@@ -14,61 +14,109 @@ async function apiFetch(url, options = {}) {
   });
   return resp.json();
 }
+// Ordem fixa e labels amigáveis
+const METHOD_ORDER = ['cash', 'credit', 'debit', 'pix', 'other'];
+const LABELS = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
+
+// Formatador de moeda (evita NaN)
+const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Renderiza <li> para métodos de pagamento em ordem fixa
+function renderPaymentList(obj = {}) {
+  return METHOD_ORDER.map(key => {
+    const valor = Number(obj[key] || 0);
+    return `<li><strong>${LABELS[key]}:</strong> ${money(valor)}</li>`;
+  }).join('');
+}
 
 // Atualizar status e resumo
 async function loadCashierStatus() {
   try {
-    const data = await apiFetch('/admin/cashier/session/current');
-    const statusDiv = document.getElementById('cashierStatus');
+    const data = await apiFetch('/admin/cashier/session/current'); // { success, session, resumo }
+    const statusDiv  = document.getElementById('cashierStatus');
     const summaryDiv = document.getElementById('cashierSummary');
 
-    if (!data.session) {
+    // Sem sessão aberta
+    if (!data?.session) {
       statusDiv.innerHTML = `<span class="badge bg-secondary">Caixa Fechado</span>`;
       summaryDiv.innerHTML = `<div class="col-12"><p>Nenhum caixa aberto.</p></div>`;
-      document.getElementById('btnOpenCashier').disabled = false;
-      document.getElementById('btnAddExpense').disabled = true;
+      document.getElementById('btnOpenCashier').disabled  = false;
+      document.getElementById('btnAddExpense').disabled   = true;
       document.getElementById('btnCloseCashier').disabled = true;
       return;
     }
 
+    // Cabeçalho do status
+    const openedAt = new Date(data.session.openedAt).toLocaleString('pt-BR');
     statusDiv.innerHTML = `
       <span class="badge bg-success">Caixa Aberto</span>
-      <small class="text-muted ms-2">Aberto em: ${new Date(data.session.openedAt).toLocaleString()}</small>
+      <small class="text-muted ms-2">Aberto em: ${openedAt}</small>
     `;
 
-    // Preencher resumo
+    // Resumo seguro (sempre números)
+    const resumo          = data.resumo || {};
+    const entradasByMeth  = resumo.entradas || {};             // normalizado pelo back
+    const despesasByMeth  = resumo.despesasByMethod || null;   // opcional
+    const totalEntradas   = Number(resumo.totalEntradas || 0);
+    const totalDespesas   = Number(resumo.totalDespesas || 0);
+    const saldoEsperado   = Number(resumo.saldoEsperado || 0);
+    const resultado       = totalEntradas - totalDespesas;
+
+    // Montagem dos cards
     let html = `
       <div class="col-md-4">
-        <div class="card border-success">
+        <div class="card border-success h-100">
           <div class="card-body">
             <h6 class="card-title">Entradas por método</h6>
             <ul class="list-unstyled mb-0">
-    `;
-
-    for (const [method, valor] of Object.entries(data.resumo.entradas)) {
-      html += `<li><strong>${method}:</strong> R$ ${valor.toFixed(2)}</li>`;
-    }
-
-    html += `
+              ${renderPaymentList(entradasByMeth)}
             </ul>
           </div>
         </div>
       </div>
+    `;
 
-      <div class="col-md-4">
-        <div class="card border-warning">
-          <div class="card-body">
-            <h6 class="card-title">Despesas</h6>
-            <p class="mb-0">R$ ${data.resumo.totalDespesas.toFixed(2)}</p>
+    // Card de Despesas por método (se existir breakdown)
+    if (despesasByMeth) {
+      html += `
+        <div class="col-md-4">
+          <div class="card border-warning h-100">
+            <div class="card-body">
+              <h6 class="card-title">Despesas por método</h6>
+              <ul class="list-unstyled mb-0">
+                ${renderPaymentList(despesasByMeth)}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      `;
+    } else {
+      // Caso não tenha breakdown, mostra total de despesas
+      html += `
+        <div class="col-md-4">
+          <div class="card border-warning h-100">
+            <div class="card-body">
+              <h6 class="card-title">Despesas</h6>
+              <p class="mb-0">${money(totalDespesas)}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
+    // Card de Saldo/Resumo rápido
+    html += `
       <div class="col-md-4">
-        <div class="card border-primary">
+        <div class="card border-primary h-100">
           <div class="card-body">
-            <h6 class="card-title">Saldo Esperado</h6>
-            <p class="mb-0">R$ ${data.resumo.saldoEsperado.toFixed(2)}</p>
+            <h6 class="card-title">Resumo</h6>
+            <ul class="list-unstyled mb-2">
+              <li><strong>Total de Entradas:</strong> ${money(totalEntradas)}</li>
+              <li><strong>Total de Despesas:</strong> ${money(totalDespesas)}</li>
+              <li><strong>Resultado (E - D):</strong> ${money(resultado)}</li>
+            </ul>
+            <h6 class="card-subtitle text-muted">Saldo Esperado</h6>
+            <p class="mb-0">${money(saldoEsperado)}</p>
           </div>
         </div>
       </div>
@@ -76,8 +124,9 @@ async function loadCashierStatus() {
 
     summaryDiv.innerHTML = html;
 
-    document.getElementById('btnOpenCashier').disabled = true;
-    document.getElementById('btnAddExpense').disabled = false;
+    // Botões
+    document.getElementById('btnOpenCashier').disabled  = true;
+    document.getElementById('btnAddExpense').disabled   = false;
     document.getElementById('btnCloseCashier').disabled = false;
 
   } catch (err) {
@@ -85,6 +134,7 @@ async function loadCashierStatus() {
     notify({ type: 'error', message: 'Erro ao carregar status do caixa' });
   }
 }
+
 
 // Ações dos botões
 document.getElementById('confirmOpenCashier')?.addEventListener('click', async () => {

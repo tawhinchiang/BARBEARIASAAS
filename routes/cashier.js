@@ -19,6 +19,18 @@ function ensureAdmin(req, res, next) {
 
 router.use(isAuthenticated);
 router.use(ensureAdmin);
+// --- Normalização de métodos de pagamento (use em todo o app) ---
+function normalizeMethod(raw) {
+  const s = String(raw || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '');
+  if (!s) return 'other';
+  if (/(dinheiro|cash|money)/.test(s)) return 'cash';
+  if (/(credito|credit|cc|cartao.*credito)/.test(s)) return 'credit';
+  if (/(debito|debit|cd|cartao.*debito)/.test(s)) return 'debit';
+  if (/\bpix\b/.test(s)) return 'pix';
+  return 'other';
+}
 
 router.get('/', async (req, res) => {
   try {
@@ -118,27 +130,44 @@ router.get('/session/current', async (req, res) => {
       return res.json({ success: true, session: null });
     }
 
-    // Entradas de pagamentos vinculadas
-    const payments = await Payment.findAll({
-      where: { cashSessionId: session.id }
-    });
+    // Entradas de pagamentos vinculadas ao caixa
+    const payments = await Payment.findAll({ where: { cashSessionId: session.id } });
 
-    const resumoPorMetodo = payments.reduce((acc, p) => {
-      acc[p.method] = (acc[p.method] || 0) + parseFloat(p.amount);
+    // Entradas "brutas" (chaves como estão no banco)
+    const entradasRaw = payments.reduce((acc, p) => {
+      const k = p.method || 'other';
+      acc[k] = (acc[k] || 0) + parseFloat(p.amount || 0);
       return acc;
     }, {});
 
-    const totalEntradas = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-    const totalDespesas = session.expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    // Entradas normalizadas p/ conjunto fixo
+    const entradas = payments.reduce((acc, p) => {
+      const m = normalizeMethod(p.method);
+      acc[m] = (acc[m] || 0) + parseFloat(p.amount || 0);
+      return acc;
+    }, { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 });
+
+    // Despesas por método (opcional), também normalizadas
+    const despesasByMethod = (session.expenses || []).reduce((acc, e) => {
+      const m = normalizeMethod(e.method || 'other');
+      acc[m] = (acc[m] || 0) + parseFloat(e.amount || 0);
+      return acc;
+    }, { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 });
+
+    const totalEntradas = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const totalDespesas = (session.expenses || []).reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const saldoEsperado = parseFloat(session.openingAmount || 0) + totalEntradas - totalDespesas;
 
     res.json({
       success: true,
       session,
       resumo: {
-        entradas: resumoPorMetodo,
+        entradasRaw,            // como está no banco (diagnóstico)
+        entradas,               // normalizado (use no front e relatório)
+        despesasByMethod,       // opcional: despesas por método
         totalEntradas,
         totalDespesas,
-        saldoEsperado: parseFloat(session.openingAmount) + totalEntradas - totalDespesas
+        saldoEsperado
       }
     });
   } catch (err) {
@@ -146,6 +175,7 @@ router.get('/session/current', async (req, res) => {
     res.status(500).json({ success: false, error: 'Erro ao buscar sessão atual' });
   }
 });
+
 
 
 router.get('/sessions', async (req, res) => {
