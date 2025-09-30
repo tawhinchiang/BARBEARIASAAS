@@ -305,54 +305,95 @@ router.post('/', async (req, res, next) => {
   next();
 });
 // POST /admin/appointments/:id/checkout
+
 router.post('/admin/appointments/:id/checkout', async (req, res) => {
- 
   const t = await Appointment.sequelize.transaction();
-
   try {
-    const appointmentId = req.params.id;
-    const { payments } = req.body; // array [{ method, amount, notes }]
+    const appointmentId = String(req.params.id || '').trim();
+    const { payments } = req.body;
 
-    const appointment = await Appointment.findByPk(appointmentId, { transaction: t });
-    if (!appointment) throw new Error('Agendamento não encontrado');
-    const openSession = await CashSession.findOne({ where: { status: 'open' } });
+    // 1) Validação básica do payload
+    if (!appointmentId) {
+      throw new Error('ID do agendamento inválido.');
+    }
+    if (!Array.isArray(payments) || payments.length === 0) {
+      throw new Error('Informe ao menos um pagamento.');
+    }
 
-    // Salvar pagamentos
+    // 2) Normalização/Validação dos pagamentos
+    const normalizeMethod = (m) => {
+      const s = String(m || '').toLowerCase();
+      if (s === 'credit') return 'credit_card';
+      if (s === 'debit')  return 'debit_card';
+      // manter os já padronizados
+      if (['cash', 'pix', 'credit_card', 'debit_card', 'voucher', 'other'].includes(s)) return s;
+      return 'other';
+    };
+
+    const sanitized = payments.map((p, idx) => {
+      const method = normalizeMethod(p?.method);
+      const amount = Number(p?.amount);
+      const notes  = (p?.notes || '').toString().trim();
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error(`Pagamento #${idx + 1}: valor deve ser maior que 0,00.`);
+      }
+      // (opcional) limite de notas
+      return { method, amount: Math.round(amount * 100) / 100, notes: notes.slice(0, 200) };
+    });
+
+    // 3) Localizar agendamento com LOCK (evita condição de corrida)
+    const appointment = await Appointment.findByPk(appointmentId, {
+      transaction: t,
+      lock: t.LOCK.UPDATE
+    });
+    if (!appointment) throw new Error('Agendamento não encontrado.');
+
+    // 4) Validar sessão de caixa aberta
+    // TODO: se necessário, filtre por usuário/filial: { where: { status: 'open', userId: req.user.id } }
+    const openSession = await CashSession.findOne({ where: { status: 'open' }, transaction: t, lock: t.LOCK.UPDATE });
     if (!openSession) {
+      await t.rollback();
       return res.status(400).json({ success: false, error: 'Nenhum caixa aberto. Abra um caixa antes de registrar pagamentos.' });
     }
-    let totalPago = 0;
-    for (const p of payments) {
-      const newPayment = await Payment.create({
-        appointmentId,
-        method: p.method,
-        amount: p.amount,
-        notes: p.notes || null,
-        cashSessionId: openSession.id 
-      }, { transaction: t });
 
-      totalPago += parseFloat(newPayment.amount);
-    }
+    // 5) Registrar pagamentos (dentro da transação)
+    // Dica: bulkCreate é mais performático
+    const toCreate = sanitized.map(p => ({
+      appointmentId: appointment.id,
+      method: p.method,
+      amount: p.amount,
+      notes: p.notes || null,
+      cashSessionId: openSession.id
+    }));
+    await Payment.bulkCreate(toCreate, { transaction: t });
 
-    // Atualizar status de pagamento
-    let paymentStatus = 'pending';
-    if (totalPago >= parseFloat(appointment.totalPrice)) {
-      paymentStatus = 'paid';
-    } else if (totalPago > 0) {
-      paymentStatus = 'partial';
-    }
+    // 6) Recalcular TOTAL RECEBIDO (todos os pagamentos, incluindo os recém-criados)
+    const received = Number(
+      await Payment.sum('amount', { where: { appointmentId: appointment.id }, transaction: t })
+      || 0
+    );
 
-    await appointment.update({
-      status: 'completed',
-      paymentStatus
-    }, { transaction: t });
+    const total = Number(appointment.totalPrice || 0);
+    let nextPaymentStatus = 'pending';
+    if (received >= total && total > 0) nextPaymentStatus = 'paid';
+    else if (received > 0) nextPaymentStatus = 'partial';
+
+    // 7) Atualizar APENAS o paymentStatus (NÃO mexer no status do agendamento aqui)
+    // Requisito: pagamento parcial não conclui. Mesmo pagamento total, não force "completed" aqui.
+    await appointment.update({ paymentStatus: nextPaymentStatus }, { transaction: t });
 
     await t.commit();
-    res.json({ success: true, appointmentId, paymentStatus });
+    return res.json({
+      success: true,
+      appointmentId: appointment.id,
+      received,
+      total,
+      paymentStatus: nextPaymentStatus
+    });
   } catch (err) {
-    await t.rollback();
     console.error('[CHECKOUT ERROR]', err);
-    res.status(400).json({ success: false, error: err.message });
+    try { await t.rollback(); } catch (_) {}
+    return res.status(400).json({ success: false, error: err.message || 'Erro ao registrar pagamento.' });
   }
 });
 

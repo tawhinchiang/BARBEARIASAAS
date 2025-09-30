@@ -1556,6 +1556,8 @@ async function openActionPanel(id) {
     if (!res.ok) throw new Error('Falha ao carregar agendamento');
     const { appointment } = await res.json();
     const status = appointment.status;
+    const paymentStatus = appointment.paymentStatus || 'pending'; // <- novo
+
 
     titleEl.textContent = 'Ações do agendamento';
 
@@ -1575,17 +1577,18 @@ async function openActionPanel(id) {
         </button>
       `;
     }
- if (status === 'confirmed' || status === 'in_progress') {
-  html += `
-    <button class="btn btn-outline-warning w-100 mb-2" onclick="markNoShow(${id})">
-      <i class="fas fa-user-slash me-2"></i> Não Compareceu
-    </button>
-    <button class="btn btn-success w-100 mb-2" onclick="openCheckoutModal(${id})">
-      <i class="fas fa-cash-register me-2"></i> Finalizar e Receber
-    </button>
-  `;
-}
 
+    const canCheckout =
+      paymentStatus !== 'paid' &&
+      !['cancelled', 'no_show', 'blocked'].includes(status);
+
+    if (canCheckout) {
+      html += `
+        <button class="btn btn-success w-100 mb-2" onclick="openCheckoutModal(${id})">
+          <i class="fas fa-cash-register me-2"></i> Finalizar e Receber
+        </button>
+      `;
+    }
     if (status !== 'cancelled'){
       html += `
         <button class="btn btn-outline-danger w-100 mb-2" onclick="cancelAppointment(${id})">
@@ -1604,36 +1607,99 @@ async function openActionPanel(id) {
 
 
 //Finalizar e Receber
+// Métodos permitidos no front (o back normaliza também)
+const ALLOWED_METHODS = new Set(['cash', 'pix', 'credit_card', 'debit_card', 'voucher', 'other']);
+
+// Util: arredonda para 2 casas, garantindo número válido
+function toMoney(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return NaN;
+  return Math.round(v * 100) / 100;
+}
+
+// ---- Finalizar e Receber ----
 async function submitCheckout(appointmentId) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-  const rows = document.querySelectorAll('#checkoutPaymentsTable tr'); // exemplo
 
- const payments = Array.from(rows).map(row => {
-  const methodEl = row.querySelector('.method-select');
-  const amountEl = row.querySelector('.amount-input');
+  // Coletar SOMENTE linhas do <tbody>
+  const rows = document.querySelectorAll('#checkoutPaymentsTable tbody tr');
 
-  return {
-    method: methodEl ? methodEl.value : 'cash',
-    amount: amountEl ? parseFloat(amountEl.value) : 0,
-    notes: row.querySelector('.notes-input')?.value || ''
-  };
-});
+  // Montar pagamentos válidos (amount > 0)
+  const rawPayments = Array.from(rows).map(row => {
+    const methodEl = row.querySelector('.method-select');
+    const amountEl = row.querySelector('.amount-input');
+    const notesEl  = row.querySelector('.notes-input');
 
+    const method = (methodEl?.value || '').trim();
+    const amount = toMoney(amountEl?.value?.trim());
+    const notes  = (notesEl?.value || '').trim();
 
-  const resp = await fetch(`/admin/appointments/${appointmentId}/checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ payments })
+    return { method, amount, notes };
   });
 
-  const data = await resp.json();
-  if (data.success) {
+  // Filtrar linhas vazias ou inválidas
+  const payments = rawPayments
+    .filter(p => ALLOWED_METHODS.has(p.method || ''))
+    .filter(p => Number.isFinite(p.amount) && p.amount > 0);
+
+  if (payments.length === 0) {
+    notify({ type: 'warning', message: 'Informe pelo menos um pagamento com valor maior que 0,00.' });
+    return;
+  }
+
+  // (Opcional) Sanitiza notas (ex.: limite 200 chars)
+  payments.forEach(p => {
+    if (p.notes.length > 200) p.notes = p.notes.slice(0, 200);
+  });
+
+  // UX: desabilitar botão enquanto envia
+  const btn = document.getElementById('finalizarCheckoutBtn');
+  const originalBtnHtml = btn?.innerHTML;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
+  }
+
+  try {
+    const resp = await fetch(`/admin/appointments/${appointmentId}/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+      },
+      body: JSON.stringify({ payments })
+    });
+
+    // Trata falhas HTTP (ex.: 400/500)
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data?.success) {
+      const msg = data?.error || 'Falha ao registrar pagamento.';
+      notify({ type: 'error', message: msg });
+      return;
+    }
+
+    // Sucesso
     notify({ type: 'success', message: 'Pagamento registrado com sucesso!' });
-    refreshAppointmentsTable();
-  } else {
-    notify({ type: 'error', message: data.error });
+
+    // Fechar modal somente após sucesso
+    const modalEl = document.getElementById('checkoutModal');
+    if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+
+    // Atualizar listagem
+    if (typeof refreshAppointmentsTable === 'function') {
+      refreshAppointmentsTable();
+    }
+  } catch (err) {
+    console.error(err);
+    notify({ type: 'error', message: 'Erro de rede ao registrar pagamento.' });
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalBtnHtml;
+    }
   }
 }
+
 function openCheckoutModal(appointmentId) {
   const modal = document.getElementById('checkoutModal');
   if (!modal) {
@@ -1641,34 +1707,41 @@ function openCheckoutModal(appointmentId) {
     return;
   }
 
-  // Preencher hidden field para saber qual appointment está sendo pago
-  document.getElementById('checkoutAppointmentId').value = appointmentId;
+  // Preencher hidden field com o ID do agendamento
+  const hidden = document.getElementById('checkoutAppointmentId');
+  if (hidden) hidden.value = appointmentId;
 
-  // Resetar valores do modal
- document.querySelector('#checkoutPaymentsTable tbody').innerHTML = `
-  <tr>
-    <td>
-      <select class="form-select method-select">
-        <option value="cash">Dinheiro</option>
-        <option value="pix">Pix</option>
-        <option value="credit_card">Cartão Crédito</option>
-        <option value="debit_card">Cartão Débito</option>
-        <option value="voucher">Voucher</option>
-      </select>
-    </td>
-    <td>
-      <input type="number" class="form-control amount-input" min="0.01" step="0.01" value="0.00">
-    </td>
-    <td>
-      <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
-    </td>
-  </tr>
-`;
+  // Resetar corpo da tabela (tbody) com 1 linha padrão
+  const tbody = document.querySelector('#checkoutPaymentsTable tbody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td>
+          <select class="form-select method-select">
+            <option value="cash">Dinheiro</option>
+            <option value="pix">Pix</option>
+            <option value="credit_card">Cartão Crédito</option>
+            <option value="debit_card">Cartão Débito</option>
+            <option value="voucher">Voucher</option>
+            <option value="other">Outros</option>
+          </select>
+        </td>
+        <td>
+          <!-- use placeholder ao invés de default 0.00 para evitar envio acidental -->
+          <input type="number" class="form-control amount-input" min="0.01" step="0.01" placeholder="0,00">
+        </td>
+        <td>
+          <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
+        </td>
+      </tr>
+    `;
+  }
 
   // Abrir modal
   const bsModal = new bootstrap.Modal(modal);
   bsModal.show();
 }
+
 // Adicionar nova linha de pagamento
 document.getElementById('addPaymentRow')?.addEventListener('click', () => {
   const tbody = document.querySelector('#checkoutPaymentsTable tbody');
@@ -1682,22 +1755,28 @@ document.getElementById('addPaymentRow')?.addEventListener('click', () => {
         <option value="credit_card">Cartão Crédito</option>
         <option value="debit_card">Cartão Débito</option>
         <option value="voucher">Voucher</option>
+        <option value="other">Outros</option>
       </select>
     </td>
-    <td><input type="number" class="form-control amount-input" min="0.01" step="0.01" value="0.00"></td>
-    <td><input type="text" class="form-control notes-input" placeholder="Obs. opcional"></td>
+    <td>
+      <input type="number" class="form-control amount-input" min="0.01" step="0.01" placeholder="0,00">
+    </td>
+    <td>
+      <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
+    </td>
   `;
   tbody.appendChild(row);
 });
 
 // Finalizar checkout
-document.getElementById('finalizarCheckoutBtn')?.addEventListener('click', () => {
-  const appointmentId = document.getElementById('checkoutAppointmentId').value;
-  if (appointmentId) {
-    submitCheckout(appointmentId);
-    const modalEl = document.getElementById('checkoutModal');
-    bootstrap.Modal.getInstance(modalEl)?.hide();
+document.getElementById('finalizarCheckoutBtn')?.addEventListener('click', async () => {
+  const appointmentId = document.getElementById('checkoutAppointmentId')?.value;
+  if (!appointmentId) {
+    notify({ type: 'warning', message: 'Agendamento inválido.' });
+    return;
   }
+  // NÃO fecha o modal aqui — deixa o submit decidir após sucesso
+  await submitCheckout(appointmentId);
 });
 
 
