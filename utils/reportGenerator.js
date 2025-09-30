@@ -190,9 +190,17 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         td() { doc.font('Helvetica').fontSize(8); },
         small() { doc.font('Helvetica').fontSize(7); },
       };
-      const hr = (y, color = '#dddddd', w = 0.8) => {
-        doc.save().moveTo(P.L, y).lineTo(P.L + WIDTH, y).lineWidth(w).strokeColor(color).stroke().restore();
+      // Linha horizontal padrão: mais escura e um pouco mais grossa
+      const hr = (y, color = '#333333', w = 1.0) => {
+        doc.save()
+          .moveTo(P.L, y)
+          .lineTo(P.L + WIDTH, y)
+          .lineWidth(w)
+          .strokeColor(color)
+          .stroke()
+          .restore();
       };
+
 
       // -------------- Cabeçalho --------------
       function addInstitutionalHeader() {
@@ -216,7 +224,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const h2c = doc.heightOfString(l4, { width: WIDTH, align: 'center' });
         doc.text(l4, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2c + 3;
 
-        hr(y, '#dddddd', 0.5);
+        hr(y);
         doc.y = y + 6;
       }
 
@@ -235,7 +243,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const y0 = doc.y;
         setFont.th(); doc.fillColor('#000');
         COL_APT.forEach(c => doc.text(c.label, c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
-        hr(y0 + LINE_H - 2, '#dddddd', 0.5);
+        hr(y0 + LINE_H - 2);
       };
       const drawAptRow = (obj) => {
         const y0 = doc.y;
@@ -259,7 +267,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const y0 = doc.y;
         setFont.th(); doc.fillColor('#000');
         COL_CASH.forEach(c => doc.text(c.label, c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
-        hr(y0 + LINE_H - 2, '#dddddd', 0.5);
+        hr(y0 + LINE_H - 2);
       };
       const drawCashRow = (obj) => {
         const y0 = doc.y;
@@ -324,71 +332,49 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const yTot = doc.y;
         doc.text('TOTAL', P.L + 422, yTot, { width: 57, align: 'left', lineBreak: false });
         doc.text(fmtMoney(totalApt), P.L + 479, yTot, { width: 60, align: 'right', lineBreak: false });
-        hr(yTot + LINE_H - 1, '#e5e5e5', 0.5);
+        hr(yTot + LINE_H - 1);
         doc.y += LINE_H;
       }
 
       // ---- Totais por forma de pagamento (SEM reimprimir header de agendamentos) ----
       doc.y += 4; // pequeno respiro
-      ensurePage(4, null); // não passar drawAptHeader aqui para não poluir a nova página
+      ensurePage(6, null); // 1 título + 1 header + 5 linhas + total
 
       setFont.h2(); doc.fillColor('#000');
       doc.text('TOTAIS POR FORMA DE PAGAMENTO', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
       doc.y += LINE_H;
 
-      if (allZeroPayments) {
-        setFont.td(); doc.fillColor('#444');
-        const y0 = doc.y;
-        doc.text('Sem dados de pagamentos no período.', P.L, y0, { width: WIDTH, align: 'left', lineBreak: false });
-        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
-        doc.y += LINE_H + 2;
-      } else {
-        // desenho em 2 colunas (label à esquerda, valor à direita) para evitar quebras estranhas
-        const colW = Math.floor(WIDTH / 2);
-        const pairs = [
-          ['cash', 'credit'],
-          ['debit', 'pix'],
-          ['other', null],
-        ];
-        setFont.th(); doc.fillColor('#000');
-        // Cabeçalho das duas colunas
-        doc.text('MÉTODO', P.L + 0, doc.y, { width: colW - 60, align: 'left', lineBreak: false });
-        doc.text('VALOR', P.L + colW - 60, doc.y, { width: 60, align: 'right', lineBreak: false });
-        doc.text('MÉTODO', P.L + colW + 0, doc.y, { width: colW - 60, align: 'left', lineBreak: false });
-        doc.text('VALOR', P.L + colW + colW - 60, doc.y, { width: 60, align: 'right', lineBreak: false });
-        hr(doc.y + LINE_H - 2, '#dddddd', 0.5);
-        doc.y += LINE_H;
+      // Tabela (uma coluna de método + uma coluna de valor)
+      const colLabelW = Math.floor(WIDTH * 0.75); // 75% para o nome
+      const colValueW = WIDTH - colLabelW;        // 25% para o valor
 
-        setFont.td(); doc.fillColor('#111');
-        pairs.forEach(pair => {
-          ensurePage(1, null);
-          const [k1, k2] = pair;
-          const y0 = doc.y;
+      // Cabeçalho
+      setFont.th(); doc.fillColor('#000');
+      doc.text('MÉTODO', P.L, doc.y, { width: colLabelW, align: 'left', lineBreak: false });
+      doc.text('VALOR', P.L + colLabelW, doc.y, { width: colValueW, align: 'right', lineBreak: false });
+      hr(doc.y + LINE_H - 2); // linha do cabeçalho mais forte
+      doc.y += LINE_H;
 
-          // Coluna esquerda
-          doc.text(PM_LABEL[k1], P.L + 0, y0, { width: colW - 60, align: 'left', lineBreak: false });
-          doc.text(fmtMoney(Number(payTotals[k1] || 0)), P.L + colW - 60, y0, { width: 60, align: 'right', lineBreak: false });
-
-          // Coluna direita (se existir)
-          if (k2) {
-            doc.text(PM_LABEL[k2], P.L + colW + 0, y0, { width: colW - 60, align: 'left', lineBreak: false });
-            doc.text(fmtMoney(Number(payTotals[k2] || 0)), P.L + colW + colW - 60, y0, { width: 60, align: 'right', lineBreak: false });
-          }
-
-          hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
-          doc.y += LINE_H;
-        });
-
-        // Total geral recebido (soma das formas)
+      // Linhas (uma por método, na ordem definida)
+      setFont.td(); doc.fillColor('#111');
+      PM_ORDER.forEach(k => {
         ensurePage(1, null);
-        hr(doc.y - 2, '#cccccc', 0.8);
-        setFont.th(); doc.fillColor('#000');
-        const yTG = doc.y;
-        doc.text('TOTAL RECEBIDO', P.L + 0, yTG, { width: WIDTH - 80, align: 'left', lineBreak: false });
-        doc.text(fmtMoney(payGrand), P.L + WIDTH - 80, yTG, { width: 80, align: 'right', lineBreak: false });
-        hr(yTG + LINE_H - 1, '#e5e5e5', 0.5);
-        doc.y += LINE_H + 4;
-      }
+        const y0 = doc.y;
+        doc.text(PM_LABEL[k], P.L, y0, { width: colLabelW, align: 'left', lineBreak: false });
+        doc.text(fmtMoney(Number(payTotals[k] || 0)), P.L + colLabelW, y0, { width: colValueW, align: 'right', lineBreak: false });
+        hr(y0 + LINE_H - 1);
+        doc.y += LINE_H;
+      });
+
+      // Total geral recebido (soma das formas)
+      ensurePage(1, null);
+      hr(doc.y - 2); // linha acima do total
+      setFont.th(); doc.fillColor('#000');
+      const yTG = doc.y;
+      doc.text('TOTAL RECEBIDO', P.L, yTG, { width: colLabelW, align: 'left', lineBreak: false });
+      doc.text(fmtMoney(payGrand), P.L + colLabelW, yTG, { width: colValueW, align: 'right', lineBreak: false });
+      hr(yTG + LINE_H - 1);
+      doc.y += LINE_H + 4;
 
       // ---- Caixa ----
       doc.y += 2; hr(doc.y, '#dddddd', 0.5); doc.y += 6;
@@ -405,7 +391,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#444');
         doc.text('Nenhum registro de caixa no período.', P.L, y0, { width: WIDTH, lineBreak: false });
-        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+        hr(y0 + LINE_H - 1);
         doc.y += LINE_H;
       } else {
         let totInicial = 0, totEntradas = 0, totDespesas = 0, totEsperado = 0, totContado = 0, totDif = 0;
@@ -435,7 +421,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         // Totais do caixa
         doc.y += 1;
         ensurePage(2, drawCashHeader);
-        hr(doc.y - 2, '#cccccc', 0.8);
+        hr(doc.y - 2);
         setFont.th(); doc.fillColor('#000');
         const yTot = doc.y;
         doc.text('TOTAIS', P.L + 0, yTot, { width: 200, align: 'left', lineBreak: false });
@@ -445,7 +431,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         doc.text(fmtMoney(totEsperado), P.L + 368, yTot, { width: 56, align: 'right', lineBreak: false });
         doc.text(fmtMoney(totContado), P.L + 424, yTot, { width: 56, align: 'right', lineBreak: false });
         doc.text(fmtMoney(totDif), P.L + 480, yTot, { width: 59, align: 'right', lineBreak: false });
-        hr(yTot + LINE_H - 1, '#e5e5e5', 0.5);
+        hr(yTot + LINE_H - 1);
         doc.y += LINE_H;
 
         // Resumo final do caixa
@@ -456,7 +442,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         const yRes = doc.y + 2;
         doc.text(`Resultado (Entradas - Despesas): ${fmtMoney(resultadoPeriodo)}`, P.L, yRes, { width: WIDTH / 2, align: 'left', lineBreak: false });
         doc.text(`Sobra/Falta (Diferença total): ${fmtMoney(sobraFalta)}`, P.L + WIDTH / 2, yRes, { width: WIDTH / 2, align: 'right', lineBreak: false });
-        hr(yRes + LINE_H, '#e5e5e5', 0.5);
+        hr(yRes + LINE_H);
         doc.y = yRes + LINE_H + 2;
       }
 
