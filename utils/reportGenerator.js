@@ -229,6 +229,26 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           .stroke()
           .restore();
       };
+      // --- util p/ grid percentual ---
+      function makeCols(percentages, keysAndLabels) {
+        let x = P.L;
+        const cols = [];
+        for (let i = 0; i < keysAndLabels.length; i++) {
+          const isLast = i === keysAndLabels.length - 1;
+          const w = isLast
+            ? (P.L + WIDTH) - x
+            : Math.round((percentages[i] / 100) * WIDTH);
+          cols.push({
+            key: keysAndLabels[i].key,
+            label: keysAndLabels[i].label,
+            x, w,
+            align: keysAndLabels[i].align || 'left'
+          });
+          x += w;
+        }
+        return cols;
+      }
+
 
 
       // -------------- Cabeçalho --------------
@@ -248,7 +268,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
         // Espaços/layout
         const topY = doc.y;
-        const logoBoxW = 140;          // área reservada para o logo à esquerda
+                // área reservada para o logo à esquerda
         const logoFit = [120, 48];     // tamanho máx. do logo
 
         // Tenta desenhar o logo, se existir
@@ -287,17 +307,19 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       }
 
 
-      // -------------- Tabela: Agendamentos --------------
-     // Larguras pensadas para A4 landscape + suas margens
-      const COL_APT = [
-        { key: 'data',    label: 'DATA',        x: P.L +   0, w:  72, align: 'left'  },
-        { key: 'hora',    label: 'HORA',        x: P.L +  72, w:  44, align: 'left'  },
-        { key: 'cliente', label: 'CLIENTE',     x: P.L + 116, w: 188, align: 'left'  },
-        { key: 'barbeiro',label: 'PROFISSIONAL',x: P.L + 304, w: 170, align: 'left'  },
-        { key: 'servico', label: 'SERVIÇO',     x: P.L + 474, w: 240, align: 'left'  },
-        { key: 'status',  label: 'STATUS',      x: P.L + 714, w:  86, align: 'left'  },
-        { key: 'valor',   label: 'VALOR',       x: P.L + 800, w:  90, align: 'right' }
-      ];
+      // % somando 100: 9 + 6 + 24 + 20 + 28 + 7 + 6 = 100
+      const COL_APT = makeCols(
+        [9, 6, 24, 20, 28, 7, 6],
+        [
+          { key: 'data', label: 'DATA' },
+          { key: 'hora', label: 'HORA' },
+          { key: 'cliente', label: 'CLIENTE' },
+          { key: 'barbeiro', label: 'PROFISSIONAL' },
+          { key: 'servico', label: 'SERVIÇO' },
+          { key: 'status', label: 'STATUS' },
+          { key: 'valor', label: 'VALOR', align: 'right' },
+        ]
+      );
 
       const drawAptHeader = () => {
         const y0 = doc.y;
@@ -305,24 +327,29 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         COL_APT.forEach(c => doc.text(c.label, c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
         hr(y0 + LINE_H - 2);
       };
+
       const drawAptRow = (obj) => {
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
         COL_APT.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
-        hr(y0 + LINE_H - 1)
+        hr(y0 + LINE_H - 1);
       };
 
       // -------------- Tabela: Caixa --------------
-      const COL_CASH = [
-        { key: 'abertura',  label: 'ABERTURA',  x: P.L +   0, w: 150, align: 'left'  },
-        { key: 'fechamento',label: 'FECHAMENTO',x: P.L + 150, w: 150, align: 'left'  },
-        { key: 'inicial',   label: 'INICIAL',   x: P.L + 300, w:  90, align: 'right' },
-        { key: 'entradas',  label: 'ENTRADAS',  x: P.L + 390, w:  90, align: 'right' },
-        { key: 'despesas',  label: 'DESPESAS',  x: P.L + 480, w:  90, align: 'right' },
-        { key: 'esperado',  label: 'ESPERADO',  x: P.L + 570, w:  90, align: 'right' },
-        { key: 'contado',   label: 'CONTADO',   x: P.L + 660, w:  90, align: 'right' },
-        { key: 'diferenca',  label: 'DIFERENÇA', x: P.L + 750, w:  90, align: 'right' }
-      ];
+      // % somando 100: 17 + 17 + 9 + 11 + 11 + 11 + 12 + 12 = 100
+      const COL_CASH = makeCols(
+        [17, 17, 9, 11, 11, 11, 12, 12],
+        [
+          { key: 'abertura', label: 'ABERTURA' },
+          { key: 'fechamento', label: 'FECHAMENTO' },
+          { key: 'inicial', label: 'INICIAL', align: 'right' },
+          { key: 'entradas', label: 'ENTRADAS', align: 'right' },
+          { key: 'despesas', label: 'DESPESAS', align: 'right' },
+          { key: 'esperado', label: 'ESPERADO', align: 'right' },
+          { key: 'contado', label: 'CONTADO', align: 'right' },
+          { key: 'diferenca', label: 'DIFERENÇA', align: 'right' },
+        ]
+      );
 
       const drawCashHeader = () => {
         const y0 = doc.y;
@@ -330,12 +357,14 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         COL_CASH.forEach(c => doc.text(c.label, c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
         hr(y0 + LINE_H - 2);
       };
+
       const drawCashRow = (obj) => {
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
         COL_CASH.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
         hr(y0 + LINE_H - 1);
       };
+
 
       // -------------- Quebra segura --------------
       function ensurePage(linesToWrite, headerDrawer) {
@@ -491,16 +520,27 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           doc.y += LINE_H;
         });
 
-        // TOTAL agendamentos
+
+        // TOTAL agendamentos (label e número à direita)
         doc.y += 1;
         ensurePage(1, drawAptHeader);
-        hr(doc.y - 2, '#cccccc', 0.8);
+        hr(doc.y - 2, '#cccccc', 0.6);
+
         setFont.th(); doc.fillColor('#000');
         const yTot = doc.y;
-        doc.text('TOTAL', P.L + 422, yTot, { width: 57, align: 'left', lineBreak: false });
-        doc.text(fmtMoney(totalApt), P.L + 479, yTot, { width: 60, align: 'right', lineBreak: false });
+
+        const colStatus = COL_APT.find(c => c.key === 'status');
+        const colValor = COL_APT.find(c => c.key === 'valor');
+
+        // "TOTAL" alinhado à direita no espaço do STATUS
+        doc.text('TOTAL', colStatus.x, yTot, { width: colStatus.w, align: 'right', lineBreak: false });
+
+        // valor alinhado à direita na coluna VALOR
+        doc.text(fmtMoney(totalApt), colValor.x, yTot, { width: colValor.w, align: 'right', lineBreak: false });
+
         hr(yTot + LINE_H - 1);
         doc.y += LINE_H;
+
       }
 
       // ---- Totais por forma de pagamento (SEM reimprimir header de agendamentos) ----
@@ -585,19 +625,32 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           doc.y += LINE_H;
         });
 
-        // Totais do caixa
         doc.y += 1;
         ensurePage(2, drawCashHeader);
-        // hr(doc.y - 2);
+        hr(doc.y - 2, '#cccccc', 0.6);
         setFont.th(); doc.fillColor('#000');
+
         const yTot = doc.y;
-        doc.text('TOTAIS', P.L + 0, yTot, { width: 200, align: 'left', lineBreak: false });
-        doc.text(fmtMoney(totInicial), P.L + 200, yTot, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totEntradas), P.L + 256, yTot, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totDespesas), P.L + 312, yTot, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totEsperado), P.L + 368, yTot, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totContado), P.L + 424, yTot, { width: 56, align: 'right', lineBreak: false });
-        doc.text(fmtMoney(totDif), P.L + 480, yTot, { width: 59, align: 'right', lineBreak: false });
+
+        // largura cobrindo as duas primeiras colunas (até começar "INICIAL")
+        const firstCellsWidth = (COL_CASH[2].x - P.L);
+
+        // "TOTAIS" alinhado à direita nesse bloco
+        doc.text('TOTAIS', P.L, yTot, { width: firstCellsWidth, align: 'right', lineBreak: false });
+
+        // números nas suas colunas
+        [
+          ['inicial', totInicial],
+          ['entradas', totEntradas],
+          ['despesas', totDespesas],
+          ['esperado', totEsperado],
+          ['contado', totContado],
+          ['diferenca', totDif],
+        ].forEach(([k, v]) => {
+          const c = COL_CASH.find(col => col.key === k);
+          doc.text(fmtMoney(v), c.x, yTot, { width: c.w, align: 'right', lineBreak: false });
+        });
+
         hr(yTot + LINE_H - 1);
         doc.y += LINE_H;
 
