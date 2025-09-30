@@ -28,6 +28,14 @@ function renderPaymentList(obj = {}) {
     return `<li><strong>${LABELS[key]}:</strong> ${money(valor)}</li>`;
   }).join('');
 }
+function setVal(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value;
+}
+function setChecked(id, checked) {
+  const el = document.getElementById(id);
+  if (el) el.checked = !!checked;
+}
 
 // Atualizar status e resumo
 async function loadCashierStatus() {
@@ -175,7 +183,7 @@ document.getElementById('exp-submit-btn')?.addEventListener('click', async () =>
 
   const body = { description, amount, method, category, date, isFixed, notes };
 
-  const btn = document.getElementById('confirmAddExpense');
+  const btn = document.getElementById('exp-submit-btn');
   const html = btn?.innerHTML;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lançando...'; }
 
@@ -220,7 +228,7 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
 
   const body = { counted, countedCash, notes, printReceipt };
 
-  const btn = document.getElementById('confirmCloseCashier');
+  const btn = document.getElementById('cc-submit-btn');
   const html = btn?.innerHTML;
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Fechando...'; }
 
@@ -330,15 +338,14 @@ document.getElementById('btnCloseCashier')?.addEventListener('click', openCloseC
 
 // Botão principal "Lançar Despesa" abre o modal preparado
 document.getElementById('btnAddExpense')?.addEventListener('click', () => {
-  // prepara defaults se estiver usando o novo modal
   const d = new Date().toISOString().slice(0,10);
-  document.getElementById('exp-desc')?.value = '';
-  document.getElementById('exp-amount')?.value = '';
-  document.getElementById('exp-method')?.value = 'cash';
-  document.getElementById('exp-category')?.value = 'operacional';
-  document.getElementById('exp-date')?.value = d;
-  document.getElementById('exp-fixed') && (document.getElementById('exp-fixed').checked = false);
-  document.getElementById('exp-notes')?.value = '';
+  setVal('exp-desc', '');
+  setVal('exp-amount', '');
+  setVal('exp-method', 'cash');
+  setVal('exp-category', 'operacional');
+  setVal('exp-date', d);
+  setChecked('exp-fixed', false);
+  setVal('exp-notes', '');
   new bootstrap.Modal(document.getElementById('expenseModal')).show();
 });
 
