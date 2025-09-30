@@ -25,33 +25,33 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2
       });
       // Substituir a função atual:
-const fmtDate = d => {
-  if (!d) return '—';
+      const fmtDate = d => {
+        if (!d) return '—';
 
-  // Se já for Date válido
-  if (d instanceof Date && !isNaN(d)) {
-    return d.toLocaleDateString('pt-BR');
-  }
+        // Se já for Date válido
+        if (d instanceof Date && !isNaN(d)) {
+          return d.toLocaleDateString('pt-BR');
+        }
 
-  const s = String(d);
+        const s = String(d);
 
-  // Caso 'YYYY-MM-DD' (DATA PURA, sem fuso) -> NÃO usar new Date()
-  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (m) {
-    const [, yy, mm, dd] = m;
-    return `${dd}/${mm}/${yy}`;
-  }
+        // Caso 'YYYY-MM-DD' (DATA PURA, sem fuso) -> NÃO usar new Date()
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) {
+          const [, yy, mm, dd] = m;
+          return `${dd}/${mm}/${yy}`;
+        }
 
-  // Caso ISO com hora -> pode usar Date normalmente
-  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
-    const dt = new Date(s);
-    return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR');
-  }
+        // Caso ISO com hora -> pode usar Date normalmente
+        if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+          const dt = new Date(s);
+          return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR');
+        }
 
-  // Fallback seguro
-  const dt = new Date(s);
-  return isNaN(dt) ? s : dt.toLocaleDateString('pt-BR');
-};
+        // Fallback seguro
+        const dt = new Date(s);
+        return isNaN(dt) ? s : dt.toLocaleDateString('pt-BR');
+      };
 
       const fmtDateTimeShort = d => {
         if (!d) return '—';
@@ -277,7 +277,7 @@ const fmtDate = d => {
         const y0 = doc.y;
         setFont.td(); doc.fillColor('#111');
         COL_APT.forEach(c => doc.text(String(obj[c.key] ?? '—'), c.x, y0, { width: c.w, align: c.align, lineBreak: false }));
-        hr(y0 + LINE_H - 1, '#e5e5e5', 0.5);
+        hr(y0 + LINE_H - 0.5);
       };
 
       // -------------- Tabela: Caixa --------------
@@ -318,47 +318,99 @@ const fmtDate = d => {
         }
       }
       function renderFiltersHeader() {
-  // Monta strings a partir de reportInfo; aceita vários nomes para compatibilidade
-  const pStart = reportInfo.periodStart || reportInfo.startDate || reportInfo.from || reportInfo.inicio || reportInfo.dataInicio;
-  const pEnd   = reportInfo.periodEnd   || reportInfo.endDate   || reportInfo.to   || reportInfo.fim    || reportInfo.dataFim;
+        // 1) Fonte única de filtros (suporta nested e variações de nomes)
+        const F = reportInfo.filters || reportInfo.filtros || {};
 
-  const periodoStr = (pStart || pEnd) ? `${fmtDate(pStart)} - ${fmtDate(pEnd)}` : 'Todos';
+        // --- PERÍODO ---
+        const pStart =
+          F.start || F.startDate || F.from || F.dateFrom || F.inicio || F.dataInicio ||
+          reportInfo.periodStart || reportInfo.startDate || reportInfo.from || reportInfo.inicio || reportInfo.dataInicio;
 
-  const barbersRaw = reportInfo.barbers || reportInfo.profissionais || reportInfo.barbeiros || reportInfo.barberNames;
-  const profStr = Array.isArray(barbersRaw) ? barbersRaw.filter(Boolean).join(', ')
-                  : (barbersRaw || 'Todos');
+        const pEnd =
+          F.end || F.endDate || F.to || F.dateTo || F.fim || F.dataFim ||
+          reportInfo.periodEnd || reportInfo.endDate || reportInfo.to || reportInfo.fim || reportInfo.dataFim;
 
-  const statusRaw = reportInfo.status || reportInfo.statuses || reportInfo.filtrosStatus;
-  const arrStatus = Array.isArray(statusRaw) ? statusRaw : (statusRaw ? [statusRaw] : []);
-  const statusStr = arrStatus.length ? arrStatus.map(s => getStatusText(String(s).toLowerCase())).join(', ') : 'Todos';
+        const periodoStr = (pStart || pEnd) ? `${fmtDate(pStart)} - ${fmtDate(pEnd)}` : 'Todos';
 
-  // Layout
-  ensurePage(4, null);
-  setFont.h2(); doc.fillColor('#000');
-  doc.text('FILTROS APLICADOS', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
-  hr(doc.y + LINE_H - 2);
-  doc.y += LINE_H;
+        // --- PROFISSIONAIS ---
+        // Pode vir como: nomes separados por vírgula, array de strings, array de objetos, array de ids
+        let barbersRaw =
+          F.barbers || F.profissionais || F.barbeiros || F.barberNames ||
+          reportInfo.barbers || reportInfo.profissionais || reportInfo.barbeiros || reportInfo.barberNames;
 
-  const labelW = 90;                       // largura da coluna de rótulos
-  const valueW = WIDTH - labelW;
+        let profStr = 'Todos';
+        if (barbersRaw) {
+          let arr;
+          if (typeof barbersRaw === 'string') {
+            arr = barbersRaw.split(',').map(s => s.trim()).filter(Boolean);
+          } else if (Array.isArray(barbersRaw)) {
+            // array de objetos, ids ou strings
+            arr = barbersRaw.map(b => {
+              if (b && typeof b === 'object') return b.name || b.nome || b.fullName || b.label || b.text || '';
+              return String(b || '');
+            }).filter(Boolean);
+          }
+          if (arr && arr.length) profStr = arr.join(', ');
+        }
+        // Fallback inteligente: se não veio filtro, mas TODOS os agendamentos são do(s) mesmo(s) barbeiro(s), mostra nomes únicos
+        if (profStr === 'Todos') {
+          const setNames = new Set();
+          (appointments || []).forEach(a => {
+            const n = a?.barber?.name || a?.barbeiro?.name || a?.barberName || '';
+            if (n) setNames.add(n);
+          });
+          if (setNames.size === 1) profStr = [...setNames][0];
+          if (setNames.size > 1 && setNames.size <= 4) profStr = [...setNames].join(', ');
+        }
 
-  const row = (label, value) => {
-    ensurePage(1, null);
-    const y0 = doc.y;
-    setFont.th(); doc.fillColor('#000');
-    doc.text(label, P.L, y0, { width: labelW, align: 'left', lineBreak: false });
-    setFont.td(); doc.fillColor('#111');
-    doc.text(String(value || '—'), P.L + labelW, y0, { width: valueW, align: 'left', lineBreak: false });
-    hr(y0 + LINE_H - 1);
-    doc.y += LINE_H;
-  };
+        // --- STATUS ---
+        let statusRaw =
+          F.status || F.statuses || F.statusFilter || F.statusFilters ||
+          reportInfo.status || reportInfo.statuses || reportInfo.filtrosStatus || reportInfo.statusFilter;
 
-  row('Período',       periodoStr);
-  row('Profissionais', profStr);
-  row('Status',        statusStr);
+        // normaliza para array de strings
+        let arrStatus = [];
+        if (typeof statusRaw === 'string') {
+          const s = statusRaw.trim().toLowerCase();
+          if (s && s !== 'all' && s !== 'todos' && s !== 'todas') arrStatus = s.split(',').map(x => x.trim());
+        } else if (Array.isArray(statusRaw)) {
+          arrStatus = statusRaw.map(s => String(s || '').toLowerCase()).filter(Boolean);
+          // remove marcadores de "todos"
+          arrStatus = arrStatus.filter(s => !(s === 'all' || s === 'todos' || s === 'todas'));
+        }
 
-  doc.y += 4; // respiro antes da tabela
-}
+        const statusStr = arrStatus.length
+          ? arrStatus.map(s => getStatusText(s)).join(', ')
+          : 'Todos';
+
+        // --- LAYOUT ---
+        ensurePage(4, null);
+        setFont.h2(); doc.fillColor('#000');
+        doc.text('FILTROS APLICADOS', P.L, doc.y, { width: WIDTH, align: 'left', lineBreak: false });
+        hr(doc.y + LINE_H - 2);
+        doc.y += LINE_H;
+
+        const labelW = 90;
+        const valueW = WIDTH - labelW;
+
+        const row = (label, value) => {
+          ensurePage(1, null);
+          const y0 = doc.y;
+          setFont.th(); doc.fillColor('#000');
+          doc.text(label, P.L, y0, { width: labelW, align: 'left', lineBreak: false });
+          setFont.td(); doc.fillColor('#111');
+          doc.text(String(value || '—'), P.L + labelW, y0, { width: valueW, align: 'left', lineBreak: false });
+          hr(y0 + LINE_H - 1);
+          doc.y += LINE_H;
+        };
+
+        row('Período', periodoStr);
+        row('Profissionais', profStr);
+        row('Status', statusStr);
+
+        doc.y += 4; // respiro antes da tabela
+      }
+
 
       // ============== RENDER ==============
       addInstitutionalHeader();
