@@ -11,7 +11,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
     try {
       const doc = new PDFDocument({
         size: 'A4',
-        layout: 'landscape',  
+        layout: 'landscape',
         margins: { top: 28, left: 28, right: 28, bottom: 32 },
         bufferPages: true
       });
@@ -232,40 +232,71 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
 
       // -------------- Cabeçalho --------------
+      // ---------- Cabeçalho com logo e nome do estabelecimento ----------
       function addInstitutionalHeader() {
-        const l1 = (reportInfo.headline1 || 'RELATÓRIO GERAL').toUpperCase();
-        const l2 = (reportInfo.headline2 || 'SISTEMA DE GESTÃO').toUpperCase();
-        const l3 = (reportInfo.headline3 || 'MÓDULO DE AGENDAMENTOS').toUpperCase();
-        const l4 = (reportInfo.headline4 || 'PERÍODO DO RELATÓRIO').toUpperCase();
+        // Nome do negócio (várias chaves suportadas)
+        const businessName =
+          reportInfo.businessName || reportInfo.companyName || reportInfo.studioName ||
+          reportInfo.tenant?.name || reportInfo.estabelecimento || 'RELATÓRIO GERAL';
 
+        // Subtítulo (opcional)
+        const subtitle =
+          reportInfo.subtitle || reportInfo.headline2 || 'SISTEMA DE GESTÃO';
+
+        // Logo (caminho local, buffer ou dataURL base64)
+        const logoInput = reportInfo.logoPath || reportInfo.logo || reportInfo.tenant?.logoPath;
+
+        // Espaços/layout
+        const topY = doc.y;
+        const logoBoxW = 140;          // área reservada para o logo à esquerda
+        const logoFit = [120, 48];     // tamanho máx. do logo
+
+        // Tenta desenhar o logo, se existir
+        let usedLogoHeight = 0;
+        try {
+          if (logoInput) {
+            if (typeof logoInput === 'string' && /^data:image\//.test(logoInput)) {
+              // dataURL -> Buffer
+              const b64 = logoInput.split(',')[1] || '';
+              const buf = Buffer.from(b64, 'base64');
+              doc.image(buf, P.L, topY, { fit: logoFit, align: 'left' });
+            } else {
+              // caminho local/absoluto
+              doc.image(logoInput, P.L, topY, { fit: logoFit, align: 'left' });
+            }
+            usedLogoHeight = logoFit[1];
+          }
+        } catch { /* se falhar, só segue sem logo */ }
+
+        // Bloco central de títulos ocupa toda a largura (logo não atrapalha)
+        const titleY = topY;
         setFont.h1(); doc.fillColor('#000');
-        let y = doc.y;
-        const h1h = doc.heightOfString(l1, { width: WIDTH, align: 'center' });
-        doc.text(l1, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h1h;
+        const h1h = doc.heightOfString(businessName.toUpperCase(), { width: WIDTH, align: 'center' });
+        doc.text(businessName.toUpperCase(), P.L, titleY, { width: WIDTH, align: 'center', lineBreak: false });
 
         setFont.h2();
-        const h2a = doc.heightOfString(l2, { width: WIDTH, align: 'center' });
-        doc.text(l2, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2a;
+        const h2h = doc.heightOfString(String(subtitle).toUpperCase(), { width: WIDTH, align: 'center' });
+        doc.text(String(subtitle).toUpperCase(), P.L, titleY + h1h, { width: WIDTH, align: 'center', lineBreak: false });
 
-        const h2b = doc.heightOfString(l3, { width: WIDTH, align: 'center' });
-        doc.text(l3, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2b;
-
-        const h2c = doc.heightOfString(l4, { width: WIDTH, align: 'center' });
-        doc.text(l4, P.L, y, { width: WIDTH, align: 'center', lineBreak: false }); y += h2c + 3;
+        // Avança Y considerando o maior entre título e logo
+        const blockH = Math.max(h1h + h2h, usedLogoHeight);
+        let y = titleY + blockH + 3;
 
         hr(y);
         doc.y = y + 6;
       }
 
+
       // -------------- Tabela: Agendamentos --------------
+     // Larguras pensadas para A4 landscape + suas margens
       const COL_APT = [
-        { key: 'data', label: 'DATA', x: P.L + 0, w: 58, align: 'left' },
-        { key: 'hora', label: 'HORA', x: P.L + 58, w: 36, align: 'left' },
-        { key: 'cliente', label: 'CLIENTE', x: P.L + 94, w: 120, align: 'left' },
-        { key: 'barbeiro', label: 'PROFISSIONAL', x: P.L + 214, w: 92, align: 'left' },
-        { key: 'servico', label: 'SERVIÇO', x: P.L + 306, w: 116, align: 'left' },
-        { key: 'status', label: 'STATUS', x: P.L + 422, w: 57, align: 'left' },
-        { key: 'valor', label: 'VALOR', x: P.L + 479, w: 60, align: 'right' }
+        { key: 'data',    label: 'DATA',        x: P.L +   0, w:  72, align: 'left'  },
+        { key: 'hora',    label: 'HORA',        x: P.L +  72, w:  44, align: 'left'  },
+        { key: 'cliente', label: 'CLIENTE',     x: P.L + 116, w: 188, align: 'left'  },
+        { key: 'barbeiro',label: 'PROFISSIONAL',x: P.L + 304, w: 170, align: 'left'  },
+        { key: 'servico', label: 'SERVIÇO',     x: P.L + 474, w: 240, align: 'left'  },
+        { key: 'status',  label: 'STATUS',      x: P.L + 714, w:  86, align: 'left'  },
+        { key: 'valor',   label: 'VALOR',       x: P.L + 800, w:  90, align: 'right' }
       ];
 
       const drawAptHeader = () => {
@@ -283,15 +314,16 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
 
       // -------------- Tabela: Caixa --------------
       const COL_CASH = [
-        { key: 'abertura', label: 'ABERTURA', x: P.L + 0, w: 100, align: 'left' },
-        { key: 'fechamento', label: 'FECHAMENTO', x: P.L + 100, w: 100, align: 'left' },
-        { key: 'inicial', label: 'INICIAL', x: P.L + 200, w: 56, align: 'right' },
-        { key: 'entradas', label: 'ENTRADAS', x: P.L + 256, w: 56, align: 'right' },
-        { key: 'despesas', label: 'DESPESAS', x: P.L + 312, w: 56, align: 'right' },
-        { key: 'esperado', label: 'ESPERADO', x: P.L + 368, w: 56, align: 'right' },
-        { key: 'contado', label: 'CONTADO', x: P.L + 424, w: 56, align: 'right' },
-        { key: 'diferenca', label: 'DIFERENÇA', x: P.L + 480, w: 59, align: 'right' }
+        { key: 'abertura',  label: 'ABERTURA',  x: P.L +   0, w: 150, align: 'left'  },
+        { key: 'fechamento',label: 'FECHAMENTO',x: P.L + 150, w: 150, align: 'left'  },
+        { key: 'inicial',   label: 'INICIAL',   x: P.L + 300, w:  90, align: 'right' },
+        { key: 'entradas',  label: 'ENTRADAS',  x: P.L + 390, w:  90, align: 'right' },
+        { key: 'despesas',  label: 'DESPESAS',  x: P.L + 480, w:  90, align: 'right' },
+        { key: 'esperado',  label: 'ESPERADO',  x: P.L + 570, w:  90, align: 'right' },
+        { key: 'contado',   label: 'CONTADO',   x: P.L + 660, w:  90, align: 'right' },
+        { key: 'diferenca',  label: 'DIFERENÇA', x: P.L + 750, w:  90, align: 'right' }
       ];
+
       const drawCashHeader = () => {
         const y0 = doc.y;
         setFont.th(); doc.fillColor('#000');
@@ -375,15 +407,22 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         if (typeof statusRaw === 'string') {
           const s = statusRaw.trim();
           if (s && !/^todos?|todas?|all$/i.test(s)) {
-            // se já veio em português, mantém; se veio enum, traduz
-            const items = s.split(',').map(x => x.trim());
-            arrStatus = items.map(x => getStatusText(x.toLowerCase()));
+            arrStatus = s.split(',').map(x => getStatusText(x.trim().toLowerCase()));
           }
         } else if (Array.isArray(statusRaw)) {
           arrStatus = statusRaw
             .map(s => String(s || '').trim())
             .filter(s => s && !/^todos?|todas?|all$/i.test(s))
             .map(s => getStatusText(s.toLowerCase()));
+        }
+        if (!arrStatus.length) {
+          // INFERÊNCIA pelos itens impressos
+          const set = new Set(
+            (appointments || [])
+              .map(a => String(a?.status || '').toLowerCase())
+              .filter(Boolean)
+          );
+          if (set.size) arrStatus = [...set].map(s => getStatusText(s));
         }
         const statusStr = arrStatus.length ? arrStatus.join(', ') : 'Todos';
 
@@ -439,9 +478,9 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
           const linha = {
             data: fmtDate(apt.appointmentDate),
             hora: (apt.appointmentTime || '').slice(0, 5),
-            cliente: clip(((apt.client?.firstName || '') + ' ' + (apt.client?.lastName || '')).trim(), 28),
-            barbeiro: clip(apt.barber?.name || '', 22),
-            servico: clip(apt.serviceType?.name || '', 28),
+            cliente: clip(((apt.client?.firstName || '') + ' ' + (apt.client?.lastName || '')).trim(), 48),
+            barbeiro: clip(apt.barber?.name || '', 28),
+            servico: clip(apt.serviceType?.name || '', 40),
             status: clip(getStatusText(apt.status), 14),
             valor: fmtMoney(apt.totalPrice)
           };
@@ -479,7 +518,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
       // Cabeçalho (sem linha embaixo)
       setFont.th(); doc.fillColor('#000');
       doc.text('MÉTODO', P.L, doc.y, { width: colLabelW, align: 'left', lineBreak: false });
-      doc.text('VALOR',  P.L + colLabelW, doc.y, { width: colValueW, align: 'right', lineBreak: false });
+      doc.text('VALOR', P.L + colLabelW, doc.y, { width: colValueW, align: 'right', lineBreak: false });
       doc.y += LINE_H;
 
       // Linhas (só traço ENTRE linhas, não depois da última)
@@ -549,7 +588,7 @@ async function generatePDF({ appointments = [], cashier = [] }, reportInfo = {},
         // Totais do caixa
         doc.y += 1;
         ensurePage(2, drawCashHeader);
-        hr(doc.y - 2);
+        // hr(doc.y - 2);
         setFont.th(); doc.fillColor('#000');
         const yTot = doc.y;
         doc.text('TOTAIS', P.L + 0, yTot, { width: 200, align: 'left', lineBreak: false });

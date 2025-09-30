@@ -947,6 +947,8 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
   try {
     const { format, startDate, endDate, barberId, status, sort } = req.body;
 
+
+
     // Filtro agendamentos
     const where = {};
     if (startDate && endDate) where.appointmentDate = { [Op.between]: [startDate, endDate] };
@@ -981,7 +983,7 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
         { model: Payment, as: 'payments', attributes: ['method', 'amount'] }
       ]
     });
-
+      
     // Filtro caixa
     const cashierWhere = {};
     if (startDate && endDate) cashierWhere.openedAt = { [Op.between]: [startDate, endDate] };
@@ -1011,9 +1013,20 @@ router.post('/reports/export', isAuthenticated, async (req, res) => {
         diferenca
       };
     });
+    const BUSINESS_NAME =
+      (req.session?.tenant && req.session.tenant.name) ||
+      process.env.BUSINESS_NAME ||
+      'Relatório Geral';
 
+    const LOGO_PATH =
+      (req.session?.tenant && req.session.tenant.logoPath) ||
+      process.env.BUSINESS_LOGO_PATH || // ex.: /var/app/public/logo.png
+      null;
     // Resumo simples
     const reportInfo = {
+      businessName: BUSINESS_NAME,
+      logoPath: LOGO_PATH,
+      subtitle: 'Módulo de Agendamentos',
       periodo: `${startDate || '...'} até ${endDate || '...'}`,
       barbeiro: barberId || 'Todos',
       totalAgendamentos: appointments.length,
