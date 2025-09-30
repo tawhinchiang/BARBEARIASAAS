@@ -154,46 +154,192 @@ document.getElementById('confirmOpenCashier')?.addEventListener('click', async (
   }
 });
 
-document.getElementById('confirmAddExpense')?.addEventListener('click', async () => {
-  const description = document.getElementById('expenseDescription').value.trim();
-  const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-  const method = document.getElementById('expenseMethod').value;
+// Lançar Despesa (novo: category, date, isFixed, notes)
+document.getElementById('exp-submit-btn')?.addEventListener('click', async () => {
+  // IDs do novo modal (ajuste se usou outros):
+  const description = document.getElementById('exp-desc')?.value?.trim() ||
+                      document.getElementById('expenseDescription')?.value?.trim() || '';
+  const amount = parseFloat(document.getElementById('exp-amount')?.value ??
+                            document.getElementById('expenseAmount')?.value) || 0;
+  const method = document.getElementById('exp-method')?.value ??
+                 document.getElementById('expenseMethod')?.value ?? 'cash';
+  const category = document.getElementById('exp-category')?.value || 'operacional';
+  const date = document.getElementById('exp-date')?.value || new Date().toISOString().slice(0,10);
+  const isFixed = document.getElementById('exp-fixed')?.checked === true;
+  const notes = document.getElementById('exp-notes')?.value?.trim() || '';
 
-  if (!description || amount <= 0) {
-    notify({ type: 'warning', message: 'Preencha descrição e valor válido.' });
+  if (!description || !(amount > 0)) {
+    notify({ type: 'warning', message: 'Preencha descrição e um valor maior que 0,00.' });
     return;
   }
 
+  const body = { description, amount, method, category, date, isFixed, notes };
+
+  const btn = document.getElementById('confirmAddExpense');
+  const html = btn?.innerHTML;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lançando...'; }
+
   const data = await apiFetch('/admin/cashier/expenses', {
     method: 'POST',
-    body: JSON.stringify({ description, amount, method })
+    body: JSON.stringify(body)
   });
+
+  if (btn) { btn.disabled = false; btn.innerHTML = html; }
 
   if (data.success) {
     notify({ type: 'success', message: 'Despesa registrada com sucesso!' });
-    bootstrap.Modal.getInstance(document.getElementById('expenseModal')).hide();
+    bootstrap.Modal.getInstance(document.getElementById('expenseModal'))?.hide();
     loadCashierStatus();
   } else {
     notify({ type: 'error', message: data.error || 'Erro ao lançar despesa' });
   }
 });
 
-document.getElementById('confirmCloseCashier')?.addEventListener('click', async () => {
-  const countedCash = parseFloat(document.getElementById('countedCash').value) || 0;
-  const notes = document.getElementById('closeNotes').value.trim();
+
+// Fechar Caixa com contagem por método
+document.getElementById('cc-submit-btn')?.addEventListener('click', async () => {
+
+  const rows = document.querySelectorAll('#cc-count-tbody tr'); // linhas do modal de fechar
+  if (!rows.length) {
+    notify({ type: 'warning', message: 'Abra o modal de Fechar Caixa para informar as contagens por método.' });
+    return;
+  }
+
+  const counted = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
+  rows.forEach(tr => {
+    const method = tr?.dataset?.method;
+    const val = parseFloat(tr.querySelector('.cc-count')?.value) || 0;
+    if (method && method in counted) counted[method] = Math.max(0, Math.round(val * 100) / 100);
+  });
+
+  const notes = document.getElementById('cc-notes')?.value?.trim() || '';
+  const printReceipt = document.getElementById('cc-print')?.checked === true;
+
+  // Compat: soma geral (caso seu back ainda aceite countedCash)
+  const countedCash = Object.values(counted).reduce((s, v) => s + v, 0);
+
+  const body = { counted, countedCash, notes, printReceipt };
+
+  const btn = document.getElementById('confirmCloseCashier');
+  const html = btn?.innerHTML;
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Fechando...'; }
 
   const data = await apiFetch('/admin/cashier/close', {
     method: 'POST',
-    body: JSON.stringify({ countedCash, notes })
+    body: JSON.stringify(body)
   });
+
+  if (btn) { btn.disabled = false; btn.innerHTML = html; }
 
   if (data.success) {
     notify({ type: 'success', message: 'Caixa fechado com sucesso!' });
-    bootstrap.Modal.getInstance(document.getElementById('closeCashierModal')).hide();
+    bootstrap.Modal.getInstance(document.getElementById('closeCashierModal'))?.hide();
     loadCashierStatus();
   } else {
     notify({ type: 'error', message: data.error || 'Erro ao fechar caixa' });
   }
+});
+
+// Carregar resumo do caixa aberto (reutiliza a sua rota atual)
+async function fetchOpenCashSummary() {
+  const data = await apiFetch('/admin/cashier/session/current');
+  if (!data?.session) throw new Error('Nenhum caixa aberto.');
+  // Normaliza estrutura para o modal:
+  const entradas = data?.resumo?.entradas || {};
+  const despesas = Number(data?.resumo?.totalDespesas || 0);
+  const expectedByMethod = {
+    cash:   Number(entradas.cash || 0),
+    credit: Number(entradas.credit || 0),
+    debit:  Number(entradas.debit || 0),
+    pix:    Number(entradas.pix || 0),
+    other:  Number(entradas.other || 0)
+  };
+  const expectedTotal = Object.values(expectedByMethod).reduce((s,v)=>s+Number(v||0),0);
+  return { expectedByMethod, expectedTotal, expensesTotal: despesas };
+}
+
+// Monta as linhas do modal de fechar caixa e liga os listeners
+async function openCloseCashierModal() {
+  try {
+    const { expectedByMethod, expectedTotal, expensesTotal } = await fetchOpenCashSummary();
+
+    // Cabeçalho do modal
+    const elExp = document.getElementById('cc-expected-total');
+    const elDes = document.getElementById('cc-expenses-total');
+    const elRes = document.getElementById('cc-result-expected');
+    if (elExp) elExp.textContent = money(expectedTotal);
+    if (elDes) elDes.textContent = money(expensesTotal);
+    if (elRes) elRes.textContent = money(expectedTotal - expensesTotal);
+
+    // Linhas por método
+    const mapLabels = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
+    const tbody = document.getElementById('cc-count-tbody');
+    tbody.innerHTML = '';
+    Object.keys(mapLabels).forEach(method => {
+      const tr = document.createElement('tr');
+      tr.dataset.method = method;
+      tr.innerHTML = `
+        <td>${mapLabels[method]}</td>
+        <td class="text-end" data-expected>${money(expectedByMethod[method])}</td>
+        <td>
+          <div class="input-group">
+            <span class="input-group-text">R$</span>
+            <input type="number" class="form-control cc-count" min="0" step="0.01" placeholder="0,00">
+          </div>
+        </td>
+        <td class="text-end" data-diff>R$ 0,00</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('cc-expected-sum').textContent = money(expectedTotal);
+    document.getElementById('cc-counted-sum').value = 'R$ 0,00';
+    document.getElementById('cc-diff-sum').textContent = 'R$ 0,00';
+    document.getElementById('cc-notes').value = '';
+    document.getElementById('cc-print').checked = false;
+    document.getElementById('cc-diff-alert').classList.add('d-none');
+
+    // Recalcular ao digitar
+    const onChange = () => {
+      const rows = document.querySelectorAll('#cc-count-tbody tr');
+      let sumCounted = 0;
+      let sumDiff = 0;
+      rows.forEach(row => {
+        const expText = row.querySelector('[data-expected]').textContent;
+        const expected = parseFloat(expText.replace(/[R$\.\s]/g,'').replace(',', '.')) || 0;
+        const val = parseFloat(row.querySelector('.cc-count')?.value) || 0;
+        sumCounted += val;
+        const diff = Math.round((val - expected) * 100) / 100;
+        row.querySelector('[data-diff]').textContent = money(diff);
+        sumDiff += diff;
+      });
+      document.getElementById('cc-counted-sum').value = money(sumCounted);
+      document.getElementById('cc-diff-sum').textContent = money(sumDiff);
+      document.getElementById('cc-diff-alert').classList.toggle('d-none', Math.abs(sumDiff) < 0.01);
+    };
+   
+    tbody.addEventListener('input', onChange);
+
+    new bootstrap.Modal(document.getElementById('closeCashierModal')).show();
+  } catch (e) {
+    console.error(e);
+    notify({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
+  }
+}
+// Botão principal "Fechar Caixa" abre o modal com linhas e totais preenchidos
+document.getElementById('btnCloseCashier')?.addEventListener('click', openCloseCashierModal);
+
+// Botão principal "Lançar Despesa" abre o modal preparado
+document.getElementById('btnAddExpense')?.addEventListener('click', () => {
+  // prepara defaults se estiver usando o novo modal
+  const d = new Date().toISOString().slice(0,10);
+  document.getElementById('exp-desc')?.value = '';
+  document.getElementById('exp-amount')?.value = '';
+  document.getElementById('exp-method')?.value = 'cash';
+  document.getElementById('exp-category')?.value = 'operacional';
+  document.getElementById('exp-date')?.value = d;
+  document.getElementById('exp-fixed') && (document.getElementById('exp-fixed').checked = false);
+  document.getElementById('exp-notes')?.value = '';
+  new bootstrap.Modal(document.getElementById('expenseModal')).show();
 });
 
 // Carregar ao abrir a página
