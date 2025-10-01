@@ -1240,14 +1240,17 @@ function initCardExpandables() {
   });
 }
 
-async function refreshAppointmentsTable() {
+async function refreshAppointmentsTable(ts = Date.now()) {
   const params = new URLSearchParams(window.location.search);
+  params.set('_ts', String(ts)); // evita cache
 
   // Atualiza a tabela
   const tableBody = document.querySelector('.admin-table tbody');
   if (tableBody) {
     try {
-      const res = await fetch(`/admin/appointments/partial?${params.toString()}`);
+      const res = await fetch(`/admin/appointments/partial?${params.toString()}`, {
+        cache: 'no-store'
+      });
       const ct = res.headers.get('content-type') || '';
 
       if (ct.includes('application/json')) {
@@ -1266,7 +1269,9 @@ async function refreshAppointmentsTable() {
   const cardContainer = document.getElementById('appointmentsCardView');
   if (cardContainer) {
     try {
-      const res = await fetch(`/admin/appointments/partial-cards?${params.toString()}`);
+      const res = await fetch(`/admin/appointments/partial-cards?${params.toString()}`, {
+        cache: 'no-store'
+      });
       const ct = res.headers.get('content-type') || '';
 
       if (ct.includes('application/json')) {
@@ -1286,7 +1291,7 @@ async function refreshAppointmentsTable() {
     }
   }
 
-  initTableListeners(); // reanexar eventos
+  initTableListeners();
   attachActionPanelListeners();
 }
 
@@ -1556,9 +1561,7 @@ async function submitCheckout(appointmentId) {
     return;
   }
 
-  payments.forEach(p => {
-    if (p.notes.length > 200) p.notes = p.notes.slice(0, 200);
-  });
+  payments.forEach(p => { if (p.notes.length > 200) p.notes = p.notes.slice(0, 200); });
 
   const btn = document.getElementById('finalizarCheckoutBtn');
   const originalBtnHtml = btn?.innerHTML;
@@ -1579,8 +1582,7 @@ async function submitCheckout(appointmentId) {
 
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok || !data?.success) {
-      const msg = data?.error || 'Falha ao registrar pagamento.';
-      notify({ type: 'error', message: msg });
+      notify({ type: 'error', message: data?.error || 'Falha ao registrar pagamento.' });
       return;
     }
 
@@ -1593,22 +1595,35 @@ async function submitCheckout(appointmentId) {
       modal.hide();
     }
 
+  
+    const nodes = document.querySelectorAll(
+      `[data-appointment-id="${appointmentId}"], [data-id="${appointmentId}"]`
+    );
+    nodes.forEach(node => {
+      node.dataset.paymentStatus = 'paid';
+      node.querySelectorAll('.badge, .badge-status, .status-badge').forEach(b => {
+        const txt = (b.textContent || '').trim().toLowerCase();
+        if (txt.includes('pendente') || txt.includes('pending')) {
+          b.textContent = 'Pago';
+          b.classList.remove('bg-warning', 'text-dark');
+          b.classList.add('bg-success');
+        }
+      });
+    });
+
+   
     document.dispatchEvent(new CustomEvent('appointment:paid', { detail: { id: appointmentId } }));
 
+   
     const doRefresh = async () => {
       if (typeof refreshAppointmentsTable === 'function') {
-        try {
-          const maybe = refreshAppointmentsTable();
-          if (maybe && typeof maybe.then === 'function') await maybe;
-        } catch {}
+        const maybe = refreshAppointmentsTable(Date.now());
+        if (maybe && typeof maybe.then === 'function') await maybe;
       }
     };
+    if ('requestIdleCallback' in window) requestIdleCallback(() => { doRefresh(); });
+    else setTimeout(() => { doRefresh(); }, 50);
 
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => { doRefresh(); });
-    } else {
-      setTimeout(() => { doRefresh(); }, 50);
-    }
   } catch (err) {
     console.error(err);
     notify({ type: 'error', message: 'Erro de rede ao registrar pagamento.' });
@@ -1619,6 +1634,7 @@ async function submitCheckout(appointmentId) {
     }
   }
 }
+
 
 
 function openCheckoutModal(appointmentId) {
