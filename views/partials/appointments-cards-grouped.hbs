@@ -1,4 +1,4 @@
-<div class="appointments-columns">
+{{!-- <div class="appointments-columns">
 {{#each (groupBy appointments "barber.name") as |appointmentsList|}}
 {{#if appointmentsList.length}}
 <div class="barber-column">
@@ -50,7 +50,7 @@
             <button class="btn btn-sm btn-outline-success action-item js-send-whatsapp" data-id="{{id}}">
               <i class="fab fa-whatsapp"></i> WhatsApp
             </button>
-            {{/unless}} --}}
+            {{/unless}} 
 
             {{#eq status "pending"}}
             <button class="btn btn-sm btn-outline-primary action-item js-confirm-appointment" data-id="{{id}}">
@@ -94,4 +94,4 @@
 </div>
 {{#unless appointments.length}}
 <p class="text-danger text-center">Nenhum agendamento encontrado.</p>
-{{/unless}}
+{{/unless}} --}}

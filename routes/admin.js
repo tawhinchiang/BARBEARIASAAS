@@ -694,7 +694,7 @@ router.get('/appointments/partial', async (req, res) => {
     }
 
     // Mesclar
-    const merged = [...formattedAppointments, ...freeSlots];
+    const merged = [...formatted, ...freeSlots];
     // Ordenar pela hora
     merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
     const timeSlots = buildTimeSlots(merged, barbers, 30);
@@ -1226,6 +1226,15 @@ router.post('/api/appointments/:id/cancel', async (req, res) => {
       cancelReason: reason || null,
       cancelledAt: new Date()
     });
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('appointment_cancelled', {
+        id: appointment.id,
+        client: `${appointment.client?.firstName || ''} ${appointment.client?.lastName || ''}`.trim(),
+        time: appointment.appointmentTime,
+        date: appointment.appointmentDate
+      });
+    }
     res.json({ success: true, reason });
   } catch (error) {
     logError('Erro ao cancelar agendamento', error);

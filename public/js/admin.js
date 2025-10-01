@@ -218,8 +218,11 @@ function setupWhatsAppConfigUI() {
     const data = await res.json();
 
     if (data?.html) {
-      if (isTable && tableBody) {
-        tableBody.insertAdjacentHTML('beforeend', data.html);
+      if (isTable) {
+        const tbody = document.querySelector('#appointmentsTableView table tbody');
+        if (tbody) {
+          tbody.insertAdjacentHTML('beforeend', data.html);
+        }
       } else if (cardsContainer) {
         cardsContainer.insertAdjacentHTML('beforeend', data.html);
       }

@@ -20,19 +20,19 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-document.addEventListener('click', e => {
-  const cell = e.target.closest('.js-appointment-cell[data-id]');
-  if (!cell) return;
-
-  
-  if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) return;
-
-  const id = cell.dataset.id;
+  document.addEventListener('click', e => {
+    const cell = e.target.closest('.js-appointment-cell[data-id]');
+    if (!cell) return;
 
 
- 
-  openActionPanel(id);
-});
+    if (cell.querySelector('.slot-blocked') || cell.querySelector('.slot-free')) return;
+
+    const id = cell.dataset.id;
+
+
+
+    openActionPanel(id);
+  });
 
 
 
@@ -92,8 +92,7 @@ document.addEventListener('click', e => {
         tableView.classList.add('hidden');
         cardView.classList.remove('hidden');
         localStorage.setItem('appointmentsView', 'cards');
-        // 🔧 Reaplica listeners para expansão
-        initCardExpandables();
+       
         console.log('[DEBUG] Switched to cards view');
       } else {
         cardView.classList.add('hidden');
@@ -188,66 +187,61 @@ document.addEventListener('click', e => {
   initTableListeners();
   // attachActionPanelListeners();
   // iOS-safe: delegação por click para slots livres/bloqueados + fallback no <td>
-(function wireSlotClicks() {
-  const handleFree = (el) => {
-    openActionPanelForEmptySlot({
-      barberId: el.dataset.barber,
-      date: el.dataset.date,
-      time: el.dataset.time
-    });
-  };
+  (function wireSlotClicks() {
+    const handleFree = (el) => {
+      openActionPanelForEmptySlot({
+        barberId: el.dataset.barber,
+        date: el.dataset.date,
+        time: el.dataset.time
+      });
+    };
 
-  const handleBlocked = (el) => {
-    const appointmentId = el.dataset.id;
-    if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
-  };
+    const handleBlocked = (el) => {
+      const appointmentId = el.dataset.id;
+      if (appointmentId) openActionPanelForBlockedSlot(appointmentId);
+    };
 
-  document.addEventListener('click', (e) => {
-    // 1) clique direto no slot livre
-    const free = e.target.closest('.slot-free.js-open-schedule');
-    if (free) {
-      handleFree(free);
-      return;
-    }
+    document.addEventListener('click', (e) => {
+      // 1) clique direto no slot livre
+      const free = e.target.closest('.slot-free.js-open-schedule');
+      if (free) {
+        handleFree(free);
+        return;
+      }
 
-    // 2) clique direto no slot bloqueado
-    const blocked = e.target.closest('.slot-blocked.js-open-blocked');
-    if (blocked) {
-      handleBlocked(blocked);
-      return;
-    }
+      // 2) clique direto no slot bloqueado
+      const blocked = e.target.closest('.slot-blocked.js-open-blocked');
+      if (blocked) {
+        handleBlocked(blocked);
+        return;
+      }
 
-    // 3) fallback: clique no <td> que contenha um dos slots
-    const td = e.target.closest('td');
-    if (!td) return;
+      // 3) fallback: clique no <td> que contenha um dos slots
+      const td = e.target.closest('td');
+      if (!td) return;
 
-    const freeInside = td.querySelector('.slot-free.js-open-schedule');
-    if (freeInside) {
-      handleFree(freeInside);
-      return;
-    }
+      const freeInside = td.querySelector('.slot-free.js-open-schedule');
+      if (freeInside) {
+        handleFree(freeInside);
+        return;
+      }
 
-    const blockedInside = td.querySelector('.slot-blocked.js-open-blocked');
-    if (blockedInside) {
-      handleBlocked(blockedInside);
-    }
-  }, { passive: true });
-})();
+      const blockedInside = td.querySelector('.slot-blocked.js-open-blocked');
+      if (blockedInside) {
+        handleBlocked(blockedInside);
+      }
+    }, { passive: true });
+  })();
 
 
   // Executa tarefas mais leves logo
   requestIdleCallback(() => {
-    initCardExpandables();
+    
     setDefaultDates();
     restoreFilters();
 
-    
-    // fase visual 3: limitar cards
-    setTimeout(() => {
-      requestAnimationFrame(() => {
-        limitarCardsPorBarbeiro(10);
-      });
-    }, 100);
+
+   
 
     setTimeout(() => {
       attachActionPanelListeners();
@@ -548,20 +542,20 @@ function initModals() {
 
   const editModalElement = document.getElementById('editModal');
   if (editModalElement) {
-    
+
     if (editModalElement.parentElement !== document.body) {
       document.body.appendChild(editModalElement);
       console.log('[DEBUG] #editModal movido para <body>');
     }
 
-    
+
     editModalElement.addEventListener('show.bs.modal', () => {
-      try { closeActionPanel(); } catch (_) {}
+      try { closeActionPanel(); } catch (_) { }
     });
 
     editModal = new bootstrap.Modal(editModalElement);
   }
-  
+
 
   modalElement?.querySelector('.btn-close')?.addEventListener('click', () => viewAppointmentModal.hide());
   modalElement?.addEventListener('click', (e) => {
@@ -844,11 +838,11 @@ async function viewAppointment(appointmentId) {
       : '0.00';
 
     const modalContent = document.getElementById('modalContent');
-    modalContent.innerHTML = ''; 
-  
+    modalContent.innerHTML = '';
+
     if (typeof closeActionPanel === 'function') {
       closeActionPanel();
-      await new Promise(requestAnimationFrame); 
+      await new Promise(requestAnimationFrame);
     }
     const row = document.createElement('div');
     row.className = 'row';
@@ -892,20 +886,20 @@ async function viewAppointment(appointmentId) {
 async function editAppointment(appointmentId) {
   closeAllMenus();
 
-  const globalLoader = document.getElementById('global-loading'); 
+  const globalLoader = document.getElementById('global-loading');
   const modalEl = document.getElementById('editModal');
   const loadingEl = modalEl?.querySelector('#edit-loading');
-  const fieldsEl  = modalEl?.querySelector('#edit-fields');
+  const fieldsEl = modalEl?.querySelector('#edit-fields');
 
-  
+
   loadingEl?.classList.remove('d-none');
   loadingEl?.classList.add('d-flex');
   fieldsEl?.classList.add('d-none');
 
-  
+
   if (typeof closeActionPanel === 'function') closeActionPanel();
 
-  
+
   globalLoader?.classList.remove('d-none');
 
   try {
@@ -923,24 +917,24 @@ async function editAppointment(appointmentId) {
     await loadSelectOptions('edit-service', '/api/services', appointment.serviceType.id);
     await loadSelectOptions('edit-barber', '/api/barbers', appointment.barber.id);
 
-    
+
     loadingEl?.classList.add('d-none');
     loadingEl?.classList.remove('d-flex');
     fieldsEl?.classList.remove('d-none');
 
-    
+
     const editModalElement = document.getElementById('editModal');
     if (editModalElement && editModalElement.parentElement !== document.body) {
       document.body.appendChild(editModalElement);
     }
 
-   
+
     editModal.show();
   } catch (err) {
     console.error('[ADMIN ERROR] Erro ao carregar agendamento:', err);
     notify({ type: 'error', message: 'Erro ao carregar dados do agendamento' });
 
-    
+
     loadingEl?.classList.add('d-none');
     loadingEl?.classList.remove('d-flex');
   } finally {
@@ -988,7 +982,7 @@ async function completeAppointment(appointmentId) {
   // console.log('[ADMIN] Concluindo agendamento:', appointmentId);
   closeAllMenus();
   if (typeof closeActionPanel === 'function') closeActionPanel();
-    await new Promise(requestAnimationFrame)
+  await new Promise(requestAnimationFrame)
   const ok = await confirmDialog({
     title: 'Concluir agendamento',
     message: 'Marcar este agendamento como concluído?',
@@ -1021,7 +1015,7 @@ async function completeAppointment(appointmentId) {
 async function cancelAppointment(appointmentId) {
   closeAllMenus();
   if (typeof closeActionPanel === 'function') closeActionPanel();
-    await new Promise(requestAnimationFrame)
+  await new Promise(requestAnimationFrame)
   const textareaId = 'cancel-reason-input';
   const ok = await confirmDialog({
     title: 'Deseja Cancelar agendamento?',
@@ -1029,8 +1023,8 @@ async function cancelAppointment(appointmentId) {
       <label class="form-label">Motivo do cancelamento (opcional):</label>
       <textarea id="${textareaId}" class="form-control" rows="3" placeholder="Ex.: cliente solicitou"></textarea>
     `,
-      confirmText: 'SIM',
-      cancelText: 'Não',
+    confirmText: 'SIM',
+    cancelText: 'Não',
     variant: 'danger'
   });
   if (!ok) return;
@@ -1047,7 +1041,7 @@ async function cancelAppointment(appointmentId) {
 
     if (response.ok) {
       notify({ type: 'success', message: 'Agendamento cancelado com sucesso!' });
-      setTimeout(refreshAppointmentsTable, 300);
+     await refreshAppointmentsTable(Date.now());
     } else {
       notify({ type: 'error', message: 'Erro ao cancelar agendamento' });
     }
@@ -1061,7 +1055,7 @@ async function deleteAppointment(appointmentId) {
   // console.log('[ADMIN] Excluindo agendamento:', appointmentId);
   closeAllMenus();
   if (typeof closeActionPanel === 'function') closeActionPanel();
-    await new Promise(requestAnimationFrame)
+  await new Promise(requestAnimationFrame)
   const ok = await confirmDialog({
     title: 'Excluir agendamento',
     message: 'ATENÇÃO: Esta ação não pode ser desfeita. Excluir este agendamento?',
@@ -1226,70 +1220,33 @@ if (editForm) {
   });
 }
 
-function initCardExpandables() {
-  document.querySelectorAll('.card-collapsible').forEach(card => {
-    // Evita adicionar múltiplos listeners
-    if (card.dataset.expandableAttached === 'true') return;
-
-    card.addEventListener('click', function (e) {
-      if (e.target.closest('.action-item')) return;
-      card.classList.toggle('expanded');
-    });
-
-    card.dataset.expandableAttached = 'true';
-  });
-}
 
 async function refreshAppointmentsTable(ts = Date.now()) {
   const params = new URLSearchParams(window.location.search);
-  params.set('_ts', String(ts)); // evita cache
-
-  // Atualiza a tabela
-  const tableBody = document.querySelector('.admin-table tbody');
-  if (tableBody) {
+  params.set('_ts', String(ts)); 
+   // Atualiza a TABELA inteira (thead + tbody) porque a partial devolve ambos
+  const tableEl = document.querySelector('#appointmentsTableView .admin-table');
+  if (tableEl) {
     try {
       const res = await fetch(`/admin/appointments/partial?${params.toString()}`, {
         cache: 'no-store'
       });
       const ct = res.headers.get('content-type') || '';
 
-      if (ct.includes('application/json')) {
+     if (ct.includes('application/json')) {
         const { html } = await res.json();
-        tableBody.innerHTML = html || '';
+        tableEl.innerHTML = html || '';
       } else {
         const html = await res.text();
-        tableBody.innerHTML = html;
+        tableEl.innerHTML = html || '';
       }
+
     } catch (err) {
       console.error('[ADMIN] Erro ao atualizar a TABELA:', err);
     }
   }
 
-  // Atualiza os cards
-  const cardContainer = document.getElementById('appointmentsCardView');
-  if (cardContainer) {
-    try {
-      const res = await fetch(`/admin/appointments/partial-cards?${params.toString()}`, {
-        cache: 'no-store'
-      });
-      const ct = res.headers.get('content-type') || '';
 
-      if (ct.includes('application/json')) {
-        const { html } = await res.json();
-        cardContainer.innerHTML = html || '';
-      } else {
-        const html = await res.text();
-        cardContainer.innerHTML = html;
-      }
-
-      requestAnimationFrame(() => {
-        initCardExpandables();
-        limitarCardsPorBarbeiro(10);
-      });
-    } catch (err) {
-      console.error('[ADMIN] Erro ao atualizar os CARDS:', err);
-    }
-  }
 
   initTableListeners();
   attachActionPanelListeners();
@@ -1313,7 +1270,7 @@ function restoreSavedView() {
   if (savedView === 'cards') {
     tableView.classList.add('hidden');
     cardView.classList.remove('hidden');
-    initCardExpandables();
+    
     console.log('[DEBUG] Restored to cards view');
   } else {
     cardView.classList.add('hidden');
@@ -1325,7 +1282,7 @@ function restoreSavedView() {
   }
 }
 function limitarLinhasDaTabela(qtd = 10) {
-  const linhas = document.querySelectorAll('#appointmentsTableBody tr');
+ const linhas = document.querySelectorAll('#appointmentsTableView table tbody tr');
   if (linhas.length > qtd) {
     linhas.forEach((tr, index) => {
       if (index >= qtd) tr.classList.add('d-none');
@@ -1403,55 +1360,6 @@ document.addEventListener('click', (e) => {
   window.location.href = url.toString();
 });
 
-function limitarCardsPorBarbeiro(qtd = 10) {
-  document.querySelectorAll('.card-group').forEach(group => {
-    const cards = group.querySelectorAll('.card-wrapper');
-    const barber = group.dataset.barber;
-    const btnVerMais = document.querySelector(`.ver-mais-cards[data-barber="${barber}"]`);
-
-    if (cards.length > qtd) {
-      cards.forEach((card, i) => {
-        if (i >= qtd) card.classList.add('d-none');
-      });
-
-      if (btnVerMais) {
-        btnVerMais.classList.remove('d-none');
-        btnVerMais.innerHTML = '<i class="fas fa-angle-down"></i> Ver mais';
-        btnVerMais.addEventListener('click', () => {
-          cards.forEach(card => card.classList.remove('d-none'));
-          btnVerMais.classList.add('d-none');
-
-          const btnVerMenos = document.createElement('button');
-          btnVerMenos.className = 'btn btn-outline-light btn-sm mt-2 ver-menos-cards';
-          btnVerMenos.setAttribute('data-barber', barber);
-          btnVerMenos.innerHTML = '<i class="fas fa-angle-up"></i> Ver menos';
-
-          btnVerMenos.addEventListener('click', () => {
-            requestAnimationFrame(() => {
-              cards.forEach((card, i) => {
-                if (i >= qtd) {
-                  card.classList.add('fade-out');
-                  setTimeout(() => {
-                    card.classList.add('d-none');
-                    card.classList.remove('fade-out');
-                  }, 300);
-                }
-              });
-
-              const column = group.closest('.barber-column');
-              if (column) column.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-              btnVerMenos.remove();
-              btnVerMais.classList.remove('d-none');
-            });
-          });
-
-          btnVerMais.parentElement.appendChild(btnVerMenos);
-        });
-      }
-    }
-  });
-}
 
 
 function attachActionPanelListeners() {
@@ -1509,7 +1417,7 @@ async function openActionPanel(id) {
         </button>
       `;
     }
-    if (status !== 'cancelled'){
+    if (status !== 'cancelled') {
       html += `
         <button class="btn btn-outline-danger w-100 mb-2" onclick="cancelAppointment(${id})">
           <i class="fas fa-times-circle me-2"></i> Cancelar
@@ -1545,10 +1453,10 @@ async function submitCheckout(appointmentId) {
   const rawPayments = Array.from(rows).map(row => {
     const methodEl = row.querySelector('.method-select');
     const amountEl = row.querySelector('.amount-input');
-    const notesEl  = row.querySelector('.notes-input');
+    const notesEl = row.querySelector('.notes-input');
     const method = (methodEl?.value || '').trim();
     const amount = toMoney(amountEl?.value?.trim());
-    const notes  = (notesEl?.value || '').trim();
+    const notes = (notesEl?.value || '').trim();
     return { method, amount, notes };
   });
 
@@ -1595,7 +1503,7 @@ async function submitCheckout(appointmentId) {
       modal.hide();
     }
 
-  
+
     const nodes = document.querySelectorAll(
       `[data-appointment-id="${appointmentId}"], [data-id="${appointmentId}"]`
     );
@@ -1611,10 +1519,10 @@ async function submitCheckout(appointmentId) {
       });
     });
 
-   
+
     document.dispatchEvent(new CustomEvent('appointment:paid', { detail: { id: appointmentId } }));
 
-   
+
     const doRefresh = async () => {
       if (typeof refreshAppointmentsTable === 'function') {
         const maybe = refreshAppointmentsTable(Date.now());
@@ -1749,15 +1657,15 @@ document.addEventListener('click', function (e) {
   const panel = document.getElementById('actionPanel');
   if (!panel || !panel.classList.contains('show')) return;
 
-  
+
   if (panel.contains(e.target)) return;
 
-  
+
   const isOpenTrigger =
-    e.target.closest('.js-open-action-panel') ||                         
-    e.target.closest('.slot-free.js-open-schedule') ||                   
-    e.target.closest('.slot-blocked.js-open-blocked') ||                 
-    e.target.closest('.js-appointment-cell[data-id]');                   
+    e.target.closest('.js-open-action-panel') ||
+    e.target.closest('.slot-free.js-open-schedule') ||
+    e.target.closest('.slot-blocked.js-open-blocked') ||
+    e.target.closest('.js-appointment-cell[data-id]');
 
   if (isOpenTrigger) return;
 

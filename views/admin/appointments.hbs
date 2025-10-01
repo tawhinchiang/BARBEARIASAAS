@@ -62,7 +62,8 @@
                     </option>
                     <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
                     </option>
-                    <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Profissional (A-Z)</option>
+                    <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Profissional (A-Z)
+                    </option>
                     <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Profissional (Z-A)
                     </option>
                   </select>
@@ -90,44 +91,20 @@
     </div>
 
 
-    {{!-- <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
-    <div class="toggle-btn-wrapper mb-3">
-      <button class="btn btn-secondary" id="toggleView">
-        <i class="fas fa-columns"></i> Alternar Visualização
-      </button>
-    </div> --}}
+
 
 
     <!-- VISUALIZAÇÃO EM TABELA -->
     <div id="appointmentsTableView" class="view-mode">
       <div class="row">
         <div class="col-12">
-
-
-
           <table class="table table-hover admin-table">
-
-            <tbody id="appointmentsTableBody">
-              {{> appointments-table-rows}}
-            </tbody>
+            {{> appointments-table-rows}} 
           </table>
-
         </div>
       </div>
     </div>
 
-    {{!-- <!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
-    <div id="appointmentsCardView" class="view-mode hidden">
-      <div id="appointmentsCardsContainer">
-        {{> appointments-cards-grouped appointments=appointments }}
-      </div>
-      <div class="text-center my-3">
-        <button id="loadMoreCards" class="btn btn-outline-primary" data-page="2" data-limit="10" {{#unless
-          pagination.hasNext}}hidden{{/unless}}>
-          Ver mais
-        </button>
-      </div>
-    </div> --}}
 
 
   </div>
@@ -339,23 +316,24 @@
 
 
 <style>
-  
   /* --- Layout mobile (até tablets) --- */
   @media (max-width: 768px) {
     #filterToggleBtn {
-    margin-top: 0.75rem;   /* espaço extra acima */
-  }
+      margin-top: 0.75rem;
+      /* espaço extra acima */
+    }
 
-  /* opcional: deixar o botão mais "clicável" */
-  #filterToggleBtn.btn {
-    padding: 0.6rem 1rem;
-    font-size: 0.95rem;
-  }
+    /* opcional: deixar o botão mais "clicável" */
+    #filterToggleBtn.btn {
+      padding: 0.6rem 1rem;
+      font-size: 0.95rem;
+    }
 
-  /* se quiser dar respiro no header inteiro */
-  .d-flex.justify-content-between.align-items-center.mb-2 {
-    margin-top: 0.75rem;
-  }
+    /* se quiser dar respiro no header inteiro */
+    .d-flex.justify-content-between.align-items-center.mb-2 {
+      margin-top: 0.75rem;
+    }
+
     .admin-card .d-flex {
       flex-direction: column;
       align-items: stretch;
@@ -466,25 +444,29 @@
 
     /* Livre */
     .slot-blocked {
-  background: #888888; /* cinza */
-  color: #fff;
-  border-radius: 0.25rem;
-  padding: 0.35rem 0.6rem;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  min-height: 44px;
-  box-sizing: border-box;
-  text-align: center;
-  cursor: pointer;       /* força Safari a entender como botão */
+      background: #888888;
+      /* cinza */
+      color: #fff;
+      border-radius: 0.25rem;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      line-height: 1.3;
+      min-height: 44px;
+      box-sizing: border-box;
+      text-align: center;
+      cursor: pointer;
+      /* força Safari a entender como botão */
       user-select: none;
-      touch-action: manipulation;  
-}
+      touch-action: manipulation;
+    }
+
     .slot-free {
       background: transparent;
       border: 0.5px solid #ccc;
-      cursor: pointer;       /* força Safari a entender como botão */
+      cursor: pointer;
+      /* força Safari a entender como botão */
       user-select: none;
-      touch-action: manipulation;  
+      touch-action: manipulation;
     }
 
     /* Status → cores no fundo */
@@ -607,7 +589,8 @@
 
     /* Status coloridos */
     .admin-table td .slot-blocked {
-      background: #888888; /* cinza */
+      background: #888888;
+      /* cinza */
       color: #fff;
       border-radius: 0.25rem;
       padding: 0.35rem 0.6rem;
@@ -617,6 +600,7 @@
       box-sizing: border-box;
       text-align: center;
     }
+
     .admin-table td .slot-confirmed {
       background: #4e73df;
       color: #fff;
