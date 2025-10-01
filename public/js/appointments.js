@@ -241,18 +241,7 @@ document.addEventListener('click', e => {
     setDefaultDates();
     restoreFilters();
 
-    // fase visual 1: alternar view (tabela ou cards)
-
-
-
-
-    // fase visual 2: limitar tabela
-    // setTimeout(() => {
-    // requestAnimationFrame(() => {
-    //   limitarLinhasDaTabela(10);
-    //     });
-    // }, 50);
-
+    
     // fase visual 3: limitar cards
     setTimeout(() => {
       requestAnimationFrame(() => {
@@ -377,10 +366,6 @@ document.addEventListener('click', e => {
   }
 
 
-
-
-
-
 });
 
 function abrirModalAgendamento(scheduleBtn) {
@@ -401,6 +386,7 @@ function abrirModalAgendamento(scheduleBtn) {
     document.getElementById('fitInTime').value = time;
   }, 200);
 }
+
 function ensureActionPanelSkeleton() {
   const panel = document.getElementById('actionPanel');
   if (!panel) return null;
@@ -434,7 +420,6 @@ function ensureActionPanelSkeleton() {
 
   return { panel, header, titleEl, body };
 }
-
 
 function openActionPanelForEmptySlot({ barberId, date, time }) {
   console.log('[DEBUG] Abrindo painel slot livre:', { barberId, date, time });
@@ -504,7 +489,6 @@ function openActionPanelForEmptySlot({ barberId, date, time }) {
   panel.classList.add('show');
 }
 
-
 async function openActionPanelForBlockedSlot(appointmentId) {
   console.log('[DEBUG] Abrindo painel slot bloqueado:', appointmentId);
 
@@ -553,11 +537,11 @@ async function openActionPanelForBlockedSlot(appointmentId) {
   panel.classList.add('show');
 }
 
-
 function populateFitInSelects() {
   loadSelectOptions('fitInService', '/api/services');
   loadSelectOptions('fitInBarber', '/api/barbers');
 }
+
 function initModals() {
   const modalElement = document.getElementById('viewModal');
   viewAppointmentModal = modalElement ? new bootstrap.Modal(modalElement) : null;
@@ -668,11 +652,6 @@ function gerarSlotsHorarios(intervaloMinutos = 30) {
   return slots;
 }
 
-
-
-// Controle manual do toggle dos filtros
-
-
 function initFilterForm() {
   const filterForm = document.getElementById('filterForm');
   if (!filterForm) return;
@@ -713,6 +692,7 @@ function restoreFilters() {
     if (el) el.value = value;
   }
 }
+
 let tableListenersAttached = false;
 function initTableListeners() {
   if (tableListenersAttached) return; // evita duplicar
@@ -738,6 +718,7 @@ function initTableListeners() {
     else if (button.classList.contains('js-cancel-appointment')) cancelAppointment(appointmentId);
   });
 }
+
 document.addEventListener('click', function (e) {
   if (!e.target.closest('.actions-menu')) {
     closeAllMenus();
@@ -785,9 +766,6 @@ function selectBarber(barberId, barberName) {
   document.getElementById('selectedBarber').textContent = barberName;
 }
 
-
-
-// Toggle menu de ações
 function toggleActionsMenu(appointmentId) {
   // console.log('[ADMIN] Toggle menu para agendamento:', appointmentId);
 
@@ -911,12 +889,6 @@ async function viewAppointment(appointmentId) {
     notify({ type: 'error', message: 'Erro ao carregar detalhes do agendamento' });
   }
 }
-
-
-
-
-
-
 async function editAppointment(appointmentId) {
   closeAllMenus();
 
@@ -1157,26 +1129,6 @@ function getStatusText(status) {
   return statusMap[status] || status;
 }
 
-
-// function showNotification(message, type = 'info') {
-
-//   const notification = document.createElement('div');
-//   notification.className = `notification ${type} show`;
-//   notification.textContent = message;
-
-//   document.body.appendChild(notification);
-
-//   setTimeout(() => {
-//     notification.classList.remove('show');
-//     setTimeout(() => {
-//       if (document.body.contains(notification)) {
-//         document.body.removeChild(notification);
-//       }
-//     }, 300);
-//   }, 3000);
-// }
-
-
 async function loadSelectOptions(selectId, endpoint, selectedId) {
   try {
     const res = await fetch(endpoint);
@@ -1273,38 +1225,6 @@ if (editForm) {
     }
   });
 }
-
-
-
-// function showToast(message, type = 'success') {
-//   const toast = document.createElement('div');
-//   toast.className = `toast align-items-center text-white bg-${type} border-0 show`;
-//   toast.setAttribute('role', 'alert');
-//   toast.setAttribute('aria-live', 'assertive');
-//   toast.setAttribute('aria-atomic', 'true');
-//   toast.style.position = 'fixed';
-//   toast.style.top = '20px';
-//   toast.style.right = '20px';
-//   toast.style.zIndex = '9999';
-//   toast.style.transition = 'opacity 0.5s ease-in-out';
-
-//   toast.innerHTML = `
-//     <div class="d-flex">
-//       <div class="toast-body">${message}</div>
-//       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-//     </div>
-//   `;
-
-//   document.body.appendChild(toast);
-
-//   setTimeout(() => {
-//     toast.classList.remove('show');
-//     toast.style.opacity = 0;
-//     setTimeout(() => toast.remove(), 500);
-//   }, 4000);
-// }
-
-
 
 function initCardExpandables() {
   document.querySelectorAll('.card-collapsible').forEach(card => {
@@ -1478,9 +1398,6 @@ document.addEventListener('click', (e) => {
   window.location.href = url.toString();
 });
 
-
-
-
 function limitarCardsPorBarbeiro(qtd = 10) {
   document.querySelectorAll('.card-group').forEach(group => {
     const cards = group.querySelectorAll('.card-wrapper');
@@ -1543,8 +1460,6 @@ function attachActionPanelListeners() {
   });
 }
 
-
-
 // Função para abrir o painel lateral
 async function openActionPanel(id) {
   const s = ensureActionPanelSkeleton();
@@ -1605,7 +1520,6 @@ async function openActionPanel(id) {
   }
 }
 
-
 //Finalizar e Receber
 // Métodos permitidos no front (o back normaliza também)
 const ALLOWED_METHODS = new Set(['cash', 'pix', 'credit_card', 'debit_card', 'voucher', 'other']);
@@ -1618,26 +1532,21 @@ function toMoney(n) {
 }
 
 // ---- Finalizar e Receber ----
+
 async function submitCheckout(appointmentId) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-  // Coletar SOMENTE linhas do <tbody>
   const rows = document.querySelectorAll('#checkoutPaymentsTable tbody tr');
 
-  // Montar pagamentos válidos (amount > 0)
   const rawPayments = Array.from(rows).map(row => {
     const methodEl = row.querySelector('.method-select');
     const amountEl = row.querySelector('.amount-input');
     const notesEl  = row.querySelector('.notes-input');
-
     const method = (methodEl?.value || '').trim();
     const amount = toMoney(amountEl?.value?.trim());
     const notes  = (notesEl?.value || '').trim();
-
     return { method, amount, notes };
   });
 
-  // Filtrar linhas vazias ou inválidas
   const payments = rawPayments
     .filter(p => ALLOWED_METHODS.has(p.method || ''))
     .filter(p => Number.isFinite(p.amount) && p.amount > 0);
@@ -1647,12 +1556,10 @@ async function submitCheckout(appointmentId) {
     return;
   }
 
-  // (Opcional) Sanitiza notas (ex.: limite 200 chars)
   payments.forEach(p => {
     if (p.notes.length > 200) p.notes = p.notes.slice(0, 200);
   });
 
-  // UX: desabilitar botão enquanto envia
   const btn = document.getElementById('finalizarCheckoutBtn');
   const originalBtnHtml = btn?.innerHTML;
   if (btn) {
@@ -1670,7 +1577,6 @@ async function submitCheckout(appointmentId) {
       body: JSON.stringify({ payments })
     });
 
-    // Trata falhas HTTP (ex.: 400/500)
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok || !data?.success) {
       const msg = data?.error || 'Falha ao registrar pagamento.';
@@ -1678,16 +1584,30 @@ async function submitCheckout(appointmentId) {
       return;
     }
 
-    // Sucesso
     notify({ type: 'success', message: 'Pagamento registrado com sucesso!' });
 
-    // Fechar modal somente após sucesso
     const modalEl = document.getElementById('checkoutModal');
-    if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+    if (modalEl) {
+      let modal = bootstrap.Modal.getInstance(modalEl);
+      if (!modal) modal = new bootstrap.Modal(modalEl);
+      modal.hide();
+    }
 
-    // Atualizar listagem
-    if (typeof refreshAppointmentsTable === 'function') {
-      refreshAppointmentsTable();
+    document.dispatchEvent(new CustomEvent('appointment:paid', { detail: { id: appointmentId } }));
+
+    const doRefresh = async () => {
+      if (typeof refreshAppointmentsTable === 'function') {
+        try {
+          const maybe = refreshAppointmentsTable();
+          if (maybe && typeof maybe.then === 'function') await maybe;
+        } catch {}
+      }
+    };
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => { doRefresh(); });
+    } else {
+      setTimeout(() => { doRefresh(); }, 50);
     }
   } catch (err) {
     console.error(err);
@@ -1699,6 +1619,7 @@ async function submitCheckout(appointmentId) {
     }
   }
 }
+
 
 function openCheckoutModal(appointmentId) {
   const modal = document.getElementById('checkoutModal');
