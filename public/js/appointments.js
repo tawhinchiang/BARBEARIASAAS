@@ -350,11 +350,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     socket.on('appointment_cancelled', async (data) => {
-      console.log('[SOCKET] Agendamento cancelado:', data);
-      notify({ type: 'error', message: `Agendamento cancelado: <strong>${data.client}</strong> (${data.time})` });
+    
+    if (window.__justCancelledId && Number(window.__justCancelledId) === Number(data.id)) {
+      window.__justCancelledId = undefined;
+    } else {
+     
+      notify({
+        type: 'info', 
+        message: `Agendamento cancelado: <strong>${data.client}</strong> (${data.time})`
+      });
+    }
 
-      requestIdleCallback(() => refreshAppointmentsTable());
-    });
+    requestIdleCallback(() => refreshAppointmentsTable());
+  });
 
 
   }
@@ -1039,9 +1047,13 @@ async function cancelAppointment(appointmentId) {
       body: JSON.stringify({ reason })
     });
 
+    
     if (response.ok) {
+      
+      window.__justCancelledId = Number(appointmentId);
+
       notify({ type: 'success', message: 'Agendamento cancelado com sucesso!' });
-     await refreshAppointmentsTable(Date.now());
+      await refreshAppointmentsTable(Date.now());
     } else {
       notify({ type: 'error', message: 'Erro ao cancelar agendamento' });
     }

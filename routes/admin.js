@@ -699,8 +699,9 @@ router.get('/appointments/partial', async (req, res) => {
     merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
     const timeSlots = buildTimeSlots(merged, barbers, 30);
 
-    // Renderiza partial em string
-    res.render('partials/appointments-table-rows', { layout: false, appointments: merged, timeSlots }, (err, html) => {
+    
+    res.render('partials/appointments-table-rows', { layout: false, appointments: merged, timeSlots, barbers,              
+    currentDateRaw:currentDate}, (err, html) => {
       if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
       const hasNext = (p * l) < count;
       res.json({ html, hasNext, nextPage: p + 1 });
@@ -785,8 +786,7 @@ router.post('/appointments/:id/status', async (req, res) => {
   }
 });
 
-// Relatórios administrativos - CORRIGIDA
-// /admin/reports – LISTAGEM COM PAGINAÇÃO + VIEW MODE
+
 // -------------------- RELATÓRIOS ADMINISTRATIVOS --------------------
 
 // /admin/reports – LISTAGEM COM PAGINAÇÃO + VIEW MODE
