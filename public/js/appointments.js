@@ -9,7 +9,7 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 
 document.addEventListener('DOMContentLoaded', function () {
   console.log('[ADMIN] Página de agendamentos carregada');
-  restoreSavedView();
+
   const filterBtn = document.getElementById('filterToggleBtn');
   if (filterBtn) {
     filterBtn.addEventListener('click', () => {
@@ -63,48 +63,6 @@ document.addEventListener('DOMContentLoaded', function () {
     window.location.href = url.toString();
   }
 
-  // 2. Configura alternância da visualização
-  const toggleBtn = document.getElementById('toggleView');
-  if (!toggleBtn) {
-    console.warn('[ERRO] Botão de alternância não encontrado');
-  } else {
-    toggleBtn.addEventListener('click', function (e) {
-      e.preventDefault();
-      console.log('[DEBUG] Toggle button clicked');
-
-      const tableView = document.getElementById('appointmentsTableView');
-      const cardView = document.getElementById('appointmentsCardView');
-
-      if (!tableView || !cardView) {
-        console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
-        tableView?.classList.remove('hidden');
-        cardView?.classList.add('hidden');
-        return;
-      }
-
-      const isTableVisible = !tableView.classList.contains('hidden');
-      console.log('[DEBUG] Current state - Table visible:', isTableVisible);
-      // Inicializar modal de encaixe
-
-      // Adicionar evento ao botão de encaixe
-
-      if (isTableVisible) {
-        tableView.classList.add('hidden');
-        cardView.classList.remove('hidden');
-        localStorage.setItem('appointmentsView', 'cards');
-       
-        console.log('[DEBUG] Switched to cards view');
-      } else {
-        cardView.classList.add('hidden');
-        tableView.classList.remove('hidden');
-        localStorage.setItem('appointmentsView', 'table');
-        // 🔧 Reanexa os eventos da tabela
-        initTableListeners();
-        attachActionPanelListeners()
-        console.log('[DEBUG] Switched to table view');
-      }
-    });
-  }
 
   const fitInForm = document.getElementById('fitInForm');
   if (fitInForm) {
@@ -114,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const submitBtn = fitInForm.querySelector('button[type="submit"]');
       const originalHtml = submitBtn.innerHTML;
 
-      // 🔒 Bloqueia múltiplos cliques
+      
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
       <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
@@ -162,7 +120,9 @@ document.addEventListener('DOMContentLoaded', function () {
           const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
           if (fitInModal) fitInModal.hide();
 
-          setTimeout(() => location.reload(), 600);
+          window.__justCreated = true;
+          await refreshAppointmentsTable(Date.now());
+          try { closeActionPanel(); } catch {}
         } else {
           notify({
             type: 'error',
@@ -236,12 +196,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Executa tarefas mais leves logo
   requestIdleCallback(() => {
-    
+
     setDefaultDates();
     restoreFilters();
 
 
-   
+
 
     setTimeout(() => {
       attachActionPanelListeners();
@@ -344,25 +304,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const socket = io();
 
     socket.on('new_appointment', async (data) => {
-      notify({ type: 'success', message: `Novo agendamento: <strong>${data.client}</strong> (${data.time})` });
-
+      if (!window.__justCreated) {
+        notify({ type: 'success', message: `Novo agendamento: <strong>${data.client}</strong> (${data.time})` });
+      }
+      window.__justCreated = false;
       requestIdleCallback(() => refreshAppointmentsTable());
     });
 
     socket.on('appointment_cancelled', async (data) => {
-    
-    if (window.__justCancelledId && Number(window.__justCancelledId) === Number(data.id)) {
-      window.__justCancelledId = undefined;
-    } else {
-     
-      notify({
-        type: 'info', 
-        message: `Agendamento cancelado: <strong>${data.client}</strong> (${data.time})`
-      });
-    }
 
-    requestIdleCallback(() => refreshAppointmentsTable());
-  });
+      if (window.__justCancelledId && Number(window.__justCancelledId) === Number(data.id)) {
+        window.__justCancelledId = undefined;
+      } else {
+
+        notify({
+          type: 'info',
+          message: `Agendamento cancelado: <strong>${data.client}</strong> (${data.time})`
+        });
+      }
+
+      requestIdleCallback(() => refreshAppointmentsTable());
+    });
 
 
   }
@@ -478,7 +440,9 @@ function openActionPanelForEmptySlot({ barberId, date, time }) {
       const result = await res.json();
       if (res.ok && result.success) {
         notify({ type: 'success', message: 'Horário bloqueado com sucesso!' });
-        reloadWithFade();
+        window.__justBlocked = true;
+
+        await refreshAppointmentsTable(Date.now());
       } else {
         notify({ type: 'error', message: result.error || 'Erro ao bloquear horário' });
       }
@@ -526,7 +490,8 @@ async function openActionPanelForBlockedSlot(appointmentId) {
       const result = await res.json();
       if (res.ok && result.success) {
         notify({ type: 'success', message: 'Horário desbloqueado com sucesso!' });
-        reloadWithFade();
+        window.__justUnblocked = true;
+        await refreshAppointmentsTable(Date.now());
       } else {
         notify({ type: 'error', message: result.error || 'Erro ao desbloquear horário' });
       }
@@ -973,7 +938,7 @@ async function confirmAppointment(appointmentId) {
     if (response.ok) {
 
       notify({ type: 'success', message: 'Agendamento confirmado com sucesso!', });
-      setTimeout(() => refreshAppointmentsTable(), 300);
+     await refreshAppointmentsTable(Date.now());
     } else {
       throw new Error('Erro ao confirmar agendamento');
     }
@@ -1008,7 +973,7 @@ async function completeAppointment(appointmentId) {
     if (response.ok) {
       notify({ type: 'success', message: 'Agendamento concluído com sucesso!' });
 
-      setTimeout(() => refreshAppointmentsTable(), 300);
+      await refreshAppointmentsTable(Date.now());
     } else {
       throw new Error('Erro ao concluir agendamento');
     }
@@ -1047,9 +1012,9 @@ async function cancelAppointment(appointmentId) {
       body: JSON.stringify({ reason })
     });
 
-    
+
     if (response.ok) {
-      
+
       window.__justCancelledId = Number(appointmentId);
 
       notify({ type: 'success', message: 'Agendamento cancelado com sucesso!' });
@@ -1223,7 +1188,7 @@ if (editForm) {
       if (!response.ok) throw new Error('Erro ao atualizar');
       notify({ type: 'success', message: 'Agendamento atualizado com sucesso' });
 
-      setTimeout(() => location.reload(), 1000);
+      setTimeout(() => refreshAppointmentsTable(), 300);
     } catch (err) {
       console.error('[ADMIN ERROR] Falha ao atualizar agendamento:', err);
       notify({ type: 'error', message: 'Erro ao atualizar agendamento' });
@@ -1235,8 +1200,8 @@ if (editForm) {
 
 async function refreshAppointmentsTable(ts = Date.now()) {
   const params = new URLSearchParams(window.location.search);
-  params.set('_ts', String(ts)); 
-   // Atualiza a TABELA inteira (thead + tbody) porque a partial devolve ambos
+  params.set('_ts', String(ts));
+
   const tableEl = document.querySelector('#appointmentsTableView .admin-table');
   if (tableEl) {
     try {
@@ -1245,7 +1210,7 @@ async function refreshAppointmentsTable(ts = Date.now()) {
       });
       const ct = res.headers.get('content-type') || '';
 
-     if (ct.includes('application/json')) {
+      if (ct.includes('application/json')) {
         const { html } = await res.json();
         tableEl.innerHTML = html || '';
       } else {
@@ -1264,37 +1229,9 @@ async function refreshAppointmentsTable(ts = Date.now()) {
   attachActionPanelListeners();
 }
 
-function restoreSavedView() {
-  const savedView = localStorage.getItem('appointmentsView');
-  const tableView = document.getElementById('appointmentsTableView');
-  const cardView = document.getElementById('appointmentsCardView');
 
-  console.log('[DEBUG] Restoring saved view:', savedView);
-  console.log('[DEBUG] Elements found:', { tableView: !!tableView, cardView: !!cardView });
-
-  if (!tableView || !cardView) {
-    console.warn('[WARN] Views não encontrados. Forçando visualização por tabela.');
-    document.getElementById('appointmentsTableView')?.classList.remove('hidden');
-    document.getElementById('appointmentsCardView')?.classList.add('hidden');
-    return;
-  }
-
-  if (savedView === 'cards') {
-    tableView.classList.add('hidden');
-    cardView.classList.remove('hidden');
-    
-    console.log('[DEBUG] Restored to cards view');
-  } else {
-    cardView.classList.add('hidden');
-    tableView.classList.remove('hidden');
-    // reaplica eventos
-    initTableListeners();
-    attachActionPanelListeners();
-    console.log('[DEBUG] Restored to table view');
-  }
-}
 function limitarLinhasDaTabela(qtd = 10) {
- const linhas = document.querySelectorAll('#appointmentsTableView table tbody tr');
+  const linhas = document.querySelectorAll('#appointmentsTableView table tbody tr');
   if (linhas.length > qtd) {
     linhas.forEach((tr, index) => {
       if (index >= qtd) tr.classList.add('d-none');
