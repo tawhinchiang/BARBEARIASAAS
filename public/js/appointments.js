@@ -119,8 +119,13 @@ document.addEventListener('DOMContentLoaded', function () {
           const fitInModalEl = document.getElementById('fitInModal');
           const fitInModal = bootstrap.Modal.getInstance(fitInModalEl);
           if (fitInModal) fitInModal.hide();
+          await new Promise(r => setTimeout(r, 150));
+          
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('padding-right');
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
 
-          window.__justCreated = true;
+          // agora pode atualizar a tabela
           await refreshAppointmentsTable(Date.now());
           try { closeActionPanel(); } catch {}
         } else {
@@ -341,8 +346,9 @@ function abrirModalAgendamento(scheduleBtn) {
   const date = scheduleBtn.dataset.date;
   const time = scheduleBtn.dataset.time;
 
-  const openBtn = document.getElementById('openFitInBtn');
-  if (openBtn) openBtn.click();
+const fitInModalEl = document.getElementById('fitInModal');
+const fitInModal = bootstrap.Modal.getOrCreateInstance(fitInModalEl);
+fitInModal.show();
 
   setTimeout(() => {
     document.getElementById('fitInBarber').value = barberId;
@@ -536,13 +542,21 @@ function initModals() {
   });
 
   const fitInModalEl = document.getElementById('fitInModal');
-  if (fitInModalEl) {
-    if (fitInModalEl.parentElement !== document.body) {
-      document.body.appendChild(fitInModalEl);
-      console.log('[DEBUG] #fitInModal movido para <body> para evitar problemas de stacking context');
-    }
+if (fitInModalEl) {
+  if (fitInModalEl.parentElement !== document.body) {
+    document.body.appendChild(fitInModalEl);
+  }
 
-    const fitInModal = new bootstrap.Modal(fitInModalEl);
+  // garanta uma única instância
+  const fitInModal = bootstrap.Modal.getOrCreateInstance(fitInModalEl);
+
+  // limpeza robusta quando o modal fecha
+  const cleanupBackdrops = () => {
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('padding-right');
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+  };
+  fitInModalEl.addEventListener('hidden.bs.modal', cleanupBackdrops);
     fitInModalEl.addEventListener('show.bs.modal', () => {
       populateFitInSelects();
 
