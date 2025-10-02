@@ -236,7 +236,7 @@ function setupWhatsAppConfigUI() {
       btn.remove(); // acabou
     }
   }
-
+  
   btnMoreTable?.addEventListener('click', () => loadMore({ view: 'table' }));
   btnMoreCards?.addEventListener('click', () => loadMore({ view: 'cards' }));
 

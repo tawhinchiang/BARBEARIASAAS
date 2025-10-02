@@ -696,16 +696,28 @@ router.get('/appointments/partial', async (req, res) => {
     // Mesclar
     const merged = [...formatted, ...freeSlots];
     // Ordenar pela hora
-    merged.sort((a, b) => a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted));
+    merged.sort((a, b) => {
+    if (a.barberId !== b.barberId) return a.barberId - b.barberId;
+    return a.appointmentTimeFormatted.localeCompare(b.appointmentTimeFormatted);
+  });
     const timeSlots = buildTimeSlots(merged, barbers, 30);
 
     
-    res.render('partials/appointments-table-rows', { layout: false, appointments: merged, timeSlots, barbers,              
-    currentDateRaw:currentDate}, (err, html) => {
+    res.render('partials/appointments-table-rows', {
+      layout: false,
+      appointments: merged,
+      timeSlots,
+      barbers,
+      currentDateRaw: new Date(currentDate + 'T00:00:00')
+    }, (err, html) => {
       if (err) return res.status(500).json({ error: 'Erro ao renderizar partial' });
-      const hasNext = (p * l) < count;
+
+      const total = count + freeSlots.length;
+      const hasNext = (p * l) < total;
+
       res.json({ html, hasNext, nextPage: p + 1 });
     });
+
   } catch (e) {
     res.status(500).json({ error: 'Erro ao paginar agendamentos' });
   }

@@ -93,17 +93,33 @@
 
 
 
-
-    <!-- VISUALIZAÇÃO EM TABELA -->
-    <div id="appointmentsTableView" class="view-mode">
-      <div class="row">
-        <div class="col-12">
-          <table class="table table-hover admin-table">
-            {{> appointments-table-rows}} 
-          </table>
-        </div>
-      </div>
+<div id="appointmentsTableView" class="view-mode">
+  <!-- Navegação de dia (fica aqui, fora da table) -->
+  <div class="d-flex justify-content-between align-items-center mb-2 d-block d-md-none">
+    <button class="btn btn-sm btn-outline-secondary prevDay">&lt;</button>
+    <div class="fw-bold text-center flex-grow-1">
+      {{formatDate currentDateRaw}}, {{dayOfWeek currentDateRaw}}
     </div>
+    <button class="btn btn-sm btn-outline-secondary nextDay">&gt;</button>
+  </div>
+
+  <div class="d-none d-md-flex justify-content-between align-items-center mb-3">
+    <button class="btn btn-outline-secondary prevDay">&laquo; Dia anterior</button>
+    <div class="fw-bold text-center flex-grow-1 fs-5">
+      {{dayOfWeek currentDateRaw}}, {{formatDate currentDateRaw}}
+    </div>
+    <button class="btn btn-outline-secondary nextDay">Próximo dia &raquo;</button>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <table class="table table-hover admin-table">
+        {{> appointments-table-rows}}  <!-- esta partial só tem THEAD + TBODY -->
+      </table>
+    </div>
+  </div>
+</div>
+
 
 
 

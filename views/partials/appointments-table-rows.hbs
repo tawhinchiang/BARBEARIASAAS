@@ -1,28 +1,6 @@
-{{!-- Mobile --}}
-<div class="d-flex justify-content-between align-items-center mb-2 d-block d-md-none">
-  <button class="btn btn-sm btn-outline-secondary prevDay">&lt;</button>
-  <div class="fw-bold text-center flex-grow-1">
-    {{formatDate currentDateRaw}}, {{dayOfWeek currentDateRaw}}
-  </div>
-  <button class="btn btn-sm btn-outline-secondary nextDay">&gt;</button>
-</div>
-
-{{!-- Desktop --}}
-<div class="d-none d-md-flex justify-content-between align-items-center mb-3">
-  <button class="btn btn-outline-secondary prevDay">&laquo; Dia anterior</button>
-  <div class="fw-bold text-center flex-grow-1 fs-5">
-    {{dayOfWeek currentDateRaw}}, {{formatDate currentDateRaw}}
-  </div>
-  <button class="btn btn-outline-secondary nextDay">Próximo dia &raquo;</button>
-</div>
-
-
 <thead>
   <tr>
-    <!-- ✅ Coluna fixa de horário -->
     <th class="text-center align-middle" style="width:100px;">Horário</th>
-
-    <!-- ✅ Colunas por barbeiro -->
     {{#each barbers}}
     <th class="text-start align-middle">
       <div class="d-flex align-items-center">
@@ -39,12 +17,11 @@
 <tbody>
   {{#each timeSlots as |slot|}}
   <tr>
-    <!-- Coluna fixa do horário -->
     <td class="text-center fw-semibold align-middle" style="width:100px;">
       {{slot.time}}
     </td>
 
-    <!-- Colunas por barbeiro -->
+
     {{#each slot.cells as |cell|}}
     <td class="align-top
     {{#if cell.appointment}}
@@ -53,7 +30,7 @@
 
       {{#if cell.appointment}}
       {{#if (eq cell.appointment.status "blocked")}}
-      <!-- Card para BLOQUEADO -->
+    
       <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center" role="button"
         tabindex="0" data-id="{{cell.appointment.id}}">
         <span class="text-muted fw-bold">Bloqueado</span>
