@@ -803,7 +803,6 @@ function createParagraph(label, value) {
 }
 
 async function viewAppointment(appointmentId) {
-  // console.log('[ADMIN] Visualizando agendamento:', appointmentId);
   closeAllMenus();
 
   try {
@@ -851,6 +850,59 @@ async function viewAppointment(appointmentId) {
     colDetails.appendChild(createParagraph('Status',
       `<span class="status-badge status-${appointment.status}">${getStatusText(appointment.status)}</span>`));
     colDetails.appendChild(createParagraph('Valor', `R$ ${totalPrice}`));
+    // === Pagamento (badge) ===
+const paymentStatus = appointment.paymentStatus || 'pending';
+const paymentLabelMap = { paid: 'Pago', partial: 'Parcial', pending: 'Pendente' };
+const paymentLabel = paymentLabelMap[paymentStatus] || paymentStatus;
+
+// classes Bootstrap para o badge
+let paymentBadgeClass = 'bg-warning text-dark';
+if (paymentStatus === 'paid') paymentBadgeClass = 'bg-success';
+else if (paymentStatus === 'partial') paymentBadgeClass = 'bg-info text-dark';
+
+colDetails.appendChild(
+  createParagraph('Pagamento', `<span class="badge ${paymentBadgeClass}">${paymentLabel}</span>`)
+);
+
+// === Forma(s) de pagamento ===
+// Suporta múltiplos pagamentos (ex.: parcial em Pix + Crédito)
+const methodLabels = {
+  cash: 'Dinheiro',
+  pix: 'Pix',
+  credit_card: 'Cartão Crédito',
+  debit_card: 'Cartão Débito',
+  credit: 'Cartão Crédito', // compatibilidade
+  debit: 'Cartão Débito',   // compatibilidade
+  voucher: 'Voucher',
+  other: 'Outros'
+};
+
+let methodsText = '—';
+
+// Se o backend retorna um array "payments"
+if (Array.isArray(appointment.payments) && appointment.payments.length) {
+  const totalsByMethod = {};
+  appointment.payments.forEach(p => {
+    const raw = String(p.method || '').toLowerCase();
+    const key = methodLabels[raw] ? raw : 'other';
+    const amt = Number(p.amount || 0);
+    totalsByMethod[key] = (totalsByMethod[key] || 0) + amt;
+  });
+
+  methodsText = Object.entries(totalsByMethod)
+    .map(([m, amt]) => {
+      const label = methodLabels[m] || m;
+      const money = Number(amt || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      return `${label} (${money})`;
+    })
+    .join(' + ');
+} else if (appointment.paymentMethod) {
+  // compat: alguns endpoints podem mandar um único método
+  const m = String(appointment.paymentMethod).toLowerCase();
+  methodsText = methodLabels[m] || appointment.paymentMethod;
+}
+
+colDetails.appendChild(createParagraph('Forma(s) de pagamento', methodsText));
 
     row.appendChild(colClient);
     row.appendChild(colDetails);
