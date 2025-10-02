@@ -1090,7 +1090,8 @@ router.get('/appointments/:id', async (req, res) => {
       include: [
         { model: Client, as: 'client', attributes: ['firstName', 'lastName', 'phone', 'email'] },
         { model: Barber, as: 'barber', attributes: ['name'] },
-        { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] }
+        { model: ServiceType, as: 'serviceType', attributes: ['name', 'duration', 'price'] },
+        { model: Payment, as: 'payments', attributes: ['id', 'method', 'amount', 'notes', 'createdAt'] }
       ]
     });
 
