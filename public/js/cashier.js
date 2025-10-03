@@ -293,7 +293,7 @@ async function openCloseCashierModal() {
           <div class="input-group">
             <span class="input-group-text">R$</span>
             <input type="number" class="form-control cc-count" min="0" step="0.01" placeholder="0,00">
-          </div>
+          </div>s
         </td>
         <td class="text-end" data-diff>R$ 0,00</td>
       `;
@@ -302,8 +302,8 @@ async function openCloseCashierModal() {
     document.getElementById('cc-expected-sum').textContent = money(expectedTotal);
     document.getElementById('cc-counted-sum').value = 'R$ 0,00';
     document.getElementById('cc-diff-sum').textContent = 'R$ 0,00';
-    document.getElementById('cc-notes').value = '';
-    document.getElementById('cc-print').checked = false;
+    // document.getElementById('cc-notes').value = '';
+    // document.getElementById('cc-print').checked = false;
     document.getElementById('cc-diff-alert').classList.add('d-none');
 
     // Recalcular ao digitar
