@@ -200,5 +200,62 @@
   </div>
 </div>
 
+<style>
+  /* Escopo exclusivo do modal de Fechar Caixa */
+  #closeCashierModal .modal-content { 
+    background: #fff !important; 
+    color: #212529 !important; 
+  }
+
+  /* Mantém o header vermelho com texto branco */
+  #closeCashierModal .modal-header {
+    background: #dc3545 !important;
+    color: #fff !important;
+  }
+  #closeCashierModal .btn-close,
+  #closeCashierModal .btn-close-white { filter: invert(1); }
+
+  /* Garante texto escuro em TODO o conteúdo do corpo do modal */
+  #closeCashierModal .modal-body,
+  #closeCashierModal .modal-body *:not(.btn):not(.badge) {
+    color: #212529 !important;
+  }
+  /* “text-muted” precisa continuar legível */
+  #closeCashierModal .text-muted { color: #6c757d !important; }
+
+  /* Tabela clara, com thead escuro e letras brancas (como no seu print) */
+  #closeCashierModal .table { background: #fff !important; }
+  #closeCashierModal .table thead tr { background: #212529 !important; }
+  #closeCashierModal .table thead th { 
+    color: #fff !important; 
+    border-color: #212529 !important; 
+  }
+  #closeCashierModal .table tbody td,
+  #closeCashierModal .table tfoot th,
+  #closeCashierModal .table tfoot td {
+    color: #212529 !important;
+  }
+
+  /* Inputs e placeholders legíveis */
+  #closeCashierModal .input-group-text {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+    border-color: #ced4da !important;
+  }
+  #closeCashierModal .form-control {
+    background: #fff !important;
+    color: #212529 !important;
+    border-color: #ced4da !important;
+  }
+  #closeCashierModal .form-control:disabled,
+  #closeCashierModal .form-control[readonly] {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+  }
+  #closeCashierModal .form-control::placeholder {
+    color: #6c757d !important;
+    opacity: 1;
+  }
+</style>
 
 <script src="/js/cashier.js"></script>
