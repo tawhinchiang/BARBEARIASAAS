@@ -1,31 +1,37 @@
-<div id="cashierView" class="container py-4">
-  <h2 id="cashierTitle" class="mb-4 d-flex align-items-center">
-    <i class="fas fa-cash-register me-2"></i> Caixa
-  </h2>
+<div class="admin-dashboard fade-in-soft">
+  <div class="container-fluid">
+    <div class="row mt-5">
+      <div class="col-12">
+        <h2 id="cashierTitle" class="mb-4 d-flex align-items-center">
+          <i class="fas fa-cash-register me-2"></i> Caixa
+        </h2>
 
-  <!-- Status atual -->
-  <div id="cashierStatus" class="mb-3">
-    {{!-- Aqui via JS você vai preencher se está aberto ou fechado --}}
-  </div>
+        <!-- Status atual -->
+        <div id="cashierStatus" class="mb-3">
+          {{!-- Aqui via JS você vai preencher se está aberto ou fechado --}}
+        </div>
 
-  <!-- Botões de ações -->
-  <div class="mb-4">
-    <button id="btnOpenCashier" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#openCashierModal">
-      <i class="fas fa-door-open me-1"></i> Abrir Caixa
-    </button>
+        <!-- Botões de ações -->
+        <div class="mb-4">
+          <button id="btnOpenCashier" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#openCashierModal">
+            <i class="fas fa-door-open me-1"></i> Abrir Caixa
+          </button>
 
-    <button id="btnAddExpense" class="btn btn-warning me-2" disabled>
-      <i class="fas fa-minus-circle me-1"></i> Lançar Despesa
-    </button>
+          <button id="btnAddExpense" class="btn btn-warning me-2" disabled>
+            <i class="fas fa-minus-circle me-1"></i> Lançar Despesa
+          </button>
 
-    <button id="btnCloseCashier" class="btn btn-danger" disabled>
-      <i class="fas fa-door-closed me-1"></i> Fechar Caixa
-    </button>
-  </div>
+          <button id="btnCloseCashier" class="btn btn-danger" disabled>
+            <i class="fas fa-door-closed me-1"></i> Fechar Caixa
+          </button>
+        </div>
 
-  <!-- Resumo da sessão atual -->
-  <div id="cashierSummary" class="row g-3">
-    <!-- preenchido via JS com /admin/cashier/session/current -->
+        <!-- Resumo da sessão atual -->
+        <div id="cashierSummary" class="row g-3">
+          <!-- preenchido via JS com /admin/cashier/session/current -->
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
