@@ -100,7 +100,7 @@
             <label class="form-label">Categoria</label>
             <select id="exp-category" class="form-select">
               <option value="operacional">Operacional</option>
-              <option value="fixa">Fixa (mensal)</option>
+              {{!-- <option value="fixa">Fixa (mensal)</option> --}}
               <option value="taxa_maquininha">Taxa maquininha</option>
               <option value="outras">Outras</option>
             </select>
@@ -110,16 +110,16 @@
             <input id="exp-date" type="date" class="form-control">
           </div>
         </div>
-
+{{!-- 
         <div class="form-check mt-2">
           <input class="form-check-input" type="checkbox" id="exp-fixed">
           <label class="form-check-label" for="exp-fixed">Cadastrar como despesa fixa mensal</label>
-        </div>
+        </div> --}}
 
-        <div class="mt-2">
+        {{!-- <div class="mt-2">
           <label class="form-label small">Observações</label>
           <textarea id="exp-notes" class="form-control" rows="2" placeholder="Obs. (opcional)"></textarea>
-        </div>
+        </div> --}}
 
         <div id="exp-alert" class="alert alert-danger py-2 px-3 mt-2 d-none"></div>
       </div>
@@ -193,15 +193,15 @@
           Existem diferenças entre o esperado e o contado. Revise antes de fechar.
         </div>
 
-        <div class="mb-2">
+        {{!-- <div class="mb-2">
           <label class="form-label small text-muted">Observações</label>
           <textarea id="cc-notes" class="form-control" rows="2" placeholder="Obs. (opcional)"></textarea>
-        </div>
+        </div> --}}
 
-        <div class="form-check">
+        {{!-- <div class="form-check">
           <input class="form-check-input" type="checkbox" id="cc-print">
           <label class="form-check-label" for="cc-print">Imprimir recibo de fechamento</label>
-        </div>
+        </div> --}}
       </div>
 
       <div class="modal-footer">
@@ -213,9 +213,8 @@
 </div>
 
 <style>
-  /* ========= Título/Heading sempre visível ========= */
   #cashierTitle{
-    color: var(--cashier-title-color, #fff) !important; /* contraste em tema escuro */
+    color: var(--cashier-title-color, #fff) !important;
     font-weight: 600;
     letter-spacing: .2px;
   }
@@ -223,20 +222,16 @@
     #cashierTitle{ font-size: 1.25rem; }
   }
 
-  /* ========= Vars do modal de FECHAMENTO ========= */
   #closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
-
   #closeCashierModal .modal-content{ background:#fff !important; color:#212529 !important; }
   #closeCashierModal .modal-header{ background:#dc3545 !important; color:#fff !important; }
   #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter: invert(1); }
   #closeCashierModal .modal-body{ color:#212529 !important; }
   #closeCashierModal .text-muted{ color:#6c757d !important; }
 
-  /* Tabela colorida */
   #closeCashierModal .table thead tr{ background: var(--brand-primary) !important; }
   #closeCashierModal .table thead th{ color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
   #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background: var(--brand-primary) !important; }
-
   #closeCashierModal .table{
     --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff;
   }
@@ -246,7 +241,6 @@
   #closeCashierModal .table tfoot td{ border-color: rgba(255,255,255,.15) !important; }
   #closeCashierModal .table .text-muted{ color:#fff !important; opacity:1 !important; }
 
-  /* ========= Padronização dos CONTROLES DE ENTRADA (inputs/selects/R$) nos 3 modais ========= */
   #openCashierModal .input-group-text,   #openCashierModal .form-control,   #openCashierModal .form-select,
   #expenseModal   .input-group-text,     #expenseModal   .form-control,     #expenseModal   .form-select,
   #closeCashierModal .input-group-text,  #closeCashierModal .form-control,  #closeCashierModal .form-select{
@@ -254,25 +248,21 @@
     padding: .5rem .65rem;
     font-size: .95rem;
     line-height: 1.2;
+    background:#fff !important;
+    color:#212529 !important;
+    border-color:#ced4da !important;
   }
-  /* Aparência clara */
-  #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text{
-    background:#f8f9fa !important; color:#212529 !important; border-color:#ced4da !important;
-  }
-  #openCashierModal .form-control, #expenseModal .form-control, #closeCashierModal .form-control{
-    background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
-  }
-  #openCashierModal .form-select, #expenseModal .form-select, #closeCashierModal .form-select{
-    background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
+  #openCashierModal .input-group-text,
+  #expenseModal .input-group-text,
+  #closeCashierModal .input-group-text{
+    background:#f8f9fa !important;
   }
 
-  /* Inputs/placeholder de fechamento */
   #closeCashierModal .form-control:disabled,
   #closeCashierModal .form-control[readonly]{ background:#f8f9fa !important; color:#212529 !important; }
   #closeCashierModal .form-control::placeholder{ color:#6c757d !important; opacity:1; }
   #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff !important; color:#212529 !important; }
 
-  /* ========= Botões uniformes nos três modais ========= */
   #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{
     padding: .5rem .9rem;
     font-size: .9rem;
@@ -281,48 +271,10 @@
   }
   .btn-uniform{ padding: .5rem .9rem; font-size: .9rem; min-width: 128px; line-height: 1.2; }
 
-  /* ========= Responsivo (≤ 576px) ========= */
-  @media (max-width: 576.98px){
-    /* Margens e bordas (sem fullscreen) */
-    #closeCashierModal .modal-dialog, #expenseModal .modal-dialog, #openCashierModal .modal-dialog{ margin: .5rem; }
-    #closeCashierModal .modal-content, #expenseModal .modal-content, #openCashierModal .modal-content{ border-radius: .5rem; }
-
-    /* Tipografia/espacamentos menores no fechamento */
-    #closeCashierModal .modal-header, #closeCashierModal .modal-footer{ padding: .5rem .75rem; }
-    #closeCashierModal .modal-title{ font-size: .95rem; }
-    #closeCashierModal .modal-body .border.rounded.p-2{ padding: .5rem !important; }
-    #closeCashierModal .modal-body .small{ font-size: .72rem !important; }
-    #closeCashierModal .modal-body .fw-bold{ font-size: .9rem !important; }
-
-    #closeCashierModal .table{ font-size: .78rem; }
-    #closeCashierModal .table>:not(caption)>*>*{ padding: .35rem .4rem !important; }
-    #closeCashierModal .table thead th{ font-size: .75rem; white-space: nowrap; }
-    #closeCashierModal .table thead th:nth-child(3),
-    #closeCashierModal .table tbody td:nth-child(3){ width: 132px !important; }
-    #closeCashierModal .input-group-text, #expenseModal .input-group-text, #openCashierModal .input-group-text{ padding: .35rem .45rem !important; }
-    #closeCashierModal .form-control,    #expenseModal .form-control,    #openCashierModal .form-control{ padding: .35rem .5rem !important; height: 36px; }
-    #closeCashierModal .form-select,     #expenseModal .form-select,     #openCashierModal .form-select{ height: 36px; }
-
-    /* Evita zoom em iOS/Android */
-    #openCashierModal input,  #openCashierModal select,  #openCashierModal textarea,
-    #expenseModal input,      #expenseModal select,      #expenseModal textarea,
-    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea{ font-size: 16px !important; }
-
-    /* Despesa compacto */
-    #expenseModal .modal-header, #expenseModal .modal-footer{ padding: .5rem .75rem; }
-    #expenseModal .modal-title{ font-size: .95rem; }
-    #expenseModal textarea.form-control{ height: 96px; }
-
-    /* Botões uniformes no mobile */
-    #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ min-width: 132px; font-size: .92rem; padding: .5rem .9rem; }
-  }
-
-  /* ====== BOTÕES DO CAIXA (fora dos modais) ====== */
-  /* Desktop/tablet: lado a lado */
   .cashier-actions{
     display: flex;
     flex-wrap: wrap;
-    gap: .5rem;                 /* substitui me-2 como espaçamento */
+    gap: .5rem;
   }
   @media (min-width: 577px){
     .cashier-actions .btn{
@@ -330,29 +282,61 @@
       align-items: center;
       justify-content: center;
       padding: .6rem 1rem;
-      min-width: 150px;         /* largura mínima padronizada */
+      min-width: 150px;
       font-size: .95rem;
       line-height: 1.2;
     }
   }
 
-  /* Mobile: um por linha, ocupando 100% */
+  #expenseModal .form-label,
+  #expenseModal label,
+  #expenseModal .form-check-label{ color:#212529 !important; }
+  #expenseModal .text-danger{ color:#dc3545 !important; }
+  #expenseModal .modal-header,
+  #expenseModal .modal-header .modal-title,
+  #expenseModal .modal-header i{ color:#212529 !important; }
+
   @media (max-width: 576.98px){
-    .cashier-actions{ display:block; }    /* deixa de ser flex */
+    #closeCashierModal .modal-dialog{ margin:.75rem !important; max-width:100%; }
+    #closeCashierModal .modal-content{ border-radius:.6rem !important; max-height:calc(100dvh - 1.5rem); overflow:hidden; }
+    #closeCashierModal .modal-body{ max-height:calc(100dvh - 7.5rem); overflow:auto !important; -webkit-overflow-scrolling:touch; }
+    #closeCashierModal .modal-header, #closeCashierModal .modal-footer{ padding:.5rem .75rem !important; }
+    #closeCashierModal .modal-title{ font-size:.95rem; }
+    #closeCashierModal .modal-body .border.rounded.p-2{ padding:.5rem !important; }
+    #closeCashierModal .modal-body .small{ font-size:.72rem !important; }
+    #closeCashierModal .modal-body .fw-bold{ font-size:.9rem !important; }
+    #closeCashierModal .table{ font-size:.78rem; }
+    #closeCashierModal .table>:not(caption)>*>*{ padding:.35rem .4rem !important; }
+    #closeCashierModal .table thead th{ font-size:.75rem; white-space:nowrap; }
+    #closeCashierModal .table thead th:nth-child(3),
+    #closeCashierModal .table tbody td:nth-child(3){ width:132px !important; }
+    #closeCashierModal .input-group-text{ padding:.35rem .45rem !important; }
+    #closeCashierModal .form-control{ padding:.35rem .5rem !important; height:36px; }
+    #closeCashierModal .form-select{ height:36px; }
+
+    #expenseModal .modal-header, #expenseModal .modal-footer{ padding:.5rem .75rem; }
+    #expenseModal .modal-title{ font-size:.95rem; }
+    #expenseModal textarea.form-control{ height:96px; }
+
+    #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ min-width:132px; font-size:.92rem; padding:.5rem .9rem; }
+
+    #openCashierModal input,  #openCashierModal select,  #openCashierModal textarea,
+    #expenseModal input,      #expenseModal select,      #expenseModal textarea,
+    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea{ font-size:16px !important; }
+
+    .cashier-actions{ display:block; }
     .cashier-actions .btn{
       display:block;
-      width:100%;                         /* ocupa a linha inteira */
-      min-width: 0;                       /* ignora min-width do desktop */
+      width:100%;
+      min-width:0;
       min-height:44px;
-      margin:0 0 .5rem 0;                 /* separação vertical */
+      margin:0 0 .5rem 0;
       border-radius:10px;
       text-align:center;
     }
     .cashier-actions .btn:last-child{ margin-bottom:0; }
-    /* zera .me-2 do Bootstrap quando vertical */
     .cashier-actions .me-2{ margin-right:0 !important; }
   }
 </style>
-
 
 <script src="/js/cashier.js"></script>
