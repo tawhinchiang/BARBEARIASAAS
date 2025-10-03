@@ -277,6 +277,25 @@
     background:#fff !important; 
     color:#212529 !important; 
   }
+   #closeCashierModal .table {
+    /* cores padrão da tabela dentro do modal */
+    --bs-table-color: #fff;
+    --bs-table-striped-color: #fff;
+    --bs-table-hover-color: #fff;
+  }
+
+  /* garante branco em todas as células do corpo e rodapé */
+  #closeCashierModal .table tbody td,
+  #closeCashierModal .table tbody th,
+  #closeCashierModal .table tfoot th,
+  #closeCashierModal .table tfoot td {
+    color: #fff !important;
+  }
+
+  /* se houver algum elemento com classe herdada (ex.: small, span, etc.) */
+  #closeCashierModal .table tbody tr * {
+    color: #fff !important;
+  }
 </style>
 
 
