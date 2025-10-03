@@ -18,7 +18,7 @@
       <i class="fas fa-minus-circle me-1"></i> Lançar Despesa
     </button>
 
-    <button id="btnCloseCashier" class="btn btn-danger" disabled> 
+    <button id="btnCloseCashier" class="btn btn-danger" disabled>
       <i class="fas fa-door-closed me-1"></i> Fechar Caixa
     </button>
   </div>
@@ -31,7 +31,7 @@
 
 <!-- Modal Abrir Caixa -->
 <div class="modal fade" id="openCashierModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-fullscreen-sm-down"><!-- fullscreen no mobile -->
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title"><i class="fas fa-door-open me-2"></i> Abrir Caixa</h5>
@@ -49,8 +49,9 @@
   </div>
 </div>
 
+<!-- Modal Despesa -->
 <div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
     <div class="modal-content border-0 bg-white text-dark">
       <div class="modal-header bg-warning">
         <h5 class="modal-title"><i class="bi bi-dash-circle me-2"></i> Lançar Despesa</h5>
@@ -120,8 +121,9 @@
   </div>
 </div>
 
+<!-- Modal Fechar Caixa -->
 <div class="modal fade" id="closeCashierModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
     <div class="modal-content border-0">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title"><i class="bi bi-bell me-2"></i> Fechar Caixa</h5>
@@ -169,7 +171,8 @@
               <tr>
                 <th>Total</th>
                 <th class="text-end" id="cc-expected-sum">R$ 0,00</th>
-                <th><input id="cc-counted-sum" type="text" class="form-control text-end text-dark bg-white" readonly></th>                <th class="text-end" id="cc-diff-sum">R$ 0,00</th>
+                <th><input id="cc-counted-sum" type="text" class="form-control text-end text-dark bg-white" readonly></th>
+                <th class="text-end" id="cc-diff-sum">R$ 0,00</th>
               </tr>
             </tfoot>
           </table>
@@ -202,7 +205,6 @@
 
 <style>
   /* ========= Vars locais só para ESTE modal ========= */
-  /* Se a global --primary-color estiver branca, usa --bs-primary; senão, usa a sua. */
   #closeCashierModal {
     --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd));
   }
@@ -297,7 +299,52 @@
     background:#fff !important;
     color:#212529 !important;
   }
-</style>
 
+  /* =========================================================================
+     =============  AJUSTES PARA MOBILE (≤ 576px - Bootstrap sm)  =============
+     ========================================================================= */
+  @media (max-width: 576.98px) {
+    /* Modal ocupa tela inteira (classe no HTML) e bordas retas */
+    #closeCashierModal .modal-content { border-radius: 0; }
+    #closeCashierModal .modal-header,
+    #closeCashierModal .modal-footer { padding: .5rem .75rem; }
+    #closeCashierModal .modal-title { font-size: .95rem; }
+
+    /* Cards do resumo mais compactos */
+    #closeCashierModal .modal-body .border.rounded.p-2 { padding: .5rem !important; }
+    #closeCashierModal .modal-body .small { font-size: .72rem !important; }
+    #closeCashierModal .modal-body .fw-bold { font-size: .9rem !important; }
+
+    /* Tabela: fontes e paddings menores */
+    #closeCashierModal .table { font-size: .78rem; }
+    #closeCashierModal .table>:not(caption)>*>* { padding: .35rem .4rem !important; }
+
+    /* Cabeçalho enxuto */
+    #closeCashierModal .table thead th { font-size: .75rem; white-space: nowrap; }
+
+    /* Coluna "Contado" mais estreita no mobile */
+    #closeCashierModal .table thead th:nth-child(3) { width: 132px !important; }
+    #closeCashierModal .table tbody td:nth-child(3) { width: 132px !important; }
+
+    /* Input-group compacto na coluna "Contado" */
+    #closeCashierModal .input-group-text { padding: .25rem .35rem !important; font-size: .78rem; }
+    #closeCashierModal .form-control { padding: .3rem .4rem !important; height: 31px; font-size: .78rem; }
+
+    /* Rodapé da tabela (Total) também compacto */
+    #closeCashierModal tfoot th,
+    #closeCashierModal tfoot td { font-size: .8rem; }
+
+    /* Alert e observações com tipografia menor */
+    #closeCashierModal #cc-diff-alert { font-size: .78rem; padding: .4rem .5rem; }
+    #closeCashierModal label.form-label { font-size: .8rem; }
+    #closeCashierModal textarea.form-control { font-size: .82rem; }
+
+    /* Botões menores */
+    #closeCashierModal .btn { padding: .35rem .6rem; font-size: .82rem; }
+
+    /* Garante que a tabela não estoure horizontalmente */
+    #closeCashierModal .table-responsive { overflow-x: auto; }
+  }
+</style>
 
 <script src="/js/cashier.js"></script>
