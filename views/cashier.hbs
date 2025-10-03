@@ -1,5 +1,5 @@
-<div class="container py-4">
-  <h2 class="mb-4">
+<div id="cashierView" class="container py-4">
+  <h2 id="cashierTitle" class="mb-4 d-flex align-items-center">
     <i class="fas fa-cash-register me-2"></i> Caixa
   </h2>
 
@@ -39,7 +39,10 @@
       </div>
       <div class="modal-body">
         <label class="form-label">Valor inicial em dinheiro</label>
-        <input type="number" id="openingAmount" class="form-control" step="0.01" min="0" value="0.00">
+        <div class="input-group">
+          <span class="input-group-text">R$</span>
+          <input type="number" id="openingAmount" class="form-control" step="0.01" min="0" value="0.00">
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary btn-uniform" data-bs-dismiss="modal">Cancelar</button>
@@ -165,7 +168,7 @@
               </tr>
             </thead>
             <tbody id="cc-count-tbody">
-              <!-- linhas criadas via JS para: cash, pix, credit, debit, other -->
+              <!-- linhas criadas via JS -->
             </tbody>
             <tfoot>
               <tr>
@@ -202,6 +205,16 @@
 </div>
 
 <style>
+  /* ========= Título/Heading sempre visível ========= */
+  #cashierTitle {
+    color: var(--cashier-title-color, #fff) !important; /* força contraste em tema escuro */
+    font-weight: 600;
+    letter-spacing: .2px;
+  }
+  @media (max-width: 576.98px){
+    #cashierTitle { font-size: 1.25rem; }
+  }
+
   /* ========= Vars do modal de FECHAMENTO ========= */
   #closeCashierModal { --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
 
@@ -225,46 +238,45 @@
   }
   #closeCashierModal .table .text-muted { color:#fff !important; opacity:1 !important; }
 
-  /* Inputs do fechamento */
-  #closeCashierModal .input-group-text { background:#f8f9fa !important; color:#212529 !important; border-color:#ced4da !important; }
-  #closeCashierModal .form-control { background:#fff !important; color:#212529 !important; border-color:#ced4da !important; }
+  /* ========= Padronização dos CONTROLES DE ENTRADA (inputs/selects/R$) nos 3 modais ========= */
+  #openCashierModal .input-group-text,   #openCashierModal .form-control,   #openCashierModal .form-select,
+  #expenseModal   .input-group-text,     #expenseModal   .form-control,     #expenseModal   .form-select,
+  #closeCashierModal .input-group-text,  #closeCashierModal .form-control,  #closeCashierModal .form-select {
+    height: 40px;                        /* altura padrão */
+    padding: .5rem .65rem;
+    font-size: .95rem;
+    line-height: 1.2;
+  }
+  /* Mantém aparência clara nos controles */
+  #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text {
+    background:#f8f9fa !important; color:#212529 !important; border-color:#ced4da !important;
+  }
+  #openCashierModal .form-control, #expenseModal .form-control, #closeCashierModal .form-control {
+    background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
+  }
+  #openCashierModal .form-select, #expenseModal .form-select, #closeCashierModal .form-select {
+    background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
+  }
+
+  /* Inputs/placeholder de fechamento */
   #closeCashierModal .form-control:disabled, #closeCashierModal .form-control[readonly] { background:#f8f9fa !important; color:#212529 !important; }
   #closeCashierModal .form-control::placeholder { color:#6c757d !important; opacity:1; }
   #closeCashierModal #cc-counted-sum { text-align:right; background:#fff !important; color:#212529 !important; }
 
-  /* ========= Força PRETO no modal de DESPESAS (labels e campos) ========= */
-  #expenseModal .modal-content { background:#fff !important; color:#212529 !important; }
-  #expenseModal .form-label, #expenseModal label { color:#212529 !important; }
-  #expenseModal .input-group-text, 
-  #expenseModal .form-control, 
-  #expenseModal .form-select { background:#fff !important; color:#212529 !important; border-color:#ced4da !important; }
-  #expenseModal .form-control::placeholder { color:#6c757d !important; }
-
   /* ========= Botões uniformes nos três modais ========= */
-  #openCashierModal .btn,
-  #expenseModal .btn,
-  #closeCashierModal .btn {
-    padding: .5rem .9rem;
-    font-size: .9rem;
-    min-width: 128px;         /* largura mínima igual para todos */
-    line-height: 1.2;
-  }
-  .btn-uniform { /* caso precise aplicar fora do footer no futuro */
+  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn {
     padding: .5rem .9rem;
     font-size: .9rem;
     min-width: 128px;
     line-height: 1.2;
   }
+  .btn-uniform { padding: .5rem .9rem; font-size: .9rem; min-width: 128px; line-height: 1.2; }
 
-  /* ========= Ajustes responsivos (≤ 576px) ========= */
+  /* ========= Responsivo (≤ 576px) ========= */
   @media (max-width: 576.98px) {
     /* Margens e bordas (sem fullscreen) */
-    #closeCashierModal .modal-dialog,
-    #expenseModal .modal-dialog,
-    #openCashierModal .modal-dialog { margin: .5rem; }
-    #closeCashierModal .modal-content,
-    #expenseModal .modal-content,
-    #openCashierModal .modal-content { border-radius: .5rem; }
+    #closeCashierModal .modal-dialog, #expenseModal .modal-dialog, #openCashierModal .modal-dialog { margin: .5rem; }
+    #closeCashierModal .modal-content, #expenseModal .modal-content, #openCashierModal .modal-content { border-radius: .5rem; }
 
     /* Tipografia/espacamentos menores no fechamento */
     #closeCashierModal .modal-header, #closeCashierModal .modal-footer { padding: .5rem .75rem; }
@@ -278,33 +290,22 @@
     #closeCashierModal .table thead th { font-size: .75rem; white-space: nowrap; }
     #closeCashierModal .table thead th:nth-child(3),
     #closeCashierModal .table tbody td:nth-child(3) { width: 132px !important; }
-    #closeCashierModal .input-group-text { padding: .25rem .35rem !important; }
-    #closeCashierModal .form-control { padding: .3rem .4rem !important; height: 31px; }
+    #closeCashierModal .input-group-text, #expenseModal .input-group-text, #openCashierModal .input-group-text { padding: .35rem .45rem !important; }
+    #closeCashierModal .form-control, #expenseModal .form-control, #openCashierModal .form-control { padding: .35rem .5rem !important; height: 36px; }
+    #closeCashierModal .form-select,  #expenseModal .form-select,  #openCashierModal .form-select  { height: 36px; }
 
-    /* ——— Remover ZOOM automático no iOS/Android (inputs >= 16px) ——— */
+    /* Evita zoom em iOS/Android nos campos */
     #openCashierModal input, #openCashierModal select, #openCashierModal textarea,
     #expenseModal input, #expenseModal select, #expenseModal textarea,
-    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea {
-      font-size: 16px !important;  /* evita zoom ao focar em iOS */
-    }
+    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea { font-size: 16px !important; }
 
-    /* Despesas mais compacto também */
+    /* Despesa compacto */
     #expenseModal .modal-header, #expenseModal .modal-footer { padding: .5rem .75rem; }
     #expenseModal .modal-title { font-size: .95rem; }
-    #expenseModal .form-label, #expenseModal label { font-size: .9rem; }
-    #expenseModal .input-group-text, #expenseModal .form-control, #expenseModal .form-select {
-      padding: .45rem .55rem; height: 36px;
-    }
     #expenseModal textarea.form-control { height: 96px; }
 
     /* Botões uniformes no mobile */
-    #openCashierModal .btn,
-    #expenseModal .btn,
-    #closeCashierModal .btn {
-      min-width: 132px;
-      font-size: .92rem;
-      padding: .5rem .9rem;
-    }
+    #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn { min-width: 132px; font-size: .92rem; padding: .5rem .9rem; }
   }
 </style>
 
