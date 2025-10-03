@@ -31,11 +31,11 @@
 
 <!-- Modal Abrir Caixa -->
 <div class="modal fade" id="openCashierModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-fullscreen-sm-down"><!-- fullscreen no mobile -->
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><!-- SEM fullscreen -->
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title"><i class="fas fa-door-open me-2"></i> Abrir Caixa</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <label class="form-label">Valor inicial em dinheiro</label>
@@ -51,7 +51,7 @@
 
 <!-- Modal Despesa -->
 <div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><!-- SEM fullscreen -->
     <div class="modal-content border-0 bg-white text-dark">
       <div class="modal-header bg-warning">
         <h5 class="modal-title"><i class="bi bi-dash-circle me-2"></i> Lançar Despesa</h5>
@@ -106,7 +106,7 @@
         </div>
 
         <div class="mt-2">
-          <label class="form-label small text-muted">Observações</label>
+          <label class="form-label small">Observações</label>
           <textarea id="exp-notes" class="form-control" rows="2" placeholder="Obs. (opcional)"></textarea>
         </div>
 
@@ -123,7 +123,7 @@
 
 <!-- Modal Fechar Caixa -->
 <div class="modal fade" id="closeCashierModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-sm-down">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"><!-- SEM fullscreen -->
     <div class="modal-content border-0">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title"><i class="bi bi-bell me-2"></i> Fechar Caixa</h5>
@@ -204,146 +204,82 @@
 </div>
 
 <style>
-  /* ========= Vars locais só para ESTE modal ========= */
-  #closeCashierModal {
-    --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd));
-  }
+  /* ========= Vars do modal de FECHAMENTO ========= */
+  #closeCashierModal { --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
 
-  /* Fundo claro do conteúdo + texto padrão escuro */
-  #closeCashierModal .modal-content {
-    background:#fff !important;
-    color:#212529 !important;
-  }
-
-  /* Header permanece vermelho do Bootstrap (danger) */
-  #closeCashierModal .modal-header {
-    background:#dc3545 !important;
-    color:#fff !important;
-  }
-  #closeCashierModal .btn-close,
-  #closeCashierModal .btn-close-white { filter: invert(1); }
-
-  /* Texto padrão do corpo do modal (sem forçar os filhos todos) */
+  #closeCashierModal .modal-content { background:#fff !important; color:#212529 !important; }
+  #closeCashierModal .modal-header { background:#dc3545 !important; color:#fff !important; }
+  #closeCashierModal .btn-close, #closeCashierModal .btn-close-white { filter: invert(1); }
   #closeCashierModal .modal-body { color:#212529 !important; }
-
-  /* Muted genérico (fora da tabela) */
   #closeCashierModal .text-muted { color:#6c757d !important; }
 
-  /* ========= Tabela com cores da MARCA ========= */
-  /* Cabeçalho da tabela na cor principal com letras brancas */
-  #closeCashierModal .table thead tr {
-    background: var(--brand-primary) !important;
-  }
-  #closeCashierModal .table thead th {
-    color:#fff !important;
-    border-color: rgba(255,255,255,.25) !important;
-  }
+  /* Tabela colorida */
+  #closeCashierModal .table thead tr { background: var(--brand-primary) !important; }
+  #closeCashierModal .table thead th { color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
+  #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr { background: var(--brand-primary) !important; }
 
-  /* Linhas (tbody/tfoot) com fundo da marca */
-  #closeCashierModal .table tbody tr,
-  #closeCashierModal .table tfoot tr {
-    background: var(--brand-primary) !important;
-  }
-
-  /* Variáveis de cor da tabela (garante branco como padrão de texto da tabela) */
   #closeCashierModal .table {
-    --bs-table-color: #fff;
-    --bs-table-striped-color: #fff;
-    --bs-table-hover-color: #fff;
+    --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff;
   }
-
-  /* Texto branco em TODO conteúdo da tabela,
-     exceto controles de formulário que devem continuar escuros */
-  #closeCashierModal .table *:not(.form-control):not(.input-group-text) {
-    color:#fff !important;
-    opacity:1 !important;
-  }
-
-  /* Bordas claras nas células do corpo/rodapé */
-  #closeCashierModal .table tbody td,
-  #closeCashierModal .table tfoot th,
-  #closeCashierModal .table tfoot td {
+  #closeCashierModal .table *:not(.form-control):not(.input-group-text) { color:#fff !important; opacity:1 !important; }
+  #closeCashierModal .table tbody td, #closeCashierModal .table tfoot th, #closeCashierModal .table tfoot td {
     border-color: rgba(255,255,255,.15) !important;
   }
+  #closeCashierModal .table .text-muted { color:#fff !important; opacity:1 !important; }
 
-  /* Se algum elemento vier com .text-muted DENTRO da tabela, força branco */
-  #closeCashierModal .table .text-muted {
-    color:#fff !important;
-    opacity:1 !important;
-  }
+  /* Inputs do fechamento */
+  #closeCashierModal .input-group-text { background:#f8f9fa !important; color:#212529 !important; border-color:#ced4da !important; }
+  #closeCashierModal .form-control { background:#fff !important; color:#212529 !important; border-color:#ced4da !important; }
+  #closeCashierModal .form-control:disabled, #closeCashierModal .form-control[readonly] { background:#f8f9fa !important; color:#212529 !important; }
+  #closeCashierModal .form-control::placeholder { color:#6c757d !important; opacity:1; }
+  #closeCashierModal #cc-counted-sum { text-align:right; background:#fff !important; color:#212529 !important; }
 
-  /* ========= Inputs continuam brancos sobre fundo colorido ========= */
-  #closeCashierModal .input-group-text {
-    background:#f8f9fa !important;
-    color:#212529 !important;
-    border-color:#ced4da !important;
-  }
-  #closeCashierModal .form-control {
-    background:#fff !important;
-    color:#212529 !important;
-    border-color:#ced4da !important;
-  }
-  #closeCashierModal .form-control:disabled,
-  #closeCashierModal .form-control[readonly] {
-    background:#f8f9fa !important;
-    color:#212529 !important;
-  }
-  #closeCashierModal .form-control::placeholder {
-    color:#6c757d !important;
-    opacity:1;
-  }
+  /* ========= Força PRETO no modal de DESPESAS (labels e campos) ========= */
+  #expenseModal .modal-content { background:#fff !important; color:#212529 !important; }
+  #expenseModal .form-label, #expenseModal label { color:#212529 !important; }
+  #expenseModal .input-group-text, 
+  #expenseModal .form-control, 
+  #expenseModal .form-select { background:#fff !important; color:#212529 !important; border-color:#ced4da !important; }
+  #expenseModal .form-control::placeholder { color:#6c757d !important; }
 
-  /* Total contado (input do rodapé) alinhado à direita e branco */
-  #closeCashierModal #cc-counted-sum {
-    text-align:right;
-    background:#fff !important;
-    color:#212529 !important;
-  }
-
-  /* =========================================================================
-     =============  AJUSTES PARA MOBILE (≤ 576px - Bootstrap sm)  =============
-     ========================================================================= */
+  /* ========= Ajustes responsivos (≤ 576px) sem fullscreen ========= */
   @media (max-width: 576.98px) {
-    /* Modal ocupa tela inteira (classe no HTML) e bordas retas */
-    #closeCashierModal .modal-content { border-radius: 0; }
-    #closeCashierModal .modal-header,
-    #closeCashierModal .modal-footer { padding: .5rem .75rem; }
-    #closeCashierModal .modal-title { font-size: .95rem; }
+    /* Margens suaves e borda reta (sem tampar tudo) */
+    #closeCashierModal .modal-dialog,
+    #expenseModal .modal-dialog,
+    #openCashierModal .modal-dialog { margin: .5rem; }
+    #closeCashierModal .modal-content,
+    #expenseModal .modal-content,
+    #openCashierModal .modal-content { border-radius: .5rem; }
 
-    /* Cards do resumo mais compactos */
+    /* Tipografia/espacamentos menores no fechamento */
+    #closeCashierModal .modal-header, #closeCashierModal .modal-footer { padding: .5rem .75rem; }
+    #closeCashierModal .modal-title { font-size: .95rem; }
     #closeCashierModal .modal-body .border.rounded.p-2 { padding: .5rem !important; }
     #closeCashierModal .modal-body .small { font-size: .72rem !important; }
     #closeCashierModal .modal-body .fw-bold { font-size: .9rem !important; }
 
-    /* Tabela: fontes e paddings menores */
     #closeCashierModal .table { font-size: .78rem; }
     #closeCashierModal .table>:not(caption)>*>* { padding: .35rem .4rem !important; }
-
-    /* Cabeçalho enxuto */
     #closeCashierModal .table thead th { font-size: .75rem; white-space: nowrap; }
-
-    /* Coluna "Contado" mais estreita no mobile */
-    #closeCashierModal .table thead th:nth-child(3) { width: 132px !important; }
+    #closeCashierModal .table thead th:nth-child(3),
     #closeCashierModal .table tbody td:nth-child(3) { width: 132px !important; }
-
-    /* Input-group compacto na coluna "Contado" */
     #closeCashierModal .input-group-text { padding: .25rem .35rem !important; font-size: .78rem; }
     #closeCashierModal .form-control { padding: .3rem .4rem !important; height: 31px; font-size: .78rem; }
-
-    /* Rodapé da tabela (Total) também compacto */
-    #closeCashierModal tfoot th,
-    #closeCashierModal tfoot td { font-size: .8rem; }
-
-    /* Alert e observações com tipografia menor */
+    #closeCashierModal tfoot th, #closeCashierModal tfoot td { font-size: .8rem; }
     #closeCashierModal #cc-diff-alert { font-size: .78rem; padding: .4rem .5rem; }
     #closeCashierModal label.form-label { font-size: .8rem; }
     #closeCashierModal textarea.form-control { font-size: .82rem; }
-
-    /* Botões menores */
     #closeCashierModal .btn { padding: .35rem .6rem; font-size: .82rem; }
-
-    /* Garante que a tabela não estoure horizontalmente */
     #closeCashierModal .table-responsive { overflow-x: auto; }
+
+    /* Despesas mais compacto também */
+    #expenseModal .modal-header, #expenseModal .modal-footer { padding: .5rem .75rem; }
+    #expenseModal .modal-title { font-size: .95rem; }
+    #expenseModal .form-label, #expenseModal label { font-size: .85rem; }
+    #expenseModal .input-group-text, #expenseModal .form-control, #expenseModal .form-select { font-size: .85rem; padding: .38rem .5rem; height: 34px; }
+    #expenseModal textarea.form-control { height: 90px; }
+    #expenseModal .btn { padding: .4rem .65rem; font-size: .85rem; }
   }
 </style>
 
