@@ -31,7 +31,7 @@
 
 <!-- Modal Abrir Caixa -->
 <div class="modal fade" id="openCashierModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><!-- SEM fullscreen -->
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
         <h5 class="modal-title"><i class="fas fa-door-open me-2"></i> Abrir Caixa</h5>
@@ -42,8 +42,8 @@
         <input type="number" id="openingAmount" class="form-control" step="0.01" min="0" value="0.00">
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-success" id="confirmOpenCashier">Abrir</button>
+        <button class="btn btn-secondary btn-uniform" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success btn-uniform" id="confirmOpenCashier">Abrir</button>
       </div>
     </div>
   </div>
@@ -51,7 +51,7 @@
 
 <!-- Modal Despesa -->
 <div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><!-- SEM fullscreen -->
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content border-0 bg-white text-dark">
       <div class="modal-header bg-warning">
         <h5 class="modal-title"><i class="bi bi-dash-circle me-2"></i> Lançar Despesa</h5>
@@ -114,8 +114,8 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-dark" data-bs-dismiss="modal">Cancelar</button>
-        <button id="exp-submit-btn" class="btn btn-warning">Lançar</button>
+        <button class="btn btn-dark btn-uniform" data-bs-dismiss="modal">Cancelar</button>
+        <button id="exp-submit-btn" class="btn btn-warning btn-uniform">Lançar</button>
       </div>
     </div>
   </div>
@@ -123,7 +123,7 @@
 
 <!-- Modal Fechar Caixa -->
 <div class="modal fade" id="closeCashierModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable"><!-- SEM fullscreen -->
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content border-0">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title"><i class="bi bi-bell me-2"></i> Fechar Caixa</h5>
@@ -194,10 +194,8 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-dark" data-bs-dismiss="modal">Cancelar</button>
-        <button id="cc-submit-btn" class="btn btn-danger">
-          Fechar Caixa
-        </button>
+        <button class="btn btn-dark btn-uniform" data-bs-dismiss="modal">Cancelar</button>
+        <button id="cc-submit-btn" class="btn btn-danger btn-uniform">Fechar Caixa</button>
       </div>
     </div>
   </div>
@@ -242,9 +240,25 @@
   #expenseModal .form-select { background:#fff !important; color:#212529 !important; border-color:#ced4da !important; }
   #expenseModal .form-control::placeholder { color:#6c757d !important; }
 
-  /* ========= Ajustes responsivos (≤ 576px) sem fullscreen ========= */
+  /* ========= Botões uniformes nos três modais ========= */
+  #openCashierModal .btn,
+  #expenseModal .btn,
+  #closeCashierModal .btn {
+    padding: .5rem .9rem;
+    font-size: .9rem;
+    min-width: 128px;         /* largura mínima igual para todos */
+    line-height: 1.2;
+  }
+  .btn-uniform { /* caso precise aplicar fora do footer no futuro */
+    padding: .5rem .9rem;
+    font-size: .9rem;
+    min-width: 128px;
+    line-height: 1.2;
+  }
+
+  /* ========= Ajustes responsivos (≤ 576px) ========= */
   @media (max-width: 576.98px) {
-    /* Margens suaves e borda reta (sem tampar tudo) */
+    /* Margens e bordas (sem fullscreen) */
     #closeCashierModal .modal-dialog,
     #expenseModal .modal-dialog,
     #openCashierModal .modal-dialog { margin: .5rem; }
@@ -264,22 +278,33 @@
     #closeCashierModal .table thead th { font-size: .75rem; white-space: nowrap; }
     #closeCashierModal .table thead th:nth-child(3),
     #closeCashierModal .table tbody td:nth-child(3) { width: 132px !important; }
-    #closeCashierModal .input-group-text { padding: .25rem .35rem !important; font-size: .78rem; }
-    #closeCashierModal .form-control { padding: .3rem .4rem !important; height: 31px; font-size: .78rem; }
-    #closeCashierModal tfoot th, #closeCashierModal tfoot td { font-size: .8rem; }
-    #closeCashierModal #cc-diff-alert { font-size: .78rem; padding: .4rem .5rem; }
-    #closeCashierModal label.form-label { font-size: .8rem; }
-    #closeCashierModal textarea.form-control { font-size: .82rem; }
-    #closeCashierModal .btn { padding: .35rem .6rem; font-size: .82rem; }
-    #closeCashierModal .table-responsive { overflow-x: auto; }
+    #closeCashierModal .input-group-text { padding: .25rem .35rem !important; }
+    #closeCashierModal .form-control { padding: .3rem .4rem !important; height: 31px; }
+
+    /* ——— Remover ZOOM automático no iOS/Android (inputs >= 16px) ——— */
+    #openCashierModal input, #openCashierModal select, #openCashierModal textarea,
+    #expenseModal input, #expenseModal select, #expenseModal textarea,
+    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea {
+      font-size: 16px !important;  /* evita zoom ao focar em iOS */
+    }
 
     /* Despesas mais compacto também */
     #expenseModal .modal-header, #expenseModal .modal-footer { padding: .5rem .75rem; }
     #expenseModal .modal-title { font-size: .95rem; }
-    #expenseModal .form-label, #expenseModal label { font-size: .85rem; }
-    #expenseModal .input-group-text, #expenseModal .form-control, #expenseModal .form-select { font-size: .85rem; padding: .38rem .5rem; height: 34px; }
-    #expenseModal textarea.form-control { height: 90px; }
-    #expenseModal .btn { padding: .4rem .65rem; font-size: .85rem; }
+    #expenseModal .form-label, #expenseModal label { font-size: .9rem; }
+    #expenseModal .input-group-text, #expenseModal .form-control, #expenseModal .form-select {
+      padding: .45rem .55rem; height: 36px;
+    }
+    #expenseModal textarea.form-control { height: 96px; }
+
+    /* Botões uniformes no mobile */
+    #openCashierModal .btn,
+    #expenseModal .btn,
+    #closeCashierModal .btn {
+      min-width: 132px;
+      font-size: .92rem;
+      padding: .5rem .9rem;
+    }
   }
 </style>
 
