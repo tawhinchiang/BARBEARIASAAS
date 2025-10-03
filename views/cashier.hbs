@@ -214,143 +214,145 @@
 
 <style>
   /* ========= Título/Heading sempre visível ========= */
-  #cashierTitle {
-    color: var(--cashier-title-color, #fff) !important; /* força contraste em tema escuro */
+  #cashierTitle{
+    color: var(--cashier-title-color, #fff) !important; /* contraste em tema escuro */
     font-weight: 600;
     letter-spacing: .2px;
   }
   @media (max-width: 576.98px){
-    #cashierTitle { font-size: 1.25rem; }
+    #cashierTitle{ font-size: 1.25rem; }
   }
 
   /* ========= Vars do modal de FECHAMENTO ========= */
-  #closeCashierModal { --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
+  #closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
 
-  #closeCashierModal .modal-content { background:#fff !important; color:#212529 !important; }
-  #closeCashierModal .modal-header { background:#dc3545 !important; color:#fff !important; }
-  #closeCashierModal .btn-close, #closeCashierModal .btn-close-white { filter: invert(1); }
-  #closeCashierModal .modal-body { color:#212529 !important; }
-  #closeCashierModal .text-muted { color:#6c757d !important; }
+  #closeCashierModal .modal-content{ background:#fff !important; color:#212529 !important; }
+  #closeCashierModal .modal-header{ background:#dc3545 !important; color:#fff !important; }
+  #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter: invert(1); }
+  #closeCashierModal .modal-body{ color:#212529 !important; }
+  #closeCashierModal .text-muted{ color:#6c757d !important; }
 
   /* Tabela colorida */
-  #closeCashierModal .table thead tr { background: var(--brand-primary) !important; }
-  #closeCashierModal .table thead th { color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
-  #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr { background: var(--brand-primary) !important; }
+  #closeCashierModal .table thead tr{ background: var(--brand-primary) !important; }
+  #closeCashierModal .table thead th{ color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
+  #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background: var(--brand-primary) !important; }
 
-  #closeCashierModal .table {
+  #closeCashierModal .table{
     --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff;
   }
-  #closeCashierModal .table *:not(.form-control):not(.input-group-text) { color:#fff !important; opacity:1 !important; }
-  #closeCashierModal .table tbody td, #closeCashierModal .table tfoot th, #closeCashierModal .table tfoot td {
-    border-color: rgba(255,255,255,.15) !important;
-  }
-  #closeCashierModal .table .text-muted { color:#fff !important; opacity:1 !important; }
+  #closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff !important; opacity:1 !important; }
+  #closeCashierModal .table tbody td,
+  #closeCashierModal .table tfoot th,
+  #closeCashierModal .table tfoot td{ border-color: rgba(255,255,255,.15) !important; }
+  #closeCashierModal .table .text-muted{ color:#fff !important; opacity:1 !important; }
 
   /* ========= Padronização dos CONTROLES DE ENTRADA (inputs/selects/R$) nos 3 modais ========= */
   #openCashierModal .input-group-text,   #openCashierModal .form-control,   #openCashierModal .form-select,
   #expenseModal   .input-group-text,     #expenseModal   .form-control,     #expenseModal   .form-select,
-  #closeCashierModal .input-group-text,  #closeCashierModal .form-control,  #closeCashierModal .form-select {
-    height: 40px;                        /* altura padrão */
+  #closeCashierModal .input-group-text,  #closeCashierModal .form-control,  #closeCashierModal .form-select{
+    height: 40px;
     padding: .5rem .65rem;
     font-size: .95rem;
     line-height: 1.2;
   }
-  /* Mantém aparência clara nos controles */
-  #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text {
+  /* Aparência clara */
+  #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text{
     background:#f8f9fa !important; color:#212529 !important; border-color:#ced4da !important;
   }
-  #openCashierModal .form-control, #expenseModal .form-control, #closeCashierModal .form-control {
+  #openCashierModal .form-control, #expenseModal .form-control, #closeCashierModal .form-control{
     background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
   }
-  #openCashierModal .form-select, #expenseModal .form-select, #closeCashierModal .form-select {
+  #openCashierModal .form-select, #expenseModal .form-select, #closeCashierModal .form-select{
     background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
   }
 
   /* Inputs/placeholder de fechamento */
-  #closeCashierModal .form-control:disabled, #closeCashierModal .form-control[readonly] { background:#f8f9fa !important; color:#212529 !important; }
-  #closeCashierModal .form-control::placeholder { color:#6c757d !important; opacity:1; }
-  #closeCashierModal #cc-counted-sum { text-align:right; background:#fff !important; color:#212529 !important; }
+  #closeCashierModal .form-control:disabled,
+  #closeCashierModal .form-control[readonly]{ background:#f8f9fa !important; color:#212529 !important; }
+  #closeCashierModal .form-control::placeholder{ color:#6c757d !important; opacity:1; }
+  #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff !important; color:#212529 !important; }
 
   /* ========= Botões uniformes nos três modais ========= */
-  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn {
+  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{
     padding: .5rem .9rem;
     font-size: .9rem;
     min-width: 128px;
     line-height: 1.2;
   }
-  .btn-uniform { padding: .5rem .9rem; font-size: .9rem; min-width: 128px; line-height: 1.2; }
+  .btn-uniform{ padding: .5rem .9rem; font-size: .9rem; min-width: 128px; line-height: 1.2; }
 
   /* ========= Responsivo (≤ 576px) ========= */
-  @media (max-width: 576.98px) {
+  @media (max-width: 576.98px){
     /* Margens e bordas (sem fullscreen) */
-    #closeCashierModal .modal-dialog, #expenseModal .modal-dialog, #openCashierModal .modal-dialog { margin: .5rem; }
-    #closeCashierModal .modal-content, #expenseModal .modal-content, #openCashierModal .modal-content { border-radius: .5rem; }
+    #closeCashierModal .modal-dialog, #expenseModal .modal-dialog, #openCashierModal .modal-dialog{ margin: .5rem; }
+    #closeCashierModal .modal-content, #expenseModal .modal-content, #openCashierModal .modal-content{ border-radius: .5rem; }
 
     /* Tipografia/espacamentos menores no fechamento */
-    #closeCashierModal .modal-header, #closeCashierModal .modal-footer { padding: .5rem .75rem; }
-    #closeCashierModal .modal-title { font-size: .95rem; }
-    #closeCashierModal .modal-body .border.rounded.p-2 { padding: .5rem !important; }
-    #closeCashierModal .modal-body .small { font-size: .72rem !important; }
-    #closeCashierModal .modal-body .fw-bold { font-size: .9rem !important; }
+    #closeCashierModal .modal-header, #closeCashierModal .modal-footer{ padding: .5rem .75rem; }
+    #closeCashierModal .modal-title{ font-size: .95rem; }
+    #closeCashierModal .modal-body .border.rounded.p-2{ padding: .5rem !important; }
+    #closeCashierModal .modal-body .small{ font-size: .72rem !important; }
+    #closeCashierModal .modal-body .fw-bold{ font-size: .9rem !important; }
 
-    #closeCashierModal .table { font-size: .78rem; }
-    #closeCashierModal .table>:not(caption)>*>* { padding: .35rem .4rem !important; }
-    #closeCashierModal .table thead th { font-size: .75rem; white-space: nowrap; }
+    #closeCashierModal .table{ font-size: .78rem; }
+    #closeCashierModal .table>:not(caption)>*>*{ padding: .35rem .4rem !important; }
+    #closeCashierModal .table thead th{ font-size: .75rem; white-space: nowrap; }
     #closeCashierModal .table thead th:nth-child(3),
-    #closeCashierModal .table tbody td:nth-child(3) { width: 132px !important; }
-    #closeCashierModal .input-group-text, #expenseModal .input-group-text, #openCashierModal .input-group-text { padding: .35rem .45rem !important; }
-    #closeCashierModal .form-control, #expenseModal .form-control, #openCashierModal .form-control { padding: .35rem .5rem !important; height: 36px; }
-    #closeCashierModal .form-select,  #expenseModal .form-select,  #openCashierModal .form-select  { height: 36px; }
+    #closeCashierModal .table tbody td:nth-child(3){ width: 132px !important; }
+    #closeCashierModal .input-group-text, #expenseModal .input-group-text, #openCashierModal .input-group-text{ padding: .35rem .45rem !important; }
+    #closeCashierModal .form-control,    #expenseModal .form-control,    #openCashierModal .form-control{ padding: .35rem .5rem !important; height: 36px; }
+    #closeCashierModal .form-select,     #expenseModal .form-select,     #openCashierModal .form-select{ height: 36px; }
 
-    /* Evita zoom em iOS/Android nos campos */
-    #openCashierModal input, #openCashierModal select, #openCashierModal textarea,
-    #expenseModal input, #expenseModal select, #expenseModal textarea,
-    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea { font-size: 16px !important; }
+    /* Evita zoom em iOS/Android */
+    #openCashierModal input,  #openCashierModal select,  #openCashierModal textarea,
+    #expenseModal input,      #expenseModal select,      #expenseModal textarea,
+    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea{ font-size: 16px !important; }
 
     /* Despesa compacto */
-    #expenseModal .modal-header, #expenseModal .modal-footer { padding: .5rem .75rem; }
-    #expenseModal .modal-title { font-size: .95rem; }
-    #expenseModal textarea.form-control { height: 96px; }
+    #expenseModal .modal-header, #expenseModal .modal-footer{ padding: .5rem .75rem; }
+    #expenseModal .modal-title{ font-size: .95rem; }
+    #expenseModal textarea.form-control{ height: 96px; }
 
     /* Botões uniformes no mobile */
-    #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn { min-width: 132px; font-size: .92rem; padding: .5rem .9rem; }
-  }
-  /* ===== Botões do Caixa: linha inteira no mobile, inline no desktop ===== */
-.cashier-actions {
-  display: flex;
-  gap: .5rem;          
-  flex-wrap: wrap;     
-}
-
-
-@media (max-width: 576.98px) {
-  .cashier-actions {
-    display: grid;
-    grid-template-columns: 1fr;  
-    gap: .5rem;
+    #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ min-width: 132px; font-size: .92rem; padding: .5rem .9rem; }
   }
 
-  .cashier-actions .btn {
-    width: 80%;
-    min-height: 44px;       
-    justify-content: center;
-    border-radius: 10px;
+  /* ====== BOTÕES DO CAIXA (fora dos modais) ====== */
+  /* Desktop/tablet: lado a lado */
+  .cashier-actions{
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;                 /* substitui me-2 como espaçamento */
+  }
+  @media (min-width: 577px){
+    .cashier-actions .btn{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .6rem 1rem;
+      min-width: 150px;         /* largura mínima padronizada */
+      font-size: .95rem;
+      line-height: 1.2;
+    }
   }
 
-  
-  .cashier-actions .me-2 { margin-right: 0 !important; }
-}
-
-/* ≥ sm: seguem lado a lado, com tamanhos e padding padronizados */
-@media (min-width: 577px) {
-  .cashier-actions .btn {
-    padding: .6rem 1rem;
-    min-width: 150px;       /* padroniza largura */
-    font-size: .95rem;
-    line-height: 1.2;
+  /* Mobile: um por linha, ocupando 100% */
+  @media (max-width: 576.98px){
+    .cashier-actions{ display:block; }    /* deixa de ser flex */
+    .cashier-actions .btn{
+      display:block;
+      width:100%;                         /* ocupa a linha inteira */
+      min-width: 0;                       /* ignora min-width do desktop */
+      min-height:44px;
+      margin:0 0 .5rem 0;                 /* separação vertical */
+      border-radius:10px;
+      text-align:center;
+    }
+    .cashier-actions .btn:last-child{ margin-bottom:0; }
+    /* zera .me-2 do Bootstrap quando vertical */
+    .cashier-actions .me-2{ margin-right:0 !important; }
   }
-}
-
 </style>
+
 
 <script src="/js/cashier.js"></script>
