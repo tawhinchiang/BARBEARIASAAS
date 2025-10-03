@@ -208,9 +208,9 @@
   }
 
   /* Fundo claro do conteúdo + texto padrão escuro */
-  #closeCashierModal .modal-content { 
-    background:#fff !important; 
-    color:#212529 !important; 
+  #closeCashierModal .modal-content {
+    background:#fff !important;
+    color:#212529 !important;
   }
 
   /* Header permanece vermelho do Bootstrap (danger) */
@@ -221,33 +221,53 @@
   #closeCashierModal .btn-close,
   #closeCashierModal .btn-close-white { filter: invert(1); }
 
-  /* Cards do resumo (topo) permanecem brancos e legíveis */
-  #closeCashierModal .modal-body,
-  #closeCashierModal .modal-body *:not(.btn):not(.badge) {
-    color:#212529 !important;
-  }
+  /* Texto padrão do corpo do modal (sem forçar os filhos todos) */
+  #closeCashierModal .modal-body { color:#212529 !important; }
+
+  /* Muted genérico (fora da tabela) */
   #closeCashierModal .text-muted { color:#6c757d !important; }
 
   /* ========= Tabela com cores da MARCA ========= */
   /* Cabeçalho da tabela na cor principal com letras brancas */
-  #closeCashierModal .table thead tr { 
-    background: var(--brand-primary) !important; 
+  #closeCashierModal .table thead tr {
+    background: var(--brand-primary) !important;
   }
-  #closeCashierModal .table thead th { 
-    color:#fff !important; 
-    border-color: rgba(255,255,255,.25) !important; 
+  #closeCashierModal .table thead th {
+    color:#fff !important;
+    border-color: rgba(255,255,255,.25) !important;
   }
 
-  /* Linhas (tbody/tfoot) com fundo da marca e texto branco */
+  /* Linhas (tbody/tfoot) com fundo da marca */
   #closeCashierModal .table tbody tr,
   #closeCashierModal .table tfoot tr {
     background: var(--brand-primary) !important;
   }
+
+  /* Variáveis de cor da tabela (garante branco como padrão de texto da tabela) */
+  #closeCashierModal .table {
+    --bs-table-color: #fff;
+    --bs-table-striped-color: #fff;
+    --bs-table-hover-color: #fff;
+  }
+
+  /* Texto branco em TODO conteúdo da tabela,
+     exceto controles de formulário que devem continuar escuros */
+  #closeCashierModal .table *:not(.form-control):not(.input-group-text) {
+    color:#fff !important;
+    opacity:1 !important;
+  }
+
+  /* Bordas claras nas células do corpo/rodapé */
   #closeCashierModal .table tbody td,
   #closeCashierModal .table tfoot th,
   #closeCashierModal .table tfoot td {
-    color:#fff !important;
     border-color: rgba(255,255,255,.15) !important;
+  }
+
+  /* Se algum elemento vier com .text-muted DENTRO da tabela, força branco */
+  #closeCashierModal .table .text-muted {
+    color:#fff !important;
+    opacity:1 !important;
   }
 
   /* ========= Inputs continuam brancos sobre fundo colorido ========= */
@@ -272,29 +292,10 @@
   }
 
   /* Total contado (input do rodapé) alinhado à direita e branco */
-  #closeCashierModal #cc-counted-sum { 
-    text-align:right; 
-    background:#fff !important; 
-    color:#212529 !important; 
-  }
-   #closeCashierModal .table {
-    /* cores padrão da tabela dentro do modal */
-    --bs-table-color: #fff;
-    --bs-table-striped-color: #fff;
-    --bs-table-hover-color: #fff;
-  }
-
-  /* garante branco em todas as células do corpo e rodapé */
-  #closeCashierModal .table tbody td,
-  #closeCashierModal .table tbody th,
-  #closeCashierModal .table tfoot th,
-  #closeCashierModal .table tfoot td {
-    color: #fff !important;
-  }
-
-  /* se houver algum elemento com classe herdada (ex.: small, span, etc.) */
-  #closeCashierModal .table tbody tr * {
-    color: #fff !important;
+  #closeCashierModal #cc-counted-sum {
+    text-align:right;
+    background:#fff !important;
+    color:#212529 !important;
   }
 </style>
 
