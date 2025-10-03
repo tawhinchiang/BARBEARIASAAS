@@ -201,61 +201,83 @@
 </div>
 
 <style>
-  /* Escopo exclusivo do modal de Fechar Caixa */
-  #closeCashierModal .modal-content { 
-    background: #fff !important; 
-    color: #212529 !important; 
+  /* ========= Vars locais só para ESTE modal ========= */
+  /* Se a global --primary-color estiver branca, usa --bs-primary; senão, usa a sua. */
+  #closeCashierModal {
+    --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd));
   }
 
-  /* Mantém o header vermelho com texto branco */
+  /* Fundo claro do conteúdo + texto padrão escuro */
+  #closeCashierModal .modal-content { 
+    background:#fff !important; 
+    color:#212529 !important; 
+  }
+
+  /* Header permanece vermelho do Bootstrap (danger) */
   #closeCashierModal .modal-header {
-    background: #dc3545 !important;
-    color: #fff !important;
+    background:#dc3545 !important;
+    color:#fff !important;
   }
   #closeCashierModal .btn-close,
   #closeCashierModal .btn-close-white { filter: invert(1); }
 
-  /* Garante texto escuro em TODO o conteúdo do corpo do modal */
+  /* Cards do resumo (topo) permanecem brancos e legíveis */
   #closeCashierModal .modal-body,
   #closeCashierModal .modal-body *:not(.btn):not(.badge) {
-    color: #212529 !important;
+    color:#212529 !important;
   }
-  /* “text-muted” precisa continuar legível */
-  #closeCashierModal .text-muted { color: #6c757d !important; }
+  #closeCashierModal .text-muted { color:#6c757d !important; }
 
-  /* Tabela clara, com thead escuro e letras brancas (como no seu print) */
-  #closeCashierModal .table { background: #fff !important; }
-  #closeCashierModal .table thead tr { background: #212529 !important; }
+  /* ========= Tabela com cores da MARCA ========= */
+  /* Cabeçalho da tabela na cor principal com letras brancas */
+  #closeCashierModal .table thead tr { 
+    background: var(--brand-primary) !important; 
+  }
   #closeCashierModal .table thead th { 
-    color: #fff !important; 
-    border-color: #212529 !important; 
+    color:#fff !important; 
+    border-color: rgba(255,255,255,.25) !important; 
+  }
+
+  /* Linhas (tbody/tfoot) com fundo da marca e texto branco */
+  #closeCashierModal .table tbody tr,
+  #closeCashierModal .table tfoot tr {
+    background: var(--brand-primary) !important;
   }
   #closeCashierModal .table tbody td,
   #closeCashierModal .table tfoot th,
   #closeCashierModal .table tfoot td {
-    color: #212529 !important;
+    color:#fff !important;
+    border-color: rgba(255,255,255,.15) !important;
   }
 
-  /* Inputs e placeholders legíveis */
+  /* ========= Inputs continuam brancos sobre fundo colorido ========= */
   #closeCashierModal .input-group-text {
-    background: #f8f9fa !important;
-    color: #212529 !important;
-    border-color: #ced4da !important;
+    background:#f8f9fa !important;
+    color:#212529 !important;
+    border-color:#ced4da !important;
   }
   #closeCashierModal .form-control {
-    background: #fff !important;
-    color: #212529 !important;
-    border-color: #ced4da !important;
+    background:#fff !important;
+    color:#212529 !important;
+    border-color:#ced4da !important;
   }
   #closeCashierModal .form-control:disabled,
   #closeCashierModal .form-control[readonly] {
-    background: #f8f9fa !important;
-    color: #212529 !important;
+    background:#f8f9fa !important;
+    color:#212529 !important;
   }
   #closeCashierModal .form-control::placeholder {
-    color: #6c757d !important;
-    opacity: 1;
+    color:#6c757d !important;
+    opacity:1;
+  }
+
+  /* Total contado (input do rodapé) alinhado à direita e branco */
+  #closeCashierModal #cc-counted-sum { 
+    text-align:right; 
+    background:#fff !important; 
+    color:#212529 !important; 
   }
 </style>
+
 
 <script src="/js/cashier.js"></script>
