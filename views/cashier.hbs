@@ -65,8 +65,9 @@
       </select>
 
       <button id="histSearchBtn" class="btn btn-primary btn-sm">
-        <i class="bi bi-search"></i>
-      </button>
+  <i class="bi bi-search me-1"></i>
+  <span class="d-none d-sm-inline">Aplicar</span>
+</button>
     </div>
   </div>
 </div>
@@ -77,7 +78,7 @@
       <table class="table mb-0 align-middle">
         <thead class="table-light">
   <tr>
-    <th>#</th>
+    
     <th class="text-nowrap">Abertura</th>
     <th class="text-nowrap">Fechamento</th>
     <th>Status</th>
@@ -453,6 +454,119 @@
     position: sticky; top: 56px; z-index: 2;  /* ajuste o top ao tamanho da sua navbar */
     background: var(--bs-card-bg, #1e1e1e);
   }
+}
+/* ====== HISTÓRICO DE CAIXAS – visual dark harmonizado ====== */
+#cashierHistoryCard {
+  --hist-bg: var(--bg-light);
+  --hist-surface: var(--bg-gray);
+  --hist-border: var(--border-color);
+  --hist-text: var(--text-dark);
+  --hist-muted: #9ca3af;
+  --hist-focus: var(--primary-color);
+}
+
+/* Cabeçalho do card */
+#cashierHistoryCard .card-header{
+  background: var(--hist-bg);
+  border-bottom: 1px solid var(--hist-border);
+}
+
+/* Inputs e selects mais claros e com altura consistente */
+#cashierHistoryCard .form-control.form-control-sm,
+#cashierHistoryCard .form-select.form-select-sm{
+  background: #1e1e22;
+  border: 1px solid var(--hist-border);
+  color: var(--hist-text);
+  height: 38px;
+  padding: .35rem .6rem;
+}
+#cashierHistoryCard .form-control::placeholder{ color: var(--hist-muted); opacity: .9; }
+
+/* Ícone do datepicker visível no dark */
+#cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{
+  filter: invert(1) opacity(.9);
+  cursor: pointer;
+}
+
+/* Grupo de atalhos (Hoje/Ontem/Semana/Mês) com estados */
+#cashierHistoryCard .hist-range-group .btn{
+  background: #1e1e22;
+  border: 1px solid var(--hist-border);
+  color: var(--hist-text);
+}
+#cashierHistoryCard .hist-range-group .btn:hover{
+  background: #232327;
+}
+#cashierHistoryCard .hist-range-group .btn.active{
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #000;
+}
+
+/* Page size */
+#cashierHistoryCard .hist-pagesize{
+  background: #1e1e22;
+  border: 1px solid var(--hist-border);
+  color: var(--hist-text);
+  height: 38px;
+  min-width: 92px;
+}
+
+/* Botão Aplicar bem visível */
+#cashierHistoryCard #histSearchBtn.btn{
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  color: #000;
+  height: 38px;
+  padding: .35rem .75rem;
+}
+#cashierHistoryCard #histSearchBtn.btn:hover{
+  filter: brightness(1.05);
+}
+
+/* Thead e zebra mais suaves */
+#cashierHistoryCard thead.table-light th{
+  background: #202026 !important;
+  color: var(--hist-text) !important;
+  border-color: var(--hist-border) !important;
+}
+#cashierHistoryCard tbody td{
+  background: #18181c;
+  border-color: var(--hist-border);
+}
+#cashierHistoryCard tbody tr:hover td{
+  background: #1d1d22;
+}
+
+/* Badges de status mantendo o verde, mas com contraste certo */
+#cashierHistoryCard .badge.bg-success{
+  background-color: #198754 !important;
+  color: #fff !important;
+}
+
+/* Rodapé (paginação/resumo) */
+#cashierHistoryCard .card-body + .d-flex{
+  background: var(--hist-bg);
+  border-top: 1px solid var(--hist-border);
+}
+#cashierHistoryCard .pagination .page-link{
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: transparent;
+}
+#cashierHistoryCard .pagination .page-item.active .page-link{
+  background: #fff;
+  color: #000 !important;
+  border-color: var(--primary-color);
+}
+
+/* Responsivo: filtros empilham bonitos no mobile */
+@media (max-width: 576.98px){
+  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex: 1 1 100%; }
+  #cashierHistoryCard .hist-range-group .btn{ flex: 1 0 auto; }
+  #cashierHistoryCard .hist-pagesize{ min-width: 0; }
+  #cashierHistoryCard .form-control.form-control-sm,
+  #cashierHistoryCard .form-select.form-select-sm{ height: 40px; }
 }
 
 </style>

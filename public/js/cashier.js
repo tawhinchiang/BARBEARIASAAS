@@ -403,7 +403,6 @@ function renderHistTable(list=[]) {
 
     return `
   <tr>
-    <td>${s.id}</td>
     <td class="text-nowrap">${fmtDateTime(s.openedAt)}</td>
     <td class="text-nowrap">${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</td>
     <td>${statusBadge}</td>
