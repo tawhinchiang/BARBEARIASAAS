@@ -402,22 +402,23 @@ function renderHistTable(list=[]) {
       : '<span class="badge text-bg-warning">aberto</span>';
 
     return `
-      <tr>
-        <td>${s.id}</td>
-        <td>${fmtDateTime(s.openedAt)}</td>
-        <td>${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</td>
-        <td>${statusBadge}</td>
-        <td class="text-end">${entradas}</td>
-        <td class="text-end">${despesas}</td>
-        <td class="text-end">${resultado}</td>
-        <td class="text-end">${diffCash}</td>
-        <td>
-          <button class="btn btn-sm btn-outline-primary" data-view-session="${s.id}">
-            <i class="bi bi-eye"></i>
-          </button>
-        </td>
-      </tr>
-    `;
+  <tr>
+    <td>${s.id}</td>
+    <td class="text-nowrap">${fmtDateTime(s.openedAt)}</td>
+    <td class="text-nowrap">${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</td>
+    <td>${statusBadge}</td>
+    <td class="text-end">${entradas}</td>
+    <td class="text-end d-none d-sm-table-cell">${despesas}</td>
+    <td class="text-end d-none d-sm-table-cell">${resultado}</td>
+    <td class="text-end d-none d-sm-table-cell">${diffCash}</td>
+    <td>
+      <button class="btn btn-sm btn-outline-primary" data-view-session="${s.id}">
+        <i class="bi bi-eye"></i>
+      </button>
+    </td>
+  </tr>
+`;
+
   }).join('');
 
   tbody.querySelectorAll('[data-view-session]')?.forEach(btn=>{

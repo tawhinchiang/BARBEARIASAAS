@@ -33,43 +33,63 @@
           <!-- preenchido via JS com /admin/cashier/session/current -->
         </div>
         <div class="card mt-4" id="cashierHistoryCard">
-  <div class="card-header d-flex align-items-center justify-content-between">
+  <div class="card-header">
+  <div class="d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center gap-2">
       <i class="bi bi-clock-history me-1"></i> <strong>Histórico de Caixas</strong>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-      <input type="date" id="histFrom" class="form-control form-control-sm">
-      <input type="date" id="histTo"   class="form-control form-control-sm">
-      <div class="btn-group btn-group-sm">
+
+    {{!-- Botão só no mobile para abrir/fechar filtros --}}
+    <button class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
+            type="button" data-bs-toggle="collapse" data-bs-target="#histFilters"
+            aria-expanded="false" aria-controls="histFilters">
+      <i class="bi bi-sliders me-1"></i> Filtros
+    </button>
+  </div>
+
+  {{!-- Filtros: visível sempre no desktop; collapse no mobile --}}
+  <div id="histFilters" class="collapse d-md-block mt-2">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <input type="date" id="histFrom" class="form-control form-control-sm hist-w">
+      <input type="date" id="histTo"   class="form-control form-control-sm hist-w">
+
+      <div class="btn-group btn-group-sm hist-range-group" role="group" aria-label="Atalhos de período">
         <button class="btn btn-outline-secondary" data-range="today">Hoje</button>
         <button class="btn btn-outline-secondary" data-range="yesterday">Ontem</button>
         <button class="btn btn-outline-secondary" data-range="week">Semana</button>
         <button class="btn btn-outline-secondary" data-range="month">Mês</button>
       </div>
-      <select id="histPageSize" class="form-select form-select-sm">
+
+      <select id="histPageSize" class="form-select form-select-sm hist-pagesize">
         <option>10</option><option selected>20</option><option>50</option>
       </select>
-      <button id="histSearchBtn" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+
+      <button id="histSearchBtn" class="btn btn-primary btn-sm">
+        <i class="bi bi-search"></i>
+      </button>
     </div>
   </div>
+</div>
+
 
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table mb-0 align-middle">
         <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>Abertura</th>
-            <th>Fechamento</th>
-            <th>Status</th>
-            <th class="text-end">Entradas</th>
-            <th class="text-end">Despesas</th>
-            <th class="text-end">Resultado</th>
-            <th class="text-end">Dif. Dinheiro</th>
-            <th>Ações</th>
-          </tr>
+  <tr>
+    <th>#</th>
+    <th class="text-nowrap">Abertura</th>
+    <th class="text-nowrap">Fechamento</th>
+    <th>Status</th>
+    <th class="text-end">Entradas</th>
+    <th class="text-end d-none d-sm-table-cell">Despesas</th>
+    <th class="text-end d-none d-sm-table-cell">Resultado</th>
+    <th class="text-end d-none d-sm-table-cell">Dif. Dinheiro</th>
+    <th>Ações</th>
+  </tr>
         </thead>
         <tbody id="histTbody"><!-- via JS --></tbody>
+
       </table>
     </div>
     <div class="d-flex justify-content-between align-items-center p-2">
@@ -400,6 +420,41 @@
     .cashier-actions .btn:last-child{ margin-bottom:0; }
     .cashier-actions .me-2{ margin-right:0 !important; }
   }
+  /* ===== Histórico: responsivo no mobile ===== */
+#cashierHistoryCard .card-header { border-bottom: 1px solid rgba(255,255,255,.075); }
+
+/* Larguras mais confortáveis no mobile */
+#cashierHistoryCard .hist-w { min-width: 160px; }
+#cashierHistoryCard .hist-pagesize { width: 84px; min-width: 84px; }
+
+/* Grupo de atalhos com rolagem horizontal se apertar */
+#cashierHistoryCard .hist-range-group {
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* XS: empilhar controles e ocupar 100% */
+@media (max-width: 576.98px){
+  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > * {
+    flex: 1 1 100%;
+  }
+  #cashierHistoryCard .hist-w { width: 100%; min-width: 0; }
+  #cashierHistoryCard .hist-pagesize { width: 100%; min-width: 0; }
+  #cashierHistoryCard .btn-group.hist-range-group { width: 100%; }
+  #cashierHistoryCard .btn-group.hist-range-group .btn { flex: 1 0 auto; }
+
+  /* diminuir padding da tabela no XS */
+  #cashierHistoryCard .table { font-size: .84rem; }
+  #cashierHistoryCard .table>:not(caption)>*>* { padding: .4rem .5rem; }
+}
+@media (max-width: 576.98px){
+  #cashierHistoryCard .card-header {
+    position: sticky; top: 56px; z-index: 2;  /* ajuste o top ao tamanho da sua navbar */
+    background: var(--bs-card-bg, #1e1e1e);
+  }
+}
+
 </style>
 
 <script src="/js/cashier.js"></script>
