@@ -32,6 +32,69 @@
         <div id="cashierSummary" class="row g-3">
           <!-- preenchido via JS com /admin/cashier/session/current -->
         </div>
+        <div class="card mt-4" id="cashierHistoryCard">
+  <div class="card-header d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-clock-history me-1"></i> <strong>Histórico de Caixas</strong>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <input type="date" id="histFrom" class="form-control form-control-sm">
+      <input type="date" id="histTo"   class="form-control form-control-sm">
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary" data-range="today">Hoje</button>
+        <button class="btn btn-outline-secondary" data-range="yesterday">Ontem</button>
+        <button class="btn btn-outline-secondary" data-range="week">Semana</button>
+        <button class="btn btn-outline-secondary" data-range="month">Mês</button>
+      </div>
+      <select id="histPageSize" class="form-select form-select-sm">
+        <option>10</option><option selected>20</option><option>50</option>
+      </select>
+      <button id="histSearchBtn" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Abertura</th>
+            <th>Fechamento</th>
+            <th>Status</th>
+            <th class="text-end">Entradas</th>
+            <th class="text-end">Despesas</th>
+            <th class="text-end">Resultado</th>
+            <th class="text-end">Dif. Dinheiro</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="histTbody"><!-- via JS --></tbody>
+      </table>
+    </div>
+    <div class="d-flex justify-content-between align-items-center p-2">
+      <small id="histSummary"></small>
+      <nav><ul class="pagination pagination-sm mb-0" id="histPagination"></ul></nav>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhe -->
+<div class="modal fade" id="sessionDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title"><i class="bi bi-receipt-cutoff me-2"></i> Detalhes da Sessão</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body" id="sessionDetailBody"><!-- via JS --></div>
+    <div class="modal-footer">
+      <!-- Se já tiver endpoints de exportação, plugue aqui -->
+      <button class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
+    </div>
+  </div></div>
+</div>
+
+
       </div>
     </div>
   </div>

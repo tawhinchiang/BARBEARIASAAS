@@ -177,22 +177,127 @@ router.get('/session/current', async (req, res) => {
 });
 
 
+function normalizeRange(from, to) {
+  // YYYY-MM-DD -> Date 00:00:00 e 23:59:59
+  const start = from ? new Date(`${from}T00:00:00`) : null;
+  const end   = to   ? new Date(`${to}T23:59:59`) : null;
+  return { start, end };
+}
 
+// GET /admin/cashier/sessions?from=YYYY-MM-DD&to=YYYY-MM-DD&page=1&pageSize=20
 router.get('/sessions', async (req, res) => {
   try {
-    const sessions = await CashSession.findAll({
+    const { from, to, page = 1, pageSize = 20 } = req.query;
+    const { start, end } = normalizeRange(from, to);
+
+    const where = {};
+    if (start || end) {
+      // Filtra por data de abertura (mais estável)
+      where.openedAt = {};
+      if (start) where.openedAt[Op.gte] = start;
+      if (end)   where.openedAt[Op.lte] = end;
+    }
+
+    const limit = Math.max(1, Math.min(parseInt(pageSize) || 20, 100));
+    const offset = (Math.max(1, parseInt(page) || 1) - 1) * limit;
+
+    const { rows, count } = await CashSession.findAndCountAll({
+      where,
       order: [['openedAt', 'DESC']],
-      include: [{ model: Expense, as: 'expenses' }]
+      limit, offset,
+      include: [
+        { model: Payment, as: 'payments', attributes: ['id','amount','method'] },
+        { model: Expense, as: 'expenses', attributes: ['id','amount'] }
+      ]
     });
 
-    res.json({ success: true, sessions });
+    const sessions = rows.map(s => {
+      const entradasTotal = (s.payments || []).reduce((acc, p) => acc + Number(p.amount || 0), 0);
+      const despesasTotal = (s.expenses || []).reduce((acc, e) => acc + Number(e.amount || 0), 0);
+      const resultado = entradasTotal - despesasTotal;
+      const cashExpected = (s.payments || [])
+        .filter(p => p.method === 'cash')
+        .reduce((acc, p) => acc + Number(p.amount || 0), 0);
+      const countedCash = Number(s.countedCash || 0);
+      const diffCash = countedCash - cashExpected; // diferença só de dinheiro
+
+      return {
+        id: s.id,
+        openedAt: s.openedAt,
+        closedAt: s.closedAt,
+        status: s.status,
+        openingAmount: Number(s.openingAmount || 0),
+        entradasTotal,
+        despesasTotal,
+        resultado,
+        countedCash,
+        diffCash
+      };
+    });
+
+    res.json({
+      success: true,
+      pagination: {
+        page: Number(page),
+        pageSize: limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      },
+      sessions
+    });
   } catch (err) {
-    console.error('[CAIXA SESSIONS ERROR]', err);
-    res.status(500).json({ success: false, error: 'Erro ao listar sessões' });
+    console.error('[History] list error', err);
+    res.status(500).json({ success: false, error: 'Erro ao listar sessões.' });
   }
 });
 
+// GET /admin/cashier/sessions/:id
+router.get('/sessions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const s = await CashSession.findByPk(id, {
+      include: [
+        { model: Payment, as: 'payments', attributes: ['id','amount','method','receivedAt'] },
+        { model: Expense, as: 'expenses', attributes: ['id','amount','method','description','createdAt'] }
+      ]
+    });
+    if (!s) return res.status(404).json({ success: false, error: 'Sessão não encontrada.' });
 
+    const byMethod = { cash:0, credit_card:0, debit_card:0, pix:0, voucher:0, other:0 };
+    for (const p of (s.payments || [])) {
+      const k = byMethod.hasOwnProperty(p.method) ? p.method : 'other';
+      byMethod[k] += Number(p.amount || 0);
+    }
+    const entradasTotal = Object.values(byMethod).reduce((a,b)=>a+b,0);
+    const despesasTotal = (s.expenses || []).reduce((a,e)=>a + Number(e.amount||0), 0);
+    const resultado = entradasTotal - despesasTotal;
+    const cashExpected = byMethod.cash || 0;
+    const countedCash = Number(s.countedCash || 0);
+    const diffCash = countedCash - cashExpected;
+
+    res.json({
+      success: true,
+      session: {
+        id: s.id,
+        openedAt: s.openedAt,
+        closedAt: s.closedAt,
+        status: s.status,
+        openingAmount: Number(s.openingAmount || 0),
+        countedCash,
+        entradasByMethod: byMethod,
+        entradasTotal,
+        despesasTotal,
+        resultado,
+        diffCash,
+        payments: s.payments,
+        expenses: s.expenses
+      }
+    });
+  } catch (err) {
+    console.error('[History] detail error', err);
+    res.status(500).json({ success: false, error: 'Erro ao detalhar sessão.' });
+  }
+});
 
 
 module.exports = router;

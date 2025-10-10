@@ -224,7 +224,7 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
   const printReceipt = document.getElementById('cc-print')?.checked === true;
 
   // Compat: soma geral (caso seu back ainda aceite countedCash)
-  const countedCash = Object.values(counted).reduce((s, v) => s + v, 0);
+  const countedCash = counted.cash;
 
   const body = { counted, countedCash, notes, printReceipt };
 
@@ -293,7 +293,7 @@ async function openCloseCashierModal() {
           <div class="input-group">
             <span class="input-group-text">R$</span>
             <input type="number" class="form-control cc-count" min="0" step="0.01" placeholder="0,00">
-          </div>s
+          </div>
         </td>
         <td class="text-end" data-diff>R$ 0,00</td>
       `;
@@ -352,4 +352,178 @@ document.getElementById('btnAddExpense')?.addEventListener('click', () => {
 // Carregar ao abrir a página
 document.addEventListener('DOMContentLoaded', () => {
   loadCashierStatus();
+});
+// === Histórico de Caixa ===
+const hist = { page: 1, pageSize: 20, from: null, to: null };
+
+document.getElementById('histSearchBtn')?.addEventListener('click', () => {
+  hist.page = 1;
+  hist.from = document.getElementById('histFrom').value || null;
+  hist.to   = document.getElementById('histTo').value   || null;
+  hist.pageSize = parseInt(document.getElementById('histPageSize').value) || 20;
+  loadCashierHistory();
+});
+
+document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    applyQuickRange(btn.dataset.range);
+    document.getElementById('histSearchBtn').click();
+  });
+});
+
+async function loadCashierHistory() {
+  const params = new URLSearchParams();
+  if (hist.from) params.set('from', hist.from);
+  if (hist.to)   params.set('to',   hist.to);
+  params.set('page', hist.page);
+  params.set('pageSize', hist.pageSize);
+
+  const data = await apiFetch(`/admin/cashier/sessions?${params.toString()}`);
+  if (!data?.success) {
+    notify?.({type:'error', message: data?.error || 'Erro ao carregar histórico'});
+    return;
+  }
+  renderHistTable(data.sessions);
+  renderHistPagination(data.pagination);
+  renderHistSummary(data.pagination);
+}
+
+function renderHistTable(list=[]) {
+  const tbody = document.getElementById('histTbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = list.map(s => {
+    const entradas  = fmtBRL(Number(s.entradasTotal||0));
+    const despesas  = fmtBRL(Number(s.despesasTotal||0));
+    const resultado = fmtBRL(Number(s.resultado||0));
+    const diffCash  = fmtBRL(Number(s.diffCash||0));
+    const statusBadge = s.status === 'closed'
+      ? '<span class="badge text-bg-success">fechado</span>'
+      : '<span class="badge text-bg-warning">aberto</span>';
+
+    return `
+      <tr>
+        <td>${s.id}</td>
+        <td>${fmtDateTime(s.openedAt)}</td>
+        <td>${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</td>
+        <td>${statusBadge}</td>
+        <td class="text-end">${entradas}</td>
+        <td class="text-end">${despesas}</td>
+        <td class="text-end">${resultado}</td>
+        <td class="text-end">${diffCash}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" data-view-session="${s.id}">
+            <i class="bi bi-eye"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.querySelectorAll('[data-view-session]')?.forEach(btn=>{
+    btn.addEventListener('click', ()=> openSessionDetail(btn.dataset.viewSession));
+  });
+}
+
+function renderHistPagination(p) {
+  const ul = document.getElementById('histPagination');
+  if (!ul) return;
+  const { page, totalPages } = p;
+  const pages = [];
+  const max = Math.max(1, totalPages);
+
+  const pushPage = (n, label=n, active=false, disabled=false) => {
+    pages.push(`
+      <li class="page-item ${active?'active':''} ${disabled?'disabled':''}">
+        <a class="page-link" href="#" data-page="${disabled? '' : n}">${label}</a>
+      </li>
+    `);
+  };
+
+  pushPage(page-1, '&laquo;', false, page<=1);
+  for (let i = Math.max(1, page-2); i <= Math.min(max, page+2); i++) {
+    pushPage(i, i, i===page, false);
+  }
+  pushPage(page+1, '&raquo;', false, page>=max);
+
+  ul.innerHTML = pages.join('');
+  ul.querySelectorAll('a[data-page]')?.forEach(a=>{
+    a.addEventListener('click', e=>{
+      e.preventDefault();
+      const n = parseInt(a.dataset.page);
+      if (!n || n === hist.page) return;
+      hist.page = n;
+      loadCashierHistory();
+    });
+  });
+}
+
+function renderHistSummary(p) {
+  const el = document.getElementById('histSummary');
+  if (!el) return;
+  el.textContent = `Página ${p.page} de ${p.totalPages} — ${p.total} registros`;
+}
+
+async function openSessionDetail(id) {
+  const data = await apiFetch(`/admin/cashier/sessions/${id}`);
+  if (!data?.success) {
+    notify?.({ type:'error', message: data?.error || 'Erro ao carregar sessão' });
+    return;
+  }
+  const s = data.session;
+  const body = document.getElementById('sessionDetailBody');
+  if (!body) return;
+
+  const labels = { cash:'Dinheiro', credit_card:'Crédito', debit_card:'Débito', pix:'PIX', voucher:'Voucher', other:'Outros' };
+  const methods = ['cash','credit_card','debit_card','pix','voucher','other'];
+  const byMethod = s.entradasByMethod || {};
+  body.innerHTML = `
+    <div class="row g-2 mb-3">
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Abertura</div><div class="fw-bold">${fmtDateTime(s.openedAt)}</div></div></div>
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Fechamento</div><div class="fw-bold">${s.closedAt?fmtDateTime(s.closedAt):'—'}</div></div></div>
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Entradas</div><div class="fw-bold">${fmtBRL(s.entradasTotal||0)}</div></div></div>
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Despesas</div><div class="fw-bold">${fmtBRL(s.despesasTotal||0)}</div></div></div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead><tr><th>Método</th><th class="text-end">Valor</th></tr></thead>
+        <tbody>
+          ${methods.map(k=>`
+            <tr><td>${labels[k]}</td><td class="text-end">${fmtBRL(byMethod[k]||0)}</td></tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash||0)}</strong></div>
+  `;
+
+  new bootstrap.Modal(document.getElementById('sessionDetailModal')).show();
+}
+
+// Helpers simples
+function fmtBRL(n){ return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fmtDateTime(d){
+  const dt = new Date(d);
+  const pad = (n)=> String(n).padStart(2,'0');
+  return `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+}
+function applyQuickRange(type){
+  const today = new Date();
+  const pad=(n)=>String(n).padStart(2,'0');
+  const fmt=(x)=> `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;
+  let from, to;
+  if (type==='today'){ from=to=fmt(today); }
+  else if (type==='yesterday'){ const y=new Date(today); y.setDate(y.getDate()-1); from=to=fmt(y); }
+  else if (type==='week'){ const start=new Date(today); start.setDate(today.getDate()-6); from=fmt(start); to=fmt(today); }
+  else if (type==='month'){ const start = new Date(today.getFullYear(), today.getMonth(), 1); from=fmt(start); to=fmt(today); }
+  document.getElementById('histFrom').value = from || '';
+  document.getElementById('histTo').value   = to   || '';
+}
+
+// Inicial: mês corrente
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (document.getElementById('cashierHistoryCard')) {
+    applyQuickRange('month');
+    document.getElementById('histSearchBtn')?.click();
+  }
 });
