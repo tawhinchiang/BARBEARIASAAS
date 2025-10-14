@@ -253,106 +253,177 @@
 </div>
 
 <style>
-  /* ===== Título ===== */
-  #cashierTitle{ color:var(--cashier-title-color,#fff)!important; font-weight:600; letter-spacing:.2px; }
-  @media (max-width:576.98px){ #cashierTitle{ font-size:1.25rem; } }
+  /* =========================================================
+   TÍTULO
+========================================================= */
+#cashierTitle{
+  color: var(--cashier-title-color,#fff) !important;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+@media (max-width:576.98px){
+  #cashierTitle{ font-size:1.25rem; }
+}
 
-  /* ===== Z-index padrão do Bootstrap e backdrop mais leve ===== */
-  .modal{ z-index:1055; }
-  .modal-backdrop{ z-index:1050; }
-  .modal-backdrop.show{ opacity:.45; }
+/* =========================================================
+   MODAIS — z-index padrão + backdrop mais leve
+   (mantém comportamento do Bootstrap e evita modal "travado")
+========================================================= */
+.modal{ z-index:1055; }
+.modal-backdrop{ z-index:1050; }
+.modal-backdrop.show{ opacity:.45; }
 
-  /* Neutraliza quaisquer transforms/filtros dos wrappers apenas quando um modal está aberto */
-  body.modal-open .fade-in-soft,
-  body.modal-open .admin-dashboard,
-  body.modal-open .container-fluid,
-  body.modal-open .row,
-  body.modal-open .col-12{
-    transform:none !important;
-    filter:none !important;
-    perspective:none !important;
-    will-change:auto !important;
+/* Neutraliza qualquer transform/filter que crie stacking-context
+   quando um modal está aberto (evita modal ficar atrás / tela cinza) */
+body.modal-open .fade-in-soft,
+body.modal-open .admin-dashboard,
+body.modal-open .container-fluid,
+body.modal-open .row,
+body.modal-open .col-12{
+  transform:none !important;
+  filter:none !important;
+  perspective:none !important;
+  will-change:auto !important;
+}
+
+/* Campos e botões nos modais (altura uniforme) */
+#openCashierModal .input-group-text, #openCashierModal .form-control, #openCashierModal .form-select,
+#expenseModal   .input-group-text,   #expenseModal   .form-control,   #expenseModal   .form-select,
+#closeCashierModal .input-group-text,#closeCashierModal .form-control,#closeCashierModal .form-select{
+  height:40px; padding:.5rem .65rem; font-size:.95rem; line-height:1.2;
+  background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
+}
+#openCashierModal .input-group-text,
+#expenseModal   .input-group-text,
+#closeCashierModal .input-group-text{ background:#f8f9fa !important; }
+
+#openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{
+  padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2;
+}
+.btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
+
+/* =========================================================
+   MODAL: FECHAR CAIXA (visual claro)
+========================================================= */
+#closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
+#closeCashierModal .modal-content{ background:#fff !important; color:#212529 !important; }
+#closeCashierModal .modal-header{ background:#dc3545 !important; color:#fff !important; }
+#closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter: invert(1); }
+#closeCashierModal .text-muted{ color:#6c757d !important; }
+
+#closeCashierModal .table thead tr{ background: var(--brand-primary) !important; }
+#closeCashierModal .table thead th{ color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
+#closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background: var(--brand-primary) !important; }
+#closeCashierModal .table{
+  --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff;
+}
+#closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff !important; opacity:1 !important; }
+#closeCashierModal .table tbody td,
+#closeCashierModal .table tfoot th,
+#closeCashierModal .table tfoot td{ border-color: rgba(255,255,255,.15) !important; }
+#closeCashierModal #cc-counted-sum{ text-align:right; background:#fff !important; color:#212529 !important; }
+
+/* =========================================================
+   AÇÕES DO TOPO
+========================================================= */
+.cashier-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
+@media (min-width:577px){
+  .cashier-actions .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:.6rem 1rem; min-width:150px; font-size:.95rem; line-height:1.2;
   }
+}
 
-  /* ===== Campos e botões dos modais ===== */
-  #openCashierModal .input-group-text, #openCashierModal .form-control, #openCashierModal .form-select,
-  #expenseModal .input-group-text,     #expenseModal .form-control,     #expenseModal .form-select,
-  #closeCashierModal .input-group-text,#closeCashierModal .form-control,#closeCashierModal .form-select{
-    height:40px; padding:.5rem .65rem; font-size:.95rem; line-height:1.2;
-    background:#fff!important; color:#212529!important; border-color:#ced4da!important;
-  }
-  #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text{ background:#f8f9fa!important; }
-  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
-  .btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
+/* =========================================================
+   CARD: HISTÓRICO (cores + responsivo)
+========================================================= */
+#cashierHistoryCard .card-header{ border-bottom:1px solid rgba(255,255,255,.075); }
+#cashierHistoryCard .hist-w{ min-width:160px; }
+#cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
+#cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
 
-  /* ===== Visual do modal Fechar Caixa (claro) ===== */
-  #closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
-  #closeCashierModal .modal-content{ background:#fff!important; color:#212529!important; }
-  #closeCashierModal .modal-header{ background:#dc3545!important; color:#fff!important; }
-  #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter:invert(1); }
-  #closeCashierModal .text-muted{ color:#6c757d!important; }
-  #closeCashierModal .table thead tr{ background:var(--brand-primary)!important; }
-  #closeCashierModal .table thead th{ color:#fff!important; border-color:rgba(255,255,255,.25)!important; }
-  #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background:var(--brand-primary)!important; }
-  #closeCashierModal .table{ --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff; }
-  #closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff!important; opacity:1!important; }
-  #closeCashierModal .table tbody td, #closeCashierModal .table tfoot th, #closeCashierModal .table tfoot td{ border-color:rgba(255,255,255,.15)!important; }
-  #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff!important; color:#212529!important; }
+@media (max-width:576.98px){
+  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
+  #cashierHistoryCard .hist-w, #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
+  #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
+  #cashierHistoryCard .table{ font-size:.84rem; }
+  #cashierHistoryCard .table>:not(caption)>*>*{ padding:.4rem .5rem; }
+  #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
+}
 
-  /* ===== Ações do topo ===== */
-  .cashier-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
-  @media (min-width:577px){
-    .cashier-actions .btn{ display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1rem; min-width:150px; font-size:.95rem; line-height:1.2; }
-  }
+#cashierHistoryCard{
+  --hist-bg:var(--bg-light);
+  --hist-surface:var(--bg-gray);
+  --hist-border:var(--border-color);
+  --hist-text:var(--text-dark);
+  --hist-muted:#9ca3af;
+  --hist-focus:var(--primary-color);
+}
+#cashierHistoryCard .card-header{ background:var(--hist-bg); border-bottom:1px solid var(--hist-border); }
 
-  /* ===== Card Histórico (cores + responsivo) ===== */
-  #cashierHistoryCard .card-header{ border-bottom:1px solid rgba(255,255,255,.075); }
-  #cashierHistoryCard .hist-w{ min-width:160px; }
-  #cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
-  #cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
+#cashierHistoryCard .form-control.form-control-sm,
+#cashierHistoryCard .form-select.form-select-sm{
+  background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
+  height:38px; padding:.35rem .6rem;
+}
+#cashierHistoryCard .form-control::placeholder{ color:var(--hist-muted); opacity:.9; }
+#cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{
+  filter: invert(1) opacity(.9); cursor:pointer;
+}
 
-  @media (max-width:576.98px){
-    #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
-    #cashierHistoryCard .hist-w, #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
-    #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
-    #cashierHistoryCard .table{ font-size:.84rem; }
-    #cashierHistoryCard .table>:not(caption)>*>*{ padding:.4rem .5rem; }
-    #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
-  }
+#cashierHistoryCard .hist-range-group .btn{
+  background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
+}
+#cashierHistoryCard .hist-range-group .btn:hover{ background:#232327; }
+#cashierHistoryCard .hist-range-group .btn.active{
+  background:var(--primary-color); border-color:var(--primary-color); color:#000;
+}
+#cashierHistoryCard .hist-pagesize{
+  background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
+  height:38px; min-width:92px;
+}
+#cashierHistoryCard #histSearchBtn.btn{
+  background:var(--primary-color); border:1px solid var(--primary-color);
+  color:#000; height:38px; padding:.35rem .75rem;
+}
+#cashierHistoryCard #histSearchBtn.btn:hover{ filter:brightness(1.05); }
 
-  #cashierHistoryCard{ --hist-bg:var(--bg-light); --hist-surface:var(--bg-gray); --hist-border:var(--border-color); --hist-text:var(--text-dark); --hist-muted:#9ca3af; --hist-focus:var(--primary-color); }
-  #cashierHistoryCard .card-header{ background:var(--hist-bg); border-bottom:1px solid var(--hist-border); }
+#cashierHistoryCard thead.table-light th{
+  background:#202026 !important; color:var(--hist-text) !important; border-color:var(--hist-border) !important;
+}
+#cashierHistoryCard tbody td{ background:#18181c; border-color:var(--hist-border); }
+#cashierHistoryCard tbody tr:hover td{ background:#1d1d22; }
+
+#cashierHistoryCard .badge.bg-success{ background-color:#198754 !important; color:#fff !important; }
+
+#cashierHistoryCard .card-body + .d-flex{
+  background:var(--hist-bg); border-top:1px solid var(--hist-border);
+}
+#cashierHistoryCard .pagination .page-link{
+  color:var(--primary-color); border-color:var(--primary-color); background:transparent;
+}
+#cashierHistoryCard .pagination .page-item.active .page-link{
+  background:#fff; color:#000 !important; border-color:var(--primary-color);
+}
+
+/* Mobile: densidade */
+@media (max-width:576.98px){
+  #cashierHistoryCard{ font-size:12px; }
+  #cashierHistoryCard .card-header strong{ font-size:.9rem; }
   #cashierHistoryCard .form-control.form-control-sm, #cashierHistoryCard .form-select.form-select-sm{
-    background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
-    height:38px; padding:.35rem .6rem;
+    height:32px; font-size:.8rem; padding:.25rem .5rem;
   }
-  #cashierHistoryCard .form-control::placeholder{ color:var(--hist-muted); opacity:.9; }
-  #cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(1) opacity(.9); cursor:pointer; }
-  #cashierHistoryCard .hist-range-group .btn{ background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text); }
-  #cashierHistoryCard .hist-range-group .btn:hover{ background:#232327; }
-  #cashierHistoryCard .hist-range-group .btn.active{ background:var(--primary-color); border-color:var(--primary-color); color:#000; }
-  #cashierHistoryCard .hist-pagesize{ background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text); height:38px; min-width:92px; }
-  #cashierHistoryCard #histSearchBtn.btn{ background:var(--primary-color); border:1px solid var(--primary-color); color:#000; height:38px; padding:.35rem .75rem; }
-  #cashierHistoryCard #histSearchBtn.btn:hover{ filter:brightness(1.05); }
-  #cashierHistoryCard thead.table-light th{ background:#202026!important; color:var(--hist-text)!important; border-color:var(--hist-border)!important; }
-  #cashierHistoryCard tbody td{ background:#18181c; border-color:var(--hist-border); }
-  #cashierHistoryCard tbody tr:hover td{ background:#1d1d22; }
-  #cashierHistoryCard .badge.bg-success{ background-color:#198754!important; color:#fff!important; }
-  #cashierHistoryCard .card-body + .d-flex{ background:var(--hist-bg); border-top:1px solid var(--hist-border); }
-  #cashierHistoryCard .pagination .page-link{ color:var(--primary-color); border-color:var(--primary-color); background:transparent; }
-  #cashierHistoryCard .pagination .page-item.active .page-link{ background:#fff; color:#000!important; border-color:var(--primary-color); }
+  #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
+  #cashierHistoryCard .table>:not(caption)>*>*{ padding:.3rem .4rem; }
+  #cashierHistoryCard tbody td.text-nowrap{
+    max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
+}
 
-  /* Mobile: densidade */
-  @media (max-width:576.98px){
-    #cashierHistoryCard{ font-size:12px; }
-    #cashierHistoryCard .card-header strong{ font-size:.9rem; }
-    #cashierHistoryCard .form-control.form-control-sm, #cashierHistoryCard .form-select.form-select-sm{ height:32px; font-size:.8rem; padding:.25rem .5rem; }
-    #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
-    #cashierHistoryCard .table>:not(caption)>*>*{ padding:.3rem .4rem; }
-    #cashierHistoryCard tbody td.text-nowrap{ max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
-  }
-  /* ===== Modal Detalhes da Sessão – tema escuro legível ===== */
+/* =========================================================
+   MODAL: DETALHES DA SESSÃO — tema escuro legível
+========================================================= */
 #sessionDetailModal .modal-content{
   background:#1e1e22 !important;
   color:#fff !important;
@@ -372,39 +443,42 @@
 #sessionDetailModal .modal-body .small.text-muted{
   color:#c8c8c8 !important;
 }
-#sessionDetailModal .modal-body .fw-bold{
-  color:#fff !important;
-}
+#sessionDetailModal .modal-body .fw-bold{ color:#fff !important; }
 
 /* Tabela dentro do modal */
-#sessionDetailModal .table{
-  --bs-table-color:#fff;
-}
-#sessionDetailModal thead tr{
-  background:#2f2f36 !important;
-}
+#sessionDetailModal .table{ --bs-table-color:#fff; }
+#sessionDetailModal thead tr{ background:#2f2f36 !important; }
 #sessionDetailModal thead th{
-  color:#fff !important;
-  border-color: rgba(255,255,255,.18) !important;
+  color:#fff !important; border-color: rgba(255,255,255,.18) !important;
 }
 #sessionDetailModal tbody td{
-  background:#1f1f26 !important;
-  color:#fff !important;
+  background:#1f1f26 !important; color:#fff !important;
   border-color: rgba(255,255,255,.1) !important;
 }
-#sessionDetailModal tbody tr:hover td{
-  background:#24242c !important;
-}
+#sessionDetailModal tbody tr:hover td{ background:#24242c !important; }
 
 /* Rodapé do modal */
 #sessionDetailModal .modal-footer{
   background:#1b1b20 !important;
   border-top: 1px solid rgba(255,255,255,.08) !important;
 }
-#sessionDetailModal .btn.btn-primary{
-  background:#0d6efd;
-  border-color:#0d6efd;
-  color:#000; /* melhor contraste no tema escuro desta UI */
+
+/* Botão "Fechar" igual ao "Aplicar" (branco, texto preto, borda suave) */
+#sessionDetailModal .modal-footer .btn.btn-secondary{
+  background:#fff !important;
+  color:#000 !important;
+  border:1px solid #ced4da !important;
+  border-radius:.375rem !important;
+  font-weight:500;
+  transition: background-color .15s ease, box-shadow .15s ease;
+  box-shadow:none !important;
+}
+#sessionDetailModal .modal-footer .btn.btn-secondary:hover{
+  background:#f8f9fa !important;
+  border-color:#bdbdbd !important;
+}
+#sessionDetailModal .modal-footer .btn.btn-secondary:focus{
+  box-shadow:0 0 0 .2rem rgba(108,117,125,.25) !important;
 }
 
 </style>
