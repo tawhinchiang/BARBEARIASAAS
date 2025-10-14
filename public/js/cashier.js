@@ -327,11 +327,16 @@ async function openCloseCashierModal() {
    
     tbody.addEventListener('input', onChange);
 
-    new bootstrap.Modal(document.getElementById('closeCashierModal')).show();
+    
+const modalEl = document.getElementById('sessionDetailModal');
+ let instance = bootstrap.Modal.getInstance(modalEl);
+ if (!instance) instance = new bootstrap.Modal(modalEl, {backdrop: true});
+ instance.show();
   } catch (e) {
     console.error(e);
     notify({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
   }
+
 }
 // Botão principal "Fechar Caixa" abre o modal com linhas e totais preenchidos
 document.getElementById('btnCloseCashier')?.addEventListener('click', openCloseCashierModal);
@@ -411,7 +416,7 @@ function renderHistTable(list=[]) {
     <td class="text-end d-none d-sm-table-cell">${resultado}</td>
     <td class="text-end d-none d-sm-table-cell">${diffCash}</td>
     <td>
-      <button class="btn btn-sm btn-outline-primary" data-view-session="${s.id}">
+      <button type="button" class="btn btn-primary btn-icon-xs" data-view-session="${s.id}">
         <i class="bi bi-eye"></i>
       </button>
     </td>
@@ -497,7 +502,10 @@ async function openSessionDetail(id) {
     <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash||0)}</strong></div>
   `;
 
-  new bootstrap.Modal(document.getElementById('sessionDetailModal')).show();
+ const modalEl = document.getElementById('sessionDetailModal');
+ let instance = bootstrap.Modal.getInstance(modalEl);
+ if (!instance) instance = new bootstrap.Modal(modalEl, {backdrop: true});
+ instance.show(); 
 }
 
 // Helpers simples

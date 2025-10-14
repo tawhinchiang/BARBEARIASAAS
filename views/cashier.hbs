@@ -568,6 +568,34 @@
   #cashierHistoryCard .form-control.form-control-sm,
   #cashierHistoryCard .form-select.form-select-sm{ height: 40px; }
 }
+/* ===== MOBILE: tipografia, espaçamentos e densidade ===== */
+@media (max-width: 576.98px){
+  /* reduz base dentro do card */
+  #cashierHistoryCard { font-size: 13px; }
+
+  /* cabeçalho e filtros mais compactos */
+  #cashierHistoryCard .card-header strong{ font-size: .95rem; }
+  #cashierHistoryCard .form-control.form-control-sm,
+  #cashierHistoryCard .form-select.form-select-sm{ height: 34px; font-size: .85rem; }
+
+  /* tabela enxuta */
+  #cashierHistoryCard thead th{ font-size: .78rem; padding: .35rem .4rem; }
+  #cashierHistoryCard .table>:not(caption)>*>*{ padding: .35rem .45rem; }
+  #cashierHistoryCard tbody td.text-nowrap{ max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* badge/status menor */
+  #cashierHistoryCard .badge{ font-size: .65rem; padding: .2rem .35rem; }
+
+  /* botão de ação compacto e sempre visível */
+  .btn-icon-xs{
+    --bs-btn-padding-y: .15rem; --bs-btn-padding-x: .35rem; --bs-btn-font-size: .8rem;
+    line-height: 1.1; min-width: 32px;
+  }
+}
+
+/* no XS e/* Garantir modal acima do backdrop em temas com z-index custom */
+.modal{ z-index: 1085; }
+.modal-backdrop{ z-index: 1080; }
 
 </style>
 
