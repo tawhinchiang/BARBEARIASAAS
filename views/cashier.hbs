@@ -297,223 +297,109 @@
 </div>
 
 <style>
-  /* =========================================================
-     CABEÇALHO / TÍTULO
-  ========================================================= */
-  #cashierTitle{
-    color: var(--cashier-title-color, #fff) !important;
-    font-weight: 600;
-    letter-spacing: .2px;
-  }
-  @media (max-width: 576.98px){
-    #cashierTitle{ font-size: 1.25rem; }
+  /* ===== Título ===== */
+  #cashierTitle{ color:var(--cashier-title-color,#fff)!important; font-weight:600; letter-spacing:.2px; }
+  @media (max-width:576.98px){ #cashierTitle{ font-size:1.25rem; } }
+
+  /* ===== Fix de modal atrás do backdrop / stacking context ===== */
+  .modal{ z-index:2005 !important; position:fixed; }
+  .modal-backdrop{ z-index:2000 !important; }
+  .modal-backdrop.show{ opacity:.45; }
+  /* Quando um modal abre, neutraliza transform/filter dos wrappers
+     (impede novo stacking-context que empurra o modal para trás) */
+  .modal-open .fade-in-soft,
+  .modal-open .admin-dashboard,
+  .modal-open .container-fluid{
+    transform:none !important;
+    filter:none !important;
+    perspective:none !important;
+    will-change:auto !important;
   }
 
-  /* =========================================================
-     MODAL: FECHAR CAIXA (mantém aparência clara)
-  ========================================================= */
+  /* ===== Campos dos modais ===== */
+  #openCashierModal .input-group-text, #openCashierModal .form-control, #openCashierModal .form-select,
+  #expenseModal .input-group-text,     #expenseModal .form-control,     #expenseModal .form-select,
+  #closeCashierModal .input-group-text,#closeCashierModal .form-control,#closeCashierModal .form-select{
+    height:40px; padding:.5rem .65rem; font-size:.95rem; line-height:1.2;
+    background:#fff!important; color:#212529!important; border-color:#ced4da!important;
+  }
+  #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text{ background:#f8f9fa!important; }
+
+  /* ===== Modal Fechar Caixa visual claro ===== */
   #closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
-  #closeCashierModal .modal-content{ background:#fff !important; color:#212529 !important; }
-  #closeCashierModal .modal-header{ background:#dc3545 !important; color:#fff !important; }
-  #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter: invert(1); }
-  #closeCashierModal .modal-body{ color:#212529 !important; }
-  #closeCashierModal .text-muted{ color:#6c757d !important; }
-
-  #closeCashierModal .table thead tr{ background: var(--brand-primary) !important; }
-  #closeCashierModal .table thead th{ color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
-  #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background: var(--brand-primary) !important; }
-  #closeCashierModal .table{
-    --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff;
-  }
-  #closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff !important; opacity:1 !important; }
+  #closeCashierModal .modal-content{ background:#fff!important; color:#212529!important; }
+  #closeCashierModal .modal-header{ background:#dc3545!important; color:#fff!important; }
+  #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter:invert(1); }
+  #closeCashierModal .modal-body{ color:#212529!important; }
+  #closeCashierModal .text-muted{ color:#6c757d!important; }
+  #closeCashierModal .table thead tr{ background:var(--brand-primary)!important; }
+  #closeCashierModal .table thead th{ color:#fff!important; border-color:rgba(255,255,255,.25)!important; }
+  #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background:var(--brand-primary)!important; }
+  #closeCashierModal .table{ --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff; }
+  #closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff!important; opacity:1!important; }
   #closeCashierModal .table tbody td,
   #closeCashierModal .table tfoot th,
-  #closeCashierModal .table tfoot td{ border-color: rgba(255,255,255,.15) !important; }
-  #closeCashierModal .table .text-muted{ color:#fff !important; opacity:1 !important; }
+  #closeCashierModal .table tfoot td{ border-color:rgba(255,255,255,.15)!important; }
+  #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff!important; color:#212529!important; }
 
-  /* Campos dos modais (altura consistente) */
-  #openCashierModal .input-group-text,   #openCashierModal .form-control,   #openCashierModal .form-select,
-  #expenseModal   .input-group-text,     #expenseModal   .form-control,     #expenseModal   .form-select,
-  #closeCashierModal .input-group-text,  #closeCashierModal .form-control,  #closeCashierModal .form-select{
-    height: 40px; padding: .5rem .65rem; font-size: .95rem; line-height: 1.2;
-    background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
-  }
-  #openCashierModal .input-group-text,
-  #expenseModal .input-group-text,
-  #closeCashierModal .input-group-text{ background:#f8f9fa !important; }
+  /* ===== Botões ===== */
+  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
+  .btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
 
-  #closeCashierModal .form-control:disabled,
-  #closeCashierModal .form-control[readonly]{ background:#f8f9fa !important; color:#212529 !important; }
-  #closeCashierModal .form-control::placeholder{ color:#6c757d !important; opacity:1; }
-  #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff !important; color:#212529 !important; }
-
-  /* Botões dos modais */
-  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{
-    padding: .5rem .9rem; font-size: .9rem; min-width: 128px; line-height: 1.2;
-  }
-  .btn-uniform{ padding: .5rem .9rem; font-size: .9rem; min-width: 128px; line-height: 1.2; }
-
-  /* Ações do topo */
-  .cashier-actions{
-    display: flex; flex-wrap: wrap; gap: .5rem;
-  }
-  @media (min-width: 577px){
-    .cashier-actions .btn{
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: .6rem 1rem; min-width: 150px; font-size: .95rem; line-height: 1.2;
-    }
+  /* ===== Ações topo ===== */
+  .cashier-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
+  @media (min-width:577px){
+    .cashier-actions .btn{ display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1rem; min-width:150px; font-size:.95rem; line-height:1.2; }
   }
 
-  /* Modal Despesa (texto escuro) */
-  #expenseModal .form-label, #expenseModal label, #expenseModal .form-check-label{ color:#212529 !important; }
-  #expenseModal .text-danger{ color:#dc3545 !important; }
-  #expenseModal .modal-header, #expenseModal .modal-header .modal-title, #expenseModal .modal-header i{ color:#212529 !important; }
+  /* ===== Histórico – paleta e entradas ===== */
+  #cashierHistoryCard .card-header{ border-bottom:1px solid rgba(255,255,255,.075); }
+  #cashierHistoryCard .hist-w{ min-width:160px; } .hist-pagesize{ width:84px; min-width:84px; }
+  #cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
 
-  /* Modais – ajustes mobile */
-  @media (max-width: 576.98px){
-    #closeCashierModal .modal-dialog{ margin:.75rem !important; max-width:100%; }
-    #closeCashierModal .modal-content{ border-radius:.6rem !important; max-height:calc(100dvh - 1.5rem); overflow:hidden; }
-    #closeCashierModal .modal-body{ max-height:calc(100dvh - 7.5rem); overflow:auto !important; -webkit-overflow-scrolling:touch; }
-    #closeCashierModal .modal-header, #closeCashierModal .modal-footer{ padding:.5rem .75rem !important; }
-    #closeCashierModal .modal-title{ font-size:.95rem; }
-    #closeCashierModal .modal-body .border.rounded.p-2{ padding:.5rem !important; }
-    #closeCashierModal .modal-body .small{ font-size:.72rem !important; }
-    #closeCashierModal .modal-body .fw-bold{ font-size:.9rem !important; }
-    #closeCashierModal .table{ font-size:.78rem; }
-    #closeCashierModal .table>:not(caption)>*>*{ padding:.35rem .4rem !important; }
-    #closeCashierModal .table thead th{ font-size:.75rem; white-space:nowrap; }
-    #closeCashierModal .table thead th:nth-child(3),
-    #closeCashierModal .table tbody td:nth-child(3){ width:132px !important; }
-    #closeCashierModal .input-group-text{ padding:.35rem .45rem !important; }
-    #closeCashierModal .form-control{ padding:.35rem .5rem !important; height:36px; }
-    #closeCashierModal .form-select{ height:36px; }
-
-    #expenseModal .modal-header, #expenseModal .modal-footer{ padding:.5rem .75rem; }
-    #expenseModal .modal-title{ font-size:.95rem; }
-    #expenseModal textarea.form-control{ height:96px; }
-
-    #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ min-width:132px; font-size:.92rem; padding:.5rem .9rem; }
-    #openCashierModal input,  #openCashierModal select,  #openCashierModal textarea,
-    #expenseModal input,      #expenseModal select,      #expenseModal textarea,
-    #closeCashierModal input, #closeCashierModal select, #closeCashierModal textarea{ font-size:16px !important; }
-
-    .cashier-actions{ display:block; }
-    .cashier-actions .btn{ display:block; width:100%; min-width:0; min-height:44px; margin:0 0 .5rem 0; border-radius:10px; text-align:center; }
-    .cashier-actions .btn:last-child{ margin-bottom:0; }
-    .cashier-actions .me-2{ margin-right:0 !important; }
+  @media (max-width:576.98px){
+    #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
+    #cashierHistoryCard .hist-w, #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
+    #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
+    #cashierHistoryCard .table{ font-size:.84rem; }
+    #cashierHistoryCard .table>:not(caption)>*>*{ padding:.4rem .5rem; }
+    #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
   }
 
-  /* =========================================================
-     CARD: HISTÓRICO
-  ========================================================= */
-  #cashierHistoryCard .card-header { border-bottom: 1px solid rgba(255,255,255,.075); }
-
-  /* Larguras dos filtros */
-  #cashierHistoryCard .hist-w { min-width: 160px; }
-  #cashierHistoryCard .hist-pagesize { width: 84px; min-width: 84px; }
-
-  /* Grupo de atalhos com rolagem, se apertar */
-  #cashierHistoryCard .hist-range-group { overflow-x: auto; white-space: nowrap; max-width: 100%; }
-
-  /* XS: empilhar controles e ocupar 100% */
-  @media (max-width: 576.98px){
-    #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > * { flex: 1 1 100%; }
-    #cashierHistoryCard .hist-w { width: 100%; min-width: 0; }
-    #cashierHistoryCard .hist-pagesize { width: 100%; min-width: 0; }
-    #cashierHistoryCard .btn-group.hist-range-group { width: 100%; }
-    #cashierHistoryCard .btn-group.hist-range-group .btn { flex: 1 0 auto; }
-    #cashierHistoryCard .table { font-size: .84rem; }
-    #cashierHistoryCard .table>:not(caption)>*>* { padding: .4rem .5rem; }
+  #cashierHistoryCard{ --hist-bg:var(--bg-light); --hist-surface:var(--bg-gray); --hist-border:var(--border-color); --hist-text:var(--text-dark); --hist-muted:#9ca3af; --hist-focus:var(--primary-color); }
+  #cashierHistoryCard .card-header{ background:var(--hist-bg); border-bottom:1px solid var(--hist-border); }
+  #cashierHistoryCard .form-control.form-control-sm, #cashierHistoryCard .form-select.form-select-sm{
+    background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text); height:38px; padding:.35rem .6rem;
   }
+  #cashierHistoryCard .form-control::placeholder{ color:var(--hist-muted); opacity:.9; }
+  #cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(1) opacity(.9); cursor:pointer; }
+  #cashierHistoryCard .hist-range-group .btn{ background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text); }
+  #cashierHistoryCard .hist-range-group .btn:hover{ background:#232327; }
+  #cashierHistoryCard .hist-range-group .btn.active{ background:var(--primary-color); border-color:var(--primary-color); color:#000; }
+  #cashierHistoryCard .hist-pagesize{ background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text); height:38px; min-width:92px; }
+  #cashierHistoryCard #histSearchBtn.btn{ background:var(--primary-color); border:1px solid var(--primary-color); color:#000; height:38px; padding:.35rem .75rem; }
+  #cashierHistoryCard #histSearchBtn.btn:hover{ filter:brightness(1.05); }
+  #cashierHistoryCard thead.table-light th{ background:#202026!important; color:var(--hist-text)!important; border-color:var(--hist-border)!important; }
+  #cashierHistoryCard tbody td{ background:#18181c; border-color:var(--hist-border); }
+  #cashierHistoryCard tbody tr:hover td{ background:#1d1d22; }
+  #cashierHistoryCard .badge.bg-success{ background-color:#198754!important; color:#fff!important; }
+  #cashierHistoryCard .card-body + .d-flex{ background:var(--hist-bg); border-top:1px solid var(--hist-border); }
+  #cashierHistoryCard .pagination .page-link{ color:var(--primary-color); border-color:var(--primary-color); background:transparent; }
+  #cashierHistoryCard .pagination .page-item.active .page-link{ background:#fff; color:#000!important; border-color:var(--primary-color); }
 
-  @media (max-width: 576.98px){
-    #cashierHistoryCard .card-header {
-      position: sticky; top: 56px; z-index: 2;  /* ajuste conforme a navbar */
-      background: var(--bs-card-bg, #1e1e1e);
-    }
+  /* Mobile: densidade */
+  @media (max-width:576.98px){
+    #cashierHistoryCard{ font-size:12px; }
+    #cashierHistoryCard .card-header strong{ font-size:.9rem; }
+    #cashierHistoryCard .form-control.form-control-sm, #cashierHistoryCard .form-select.form-select-sm{ height:32px; font-size:.8rem; padding:.25rem .5rem; }
+    #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
+    #cashierHistoryCard .table>:not(caption)>*>*{ padding:.3rem .4rem; }
+    #cashierHistoryCard tbody td.text-nowrap{ max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
   }
-
-  /* Paleta harmonizada do card */
-  #cashierHistoryCard {
-    --hist-bg: var(--bg-light);
-    --hist-surface: var(--bg-gray);
-    --hist-border: var(--border-color);
-    --hist-text: var(--text-dark);
-    --hist-muted: #9ca3af;
-    --hist-focus: var(--primary-color);
-  }
-  #cashierHistoryCard .card-header{ background: var(--hist-bg); border-bottom: 1px solid var(--hist-border); }
-
-  #cashierHistoryCard .form-control.form-control-sm,
-  #cashierHistoryCard .form-select.form-select-sm{
-    background: #1e1e22; border: 1px solid var(--hist-border); color: var(--hist-text);
-    height: 38px; padding: .35rem .6rem;
-  }
-  #cashierHistoryCard .form-control::placeholder{ color: var(--hist-muted); opacity:.9; }
-
-  #cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{
-    filter: invert(1) opacity(.9); cursor: pointer;
-  }
-
-  #cashierHistoryCard .hist-range-group .btn{ background: #1e1e22; border: 1px solid var(--hist-border); color: var(--hist-text); }
-  #cashierHistoryCard .hist-range-group .btn:hover{ background: #232327; }
-  #cashierHistoryCard .hist-range-group .btn.active{ background: var(--primary-color); border-color: var(--primary-color); color: #000; }
-
-  #cashierHistoryCard .hist-pagesize{ background: #1e1e22; border: 1px solid var(--hist-border); color: var(--hist-text); height: 38px; min-width: 92px; }
-
-  /* Botão Aplicar visível */
-  #cashierHistoryCard #histSearchBtn.btn{
-    background: var(--primary-color); border: 1px solid var(--primary-color); color: #000; height: 38px; padding: .35rem .75rem;
-  }
-  #cashierHistoryCard #histSearchBtn.btn:hover{ filter: brightness(1.05); }
-
-  /* Tabela */
-  #cashierHistoryCard thead.table-light th{
-    background: #202026 !important; color: var(--hist-text) !important; border-color: var(--hist-border) !important;
-  }
-  #cashierHistoryCard tbody td{ background: #18181c; border-color: var(--hist-border); }
-  #cashierHistoryCard tbody tr:hover td{ background: #1d1d22; }
-
-  /* Badge status */
-  #cashierHistoryCard .badge.bg-success{ background-color: #198754 !important; color: #fff !important; }
-
-  /* Rodapé (paginação/resumo) */
-  #cashierHistoryCard .card-body + .d-flex{ background: var(--hist-bg); border-top: 1px solid var(--hist-border); }
-  #cashierHistoryCard .pagination .page-link{ color: var(--primary-color); border-color: var(--primary-color); background: transparent; }
-  #cashierHistoryCard .pagination .page-item.active .page-link{ background: #fff; color: #000 !important; border-color: var(--primary-color); }
-
-  /* Botões da tabela mais visíveis no tema escuro */
-  #cashierHistoryCard .btn.btn-sm{ padding: .25rem .45rem; font-size: .8rem; line-height: 1.2; }
-  #cashierHistoryCard .btn-outline-primary{
-    color: #fff; border-color: var(--primary-color, #0d6efd);
-    background: color-mix(in srgb, var(--primary-color, #0d6efd) 15%, transparent);
-  }
-  #cashierHistoryCard .btn-outline-primary:hover{
-    background: var(--primary-color, #0d6efd); color: #000; border-color: var(--primary-color, #0d6efd);
-  }
-
-  /* =========================================================
-     MOBILE – densidade geral da tabela
-  ========================================================= */
-  @media (max-width: 576.98px){
-    #cashierHistoryCard { font-size: 12px; }
-    #cashierHistoryCard .card-header strong{ font-size: .9rem; }
-    #cashierHistoryCard .form-control.form-control-sm,
-    #cashierHistoryCard .form-select.form-select-sm{ height: 32px; font-size: .8rem; padding: .25rem .5rem; }
-    #cashierHistoryCard thead th{ font-size: .72rem; padding: .3rem .35rem; }
-    #cashierHistoryCard .table>:not(caption)>*>*{ padding: .3rem .4rem; }
-    #cashierHistoryCard tbody td.text-nowrap{ max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #cashierHistoryCard .badge{ font-size: .6rem; padding: .15rem .3rem; }
-  }
-
-  /* =========================================================
-     MODAIS – ordem de camadas e backdrop mais leve
-     (corrige "tela acinzentada" e travamento ao clicar fora)
-  ========================================================= */
-  .modal      { z-index: 1055; }         /* padrão Bootstrap */
-  .modal-backdrop { z-index: 1050; }
-  .modal-backdrop.show { opacity: .45; } /* um pouco mais leve que o padrão */
-
 </style>
+
+<script src="/js/cashier.js"></script>
+
 
 <script src="/js/cashier.js"></script>

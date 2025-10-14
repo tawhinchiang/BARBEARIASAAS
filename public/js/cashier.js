@@ -2,7 +2,7 @@ console.log('[CASHIER] Página de Caixa carregada');
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-// Helpers
+// Fetch helper
 async function apiFetch(url, options = {}) {
   const resp = await fetch(url, {
     ...options,
@@ -14,33 +14,25 @@ async function apiFetch(url, options = {}) {
   });
   return resp.json();
 }
-// Ordem fixa e labels amigáveis
+
+// Constantes/UI helpers
 const METHOD_ORDER = ['cash', 'credit', 'debit', 'pix', 'other'];
 const LABELS = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
-
-// Formatador de moeda (evita NaN)
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// Renderiza <li> para métodos de pagamento em ordem fixa
 function renderPaymentList(obj = {}) {
   return METHOD_ORDER.map(key => {
     const valor = Number(obj[key] || 0);
     return `<li><strong>${LABELS[key]}:</strong> ${money(valor)}</li>`;
   }).join('');
 }
-function setVal(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.value = value;
-}
-function setChecked(id, checked) {
-  const el = document.getElementById(id);
-  if (el) el.checked = !!checked;
-}
+const setVal = (id, value)=>{ const el=document.getElementById(id); if(el) el.value=value; };
+const setChecked = (id, checked)=>{ const el=document.getElementById(id); if(el) el.checked=!!checked; };
 
-// Atualizar status e resumo
+// ===== Status / Resumo =====
 async function loadCashierStatus() {
   try {
-    const data = await apiFetch('/admin/cashier/session/current'); // { success, session, resumo }
+    const data = await apiFetch('/admin/cashier/session/current');
     const statusDiv  = document.getElementById('cashierStatus');
     const summaryDiv = document.getElementById('cashierSummary');
 
@@ -72,39 +64,31 @@ async function loadCashierStatus() {
         <div class="card border-success h-100">
           <div class="card-body">
             <h6 class="card-title">Entradas por método</h6>
-            <ul class="list-unstyled mb-0">
-              ${renderPaymentList(entradasByMeth)}
-            </ul>
+            <ul class="list-unstyled mb-0">${renderPaymentList(entradasByMeth)}</ul>
           </div>
         </div>
       </div>
     `;
 
-    if (despesasByMeth) {
-      html += `
-        <div class="col-md-4">
-          <div class="card border-warning h-100">
-            <div class="card-body">
-              <h6 class="card-title">Despesas por método</h6>
-              <ul class="list-unstyled mb-0">
-                ${renderPaymentList(despesasByMeth)}
-              </ul>
-            </div>
+    html += despesasByMeth ? `
+      <div class="col-md-4">
+        <div class="card border-warning h-100">
+          <div class="card-body">
+            <h6 class="card-title">Despesas por método</h6>
+            <ul class="list-unstyled mb-0">${renderPaymentList(despesasByMeth)}</ul>
           </div>
         </div>
-      `;
-    } else {
-      html += `
-        <div class="col-md-4">
-          <div class="card border-warning h-100">
-            <div class="card-body">
-              <h6 class="card-title">Despesas</h6>
-              <p class="mb-0">${money(totalDespesas)}</p>
-            </div>
+      </div>
+    ` : `
+      <div class="col-md-4">
+        <div class="card border-warning h-100">
+          <div class="card-body">
+            <h6 class="card-title">Despesas</h6>
+            <p class="mb-0">${money(totalDespesas)}</p>
           </div>
         </div>
-      `;
-    }
+      </div>
+    `;
 
     html += `
       <div class="col-md-4">
@@ -131,144 +115,83 @@ async function loadCashierStatus() {
 
   } catch (err) {
     console.error('[CASHIER LOAD ERROR]', err);
-    notify({ type: 'error', message: 'Erro ao carregar status do caixa' });
+    notify?.({ type: 'error', message: 'Erro ao carregar status do caixa' });
   }
 }
 
-
-// Abrir Caixa
+// ===== Abrir Caixa =====
 document.getElementById('confirmOpenCashier')?.addEventListener('click', async () => {
   const openingAmount = parseFloat(document.getElementById('openingAmount').value) || 0;
-
-  const data = await apiFetch('/admin/cashier/open', {
-    method: 'POST',
-    body: JSON.stringify({ openingAmount })
-  });
+  const data = await apiFetch('/admin/cashier/open', { method:'POST', body: JSON.stringify({ openingAmount }) });
 
   if (data.success) {
-    notify({ type: 'success', message: 'Caixa aberto com sucesso!' });
-    bootstrap.Modal.getInstance(document.getElementById('openCashierModal')).hide();
+    notify?.({ type: 'success', message: 'Caixa aberto com sucesso!' });
+    bootstrap.Modal.getInstance(document.getElementById('openCashierModal'))?.hide();
     loadCashierStatus();
   } else {
-    notify({ type: 'error', message: data.error || 'Erro ao abrir caixa' });
+    notify?.({ type: 'error', message: data.error || 'Erro ao abrir caixa' });
   }
 });
 
-// Lançar Despesa
+// ===== Despesa =====
+document.getElementById('btnAddExpense')?.addEventListener('click', () => {
+  const d = new Date().toISOString().slice(0,10);
+  setVal('exp-desc',''); setVal('exp-amount',''); setVal('exp-method','cash'); setVal('exp-category','operacional'); setVal('exp-date', d);
+  const el = document.getElementById('expenseModal');
+  bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
+});
+
 document.getElementById('exp-submit-btn')?.addEventListener('click', async () => {
-  const description = document.getElementById('exp-desc')?.value?.trim() ||
-                      document.getElementById('expenseDescription')?.value?.trim() || '';
-  const amount = parseFloat(document.getElementById('exp-amount')?.value ??
-                            document.getElementById('expenseAmount')?.value) || 0;
-  const method = document.getElementById('exp-method')?.value ??
-                 document.getElementById('expenseMethod')?.value ?? 'cash';
+  const description = document.getElementById('exp-desc')?.value?.trim() || '';
+  const amount = parseFloat(document.getElementById('exp-amount')?.value) || 0;
+  const method = document.getElementById('exp-method')?.value || 'cash';
   const category = document.getElementById('exp-category')?.value || 'operacional';
   const date = document.getElementById('exp-date')?.value || new Date().toISOString().slice(0,10);
-  const isFixed = document.getElementById('exp-fixed')?.checked === true;
-  const notes = document.getElementById('exp-notes')?.value?.trim() || '';
 
-  if (!description || !(amount > 0)) {
-    notify({ type: 'warning', message: 'Preencha descrição e um valor maior que 0,00.' });
-    return;
-  }
+  if (!description || !(amount > 0)) { notify?.({ type:'warning', message:'Preencha descrição e um valor maior que 0,00.' }); return; }
 
-  const body = { description, amount, method, category, date, isFixed, notes };
+  const btn = document.getElementById('exp-submit-btn'); const html = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lançando...';
 
-  const btn = document.getElementById('exp-submit-btn');
-  const html = btn?.innerHTML;
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lançando...'; }
+  const data = await apiFetch('/admin/cashier/expenses', { method:'POST', body: JSON.stringify({ description, amount, method, category, date }) });
 
-  const data = await apiFetch('/admin/cashier/expenses', {
-    method: 'POST',
-    body: JSON.stringify(body)
-  });
-
-  if (btn) { btn.disabled = false; btn.innerHTML = html; }
+  btn.disabled = false; btn.innerHTML = html;
 
   if (data.success) {
-    notify({ type: 'success', message: 'Despesa registrada com sucesso!' });
+    notify?.({ type:'success', message:'Despesa registrada com sucesso!' });
     bootstrap.Modal.getInstance(document.getElementById('expenseModal'))?.hide();
     loadCashierStatus();
   } else {
-    notify({ type: 'error', message: data.error || 'Erro ao lançar despesa' });
+    notify?.({ type:'error', message:data.error || 'Erro ao lançar despesa' });
   }
 });
 
-
-// Fechar Caixa (enviar)
-document.getElementById('cc-submit-btn')?.addEventListener('click', async () => {
-
-  const rows = document.querySelectorAll('#cc-count-tbody tr');
-  if (!rows.length) {
-    notify({ type: 'warning', message: 'Abra o modal de Fechar Caixa para informar as contagens por método.' });
-    return;
-  }
-
-  const counted = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
-  rows.forEach(tr => {
-    const method = tr?.dataset?.method;
-    const val = parseFloat(tr.querySelector('.cc-count')?.value) || 0;
-    if (method && method in counted) counted[method] = Math.max(0, Math.round(val * 100) / 100);
-  });
-
-  const notes = document.getElementById('cc-notes')?.value?.trim() || '';
-  const printReceipt = document.getElementById('cc-print')?.checked === true;
-
-  const countedCash = counted.cash;
-  const body = { counted, countedCash, notes, printReceipt };
-
-  const btn = document.getElementById('cc-submit-btn');
-  const html = btn?.innerHTML;
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Fechando...'; }
-
-  const data = await apiFetch('/admin/cashier/close', {
-    method: 'POST',
-    body: JSON.stringify(body)
-  });
-
-  if (btn) { btn.disabled = false; btn.innerHTML = html; }
-
-  if (data.success) {
-    notify({ type: 'success', message: 'Caixa fechado com sucesso!' });
-    bootstrap.Modal.getInstance(document.getElementById('closeCashierModal'))?.hide();
-    loadCashierStatus();
-  } else {
-    notify({ type: 'error', message: data.error || 'Erro ao fechar caixa' });
-  }
-});
-
-// Carregar resumo do caixa aberto
+// ===== Fechar Caixa =====
 async function fetchOpenCashSummary() {
   const data = await apiFetch('/admin/cashier/session/current');
   if (!data?.session) throw new Error('Nenhum caixa aberto.');
   const entradas = data?.resumo?.entradas || {};
   const despesas = Number(data?.resumo?.totalDespesas || 0);
   const expectedByMethod = {
-    cash:   Number(entradas.cash || 0),
+    cash: Number(entradas.cash || 0),
     credit: Number(entradas.credit || 0),
-    debit:  Number(entradas.debit || 0),
-    pix:    Number(entradas.pix || 0),
-    other:  Number(entradas.other || 0)
+    debit: Number(entradas.debit || 0),
+    pix: Number(entradas.pix || 0),
+    other: Number(entradas.other || 0)
   };
   const expectedTotal = Object.values(expectedByMethod).reduce((s,v)=>s+Number(v||0),0);
   return { expectedByMethod, expectedTotal, expensesTotal: despesas };
 }
 
-// Monta linhas do modal e abre
 async function openCloseCashierModal() {
   try {
     const { expectedByMethod, expectedTotal, expensesTotal } = await fetchOpenCashSummary();
 
-    // Cabeçalhos
-    const elExp = document.getElementById('cc-expected-total');
-    const elDes = document.getElementById('cc-expenses-total');
-    const elRes = document.getElementById('cc-result-expected');
-    if (elExp) elExp.textContent = money(expectedTotal);
-    if (elDes) elDes.textContent = money(expensesTotal);
-    if (elRes) elRes.textContent = money(expectedTotal - expensesTotal);
+    document.getElementById('cc-expected-total').textContent = money(expectedTotal);
+    document.getElementById('cc-expenses-total').textContent = money(expensesTotal);
+    document.getElementById('cc-result-expected').textContent = money(expectedTotal - expensesTotal);
 
-    // Linhas
-    const mapLabels = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
+    const mapLabels = { cash:'Dinheiro', credit:'Crédito', debit:'Débito', pix:'PIX', other:'Outros' };
     const tbody = document.getElementById('cc-count-tbody');
     tbody.innerHTML = '';
     Object.keys(mapLabels).forEach(method => {
@@ -287,16 +210,15 @@ async function openCloseCashierModal() {
       `;
       tbody.appendChild(tr);
     });
+
     document.getElementById('cc-expected-sum').textContent = money(expectedTotal);
     document.getElementById('cc-counted-sum').value = 'R$ 0,00';
     document.getElementById('cc-diff-sum').textContent = 'R$ 0,00';
     document.getElementById('cc-diff-alert').classList.add('d-none');
 
-    // Recalcular
     const onChange = () => {
       const rows = document.querySelectorAll('#cc-count-tbody tr');
-      let sumCounted = 0;
-      let sumDiff = 0;
+      let sumCounted = 0, sumDiff = 0;
       rows.forEach(row => {
         const expText = row.querySelector('[data-expected]').textContent;
         const expected = parseFloat(expText.replace(/[R$\.\s]/g,'').replace(',', '.')) || 0;
@@ -312,55 +234,47 @@ async function openCloseCashierModal() {
     };
     tbody.addEventListener('input', onChange);
 
-    // Fecha qualquer modal aberto (evita "backdrop preso")
-    document.querySelectorAll('.modal.show').forEach(m => {
-      try { bootstrap.Modal.getInstance(m)?.hide(); } catch(e){}
-    });
-
-    // Abre o modal com opções claras
-    const modalEl = document.getElementById('closeCashierModal');
-    let instance = bootstrap.Modal.getInstance(modalEl);
-    if (!instance) {
-      instance = new bootstrap.Modal(modalEl, {
-        backdrop: true,   // clicar fora fecha
-        keyboard: true,   // ESC fecha
-        focus: true
-      });
-    }
-    instance.show();
+    const el = document.getElementById('closeCashierModal');
+    // descarta instância antiga (evita backdrop “preso”)
+    const old = bootstrap.Modal.getInstance(el);
+    if (old) old.dispose();
+    bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
 
   } catch (e) {
     console.error(e);
-    notify({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
+    notify?.({ type:'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
   }
 }
-
-// Botão principal "Fechar Caixa"
 document.getElementById('btnCloseCashier')?.addEventListener('click', openCloseCashierModal);
 
-// Botão principal "Lançar Despesa"
-document.getElementById('btnAddExpense')?.addEventListener('click', () => {
-  const d = new Date().toISOString().slice(0,10);
-  setVal('exp-desc', '');
-  setVal('exp-amount', '');
-  setVal('exp-method', 'cash');
-  setVal('exp-category', 'operacional');
-  setVal('exp-date', d);
-  setChecked('exp-fixed', false);
-  setVal('exp-notes', '');
-  const el = document.getElementById('expenseModal');
-  let inst = bootstrap.Modal.getInstance(el);
-  if (!inst) inst = new bootstrap.Modal(el, { backdrop: true, keyboard: true, focus: true });
-  inst.show();
+document.getElementById('cc-submit-btn')?.addEventListener('click', async () => {
+  const rows = document.querySelectorAll('#cc-count-tbody tr');
+  if (!rows.length) { notify?.({ type:'warning', message:'Abra o modal de Fechar Caixa para informar as contagens por método.' }); return; }
+
+  const counted = { cash:0, credit:0, debit:0, pix:0, other:0 };
+  rows.forEach(tr => {
+    const method = tr.dataset.method; const val = parseFloat(tr.querySelector('.cc-count')?.value) || 0;
+    if (method in counted) counted[method] = Math.max(0, Math.round(val * 100) / 100);
+  });
+
+  const btn = document.getElementById('cc-submit-btn'); const html = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Fechando...';
+
+  const data = await apiFetch('/admin/cashier/close', { method:'POST', body: JSON.stringify({ counted, countedCash: counted.cash }) });
+
+  btn.disabled = false; btn.innerHTML = html;
+
+  if (data.success) {
+    notify?.({ type:'success', message:'Caixa fechado com sucesso!' });
+    bootstrap.Modal.getInstance(document.getElementById('closeCashierModal'))?.hide();
+    loadCashierStatus();
+  } else {
+    notify?.({ type:'error', message:data.error || 'Erro ao fechar caixa' });
+  }
 });
 
-// Carregar ao abrir a página
-document.addEventListener('DOMContentLoaded', () => {
-  loadCashierStatus();
-});
-
-// === Histórico de Caixa ===
-const hist = { page: 1, pageSize: 20, from: null, to: null };
+// ===== Histórico =====
+const hist = { page:1, pageSize:20, from:null, to:null };
 
 document.getElementById('histSearchBtn')?.addEventListener('click', () => {
   hist.page = 1;
@@ -385,18 +299,14 @@ async function loadCashierHistory() {
   params.set('pageSize', hist.pageSize);
 
   const data = await apiFetch(`/admin/cashier/sessions?${params.toString()}`);
-  if (!data?.success) {
-    notify?.({type:'error', message: data?.error || 'Erro ao carregar histórico'});
-    return;
-  }
+  if (!data?.success) { notify?.({type:'error', message:data?.error || 'Erro ao carregar histórico'}); return; }
   renderHistTable(data.sessions);
   renderHistPagination(data.pagination);
   renderHistSummary(data.pagination);
 }
 
 function renderHistTable(list=[]) {
-  const tbody = document.getElementById('histTbody');
-  if (!tbody) return;
+  const tbody = document.getElementById('histTbody'); if (!tbody) return;
 
   tbody.innerHTML = list.map(s => {
     const entradas  = fmtBRL(Number(s.entradasTotal||0));
@@ -408,21 +318,21 @@ function renderHistTable(list=[]) {
       : '<span class="badge text-bg-warning">aberto</span>';
 
     return `
-  <tr>
-    <td class="text-nowrap">${fmtDateTime(s.openedAt)}</td>
-    <td class="text-nowrap">${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</td>
-    <td>${statusBadge}</td>
-    <td class="text-end">${entradas}</td>
-    <td class="text-end d-none d-sm-table-cell">${despesas}</td>
-    <td class="text-end d-none d-sm-table-cell">${resultado}</td>
-    <td class="text-end d-none d-sm-table-cell">${diffCash}</td>
-    <td>
-      <button type="button" class="btn btn-primary btn-icon-xs" data-view-session="${s.id}">
-        <i class="bi bi-eye"></i>
-      </button>
-    </td>
-  </tr>
-`;
+      <tr>
+        <td class="text-nowrap">${fmtDateTime(s.openedAt)}</td>
+        <td class="text-nowrap">${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</td>
+        <td>${statusBadge}</td>
+        <td class="text-end">${entradas}</td>
+        <td class="text-end d-none d-sm-table-cell">${despesas}</td>
+        <td class="text-end d-none d-sm-table-cell">${resultado}</td>
+        <td class="text-end d-none d-sm-table-cell">${diffCash}</td>
+        <td>
+          <button type="button" class="btn btn-primary btn-icon-xs" data-view-session="${s.id}">
+            <i class="bi bi-eye"></i>
+          </button>
+        </td>
+      </tr>
+    `;
   }).join('');
 
   tbody.querySelectorAll('[data-view-session]')?.forEach(btn=>{
@@ -431,11 +341,8 @@ function renderHistTable(list=[]) {
 }
 
 function renderHistPagination(p) {
-  const ul = document.getElementById('histPagination');
-  if (!ul) return;
-  const { page, totalPages } = p;
-  const pages = [];
-  const max = Math.max(1, totalPages);
+  const ul = document.getElementById('histPagination'); if (!ul) return;
+  const { page, totalPages } = p; const pages = []; const max = Math.max(1, totalPages);
 
   const pushPage = (n, label=n, active=false, disabled=false) => {
     pages.push(`
@@ -446,9 +353,7 @@ function renderHistPagination(p) {
   };
 
   pushPage(page-1, '&laquo;', false, page<=1);
-  for (let i = Math.max(1, page-2); i <= Math.min(max, page+2); i++) {
-    pushPage(i, i, i===page, false);
-  }
+  for (let i = Math.max(1, page-2); i <= Math.min(max, page+2); i++) pushPage(i, i, i===page, false);
   pushPage(page+1, '&raquo;', false, page>=max);
 
   ul.innerHTML = pages.join('');
@@ -464,20 +369,15 @@ function renderHistPagination(p) {
 }
 
 function renderHistSummary(p) {
-  const el = document.getElementById('histSummary');
-  if (!el) return;
+  const el = document.getElementById('histSummary'); if (!el) return;
   el.textContent = `Página ${p.page} de ${p.totalPages} — ${p.total} registros`;
 }
 
 async function openSessionDetail(id) {
   const data = await apiFetch(`/admin/cashier/sessions/${id}`);
-  if (!data?.success) {
-    notify?.({ type:'error', message: data?.error || 'Erro ao carregar sessão' });
-    return;
-  }
+  if (!data?.success) { notify?.({ type:'error', message:data?.error || 'Erro ao carregar sessão' }); return; }
   const s = data.session;
   const body = document.getElementById('sessionDetailBody');
-  if (!body) return;
 
   const labels = { cash:'Dinheiro', credit_card:'Crédito', debit_card:'Débito', pix:'PIX', voucher:'Voucher', other:'Outros' };
   const methods = ['cash','credit_card','debit_card','pix','voucher','other'];
@@ -493,55 +393,42 @@ async function openSessionDetail(id) {
       <table class="table table-sm">
         <thead><tr><th>Método</th><th class="text-end">Valor</th></tr></thead>
         <tbody>
-          ${methods.map(k=>`
-            <tr><td>${labels[k]}</td><td class="text-end">${fmtBRL(byMethod[k]||0)}</td></tr>
-          `).join('')}
+          ${methods.map(k=>`<tr><td>${labels[k]}</td><td class="text-end">${fmtBRL(byMethod[k]||0)}</td></tr>`).join('')}
         </tbody>
       </table>
     </div>
     <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash||0)}</strong></div>
   `;
 
-  // Fecha modais abertos e abre o detalhe
-  document.querySelectorAll('.modal.show').forEach(m => {
-    try { bootstrap.Modal.getInstance(m)?.hide(); } catch(e){}
-  });
-  const modalEl = document.getElementById('sessionDetailModal');
-  let instance = bootstrap.Modal.getInstance(modalEl);
-  if (!instance) instance = new bootstrap.Modal(modalEl, {backdrop: true, keyboard: true, focus: true});
-  instance.show();
+  const el = document.getElementById('sessionDetailModal');
+  const old = bootstrap.Modal.getInstance(el);
+  if (old) old.dispose();
+  bootstrap.Modal.getOrCreateInstance(el, { backdrop:true, keyboard:true }).show();
 }
 
-// Helpers simples
+// Helpers
 function fmtBRL(n){ return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function fmtDateTime(d){
-  const dt = new Date(d);
-  const pad = (n)=> String(n).padStart(2,'0');
+  const dt = new Date(d); const pad=(n)=>String(n).padStart(2,'0');
   return `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 }
 function applyQuickRange(type){
-  const today = new Date();
-  const pad=(n)=>String(n).padStart(2,'0');
+  const today = new Date(); const pad=(n)=>String(n).padStart(2,'0');
   const fmt=(x)=> `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;
   let from, to;
   if (type==='today'){ from=to=fmt(today); }
   else if (type==='yesterday'){ const y=new Date(today); y.setDate(y.getDate()-1); from=to=fmt(y); }
   else if (type==='week'){ const start=new Date(today); start.setDate(today.getDate()-6); from=fmt(start); to=fmt(today); }
-  else if (type==='month'){ const start = new Date(today.getFullYear(), today.getMonth(), 1); from=fmt(start); to=fmt(today); }
+  else if (type==='month'){ const start=new Date(today.getFullYear(), today.getMonth(), 1); from=fmt(start); to=fmt(today); }
   document.getElementById('histFrom').value = from || '';
   document.getElementById('histTo').value   = to   || '';
 }
 
-// Inicial: mês corrente + listeners globais para limpar backdrops “presas”
+// Inicializações
 document.addEventListener('DOMContentLoaded', ()=>{
+  loadCashierStatus();
   if (document.getElementById('cashierHistoryCard')) {
     applyQuickRange('month');
     document.getElementById('histSearchBtn')?.click();
   }
-});
-document.addEventListener('hidden.bs.modal', () => {
-  // limpeza defensiva (só se algum tema deixou backdrop sobrando)
-  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-  document.body.classList.remove('modal-open');
-  document.body.style.removeProperty('padding-right');
 });
