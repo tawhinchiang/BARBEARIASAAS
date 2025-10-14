@@ -26,21 +26,21 @@ function renderPaymentList(obj = {}) {
     return `<li><strong>${LABELS[key]}:</strong> ${money(valor)}</li>`;
   }).join('');
 }
-const setVal = (id, value)=>{ const el=document.getElementById(id); if(el) el.value=value; };
-const setChecked = (id, checked)=>{ const el=document.getElementById(id); if(el) el.checked=!!checked; };
+const setVal = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
+const setChecked = (id, checked) => { const el = document.getElementById(id); if (el) el.checked = !!checked; };
 
 // ===== Status / Resumo =====
 async function loadCashierStatus() {
   try {
     const data = await apiFetch('/admin/cashier/session/current');
-    const statusDiv  = document.getElementById('cashierStatus');
+    const statusDiv = document.getElementById('cashierStatus');
     const summaryDiv = document.getElementById('cashierSummary');
 
     if (!data?.session) {
       statusDiv.innerHTML = `<span class="badge bg-secondary">Caixa Fechado</span>`;
       summaryDiv.innerHTML = `<div class="col-12"><p>Nenhum caixa aberto.</p></div>`;
-      document.getElementById('btnOpenCashier').disabled  = false;
-      document.getElementById('btnAddExpense').disabled   = true;
+      document.getElementById('btnOpenCashier').disabled = false;
+      document.getElementById('btnAddExpense').disabled = true;
       document.getElementById('btnCloseCashier').disabled = true;
       return;
     }
@@ -51,13 +51,13 @@ async function loadCashierStatus() {
       <small class="text-muted ms-2">Aberto em: ${openedAt}</small>
     `;
 
-    const resumo          = data.resumo || {};
-    const entradasByMeth  = resumo.entradas || {};
-    const despesasByMeth  = resumo.despesasByMethod || null;
-    const totalEntradas   = Number(resumo.totalEntradas || 0);
-    const totalDespesas   = Number(resumo.totalDespesas || 0);
-    const saldoEsperado   = Number(resumo.saldoEsperado || 0);
-    const resultado       = totalEntradas - totalDespesas;
+    const resumo = data.resumo || {};
+    const entradasByMeth = resumo.entradas || {};
+    const despesasByMeth = resumo.despesasByMethod || null;
+    const totalEntradas = Number(resumo.totalEntradas || 0);
+    const totalDespesas = Number(resumo.totalDespesas || 0);
+    const saldoEsperado = Number(resumo.saldoEsperado || 0);
+    const resultado = totalEntradas - totalDespesas;
 
     let html = `
       <div class="col-md-4">
@@ -109,8 +109,8 @@ async function loadCashierStatus() {
 
     summaryDiv.innerHTML = html;
 
-    document.getElementById('btnOpenCashier').disabled  = true;
-    document.getElementById('btnAddExpense').disabled   = false;
+    document.getElementById('btnOpenCashier').disabled = true;
+    document.getElementById('btnAddExpense').disabled = false;
     document.getElementById('btnCloseCashier').disabled = false;
 
   } catch (err) {
@@ -122,7 +122,7 @@ async function loadCashierStatus() {
 // ===== Abrir Caixa =====
 document.getElementById('confirmOpenCashier')?.addEventListener('click', async () => {
   const openingAmount = parseFloat(document.getElementById('openingAmount').value) || 0;
-  const data = await apiFetch('/admin/cashier/open', { method:'POST', body: JSON.stringify({ openingAmount }) });
+  const data = await apiFetch('/admin/cashier/open', { method: 'POST', body: JSON.stringify({ openingAmount }) });
 
   if (data.success) {
     notify?.({ type: 'success', message: 'Caixa aberto com sucesso!' });
@@ -135,8 +135,8 @@ document.getElementById('confirmOpenCashier')?.addEventListener('click', async (
 
 // ===== Despesa =====
 document.getElementById('btnAddExpense')?.addEventListener('click', () => {
-  const d = new Date().toISOString().slice(0,10);
-  setVal('exp-desc',''); setVal('exp-amount',''); setVal('exp-method','cash'); setVal('exp-category','operacional'); setVal('exp-date', d);
+  const d = new Date().toISOString().slice(0, 10);
+  setVal('exp-desc', ''); setVal('exp-amount', ''); setVal('exp-method', 'cash'); setVal('exp-category', 'operacional'); setVal('exp-date', d);
   const el = document.getElementById('expenseModal');
   bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
 });
@@ -146,23 +146,23 @@ document.getElementById('exp-submit-btn')?.addEventListener('click', async () =>
   const amount = parseFloat(document.getElementById('exp-amount')?.value) || 0;
   const method = document.getElementById('exp-method')?.value || 'cash';
   const category = document.getElementById('exp-category')?.value || 'operacional';
-  const date = document.getElementById('exp-date')?.value || new Date().toISOString().slice(0,10);
+  const date = document.getElementById('exp-date')?.value || new Date().toISOString().slice(0, 10);
 
-  if (!description || !(amount > 0)) { notify?.({ type:'warning', message:'Preencha descrição e um valor maior que 0,00.' }); return; }
+  if (!description || !(amount > 0)) { notify?.({ type: 'warning', message: 'Preencha descrição e um valor maior que 0,00.' }); return; }
 
   const btn = document.getElementById('exp-submit-btn'); const html = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Lançando...';
 
-  const data = await apiFetch('/admin/cashier/expenses', { method:'POST', body: JSON.stringify({ description, amount, method, category, date }) });
+  const data = await apiFetch('/admin/cashier/expenses', { method: 'POST', body: JSON.stringify({ description, amount, method, category, date }) });
 
   btn.disabled = false; btn.innerHTML = html;
 
   if (data.success) {
-    notify?.({ type:'success', message:'Despesa registrada com sucesso!' });
+    notify?.({ type: 'success', message: 'Despesa registrada com sucesso!' });
     bootstrap.Modal.getInstance(document.getElementById('expenseModal'))?.hide();
     loadCashierStatus();
   } else {
-    notify?.({ type:'error', message:data.error || 'Erro ao lançar despesa' });
+    notify?.({ type: 'error', message: data.error || 'Erro ao lançar despesa' });
   }
 });
 
@@ -179,7 +179,7 @@ async function fetchOpenCashSummary() {
     pix: Number(entradas.pix || 0),
     other: Number(entradas.other || 0)
   };
-  const expectedTotal = Object.values(expectedByMethod).reduce((s,v)=>s+Number(v||0),0);
+  const expectedTotal = Object.values(expectedByMethod).reduce((s, v) => s + Number(v || 0), 0);
   return { expectedByMethod, expectedTotal, expensesTotal: despesas };
 }
 
@@ -191,7 +191,7 @@ async function openCloseCashierModal() {
     document.getElementById('cc-expenses-total').textContent = money(expensesTotal);
     document.getElementById('cc-result-expected').textContent = money(expectedTotal - expensesTotal);
 
-    const mapLabels = { cash:'Dinheiro', credit:'Crédito', debit:'Débito', pix:'PIX', other:'Outros' };
+    const mapLabels = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
     const tbody = document.getElementById('cc-count-tbody');
     tbody.innerHTML = '';
     Object.keys(mapLabels).forEach(method => {
@@ -221,7 +221,7 @@ async function openCloseCashierModal() {
       let sumCounted = 0, sumDiff = 0;
       rows.forEach(row => {
         const expText = row.querySelector('[data-expected]').textContent;
-        const expected = parseFloat(expText.replace(/[R$\.\s]/g,'').replace(',', '.')) || 0;
+        const expected = parseFloat(expText.replace(/[R$\.\s]/g, '').replace(',', '.')) || 0;
         const val = parseFloat(row.querySelector('.cc-count')?.value) || 0;
         sumCounted += val;
         const diff = Math.round((val - expected) * 100) / 100;
@@ -242,16 +242,16 @@ async function openCloseCashierModal() {
 
   } catch (e) {
     console.error(e);
-    notify?.({ type:'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
+    notify?.({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
   }
 }
 document.getElementById('btnCloseCashier')?.addEventListener('click', openCloseCashierModal);
 
 document.getElementById('cc-submit-btn')?.addEventListener('click', async () => {
   const rows = document.querySelectorAll('#cc-count-tbody tr');
-  if (!rows.length) { notify?.({ type:'warning', message:'Abra o modal de Fechar Caixa para informar as contagens por método.' }); return; }
+  if (!rows.length) { notify?.({ type: 'warning', message: 'Abra o modal de Fechar Caixa para informar as contagens por método.' }); return; }
 
-  const counted = { cash:0, credit:0, debit:0, pix:0, other:0 };
+  const counted = { cash: 0, credit: 0, debit: 0, pix: 0, other: 0 };
   rows.forEach(tr => {
     const method = tr.dataset.method; const val = parseFloat(tr.querySelector('.cc-count')?.value) || 0;
     if (method in counted) counted[method] = Math.max(0, Math.round(val * 100) / 100);
@@ -260,32 +260,36 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
   const btn = document.getElementById('cc-submit-btn'); const html = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Fechando...';
 
-  const data = await apiFetch('/admin/cashier/close', { method:'POST', body: JSON.stringify({ counted, countedCash: counted.cash }) });
+  const data = await apiFetch('/admin/cashier/close', { method: 'POST', body: JSON.stringify({ counted, countedCash: counted.cash }) });
 
   btn.disabled = false; btn.innerHTML = html;
 
   if (data.success) {
-    notify?.({ type:'success', message:'Caixa fechado com sucesso!' });
+    notify?.({ type: 'success', message: 'Caixa fechado com sucesso!' });
     bootstrap.Modal.getInstance(document.getElementById('closeCashierModal'))?.hide();
     loadCashierStatus();
   } else {
-    notify?.({ type:'error', message:data.error || 'Erro ao fechar caixa' });
+    notify?.({ type: 'error', message: data.error || 'Erro ao fechar caixa' });
   }
 });
 
 // ===== Histórico =====
-const hist = { page:1, pageSize:20, from:null, to:null };
+const hist = { page: 1, pageSize: 20, from: null, to: null };
 
 document.getElementById('histSearchBtn')?.addEventListener('click', () => {
-  hist.page = 1;
   hist.from = document.getElementById('histFrom').value || null;
-  hist.to   = document.getElementById('histTo').value   || null;
+  hist.to = document.getElementById('histTo').value || null;
   hist.pageSize = parseInt(document.getElementById('histPageSize').value) || 20;
   loadCashierHistory();
 });
-
-document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn=>{
-  btn.addEventListener('click', ()=>{
+['histFrom', 'histTo', 'histPageSize'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => { hist.page = 1; });
+});
+document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn => {
+  btn.addEventListener('click', () => { hist.page = 1; applyQuickRange(btn.dataset.range); document.getElementById('histSearchBtn').click(); });
+});
+document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn => {
+  btn.addEventListener('click', () => {
     applyQuickRange(btn.dataset.range);
     document.getElementById('histSearchBtn').click();
   });
@@ -294,25 +298,25 @@ document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn=>{
 async function loadCashierHistory() {
   const params = new URLSearchParams();
   if (hist.from) params.set('from', hist.from);
-  if (hist.to)   params.set('to',   hist.to);
+  if (hist.to) params.set('to', hist.to);
   params.set('page', hist.page);
   params.set('pageSize', hist.pageSize);
 
   const data = await apiFetch(`/admin/cashier/sessions?${params.toString()}`);
-  if (!data?.success) { notify?.({type:'error', message:data?.error || 'Erro ao carregar histórico'}); return; }
+  if (!data?.success) { notify?.({ type: 'error', message: data?.error || 'Erro ao carregar histórico' }); return; }
   renderHistTable(data.sessions);
   renderHistPagination(data.pagination);
   renderHistSummary(data.pagination);
 }
 
-function renderHistTable(list=[]) {
+function renderHistTable(list = []) {
   const tbody = document.getElementById('histTbody'); if (!tbody) return;
 
   tbody.innerHTML = list.map(s => {
-    const entradas  = fmtBRL(Number(s.entradasTotal||0));
-    const despesas  = fmtBRL(Number(s.despesasTotal||0));
-    const resultado = fmtBRL(Number(s.resultado||0));
-    const diffCash  = fmtBRL(Number(s.diffCash||0));
+    const entradas = fmtBRL(Number(s.entradasTotal || 0));
+    const despesas = fmtBRL(Number(s.despesasTotal || 0));
+    const resultado = fmtBRL(Number(s.resultado || 0));
+    const diffCash = fmtBRL(Number(s.diffCash || 0));
     const statusBadge = s.status === 'closed'
       ? '<span class="badge text-bg-success">fechado</span>'
       : '<span class="badge text-bg-warning">aberto</span>';
@@ -327,16 +331,16 @@ function renderHistTable(list=[]) {
         <td class="text-end d-none d-sm-table-cell">${resultado}</td>
         <td class="text-end d-none d-sm-table-cell">${diffCash}</td>
         <td>
-          <button type="button" class="btn btn-primary btn-icon-xs" data-view-session="${s.id}">
-            <i class="bi bi-eye"></i>
+          <button type="button" class="btn btn-light btn-icon-xs" data-view-session="${s.id}" title="Ver detalhes">
+           <i class="bi bi-eye"></i>
           </button>
         </td>
       </tr>
     `;
   }).join('');
 
-  tbody.querySelectorAll('[data-view-session]')?.forEach(btn=>{
-    btn.addEventListener('click', ()=> openSessionDetail(btn.dataset.viewSession));
+  tbody.querySelectorAll('[data-view-session]')?.forEach(btn => {
+    btn.addEventListener('click', () => openSessionDetail(btn.dataset.viewSession));
   });
 }
 
@@ -344,21 +348,21 @@ function renderHistPagination(p) {
   const ul = document.getElementById('histPagination'); if (!ul) return;
   const { page, totalPages } = p; const pages = []; const max = Math.max(1, totalPages);
 
-  const pushPage = (n, label=n, active=false, disabled=false) => {
+  const pushPage = (n, label = n, active = false, disabled = false) => {
     pages.push(`
-      <li class="page-item ${active?'active':''} ${disabled?'disabled':''}">
-        <a class="page-link" href="#" data-page="${disabled? '' : n}">${label}</a>
+      <li class="page-item ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="${disabled ? '' : n}">${label}</a>
       </li>
     `);
   };
 
-  pushPage(page-1, '&laquo;', false, page<=1);
-  for (let i = Math.max(1, page-2); i <= Math.min(max, page+2); i++) pushPage(i, i, i===page, false);
-  pushPage(page+1, '&raquo;', false, page>=max);
+  pushPage(page - 1, '&laquo;', false, page <= 1);
+  for (let i = Math.max(1, page - 2); i <= Math.min(max, page + 2); i++) pushPage(i, i, i === page, false);
+  pushPage(page + 1, '&raquo;', false, page >= max);
 
   ul.innerHTML = pages.join('');
-  ul.querySelectorAll('a[data-page]')?.forEach(a=>{
-    a.addEventListener('click', e=>{
+  ul.querySelectorAll('a[data-page]')?.forEach(a => {
+    a.addEventListener('click', e => {
       e.preventDefault();
       const n = parseInt(a.dataset.page);
       if (!n || n === hist.page) return;
@@ -375,57 +379,57 @@ function renderHistSummary(p) {
 
 async function openSessionDetail(id) {
   const data = await apiFetch(`/admin/cashier/sessions/${id}`);
-  if (!data?.success) { notify?.({ type:'error', message:data?.error || 'Erro ao carregar sessão' }); return; }
+  if (!data?.success) { notify?.({ type: 'error', message: data?.error || 'Erro ao carregar sessão' }); return; }
   const s = data.session;
   const body = document.getElementById('sessionDetailBody');
 
-  const labels = { cash:'Dinheiro', credit_card:'Crédito', debit_card:'Débito', pix:'PIX', voucher:'Voucher', other:'Outros' };
-  const methods = ['cash','credit_card','debit_card','pix','voucher','other'];
+  const labels = { cash: 'Dinheiro', credit_card: 'Crédito', debit_card: 'Débito', pix: 'PIX', voucher: 'Voucher', other: 'Outros' };
+  const methods = ['cash', 'credit_card', 'debit_card', 'pix', 'voucher', 'other'];
   const byMethod = s.entradasByMethod || {};
   body.innerHTML = `
     <div class="row g-2 mb-3">
       <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Abertura</div><div class="fw-bold">${fmtDateTime(s.openedAt)}</div></div></div>
-      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Fechamento</div><div class="fw-bold">${s.closedAt?fmtDateTime(s.closedAt):'—'}</div></div></div>
-      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Entradas</div><div class="fw-bold">${fmtBRL(s.entradasTotal||0)}</div></div></div>
-      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Despesas</div><div class="fw-bold">${fmtBRL(s.despesasTotal||0)}</div></div></div>
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Fechamento</div><div class="fw-bold">${s.closedAt ? fmtDateTime(s.closedAt) : '—'}</div></div></div>
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Entradas</div><div class="fw-bold">${fmtBRL(s.entradasTotal || 0)}</div></div></div>
+      <div class="col-md-3"><div class="border rounded p-2"><div class="small text-muted">Despesas</div><div class="fw-bold">${fmtBRL(s.despesasTotal || 0)}</div></div></div>
     </div>
     <div class="table-responsive">
       <table class="table table-sm">
         <thead><tr><th>Método</th><th class="text-end">Valor</th></tr></thead>
         <tbody>
-          ${methods.map(k=>`<tr><td>${labels[k]}</td><td class="text-end">${fmtBRL(byMethod[k]||0)}</td></tr>`).join('')}
+          ${methods.map(k => `<tr><td>${labels[k]}</td><td class="text-end">${fmtBRL(byMethod[k] || 0)}</td></tr>`).join('')}
         </tbody>
       </table>
     </div>
-    <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash||0)}</strong></div>
+    <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash || 0)}</strong></div>
   `;
 
   const el = document.getElementById('sessionDetailModal');
   const old = bootstrap.Modal.getInstance(el);
   if (old) old.dispose();
-  bootstrap.Modal.getOrCreateInstance(el, { backdrop:true, keyboard:true }).show();
+  bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
 }
 
 // Helpers
-function fmtBRL(n){ return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-function fmtDateTime(d){
-  const dt = new Date(d); const pad=(n)=>String(n).padStart(2,'0');
-  return `${pad(dt.getDate())}/${pad(dt.getMonth()+1)}/${dt.getFullYear()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+function fmtBRL(n) { return Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function fmtDateTime(d) {
+  const dt = new Date(d); const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 }
-function applyQuickRange(type){
-  const today = new Date(); const pad=(n)=>String(n).padStart(2,'0');
-  const fmt=(x)=> `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}`;
+function applyQuickRange(type) {
+  const today = new Date(); const pad = (n) => String(n).padStart(2, '0');
+  const fmt = (x) => `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
   let from, to;
-  if (type==='today'){ from=to=fmt(today); }
-  else if (type==='yesterday'){ const y=new Date(today); y.setDate(y.getDate()-1); from=to=fmt(y); }
-  else if (type==='week'){ const start=new Date(today); start.setDate(today.getDate()-6); from=fmt(start); to=fmt(today); }
-  else if (type==='month'){ const start=new Date(today.getFullYear(), today.getMonth(), 1); from=fmt(start); to=fmt(today); }
+  if (type === 'today') { from = to = fmt(today); }
+  else if (type === 'yesterday') { const y = new Date(today); y.setDate(y.getDate() - 1); from = to = fmt(y); }
+  else if (type === 'week') { const start = new Date(today); start.setDate(today.getDate() - 6); from = fmt(start); to = fmt(today); }
+  else if (type === 'month') { const start = new Date(today.getFullYear(), today.getMonth(), 1); from = fmt(start); to = fmt(today); }
   document.getElementById('histFrom').value = from || '';
-  document.getElementById('histTo').value   = to   || '';
+  document.getElementById('histTo').value = to || '';
 }
 
 // Inicializações
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', () => {
   loadCashierStatus();
   if (document.getElementById('cashierHistoryCard')) {
     applyQuickRange('month');

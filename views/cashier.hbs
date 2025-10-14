@@ -480,6 +480,99 @@ body.modal-open .col-12{
 #sessionDetailModal .modal-footer .btn.btn-secondary:focus{
   box-shadow:0 0 0 .2rem rgba(108,117,125,.25) !important;
 }
+/* ====== Header/título ====== */
+#cashierHistoryCard .card-header,
+#cashierHistoryCard .card-header strong,
+#cashierHistoryCard .card-header .bi{
+  color:#fff !important;
+}
+
+/* ====== Botão "Aplicar" ====== */
+#cashierHistoryCard #histSearchBtn.btn{
+  background:#fff;                     /* igual ao print */
+  color:#000; 
+  border:1px solid #ced4da;
+  height:38px; padding:.35rem .75rem;
+}
+#cashierHistoryCard #histSearchBtn.btn i{ color:#000; }
+/* No mobile, sempre mostrar o texto "Aplicar" */
+@media (max-width:576.98px){
+  #histSearchBtn .d-none.d-sm-inline{ display:inline !important; }
+}
+
+/* ====== Padronização de alturas/larguras no desktop ====== */
+@media (min-width:577px){
+  /* mesma largura para os atalhos */
+  #cashierHistoryCard .hist-range-group .btn{
+    width:100px; height:38px; 
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  /* select e aplicar do mesmo tamanho visual */
+  #cashierHistoryCard .hist-pagesize{
+    width:100px; height:38px; 
+  }
+  #cashierHistoryCard #histSearchBtn.btn{
+    width:100px; height:38px;
+  }
+}
+
+/* ====== Botão de ação "ver detalhes" (ícone preto) ====== */
+#cashierHistoryCard .btn-icon-xs{
+  --bs-btn-padding-y: .25rem; 
+  --bs-btn-padding-x: .45rem; 
+  --bs-btn-font-size: .8rem;
+  line-height:1.1; min-width:32px;
+}
+#cashierHistoryCard .btn-icon-xs i{ color:#000 !important; }
+
+/* ====== Paginação – setas « » pretas ====== */
+#cashierHistoryCard .pagination .page-link{
+  color:var(--primary-color); border-color:var(--primary-color); background:transparent;
+}
+#cashierHistoryCard .pagination .page-item.active .page-link{
+  background:#fff; color:#000 !important; border-color:var(--primary-color);
+}
+/* Primeira/última (setas) em preto com fundo branco */
+#cashierHistoryCard .pagination .page-item:first-child .page-link,
+#cashierHistoryCard .pagination .page-item:last-child .page-link{
+  background:#fff !important; color:#000 !important; border-color:#ced4da !important;
+}
+
+/* ====== Modal Detalhes – offset do topo e altura segura ====== */
+#sessionDetailModal .modal-dialog{
+  margin-top:72px;                /* espaço abaixo da navbar/título */
+}
+#sessionDetailModal .modal-content{
+  max-height:calc(100dvh - 96px); /* cabe na viewport com margem */
+  display:flex; flex-direction:column;
+}
+#sessionDetailModal .modal-body{
+  overflow:auto;                  /* rola o corpo, mantém header/footer */
+}
+
+/* ====== Modal Detalhes – tema escuro legível (mantido) ====== */
+#sessionDetailModal .modal-content{ background:#1e1e22 !important; color:#fff !important; }
+#sessionDetailModal .modal-header{ background:#2a2a30 !important; color:#fff !important; border-bottom:1px solid rgba(255,255,255,.12)!important; }
+#sessionDetailModal .btn-close{ filter:invert(1); }
+#sessionDetailModal .modal-body .border.rounded.p-2{ background:#23232a !important; border-color:rgba(255,255,255,.15)!important; }
+#sessionDetailModal .modal-body .small.text-muted{ color:#c8c8c8 !important; }
+#sessionDetailModal .modal-body .fw-bold{ color:#fff !important; }
+#sessionDetailModal .table{ --bs-table-color:#fff; }
+#sessionDetailModal thead tr{ background:#2f2f36 !important; }
+#sessionDetailModal thead th{ color:#fff !important; border-color:rgba(255,255,255,.18)!important; }
+#sessionDetailModal tbody td{ background:#1f1f26 !important; color:#fff !important; border-color:rgba(255,255,255,.1)!important; }
+#sessionDetailModal tbody tr:hover td{ background:#24242c !important; }
+#sessionDetailModal .modal-footer{ background:#1b1b20 !important; border-top:1px solid rgba(255,255,255,.08)!important; }
+
+/* Botão "Fechar" igual ao "Aplicar" branco */
+#sessionDetailModal .modal-footer .btn.btn-primary{
+  background:#fff !important; color:#000 !important; border:1px solid #ced4da !important;
+}
+#sessionDetailModal .modal-footer .btn.btn-primary:hover{
+  background:#f8f9fa !important; border-color:#bdbdbd !important;
+}
+
+/* ====== Título do card já forçado para branco no topo (item 4) ====== */
 
 </style>
 
