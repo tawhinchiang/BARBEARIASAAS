@@ -44,7 +44,6 @@ async function loadCashierStatus() {
     const statusDiv  = document.getElementById('cashierStatus');
     const summaryDiv = document.getElementById('cashierSummary');
 
-    // Sem sessão aberta
     if (!data?.session) {
       statusDiv.innerHTML = `<span class="badge bg-secondary">Caixa Fechado</span>`;
       summaryDiv.innerHTML = `<div class="col-12"><p>Nenhum caixa aberto.</p></div>`;
@@ -54,23 +53,20 @@ async function loadCashierStatus() {
       return;
     }
 
-    // Cabeçalho do status
     const openedAt = new Date(data.session.openedAt).toLocaleString('pt-BR');
     statusDiv.innerHTML = `
       <span class="badge bg-success">Caixa Aberto</span>
       <small class="text-muted ms-2">Aberto em: ${openedAt}</small>
     `;
 
-    // Resumo seguro (sempre números)
     const resumo          = data.resumo || {};
-    const entradasByMeth  = resumo.entradas || {};             // normalizado pelo back
-    const despesasByMeth  = resumo.despesasByMethod || null;   // opcional
+    const entradasByMeth  = resumo.entradas || {};
+    const despesasByMeth  = resumo.despesasByMethod || null;
     const totalEntradas   = Number(resumo.totalEntradas || 0);
     const totalDespesas   = Number(resumo.totalDespesas || 0);
     const saldoEsperado   = Number(resumo.saldoEsperado || 0);
     const resultado       = totalEntradas - totalDespesas;
 
-    // Montagem dos cards
     let html = `
       <div class="col-md-4">
         <div class="card border-success h-100">
@@ -84,7 +80,6 @@ async function loadCashierStatus() {
       </div>
     `;
 
-    // Card de Despesas por método (se existir breakdown)
     if (despesasByMeth) {
       html += `
         <div class="col-md-4">
@@ -99,7 +94,6 @@ async function loadCashierStatus() {
         </div>
       `;
     } else {
-      // Caso não tenha breakdown, mostra total de despesas
       html += `
         <div class="col-md-4">
           <div class="card border-warning h-100">
@@ -112,7 +106,6 @@ async function loadCashierStatus() {
       `;
     }
 
-    // Card de Saldo/Resumo rápido
     html += `
       <div class="col-md-4">
         <div class="card border-primary h-100">
@@ -132,7 +125,6 @@ async function loadCashierStatus() {
 
     summaryDiv.innerHTML = html;
 
-    // Botões
     document.getElementById('btnOpenCashier').disabled  = true;
     document.getElementById('btnAddExpense').disabled   = false;
     document.getElementById('btnCloseCashier').disabled = false;
@@ -144,7 +136,7 @@ async function loadCashierStatus() {
 }
 
 
-// Ações dos botões
+// Abrir Caixa
 document.getElementById('confirmOpenCashier')?.addEventListener('click', async () => {
   const openingAmount = parseFloat(document.getElementById('openingAmount').value) || 0;
 
@@ -162,9 +154,8 @@ document.getElementById('confirmOpenCashier')?.addEventListener('click', async (
   }
 });
 
-// Lançar Despesa (novo: category, date, isFixed, notes)
+// Lançar Despesa
 document.getElementById('exp-submit-btn')?.addEventListener('click', async () => {
-  // IDs do novo modal (ajuste se usou outros):
   const description = document.getElementById('exp-desc')?.value?.trim() ||
                       document.getElementById('expenseDescription')?.value?.trim() || '';
   const amount = parseFloat(document.getElementById('exp-amount')?.value ??
@@ -204,10 +195,10 @@ document.getElementById('exp-submit-btn')?.addEventListener('click', async () =>
 });
 
 
-// Fechar Caixa com contagem por método
+// Fechar Caixa (enviar)
 document.getElementById('cc-submit-btn')?.addEventListener('click', async () => {
 
-  const rows = document.querySelectorAll('#cc-count-tbody tr'); // linhas do modal de fechar
+  const rows = document.querySelectorAll('#cc-count-tbody tr');
   if (!rows.length) {
     notify({ type: 'warning', message: 'Abra o modal de Fechar Caixa para informar as contagens por método.' });
     return;
@@ -223,9 +214,7 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
   const notes = document.getElementById('cc-notes')?.value?.trim() || '';
   const printReceipt = document.getElementById('cc-print')?.checked === true;
 
-  // Compat: soma geral (caso seu back ainda aceite countedCash)
   const countedCash = counted.cash;
-
   const body = { counted, countedCash, notes, printReceipt };
 
   const btn = document.getElementById('cc-submit-btn');
@@ -248,11 +237,10 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
   }
 });
 
-// Carregar resumo do caixa aberto (reutiliza a sua rota atual)
+// Carregar resumo do caixa aberto
 async function fetchOpenCashSummary() {
   const data = await apiFetch('/admin/cashier/session/current');
   if (!data?.session) throw new Error('Nenhum caixa aberto.');
-  // Normaliza estrutura para o modal:
   const entradas = data?.resumo?.entradas || {};
   const despesas = Number(data?.resumo?.totalDespesas || 0);
   const expectedByMethod = {
@@ -266,12 +254,12 @@ async function fetchOpenCashSummary() {
   return { expectedByMethod, expectedTotal, expensesTotal: despesas };
 }
 
-// Monta as linhas do modal de fechar caixa e liga os listeners
+// Monta linhas do modal e abre
 async function openCloseCashierModal() {
   try {
     const { expectedByMethod, expectedTotal, expensesTotal } = await fetchOpenCashSummary();
 
-    // Cabeçalho do modal
+    // Cabeçalhos
     const elExp = document.getElementById('cc-expected-total');
     const elDes = document.getElementById('cc-expenses-total');
     const elRes = document.getElementById('cc-result-expected');
@@ -279,7 +267,7 @@ async function openCloseCashierModal() {
     if (elDes) elDes.textContent = money(expensesTotal);
     if (elRes) elRes.textContent = money(expectedTotal - expensesTotal);
 
-    // Linhas por método
+    // Linhas
     const mapLabels = { cash: 'Dinheiro', credit: 'Crédito', debit: 'Débito', pix: 'PIX', other: 'Outros' };
     const tbody = document.getElementById('cc-count-tbody');
     tbody.innerHTML = '';
@@ -302,11 +290,9 @@ async function openCloseCashierModal() {
     document.getElementById('cc-expected-sum').textContent = money(expectedTotal);
     document.getElementById('cc-counted-sum').value = 'R$ 0,00';
     document.getElementById('cc-diff-sum').textContent = 'R$ 0,00';
-    // document.getElementById('cc-notes').value = '';
-    // document.getElementById('cc-print').checked = false;
     document.getElementById('cc-diff-alert').classList.add('d-none');
 
-    // Recalcular ao digitar
+    // Recalcular
     const onChange = () => {
       const rows = document.querySelectorAll('#cc-count-tbody tr');
       let sumCounted = 0;
@@ -324,24 +310,35 @@ async function openCloseCashierModal() {
       document.getElementById('cc-diff-sum').textContent = money(sumDiff);
       document.getElementById('cc-diff-alert').classList.toggle('d-none', Math.abs(sumDiff) < 0.01);
     };
-   
     tbody.addEventListener('input', onChange);
 
-    
-const modalEl = document.getElementById('sessionDetailModal');
- let instance = bootstrap.Modal.getInstance(modalEl);
- if (!instance) instance = new bootstrap.Modal(modalEl, {backdrop: true});
- instance.show();
+    // Fecha qualquer modal aberto (evita "backdrop preso")
+    document.querySelectorAll('.modal.show').forEach(m => {
+      try { bootstrap.Modal.getInstance(m)?.hide(); } catch(e){}
+    });
+
+    // Abre o modal com opções claras
+    const modalEl = document.getElementById('closeCashierModal');
+    let instance = bootstrap.Modal.getInstance(modalEl);
+    if (!instance) {
+      instance = new bootstrap.Modal(modalEl, {
+        backdrop: true,   // clicar fora fecha
+        keyboard: true,   // ESC fecha
+        focus: true
+      });
+    }
+    instance.show();
+
   } catch (e) {
     console.error(e);
     notify({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
   }
-
 }
-// Botão principal "Fechar Caixa" abre o modal com linhas e totais preenchidos
+
+// Botão principal "Fechar Caixa"
 document.getElementById('btnCloseCashier')?.addEventListener('click', openCloseCashierModal);
 
-// Botão principal "Lançar Despesa" abre o modal preparado
+// Botão principal "Lançar Despesa"
 document.getElementById('btnAddExpense')?.addEventListener('click', () => {
   const d = new Date().toISOString().slice(0,10);
   setVal('exp-desc', '');
@@ -351,13 +348,17 @@ document.getElementById('btnAddExpense')?.addEventListener('click', () => {
   setVal('exp-date', d);
   setChecked('exp-fixed', false);
   setVal('exp-notes', '');
-  new bootstrap.Modal(document.getElementById('expenseModal')).show();
+  const el = document.getElementById('expenseModal');
+  let inst = bootstrap.Modal.getInstance(el);
+  if (!inst) inst = new bootstrap.Modal(el, { backdrop: true, keyboard: true, focus: true });
+  inst.show();
 });
 
 // Carregar ao abrir a página
 document.addEventListener('DOMContentLoaded', () => {
   loadCashierStatus();
 });
+
 // === Histórico de Caixa ===
 const hist = { page: 1, pageSize: 20, from: null, to: null };
 
@@ -422,7 +423,6 @@ function renderHistTable(list=[]) {
     </td>
   </tr>
 `;
-
   }).join('');
 
   tbody.querySelectorAll('[data-view-session]')?.forEach(btn=>{
@@ -502,10 +502,14 @@ async function openSessionDetail(id) {
     <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash||0)}</strong></div>
   `;
 
- const modalEl = document.getElementById('sessionDetailModal');
- let instance = bootstrap.Modal.getInstance(modalEl);
- if (!instance) instance = new bootstrap.Modal(modalEl, {backdrop: true});
- instance.show(); 
+  // Fecha modais abertos e abre o detalhe
+  document.querySelectorAll('.modal.show').forEach(m => {
+    try { bootstrap.Modal.getInstance(m)?.hide(); } catch(e){}
+  });
+  const modalEl = document.getElementById('sessionDetailModal');
+  let instance = bootstrap.Modal.getInstance(modalEl);
+  if (!instance) instance = new bootstrap.Modal(modalEl, {backdrop: true, keyboard: true, focus: true});
+  instance.show();
 }
 
 // Helpers simples
@@ -528,10 +532,16 @@ function applyQuickRange(type){
   document.getElementById('histTo').value   = to   || '';
 }
 
-// Inicial: mês corrente
+// Inicial: mês corrente + listeners globais para limpar backdrops “presas”
 document.addEventListener('DOMContentLoaded', ()=>{
   if (document.getElementById('cashierHistoryCard')) {
     applyQuickRange('month');
     document.getElementById('histSearchBtn')?.click();
   }
+});
+document.addEventListener('hidden.bs.modal', () => {
+  // limpeza defensiva (só se algum tema deixou backdrop sobrando)
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('padding-right');
 });
