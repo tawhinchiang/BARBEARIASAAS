@@ -571,6 +571,17 @@ body.modal-open .col-12{
 #sessionDetailModal .modal-footer .btn.btn-primary:hover{
   background:#f8f9fa !important; border-color:#bdbdbd !important;
 }
+/* Bloqueia a rolagem do body quando marcado via JS */
+body.scroll-locked{
+  position: fixed;   /* prende a página no ponto atual */
+  overflow: hidden !important;
+  width: 100%;
+}
+
+/* Fallback geral: quando QUALQUER modal do Bootstrap estiver aberto */
+body.modal-open{
+  overflow: hidden !important;
+}
 
 /* ====== Título do card já forçado para branco no topo (item 4) ====== */
 
@@ -581,6 +592,26 @@ body.modal-open .col-12{
 
 
 <script>
+  (function () {
+    const modal = document.getElementById('sessionDetailModal');
+    if (!modal) return;
+
+    let scrollTop = 0;
+
+    modal.addEventListener('show.bs.modal', () => {
+      // guarda a posição atual e trava o body
+      scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.style.top = `-${scrollTop}px`;
+      document.body.classList.add('scroll-locked');
+    });
+
+    modal.addEventListener('hidden.bs.modal', () => {
+      // destrava e volta exatamente ao ponto onde estava
+      document.body.classList.remove('scroll-locked');
+      document.body.style.removeProperty('top');
+      window.scrollTo(0, scrollTop || 0);
+    });
+  })();
   (function () {
     const ids = ['openCashierModal','expenseModal','closeCashierModal','sessionDetailModal'];
 
