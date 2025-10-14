@@ -7,12 +7,9 @@
         </h2>
 
         <!-- Status atual -->
-        <div id="cashierStatus" class="mb-3">
-          {{!-- Aqui via JS você vai preencher se está aberto ou fechado --}}
-        </div>
+        <div id="cashierStatus" class="mb-3"></div>
 
-        <!-- Botões de ações -->
-
+        <!-- Ações -->
         <div class="mb-4 cashier-actions">
           <button id="btnOpenCashier" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#openCashierModal">
             <i class="fas fa-door-open me-1"></i> Abrir Caixa
@@ -27,94 +24,85 @@
           </button>
         </div>
 
+        <!-- Resumo -->
+        <div id="cashierSummary" class="row g-3"><!-- via JS --></div>
 
-        <!-- Resumo da sessão atual -->
-        <div id="cashierSummary" class="row g-3">
-          <!-- preenchido via JS com /admin/cashier/session/current -->
-        </div>
+        <!-- Histórico -->
         <div class="card mt-4" id="cashierHistoryCard">
-  <div class="card-header">
-  <div class="d-flex align-items-center justify-content-between">
-    <div class="d-flex align-items-center gap-2">
-      <i class="bi bi-clock-history me-1"></i> <strong>Histórico de Caixas</strong>
-    </div>
+          <div class="card-header">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history me-1"></i> <strong>Histórico de Caixas</strong>
+              </div>
+              <button class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
+                      type="button" data-bs-toggle="collapse" data-bs-target="#histFilters"
+                      aria-expanded="false" aria-controls="histFilters">
+                <i class="bi bi-sliders me-1"></i> Filtros
+              </button>
+            </div>
 
-    {{!-- Botão só no mobile para abrir/fechar filtros --}}
-    <button class="btn btn-outline-secondary btn-sm d-inline-flex d-md-none"
-            type="button" data-bs-toggle="collapse" data-bs-target="#histFilters"
-            aria-expanded="false" aria-controls="histFilters">
-      <i class="bi bi-sliders me-1"></i> Filtros
-    </button>
-  </div>
+            <div id="histFilters" class="collapse d-md-block mt-2">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <input type="date" id="histFrom" class="form-control form-control-sm hist-w">
+                <input type="date" id="histTo"   class="form-control form-control-sm hist-w">
 
-  {{!-- Filtros: visível sempre no desktop; collapse no mobile --}}
-  <div id="histFilters" class="collapse d-md-block mt-2">
-    <div class="d-flex flex-wrap gap-2 align-items-center">
-      <input type="date" id="histFrom" class="form-control form-control-sm hist-w">
-      <input type="date" id="histTo"   class="form-control form-control-sm hist-w">
+                <div class="btn-group btn-group-sm hist-range-group" role="group" aria-label="Atalhos de período">
+                  <button class="btn btn-outline-secondary" data-range="today">Hoje</button>
+                  <button class="btn btn-outline-secondary" data-range="yesterday">Ontem</button>
+                  <button class="btn btn-outline-secondary" data-range="week">Semana</button>
+                  <button class="btn btn-outline-secondary" data-range="month">Mês</button>
+                </div>
 
-      <div class="btn-group btn-group-sm hist-range-group" role="group" aria-label="Atalhos de período">
-        <button class="btn btn-outline-secondary" data-range="today">Hoje</button>
-        <button class="btn btn-outline-secondary" data-range="yesterday">Ontem</button>
-        <button class="btn btn-outline-secondary" data-range="week">Semana</button>
-        <button class="btn btn-outline-secondary" data-range="month">Mês</button>
-      </div>
+                <select id="histPageSize" class="form-select form-select-sm hist-pagesize">
+                  <option>10</option><option selected>20</option><option>50</option>
+                </select>
 
-      <select id="histPageSize" class="form-select form-select-sm hist-pagesize">
-        <option>10</option><option selected>20</option><option>50</option>
-      </select>
+                <button id="histSearchBtn" class="btn btn-primary btn-sm">
+                  <i class="bi bi-search me-1"></i>
+                  <span class="d-none d-sm-inline">Aplicar</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-      <button id="histSearchBtn" class="btn btn-primary btn-sm">
-  <i class="bi bi-search me-1"></i>
-  <span class="d-none d-sm-inline">Aplicar</span>
-</button>
-    </div>
-  </div>
-</div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-nowrap">Abertura</th>
+                    <th class="text-nowrap">Fechamento</th>
+                    <th>Status</th>
+                    <th class="text-end">Entradas</th>
+                    <th class="text-end d-none d-sm-table-cell">Despesas</th>
+                    <th class="text-end d-none d-sm-table-cell">Resultado</th>
+                    <th class="text-end d-none d-sm-table-cell">Dif. Dinheiro</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="histTbody"><!-- via JS --></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center p-2">
+              <small id="histSummary"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="histPagination"></ul></nav>
+            </div>
+          </div>
+        </div>
 
-
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table mb-0 align-middle">
-        <thead class="table-light">
-  <tr>
-    
-    <th class="text-nowrap">Abertura</th>
-    <th class="text-nowrap">Fechamento</th>
-    <th>Status</th>
-    <th class="text-end">Entradas</th>
-    <th class="text-end d-none d-sm-table-cell">Despesas</th>
-    <th class="text-end d-none d-sm-table-cell">Resultado</th>
-    <th class="text-end d-none d-sm-table-cell">Dif. Dinheiro</th>
-    <th>Ações</th>
-  </tr>
-        </thead>
-        <tbody id="histTbody"><!-- via JS --></tbody>
-
-      </table>
-    </div>
-    <div class="d-flex justify-content-between align-items-center p-2">
-      <small id="histSummary"></small>
-      <nav><ul class="pagination pagination-sm mb-0" id="histPagination"></ul></nav>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Detalhe -->
-<div class="modal fade" id="sessionDetailModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
-    <div class="modal-header">
-      <h5 class="modal-title"><i class="bi bi-receipt-cutoff me-2"></i> Detalhes da Sessão</h5>
-      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-    </div>
-    <div class="modal-body" id="sessionDetailBody"><!-- via JS --></div>
-    <div class="modal-footer">
-      <!-- Se já tiver endpoints de exportação, plugue aqui -->
-      <button class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
-    </div>
-  </div></div>
-</div>
-
+        <!-- Modal Detalhe -->
+        <div class="modal fade" id="sessionDetailModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bi bi-receipt-cutoff me-2"></i> Detalhes da Sessão</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="sessionDetailBody"><!-- via JS --></div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+          </div></div>
+        </div>
 
       </div>
     </div>
@@ -152,13 +140,11 @@
         <h5 class="modal-title"><i class="bi bi-dash-circle me-2"></i> Lançar Despesa</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
-
       <div class="modal-body">
         <div class="mb-2">
           <label class="form-label">Descrição <span class="text-danger">*</span></label>
           <input id="exp-desc" type="text" class="form-control" placeholder="Ex.: Energia, Água, Taxa maquininha, etc.">
         </div>
-
         <div class="row g-2">
           <div class="col-6">
             <label class="form-label">Valor <span class="text-danger">*</span></label>
@@ -178,13 +164,11 @@
             </select>
           </div>
         </div>
-
         <div class="row g-2 mt-0">
           <div class="col-6">
             <label class="form-label">Categoria</label>
             <select id="exp-category" class="form-select">
               <option value="operacional">Operacional</option>
-              {{!-- <option value="fixa">Fixa (mensal)</option> --}}
               <option value="taxa_maquininha">Taxa maquininha</option>
               <option value="outras">Outras</option>
             </select>
@@ -194,20 +178,8 @@
             <input id="exp-date" type="date" class="form-control">
           </div>
         </div>
-{{!-- 
-        <div class="form-check mt-2">
-          <input class="form-check-input" type="checkbox" id="exp-fixed">
-          <label class="form-check-label" for="exp-fixed">Cadastrar como despesa fixa mensal</label>
-        </div> --}}
-
-        {{!-- <div class="mt-2">
-          <label class="form-label small">Observações</label>
-          <textarea id="exp-notes" class="form-control" rows="2" placeholder="Obs. (opcional)"></textarea>
-        </div> --}}
-
         <div id="exp-alert" class="alert alert-danger py-2 px-3 mt-2 d-none"></div>
       </div>
-
       <div class="modal-footer">
         <button class="btn btn-dark btn-uniform" data-bs-dismiss="modal">Cancelar</button>
         <button id="exp-submit-btn" class="btn btn-warning btn-uniform">Lançar</button>
@@ -224,9 +196,7 @@
         <h5 class="modal-title"><i class="bi bi-bell me-2"></i> Fechar Caixa</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
-
       <div class="modal-body">
-        <!-- Resumo esperado (preenchido via JS) -->
         <div class="row g-2 mb-3">
           <div class="col-6 col-md-4">
             <div class="border rounded p-2">
@@ -248,7 +218,6 @@
           </div>
         </div>
 
-        <!-- Contagem por método -->
         <div class="table-responsive">
           <table class="table table-striped align-middle mb-2">
             <thead>
@@ -259,9 +228,7 @@
                 <th class="text-end">Diferença</th>
               </tr>
             </thead>
-            <tbody id="cc-count-tbody">
-              <!-- linhas criadas via JS -->
-            </tbody>
+            <tbody id="cc-count-tbody"><!-- via JS --></tbody>
             <tfoot>
               <tr>
                 <th>Total</th>
@@ -276,18 +243,7 @@
         <div id="cc-diff-alert" class="alert alert-warning d-none py-2 px-3">
           Existem diferenças entre o esperado e o contado. Revise antes de fechar.
         </div>
-
-        {{!-- <div class="mb-2">
-          <label class="form-label small text-muted">Observações</label>
-          <textarea id="cc-notes" class="form-control" rows="2" placeholder="Obs. (opcional)"></textarea>
-        </div> --}}
-
-        {{!-- <div class="form-check">
-          <input class="form-check-input" type="checkbox" id="cc-print">
-          <label class="form-check-label" for="cc-print">Imprimir recibo de fechamento</label>
-        </div> --}}
       </div>
-
       <div class="modal-footer">
         <button class="btn btn-dark btn-uniform" data-bs-dismiss="modal">Cancelar</button>
         <button id="cc-submit-btn" class="btn btn-danger btn-uniform">Fechar Caixa</button>
@@ -301,22 +257,24 @@
   #cashierTitle{ color:var(--cashier-title-color,#fff)!important; font-weight:600; letter-spacing:.2px; }
   @media (max-width:576.98px){ #cashierTitle{ font-size:1.25rem; } }
 
-  /* ===== Fix de modal atrás do backdrop / stacking context ===== */
-  .modal{ z-index:2005 !important; position:fixed; }
-  .modal-backdrop{ z-index:2000 !important; }
+  /* ===== Z-index padrão do Bootstrap e backdrop mais leve ===== */
+  .modal{ z-index:1055; }
+  .modal-backdrop{ z-index:1050; }
   .modal-backdrop.show{ opacity:.45; }
-  /* Quando um modal abre, neutraliza transform/filter dos wrappers
-     (impede novo stacking-context que empurra o modal para trás) */
-  .modal-open .fade-in-soft,
-  .modal-open .admin-dashboard,
-  .modal-open .container-fluid{
+
+  /* Neutraliza quaisquer transforms/filtros dos wrappers apenas quando um modal está aberto */
+  body.modal-open .fade-in-soft,
+  body.modal-open .admin-dashboard,
+  body.modal-open .container-fluid,
+  body.modal-open .row,
+  body.modal-open .col-12{
     transform:none !important;
     filter:none !important;
     perspective:none !important;
     will-change:auto !important;
   }
 
-  /* ===== Campos dos modais ===== */
+  /* ===== Campos e botões dos modais ===== */
   #openCashierModal .input-group-text, #openCashierModal .form-control, #openCashierModal .form-select,
   #expenseModal .input-group-text,     #expenseModal .form-control,     #expenseModal .form-select,
   #closeCashierModal .input-group-text,#closeCashierModal .form-control,#closeCashierModal .form-select{
@@ -324,37 +282,33 @@
     background:#fff!important; color:#212529!important; border-color:#ced4da!important;
   }
   #openCashierModal .input-group-text, #expenseModal .input-group-text, #closeCashierModal .input-group-text{ background:#f8f9fa!important; }
+  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
+  .btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
 
-  /* ===== Modal Fechar Caixa visual claro ===== */
+  /* ===== Visual do modal Fechar Caixa (claro) ===== */
   #closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
   #closeCashierModal .modal-content{ background:#fff!important; color:#212529!important; }
   #closeCashierModal .modal-header{ background:#dc3545!important; color:#fff!important; }
   #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter:invert(1); }
-  #closeCashierModal .modal-body{ color:#212529!important; }
   #closeCashierModal .text-muted{ color:#6c757d!important; }
   #closeCashierModal .table thead tr{ background:var(--brand-primary)!important; }
   #closeCashierModal .table thead th{ color:#fff!important; border-color:rgba(255,255,255,.25)!important; }
   #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background:var(--brand-primary)!important; }
   #closeCashierModal .table{ --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff; }
   #closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff!important; opacity:1!important; }
-  #closeCashierModal .table tbody td,
-  #closeCashierModal .table tfoot th,
-  #closeCashierModal .table tfoot td{ border-color:rgba(255,255,255,.15)!important; }
+  #closeCashierModal .table tbody td, #closeCashierModal .table tfoot th, #closeCashierModal .table tfoot td{ border-color:rgba(255,255,255,.15)!important; }
   #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff!important; color:#212529!important; }
 
-  /* ===== Botões ===== */
-  #openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
-  .btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
-
-  /* ===== Ações topo ===== */
+  /* ===== Ações do topo ===== */
   .cashier-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
   @media (min-width:577px){
     .cashier-actions .btn{ display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1rem; min-width:150px; font-size:.95rem; line-height:1.2; }
   }
 
-  /* ===== Histórico – paleta e entradas ===== */
+  /* ===== Card Histórico (cores + responsivo) ===== */
   #cashierHistoryCard .card-header{ border-bottom:1px solid rgba(255,255,255,.075); }
-  #cashierHistoryCard .hist-w{ min-width:160px; } .hist-pagesize{ width:84px; min-width:84px; }
+  #cashierHistoryCard .hist-w{ min-width:160px; }
+  #cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
   #cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
 
   @media (max-width:576.98px){
@@ -369,7 +323,8 @@
   #cashierHistoryCard{ --hist-bg:var(--bg-light); --hist-surface:var(--bg-gray); --hist-border:var(--border-color); --hist-text:var(--text-dark); --hist-muted:#9ca3af; --hist-focus:var(--primary-color); }
   #cashierHistoryCard .card-header{ background:var(--hist-bg); border-bottom:1px solid var(--hist-border); }
   #cashierHistoryCard .form-control.form-control-sm, #cashierHistoryCard .form-select.form-select-sm{
-    background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text); height:38px; padding:.35rem .6rem;
+    background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
+    height:38px; padding:.35rem .6rem;
   }
   #cashierHistoryCard .form-control::placeholder{ color:var(--hist-muted); opacity:.9; }
   #cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{ filter:invert(1) opacity(.9); cursor:pointer; }
@@ -399,7 +354,34 @@
   }
 </style>
 
+
 <script src="/js/cashier.js"></script>
 
 
-<script src="/js/cashier.js"></script>
+<script>
+  (function () {
+    const ids = ['openCashierModal','expenseModal','closeCashierModal','sessionDetailModal'];
+
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+     
+      el.addEventListener('show.bs.modal', (ev) => {
+        if (ev.target.parentNode !== document.body) {
+          document.body.appendChild(ev.target);
+        }
+      
+        bootstrap.Modal.getOrCreateInstance(ev.target, { backdrop: true, keyboard: true });
+      });
+
+      
+      el.addEventListener('hidden.bs.modal', () => {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('paddingRight');
+      });
+    });
+  })();
+</script>
+
