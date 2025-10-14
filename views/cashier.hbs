@@ -352,6 +352,61 @@
     #cashierHistoryCard tbody td.text-nowrap{ max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
   }
+  /* ===== Modal Detalhes da Sessão – tema escuro legível ===== */
+#sessionDetailModal .modal-content{
+  background:#1e1e22 !important;
+  color:#fff !important;
+}
+#sessionDetailModal .modal-header{
+  background:#2a2a30 !important;
+  color:#fff !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+}
+#sessionDetailModal .btn-close{ filter: invert(1); }
+
+/* Cards/resumos do topo dentro do modal */
+#sessionDetailModal .modal-body .border.rounded.p-2{
+  background:#23232a !important;
+  border-color: rgba(255,255,255,.15) !important;
+}
+#sessionDetailModal .modal-body .small.text-muted{
+  color:#c8c8c8 !important;
+}
+#sessionDetailModal .modal-body .fw-bold{
+  color:#fff !important;
+}
+
+/* Tabela dentro do modal */
+#sessionDetailModal .table{
+  --bs-table-color:#fff;
+}
+#sessionDetailModal thead tr{
+  background:#2f2f36 !important;
+}
+#sessionDetailModal thead th{
+  color:#fff !important;
+  border-color: rgba(255,255,255,.18) !important;
+}
+#sessionDetailModal tbody td{
+  background:#1f1f26 !important;
+  color:#fff !important;
+  border-color: rgba(255,255,255,.1) !important;
+}
+#sessionDetailModal tbody tr:hover td{
+  background:#24242c !important;
+}
+
+/* Rodapé do modal */
+#sessionDetailModal .modal-footer{
+  background:#1b1b20 !important;
+  border-top: 1px solid rgba(255,255,255,.08) !important;
+}
+#sessionDetailModal .btn.btn-primary{
+  background:#0d6efd;
+  border-color:#0d6efd;
+  color:#000; /* melhor contraste no tema escuro desta UI */
+}
+
 </style>
 
 
