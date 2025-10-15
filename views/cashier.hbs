@@ -606,10 +606,60 @@ body.modal-open .col-12 {
     height: 30px;
     font-size: .8rem;
   }
+  
   .app-modal .modal-dialog {
     margin: calc(env(safe-area-inset-top, 0px) + 56px) auto 12px;
   }
 }
+/* --- Correção do input "R$ + número" na tabela de Fechar Caixa --- */
+.cc-table .input-group {
+  flex-wrap: nowrap;          /* evita quebra no mobile */
+  align-items: stretch;       /* mantêm alturas iguais */
+}
+
+/* Mantém o prefixo R$ com a MESMA altura do input (desktop) */
+.cc-table .input-group-text {
+  height: 32px;               /* casa com .cc-table .form-control */
+  line-height: 1.2;
+  padding: .3rem .4rem;
+  width: 34px;                /* mantém seu layout atual */
+  flex: 0 0 34px;
+  border-radius: .375rem 0 0 .375rem; /* cantos coerentes */
+}
+
+/* Garante que o input acompanhe a altura e cantos do prefixo */
+.cc-table .input-group .form-control {
+  height: 32px;
+  padding: .3rem .45rem;
+  font-size: .85rem;          /* já está assim, reforçando */
+  text-align: right;
+  border-radius: 0 .375rem .375rem 0;
+}
+
+/* Remove spinners do <input type="number"> (UX melhor) */
+.cc-table .form-control[type="number"]::-webkit-outer-spin-button,
+.cc-table .form-control[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cc-table .form-control[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* --- Mobile: respeitar 30px que você já usa nos inputs --- */
+@media (max-width:576.98px) {
+  .cc-table .input-group-text {
+    height: 30px;             /* casa com .cc-table .form-control no mobile */
+    padding: .25rem .35rem;
+    width: 30px;
+    flex: 0 0 30px;
+  }
+  .cc-table .input-group .form-control {
+    height: 30px;
+    font-size: .8rem;
+  }
+}
+
 </style>
 
 <script src="/js/cashier.js"></script>
