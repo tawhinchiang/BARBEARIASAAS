@@ -10,7 +10,7 @@ async function apiFetch(url, options = {}) {
       ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       ...(options.headers || {})
     },
-    signal: options.signal, 
+    signal: options.signal,
   });
   return resp.json();
 }
@@ -120,7 +120,7 @@ async function loadCashierStatus() {
   }
 }
 // ===== Modal helpers (coloque no topo do cashier.js) =================
-function ensureInBody(el){ if (el && el.parentNode !== document.body) document.body.appendChild(el); }
+function ensureInBody(el) { if (el && el.parentNode !== document.body) document.body.appendChild(el); }
 
 function showModal(id, opts = {}) {
   const el = document.getElementById(id);
@@ -155,7 +155,7 @@ document.getElementById('confirmOpenCashier')?.addEventListener('click', async (
 document.getElementById('btnAddExpense')?.addEventListener('click', () => {
   const d = new Date().toISOString().slice(0, 10);
   setVal('exp-desc', ''); setVal('exp-amount', ''); setVal('exp-method', 'cash'); setVal('exp-category', 'operacional'); setVal('exp-date', d);
- showModal('expenseModal');
+  showModal('expenseModal');
 });
 
 document.getElementById('exp-submit-btn')?.addEventListener('click', async () => {
@@ -220,7 +220,11 @@ async function openCloseCashierModal() {
         <td>
           <div class="input-group">
             <span class="input-group-text">R$</span>
-            <input type="number" class="form-control cc-count" min="0" step="0.01" placeholder="0,00">
+            <input type="text"
+       inputmode="decimal"
+       pattern="[0-9]+([\\,\\.][0-9]{0,2})?"
+       class="form-control"
+       placeholder="0,00">
           </div>
         </td>
         <td class="text-end" data-diff>R$ 0,00</td>
@@ -251,7 +255,7 @@ async function openCloseCashierModal() {
     };
     tbody.addEventListener('input', onChange);
 
-   showModal('closeCashierModal');
+    showModal('closeCashierModal');
   } catch (e) {
     console.error(e);
     notify?.({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
@@ -287,8 +291,8 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
 
 // ===== Histórico =====
 const hist = { page: 1, pageSize: 20, from: null, to: null };
-let histAbortController = null;   
-let histSeq = 0;   
+let histAbortController = null;
+let histSeq = 0;
 document.getElementById('histSearchBtn')?.addEventListener('click', () => {
   hist.from = document.getElementById('histFrom').value || null;
   hist.to = document.getElementById('histTo').value || null;
@@ -300,10 +304,10 @@ document.getElementById('histSearchBtn')?.addEventListener('click', () => {
 });
 
 document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn => {
-  btn.addEventListener('click', () => { 
-    hist.page = 1; 
-    applyQuickRange(btn.dataset.range); 
-    document.getElementById('histSearchBtn').click(); 
+  btn.addEventListener('click', () => {
+    hist.page = 1;
+    applyQuickRange(btn.dataset.range);
+    document.getElementById('histSearchBtn').click();
   });
 });
 
@@ -444,7 +448,7 @@ async function openSessionDetail(id) {
     </div>
     <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash || 0)}</strong></div>
   `;
-showModal('sessionDetailModal');
+  showModal('sessionDetailModal');
 }
 
 // Helpers
