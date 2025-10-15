@@ -6,10 +6,8 @@
           <i class="fas fa-cash-register me-2"></i> Caixa
         </h2>
 
-        <!-- Status atual -->
         <div id="cashierStatus" class="mb-3"></div>
 
-        <!-- Ações -->
         <div class="mb-4 cashier-actions">
           <button id="btnOpenCashier" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#openCashierModal">
             <i class="fas fa-door-open me-1"></i> Abrir Caixa
@@ -24,8 +22,7 @@
           </button>
         </div>
 
-        <!-- Resumo -->
-        <div id="cashierSummary" class="row g-3"><!-- via JS --></div>
+        <div id="cashierSummary" class="row g-3"></div>
 
         <!-- Histórico -->
         <div class="card mt-4" id="cashierHistoryCard">
@@ -80,7 +77,7 @@
                     <th>Ações</th>
                   </tr>
                 </thead>
-                <tbody id="histTbody"><!-- via JS --></tbody>
+                <tbody id="histTbody"></tbody>
               </table>
             </div>
             <div class="d-flex justify-content-between align-items-center p-2">
@@ -90,18 +87,20 @@
           </div>
         </div>
 
-        <!-- Modal Detalhe -->
-        <div class="modal fade" id="sessionDetailModal" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title"><i class="bi bi-receipt-cutoff me-2"></i> Detalhes da Sessão</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- Modal Detalhe (também com app-modal para manter padrão) -->
+        <div class="modal fade app-modal" id="sessionDetailModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-receipt-cutoff me-2"></i> Detalhes da Sessão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body" id="sessionDetailBody"></div>
+              <div class="modal-footer">
+                <button class="btn" data-bs-dismiss="modal">Fechar</button>
+              </div>
             </div>
-            <div class="modal-body" id="sessionDetailBody"><!-- via JS --></div>
-            <div class="modal-footer">
-              <button class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-          </div></div>
+          </div>
         </div>
 
       </div>
@@ -110,12 +109,12 @@
 </div>
 
 <!-- Modal Abrir Caixa -->
-<div class="modal fade" id="openCashierModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade app-modal" id="openCashierModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header bg-success text-white">
+      <div class="modal-header">
         <h5 class="modal-title"><i class="fas fa-door-open me-2"></i> Abrir Caixa</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <label class="form-label">Valor inicial em dinheiro</label>
@@ -125,18 +124,18 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary btn-uniform" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-success btn-uniform" id="confirmOpenCashier">Abrir</button>
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn" id="confirmOpenCashier">Abrir</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal Despesa -->
-<div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade app-modal" id="expenseModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content border-0 bg-white text-dark">
-      <div class="modal-header bg-warning">
+    <div class="modal-content">
+      <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-dash-circle me-2"></i> Lançar Despesa</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
@@ -181,20 +180,20 @@
         <div id="exp-alert" class="alert alert-danger py-2 px-3 mt-2 d-none"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-dark btn-uniform" data-bs-dismiss="modal">Cancelar</button>
-        <button id="exp-submit-btn" class="btn btn-warning btn-uniform">Lançar</button>
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="exp-submit-btn" class="btn">Lançar</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal Fechar Caixa -->
-<div class="modal fade" id="closeCashierModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade app-modal" id="closeCashierModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-    <div class="modal-content border-0">
-      <div class="modal-header bg-danger text-white">
+    <div class="modal-content">
+      <div class="modal-header">
         <h5 class="modal-title"><i class="bi bi-bell me-2"></i> Fechar Caixa</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
       <div class="modal-body">
         <div class="row g-2 mb-3">
@@ -224,16 +223,16 @@
               <tr>
                 <th>Método</th>
                 <th class="text-end">Esperado</th>
-                <th style="width: 180px;">Contado</th>
+                <th style="width:180px;">Contado</th>
                 <th class="text-end">Diferença</th>
               </tr>
             </thead>
-            <tbody id="cc-count-tbody"><!-- via JS --></tbody>
+            <tbody id="cc-count-tbody"></tbody>
             <tfoot>
               <tr>
                 <th>Total</th>
                 <th class="text-end" id="cc-expected-sum">R$ 0,00</th>
-                <th><input id="cc-counted-sum" type="text" class="form-control text-end text-dark bg-white" readonly></th>
+                <th><input id="cc-counted-sum" type="text" class="form-control text-end bg-white text-dark" readonly></th>
                 <th class="text-end" id="cc-diff-sum">R$ 0,00</th>
               </tr>
             </tfoot>
@@ -245,67 +244,39 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-dark btn-uniform" data-bs-dismiss="modal">Cancelar</button>
-        <button id="cc-submit-btn" class="btn btn-danger btn-uniform">Fechar Caixa</button>
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="cc-submit-btn" class="btn">Fechar Caixa</button>
       </div>
     </div>
   </div>
 </div>
 
 <style>
+/* Título da página */
 #cashierTitle{
-  color: var(--cashier-title-color,#fff) !important;
+  color: var(--cashier-title-color,#fff);
   font-weight: 600;
   letter-spacing: .2px;
 }
 
+/* Z-index padrão de modais */
 .modal{ z-index:1055; }
 .modal-backdrop{ z-index:1050; }
 .modal-backdrop.show{ opacity:.45; }
 
+/* Evitar stacking-context quando modal abre */
 body.modal-open .fade-in-soft,
 body.modal-open .admin-dashboard,
 body.modal-open .container-fluid,
 body.modal-open .row,
 body.modal-open .col-12{
-  transform:none !important;
-  filter:none !important;
-  perspective:none !important;
-  will-change:auto !important;
+  transform:none;
+  filter:none;
+  perspective:none;
+  will-change:auto;
 }
 
-#openCashierModal .input-group-text, #openCashierModal .form-control, #openCashierModal .form-select,
-#expenseModal   .input-group-text,   #expenseModal   .form-control,   #expenseModal   .form-select,
-#closeCashierModal .input-group-text,#closeCashierModal .form-control,#closeCashierModal .form-select{
-  height:40px; padding:.5rem .65rem; font-size:.95rem; line-height:1.2;
-  background:#fff !important; color:#212529 !important; border-color:#ced4da !important;
-}
-#openCashierModal .input-group-text,
-#expenseModal   .input-group-text,
-#closeCashierModal .input-group-text{ background:#f8f9fa !important; }
-
-#openCashierModal .btn, #expenseModal .btn, #closeCashierModal .btn{
-  padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2;
-}
-.btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
-
-#closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
-#closeCashierModal .modal-content{ background:#fff !important; color:#212529 !important; }
-#closeCashierModal .modal-header{ background:#dc3545 !important; color:#fff !important; }
-#closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter: invert(1); }
-#closeCashierModal .text-muted{ color:#6c757d !important; }
-#closeCashierModal .table thead tr{ background: var(--brand-primary) !important; }
-#closeCashierModal .table thead th{ color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
-#closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background: var(--brand-primary) !important; }
-#closeCashierModal .table{
-  --bs-table-color:#fff; --bs-table-striped-color:#fff; --bs-table-hover-color:#fff;
-}
-#closeCashierModal .table *:not(.form-control):not(.input-group-text){ color:#fff !important; opacity:1 !important; }
-#closeCashierModal .table tbody td,
-#closeCashierModal .table tfoot th,
-#closeCashierModal .table tfoot td{ border-color: rgba(255,255,255,.15) !important; }
-#closeCashierModal #cc-counted-sum{ text-align:right; background:#fff !important; color:#212529 !important; }
-
+/* Ações do topo (desktop) */
 .cashier-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
 @media (min-width:577px){
   .cashier-actions .btn{
@@ -314,11 +285,7 @@ body.modal-open .col-12{
   }
 }
 
-#cashierHistoryCard .card-header{ border-bottom:1px solid rgba(255,255,255,.075); }
-#cashierHistoryCard .hist-w{ min-width:160px; }
-#cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
-#cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
-
+/* ----------------- CARD HISTÓRICO ----------------- */
 #cashierHistoryCard{
   --hist-bg:var(--bg-light);
   --hist-surface:var(--bg-gray);
@@ -328,43 +295,29 @@ body.modal-open .col-12{
   --hist-focus:var(--primary-color);
 }
 #cashierHistoryCard .card-header{ background:var(--hist-bg); border-bottom:1px solid var(--hist-border); }
+#cashierHistoryCard .card-header strong,
+#cashierHistoryCard .card-header .bi{ color:#fff; }
+
+#cashierHistoryCard .hist-w{ min-width:160px; }
+#cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
+#cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
 
 #cashierHistoryCard .form-control.form-control-sm,
 #cashierHistoryCard .form-select.form-select-sm{
   background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
   height:38px; padding:.35rem .6rem;
 }
-#cashierHistoryCard .form-control::placeholder{ color:var(--hist-muted); opacity:.9; }
-#cashierHistoryCard input[type="date"]::-webkit-calendar-picker-indicator{
-  filter: invert(1) opacity(.9); cursor:pointer;
-}
-
-#cashierHistoryCard .hist-range-group .btn{
-  background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
-}
-#cashierHistoryCard .hist-range-group .btn:hover{ background:#232327; }
-#cashierHistoryCard .hist-range-group .btn.active{
-  background:var(--primary-color); border-color:var(--primary-color); color:#000;
-}
-#cashierHistoryCard .hist-pagesize{
-  background:#1e1e22; border:1px solid var(--hist-border); color:var(--hist-text);
-  height:38px; min-width:92px;
-}
-#cashierHistoryCard #histSearchBtn.btn{
-  background:#fff;
-  color:#000; 
-  border:1px solid #ced4da;
-  height:38px; padding:.35rem .75rem;
-}
-#cashierHistoryCard #histSearchBtn.btn i{ color:#000; }
-
 #cashierHistoryCard thead.table-light th{
-  background:#202026 !important; color:var(--hist-text) !important; border-color:var(--hist-border) !important;
+  background:#202026; color:var(--hist-text); border-color:var(--hist-border);
 }
 #cashierHistoryCard tbody td{ background:#18181c; border-color:var(--hist-border); }
 #cashierHistoryCard tbody tr:hover td{ background:#1d1d22; }
 
-#cashierHistoryCard .badge.bg-success{ background-color:#198754 !important; color:#fff !important; }
+#cashierHistoryCard #histSearchBtn.btn{
+  background:#fff; color:#000; border:1px solid #ced4da; height:38px; padding:.35rem .75rem;
+}
+#cashierHistoryCard #histSearchBtn.btn i{ color:#000; }
+
 #cashierHistoryCard .card-body + .d-flex{
   background:var(--hist-bg); border-top:1px solid var(--hist-border);
 }
@@ -372,175 +325,129 @@ body.modal-open .col-12{
   color:var(--primary-color); border-color:var(--primary-color); background:transparent;
 }
 #cashierHistoryCard .pagination .page-item.active .page-link{
-  background:#fff; color:#000 !important; border-color:var(--primary-color);
+  background:#fff; color:#000; border-color:var(--primary-color);
+}
+#cashierHistoryCard .pagination .page-item:first-child .page-link,
+#cashierHistoryCard .pagination .page-item:last-child .page-link{
+  background:#fff; color:#000; border-color:#ced4da;
 }
 
-#cashierHistoryCard .card-header strong,
-#cashierHistoryCard .card-header .bi {
-  color: #fff !important;
+/* Botão de ação pequeno (coluna Ações) */
+#cashierHistoryCard .btn-icon-xs{
+  --bs-btn-padding-y:.25rem; --bs-btn-padding-x:.45rem; --bs-btn-font-size:.8rem;
+  line-height:1.1; min-width:32px;
+}
+#cashierHistoryCard .btn-icon-xs i{ color:#000; }
+
+/* -------------- Tema único para todos os modais -------------- */
+.app-modal .modal-content{
+  background:#1e1e22;
+  color:#fff;
+  border:0;
+}
+.app-modal .modal-header{
+  background:#2a2a30;
+  color:#fff;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.app-modal .btn-close{ filter: invert(1); }
+.app-modal .modal-footer{
+  background:#1b1b20;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.app-modal .modal-footer .btn{
+  background:#fff;
+  color:#000;
+  border:1px solid #ced4da;
+  border-radius:.375rem;
+  font-weight:500;
+}
+.app-modal .modal-footer .btn:hover{
+  background:#f8f9fa;
+  border-color:#bdbdbd;
+}
+/* Campos de formulário legíveis sobre tema escuro */
+.app-modal .form-control,
+.app-modal .form-select{
+  background:#fff;
+  color:#212529;
+  border-color:#ced4da;
+}
+.app-modal .input-group-text{
+  background:#f8f9fa;
+  color:#212529;
+  border-color:#ced4da;
 }
 
+/* -------------- Mobile: densidade + sem scroll horizontal -------------- */
 @media (max-width:576.98px){
   #histSearchBtn .d-none.d-sm-inline{ display:inline !important; }
-
-  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
-  #cashierHistoryCard .hist-w, 
-  #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
-  #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
-
   #cashierTitle{ font-size:1.25rem; }
+
   #cashierHistoryCard{ font-size:12px; }
   #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:#202026; }
   #cashierHistoryCard .card-header strong{ font-size:.9rem; }
 
+  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
+  #cashierHistoryCard .hist-w, #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
+  #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
+
   #cashierHistoryCard #histFilters{
-    background:#1e1e22;
-    border:1px solid var(--hist-border);
-    border-radius:.5rem;
-    padding:.5rem;
-    margin-top:.5rem;
+    background:#1e1e22; border:1px solid var(--hist-border);
+    border-radius:.5rem; padding:.5rem; margin-top:.5rem;
   }
   #cashierHistoryCard #histFilters .form-control,
   #cashierHistoryCard #histFilters .form-select{
-    background:#1e1e22;
-    color:var(--hist-text);
-    border-color:var(--hist-border);
+    background:#1e1e22; color:var(--hist-text); border-color:var(--hist-border);
   }
   #cashierHistoryCard #histFilters .hist-range-group .btn{
-    background:#1e1e22;
-    color:var(--hist-text);
-    border-color:var(--hist-border);
+    background:#1e1e22; color:var(--hist-text); border-color:var(--hist-border);
   }
 
-  #cashierHistoryCard .form-control.form-control-sm, 
+  #cashierHistoryCard .form-control.form-control-sm,
   #cashierHistoryCard .form-select.form-select-sm{
     height:32px; font-size:.8rem; padding:.25rem .5rem;
   }
 
+  /* Tabela preenchendo a largura e sem cortar texto */
   #cashierHistoryCard .table-responsive{ overflow-x:visible; }
   #cashierHistoryCard .table{
-    table-layout:fixed;
-    width:100%;
-    font-size:.78rem;
+    table-layout:fixed; width:100%; font-size:.78rem;
   }
   #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
-  #cashierHistoryCard thead th,
-  #cashierHistoryCard tbody td{
-    white-space:normal !important;
-    word-break:normal;
-    overflow-wrap:break-word;
+  #cashierHistoryCard thead th, #cashierHistoryCard tbody td{
+    white-space:normal; word-break:normal; overflow-wrap:break-word;
   }
   #cashierHistoryCard .table>:not(caption)>*>*{
-    padding:.28rem .35rem;
-    line-height:1.25;
-    vertical-align:middle;
+    padding:.28rem .35rem; line-height:1.25; vertical-align:middle;
   }
   #cashierHistoryCard .text-nowrap{ white-space:normal !important; }
-  #cashierHistoryCard tbody td.text-nowrap{
-    max-width:none;
-    overflow:visible;
-    text-overflow:clip;
-  }
 
+  /* Coluna STATUS mais estreita */
   #cashierHistoryCard thead th:nth-child(3),
-  #cashierHistoryCard tbody td:nth-child(3){
-    width:68px;
-    white-space:nowrap;
-  }
-  #cashierHistoryCard thead th:nth-child(4),#cashierHistoryCard tbody td:nth-child(4){
-  width: 72px;        
-  white-space: nowrap; 
-}
+  #cashierHistoryCard tbody td:nth-child(3){ width:68px; white-space:nowrap; }
+
+  /* Coluna ENTRADAS mais estreita */
+  #cashierHistoryCard thead th:nth-child(4),
+  #cashierHistoryCard tbody td:nth-child(4){ width:72px; white-space:nowrap; }
+
+  /* Colunas numéricas: corpo enxuto */
   #cashierHistoryCard tbody td.text-end{ width:1%; }
   #cashierHistoryCard thead th.text-end{ width:auto; }
 
+  /* Coluna AÇÕES compacta */
   #cashierHistoryCard thead th:last-child{ width:44px; white-space:nowrap; }
   #cashierHistoryCard td:last-child{ width:36px; }
   #cashierHistoryCard td:last-child .btn{
-    padding:.2rem .35rem !important;
-    line-height:1 !important;
-    min-width:28px !important;
-    min-height:28px !important;
+    padding:.2rem .35rem; line-height:1; min-width:28px; min-height:28px;
   }
-  #cashierHistoryCard td:last-child .btn i{
-    margin:0 !important;
-    font-size:.9rem !important;
-  }
+  #cashierHistoryCard td:last-child .btn i{ margin:0; font-size:.9rem; }
 
   #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
-
 }
-
-@media (min-width:577px){
-  #cashierHistoryCard .hist-range-group .btn{
-    width:100px; height:38px; 
-    display:inline-flex; align-items:center; justify-content:center;
-  }
-  #cashierHistoryCard .hist-pagesize{
-    width:100px; height:38px; 
-  }
-  #cashierHistoryCard #histSearchBtn.btn{
-    width:100px; height:38px;
-  }
-}
-
-#cashierHistoryCard .btn-icon-xs{
-  --bs-btn-padding-y: .25rem; 
-  --bs-btn-padding-x: .45rem; 
-  --bs-btn-font-size: .8rem;
-  line-height:1.1; min-width:32px;
-}
-#cashierHistoryCard .btn-icon-xs i{ color:#000 !important; }
-
-#cashierHistoryCard .pagination .page-link{
-  color:var(--primary-color); border-color:var(--primary-color); background:transparent;
-}
-#cashierHistoryCard .pagination .page-item.active .page-link{
-  background:#fff; color:#000 !important; border-color:var(--primary-color);
-}
-#cashierHistoryCard .pagination .page-item:first-child .page-link,
-#cashierHistoryCard .pagination .page-item:last-child .page-link{
-  background:#fff !important; color:#000 !important; border-color:#ced4da !important;
-}
-
-#sessionDetailModal .modal-dialog{ margin-top:72px; }
-#sessionDetailModal .modal-content{
-  max-height:calc(100dvh - 96px);
-  display:flex; flex-direction:column;
-}
-#sessionDetailModal .modal-body{ overflow:auto; }
-
-#sessionDetailModal .modal-content{ background:#1e1e22 !important; color:#fff !important; }
-#sessionDetailModal .modal-header{ background:#2a2a30 !important; color:#fff !important; border-bottom:1px solid rgba(255,255,255,.12)!important; }
-#sessionDetailModal .btn-close{ filter:invert(1); }
-#sessionDetailModal .modal-body .border.rounded.p-2{ background:#23232a !important; border-color:rgba(255,255,255,.15)!important; }
-#sessionDetailModal .modal-body .small.text-muted{ color:#c8c8c8 !important; }
-#sessionDetailModal .modal-body .fw-bold{ color:#fff !important; }
-#sessionDetailModal .table{ --bs-table-color:#fff; }
-#sessionDetailModal thead tr{ background:#2f2f36 !important; }
-#sessionDetailModal thead th{ color:#fff !important; border-color:rgba(255,255,255,.18)!important; }
-#sessionDetailModal tbody td{ background:#1f1f26 !important; color:#fff !important; border-color:rgba(255,255,255,.1)!important; }
-#sessionDetailModal tbody tr:hover td{ background:#24242c !important; }
-#sessionDetailModal .modal-footer{ background:#1b1b20 !important; border-top:1px solid rgba(255,255,255,.08)!important; }
-#sessionDetailModal .modal-footer .btn.btn-primary{
-  background:#fff !important; color:#000 !important; border:1px solid #ced4da !important;
-}
-#sessionDetailModal .modal-footer .btn.btn-primary:hover{
-  background:#f8f9fa !important; border-color:#bdbdbd !important;
-}
-
-body.scroll-locked{
-  position: fixed;
-  overflow: hidden !important;
-  width: 100%;
-}
-body.modal-open{ overflow: hidden !important; }
 </style>
 
-
-
 <script src="/js/cashier.js"></script>
-
 
 <script>
   (function () {
@@ -550,36 +457,31 @@ body.modal-open{ overflow: hidden !important; }
     let scrollTop = 0;
 
     modal.addEventListener('show.bs.modal', () => {
-      // guarda a posição atual e trava o body
       scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
       document.body.style.top = `-${scrollTop}px`;
       document.body.classList.add('scroll-locked');
     });
 
     modal.addEventListener('hidden.bs.modal', () => {
-      // destrava e volta exatamente ao ponto onde estava
       document.body.classList.remove('scroll-locked');
       document.body.style.removeProperty('top');
       window.scrollTo(0, scrollTop || 0);
     });
   })();
+
   (function () {
     const ids = ['openCashierModal','expenseModal','closeCashierModal','sessionDetailModal'];
-
     ids.forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
 
-     
       el.addEventListener('show.bs.modal', (ev) => {
         if (ev.target.parentNode !== document.body) {
           document.body.appendChild(ev.target);
         }
-      
         bootstrap.Modal.getOrCreateInstance(ev.target, { backdrop: true, keyboard: true });
       });
 
-      
       el.addEventListener('hidden.bs.modal', () => {
         document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
         document.body.classList.remove('modal-open');
@@ -588,4 +490,3 @@ body.modal-open{ overflow: hidden !important; }
     });
   })();
 </script>
-
