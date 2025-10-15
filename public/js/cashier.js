@@ -2,7 +2,6 @@ console.log('[CASHIER] Página de Caixa carregada');
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-// Fetch helper
 async function apiFetch(url, options = {}) {
   const resp = await fetch(url, {
     ...options,
@@ -10,10 +9,12 @@ async function apiFetch(url, options = {}) {
       'Content-Type': 'application/json',
       ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       ...(options.headers || {})
-    }
+    },
+    signal: options.signal, 
   });
   return resp.json();
 }
+
 
 // Constantes/UI helpers
 const METHOD_ORDER = ['cash', 'credit', 'debit', 'pix', 'other'];
@@ -275,7 +276,8 @@ document.getElementById('cc-submit-btn')?.addEventListener('click', async () => 
 
 // ===== Histórico =====
 const hist = { page: 1, pageSize: 20, from: null, to: null };
-
+let histAbortController = null;   
+let histSeq = 0;   
 document.getElementById('histSearchBtn')?.addEventListener('click', () => {
   hist.from = document.getElementById('histFrom').value || null;
   hist.to = document.getElementById('histTo').value || null;
@@ -285,28 +287,55 @@ document.getElementById('histSearchBtn')?.addEventListener('click', () => {
 ['histFrom', 'histTo', 'histPageSize'].forEach(id => {
   document.getElementById(id)?.addEventListener('change', () => { hist.page = 1; });
 });
+
 document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn => {
-  btn.addEventListener('click', () => { hist.page = 1; applyQuickRange(btn.dataset.range); document.getElementById('histSearchBtn').click(); });
-});
-document.querySelectorAll('#cashierHistoryCard [data-range]')?.forEach(btn => {
-  btn.addEventListener('click', () => {
-    applyQuickRange(btn.dataset.range);
-    document.getElementById('histSearchBtn').click();
+  btn.addEventListener('click', () => { 
+    hist.page = 1; 
+    applyQuickRange(btn.dataset.range); 
+    document.getElementById('histSearchBtn').click(); 
   });
 });
 
 async function loadCashierHistory() {
+  // cancela requisição anterior, se existir
+  if (histAbortController) histAbortController.abort();
+  histAbortController = new AbortController();
+
+  // versão desta chamada
+  const seq = ++histSeq;
+
+  // (opcional) feedback visual de carregando
+  const ul = document.getElementById('histPagination');
+  if (ul) ul.innerHTML = '<li class="page-item disabled"><span class="page-link">Carregando...</span></li>';
+
   const params = new URLSearchParams();
   if (hist.from) params.set('from', hist.from);
   if (hist.to) params.set('to', hist.to);
   params.set('page', hist.page);
   params.set('pageSize', hist.pageSize);
 
-  const data = await apiFetch(`/admin/cashier/sessions?${params.toString()}`);
-  if (!data?.success) { notify?.({ type: 'error', message: data?.error || 'Erro ao carregar histórico' }); return; }
-  renderHistTable(data.sessions);
-  renderHistPagination(data.pagination);
-  renderHistSummary(data.pagination);
+  try {
+    const data = await apiFetch(`/admin/cashier/sessions?${params.toString()}`, {
+      signal: histAbortController.signal
+    });
+
+    // se outra busca mais nova foi feita, ignore esta resposta
+    if (seq !== histSeq) return;
+
+    if (!data?.success) {
+      notify?.({ type: 'error', message: data?.error || 'Erro ao carregar histórico' });
+      return;
+    }
+    renderHistTable(data.sessions);
+    renderHistPagination(data.pagination);
+    renderHistSummary(data.pagination);
+  } catch (err) {
+    // aborts são esperados ao trocar de página rapidamente
+    if (err?.name !== 'AbortError') {
+      console.error('[HIST LOAD ERROR]', err);
+      notify?.({ type: 'error', message: 'Erro ao carregar histórico' });
+    }
+  }
 }
 
 function renderHistTable(list = []) {

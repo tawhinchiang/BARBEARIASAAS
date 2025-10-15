@@ -584,6 +584,43 @@ body.modal-open{
 }
 
 /* ====== Título do card já forçado para branco no topo (item 4) ====== */
+/* ===== Botão "visualizar detalhes" (última coluna) ===== */
+
+/* 1) Garante um botão branco com borda visível */
+#cashierHistoryCard tbody td:last-child .btn {
+  background: #fff !important;
+  border: 1px solid #ced4da !important;
+  color: #000 !important;
+  border-radius: .5rem;                 /* mesmo visual "pill" da UI */
+  padding: .35rem .5rem;
+  line-height: 1;
+  min-width: 36px;                      /* tamanho confortável p/ ícone */
+}
+
+/* 2) Força o ícone a ser PRETO, mesmo que venha com .text-white no HTML */
+#cashierHistoryCard tbody td:last-child .btn i,
+#cashierHistoryCard tbody td:last-child .btn svg,
+#cashierHistoryCard tbody td:last-child .btn .bi,
+#cashierHistoryCard tbody td:last-child .btn .fas,
+#cashierHistoryCard tbody td:last-child .btn .fa {
+  color: #000 !important;
+  fill: #000 !important;
+  filter: none !important;
+}
+
+/* 3) Hover/focus: mantém contraste e feedback */
+#cashierHistoryCard tbody td:last-child .btn:hover {
+  background: #f8f9fa !important;
+  border-color: #bdbdbd !important;
+  color: #000 !important;
+}
+#cashierHistoryCard tbody td:last-child .btn:focus {
+  box-shadow: 0 0 0 .2rem rgba(0,0,0,.08) !important;
+}
+
+/* 4) Caso você use uma classe específica (ex.: .btn-view, .btn-icon-xs), já aplica também */
+#cashierHistoryCard .btn-view i,
+#cashierHistoryCard .btn-icon-xs i { color:#000 !important; fill:#000 !important; }
 
 </style>
 
