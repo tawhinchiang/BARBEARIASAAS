@@ -119,6 +119,23 @@ async function loadCashierStatus() {
     notify?.({ type: 'error', message: 'Erro ao carregar status do caixa' });
   }
 }
+// ===== Modal helpers (coloque no topo do cashier.js) =================
+function ensureInBody(el){ if (el && el.parentNode !== document.body) document.body.appendChild(el); }
+
+function showModal(id, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  ensureInBody(el);                           // garante <div.modal> direto em <body>
+  const old = bootstrap.Modal.getInstance(el);
+  if (old) old.dispose();                     // evita "backdrop preso"
+  const inst = new bootstrap.Modal(el, { backdrop: true, keyboard: true, focus: true, ...opts });
+  inst.show();
+  return inst;
+}
+// limpa possíveis backdrops órfãos quando QUALQUER modal fecha
+document.addEventListener('hidden.bs.modal', () => {
+  document.querySelectorAll('.modal-backdrop').forEach((b, i) => { if (i) b.remove(); });
+});
 
 // ===== Abrir Caixa =====
 document.getElementById('confirmOpenCashier')?.addEventListener('click', async () => {
@@ -138,8 +155,7 @@ document.getElementById('confirmOpenCashier')?.addEventListener('click', async (
 document.getElementById('btnAddExpense')?.addEventListener('click', () => {
   const d = new Date().toISOString().slice(0, 10);
   setVal('exp-desc', ''); setVal('exp-amount', ''); setVal('exp-method', 'cash'); setVal('exp-category', 'operacional'); setVal('exp-date', d);
-  const el = document.getElementById('expenseModal');
-  bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
+ showModal('expenseModal');
 });
 
 document.getElementById('exp-submit-btn')?.addEventListener('click', async () => {
@@ -235,12 +251,7 @@ async function openCloseCashierModal() {
     };
     tbody.addEventListener('input', onChange);
 
-    const el = document.getElementById('closeCashierModal');
-    // descarta instância antiga (evita backdrop “preso”)
-    const old = bootstrap.Modal.getInstance(el);
-    if (old) old.dispose();
-    bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
-
+   showModal('closeCashierModal');
   } catch (e) {
     console.error(e);
     notify?.({ type: 'error', message: e.message || 'Erro ao preparar fechamento do caixa.' });
@@ -433,11 +444,7 @@ async function openSessionDetail(id) {
     </div>
     <div class="mt-2 small text-muted">Diferença (Dinheiro): <strong>${fmtBRL(s.diffCash || 0)}</strong></div>
   `;
-
-  const el = document.getElementById('sessionDetailModal');
-  const old = bootstrap.Modal.getInstance(el);
-  if (old) old.dispose();
-  bootstrap.Modal.getOrCreateInstance(el, { backdrop: true, keyboard: true }).show();
+showModal('sessionDetailModal');
 }
 
 // Helpers
