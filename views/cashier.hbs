@@ -249,147 +249,367 @@
 </div>
 
 <style>
-/* ---------- Página / topo ---------- */
-#cashierTitle{color:var(--cashier-title-color,#fff);font-weight:600;letter-spacing:.2px;}
-.cashier-actions{display:flex;flex-wrap:wrap;gap:.5rem;}
-@media (min-width:577px){
-  .cashier-actions .btn{display:inline-flex;align-items:center;justify-content:center;padding:.6rem 1rem;min-width:150px;font-size:.95rem;line-height:1.2;}
+#cashierTitle {
+  color: var(--cashier-title-color, #fff);
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.cashier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+@media (min-width:577px) {
+  .cashier-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .6rem 1rem;
+    min-width: 150px;
+    font-size: .95rem;
+    line-height: 1.2;
+  }
 }
 
-/* ---------- Modais & backdrop ---------- */
-.modal{z-index:1055;}
-.modal-backdrop{z-index:1050;}
-.modal-backdrop.show{opacity:.45;}
-/* trava o scroll da página ao abrir QUALQUER modal */
-body.modal-open{ overflow:hidden!important; }
-/* evita stacking-context */
+.modal {
+  z-index: 2000;
+}
+.modal-backdrop {
+  z-index: 1995;
+  opacity: .45;
+}
+body.modal-open {
+  overflow: hidden !important;
+}
 body.modal-open .fade-in-soft,
 body.modal-open .admin-dashboard,
 body.modal-open .container-fluid,
 body.modal-open .row,
-body.modal-open .col-12{transform:none;filter:none;perspective:none;will-change:auto;}
-
-/* ---------- Card: Histórico ---------- */
-#cashierHistoryCard{--hist-bg:var(--bg-light);--hist-surface:var(--bg-gray);--hist-border:var(--border-color);--hist-text:var(--text-dark);}
-#cashierHistoryCard .card-header{background:var(--hist-bg);border-bottom:1px solid var(--hist-border);}
-#cashierHistoryCard .card-header strong,#cashierHistoryCard .card-header .bi{color:#fff;}
-#cashierHistoryCard .hist-w{min-width:160px;}
-#cashierHistoryCard .hist-pagesize{width:84px;min-width:84px;}
-#cashierHistoryCard .hist-range-group{overflow-x:auto;white-space:nowrap;max-width:100%;}
-#cashierHistoryCard .form-control.form-control-sm,#cashierHistoryCard .form-select.form-select-sm{background:#1e1e22;border:1px solid var(--hist-border);color:var(--hist-text);height:38px;padding:.35rem .6rem;}
-#cashierHistoryCard thead.table-light th{background:#202026;color:var(--hist-text);border-color:var(--hist-border);}
-#cashierHistoryCard tbody td{background:#18181c;border-color:var(--hist-border);}
-#cashierHistoryCard tbody tr:hover td{background:#1d1d22;}
-#cashierHistoryCard #histSearchBtn.btn{background:#fff;color:#000;border:1px solid #ced4da;height:38px;padding:.35rem .75rem;}
-#cashierHistoryCard #histSearchBtn.btn i{color:#000;}
-#cashierHistoryCard .card-body+.d-flex{background:var(--hist-bg);border-top:1px solid var(--hist-border);}
-#cashierHistoryCard .pagination .page-link{color:var(--primary-color);border-color:var(--primary-color);background:transparent;}
-#cashierHistoryCard .pagination .page-item.active .page-link{background:#fff;color:#000;border-color:var(--primary-color);}
-#cashierHistoryCard .pagination .page-item:first-child .page-link,#cashierHistoryCard .pagination .page-item:last-child .page-link{background:#fff;color:#000;border-color:#ced4da;}
-#cashierHistoryCard .btn-icon-xs{--bs-btn-padding-y:.25rem;--bs-btn-padding-x:.45rem;--bs-btn-font-size:.8rem;line-height:1.1;min-width:32px;}
-#cashierHistoryCard .btn-icon-xs i{color:#000;}
-
-/* ---------- Tema único para TODOS os modais ---------- */
-.app-modal .modal-dialog{
-  /* evita cortar sob navbar em desktop e mobile */
-  margin:calc(env(safe-area-inset-top,0px) + 64px) auto 16px;
+body.modal-open .col-12 {
+  transform: none;
+  filter: none;
+  perspective: none;
+  will-change: auto;
 }
-.app-modal .modal-content{background:#1e1e22;color:#fff;border:0;display:flex;max-height:calc(100dvh - 96px);}
-.app-modal .modal-header{background:#2a2a30;color:#fff;border-bottom:1px solid rgba(255,255,255,.12);}
-.app-modal .modal-body{overflow:auto;}
-.app-modal .modal-footer{background:#1b1b20;border-top:1px solid rgba(255,255,255,.08);}
-.app-modal .btn-close{filter:invert(1);}
-.app-modal .modal-footer .btn{background:#fff;color:#000;border:1px solid #ced4da;border-radius:.375rem;font-weight:500;}
-.app-modal .modal-footer .btn:hover{background:#f8f9fa;border-color:#bdbdbd;}
 
-/* Campos uniformes (altura/largura) — vale para TODOS os modais */
+#cashierHistoryCard {
+  --hist-bg: var(--bg-light);
+  --hist-surface: var(--bg-gray);
+  --hist-border: var(--border-color);
+  --hist-text: var(--text-dark);
+}
+#cashierHistoryCard .card-header {
+  background: var(--hist-bg);
+  border-bottom: 1px solid var(--hist-border);
+}
+#cashierHistoryCard .card-header strong,
+#cashierHistoryCard .card-header .bi {
+  color: #fff;
+}
+#cashierHistoryCard .hist-w {
+  min-width: 160px;
+}
+#cashierHistoryCard .hist-pagesize {
+  width: 84px;
+  min-width: 84px;
+}
+#cashierHistoryCard .hist-range-group {
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 100%;
+}
+#cashierHistoryCard .form-control.form-control-sm,
+#cashierHistoryCard .form-select.form-select-sm {
+  background: #1e1e22;
+  border: 1px solid var(--hist-border);
+  color: var(--hist-text);
+  height: 38px;
+  padding: .35rem .6rem;
+}
+#cashierHistoryCard thead.table-light th {
+  background: #202026;
+  color: var(--hist-text);
+  border-color: var(--hist-border);
+}
+#cashierHistoryCard tbody td {
+  background: #18181c;
+  border-color: var(--hist-border);
+}
+#cashierHistoryCard tbody tr:hover td {
+  background: #1d1d22;
+}
+#cashierHistoryCard #histSearchBtn.btn {
+  background: #fff;
+  color: #000;
+  border: 1px solid #ced4da;
+  height: 38px;
+  padding: .35rem .75rem;
+}
+#cashierHistoryCard #histSearchBtn.btn i {
+  color: #000;
+}
+#cashierHistoryCard .card-body + .d-flex {
+  background: var(--hist-bg);
+  border-top: 1px solid var(--hist-border);
+}
+#cashierHistoryCard .pagination .page-link {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+  background: transparent;
+}
+#cashierHistoryCard .pagination .page-item.active .page-link {
+  background: #fff;
+  color: #000;
+  border-color: var(--primary-color);
+}
+#cashierHistoryCard .pagination .page-item:first-child .page-link,
+#cashierHistoryCard .pagination .page-item:last-child .page-link {
+  background: #fff;
+  color: #000;
+  border-color: #ced4da;
+}
+#cashierHistoryCard .btn-icon-xs {
+  --bs-btn-padding-y: .25rem;
+  --bs-btn-padding-x: .45rem;
+  --bs-btn-font-size: .8rem;
+  line-height: 1.1;
+  min-width: 32px;
+}
+#cashierHistoryCard .btn-icon-xs i {
+  color: #000;
+}
+
+.app-modal .modal-dialog {
+  margin: calc(env(safe-area-inset-top, 0px) + 64px) auto 16px;
+}
+.app-modal .modal-content {
+  background: #1e1e22;
+  color: #fff;
+  border: 0;
+  display: flex;
+  max-height: calc(100dvh - 96px);
+}
+.app-modal .modal-header {
+  background: #2a2a30;
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.app-modal .modal-body {
+  overflow: auto;
+  font-size: .9rem;
+}
+.app-modal .modal-footer {
+  background: #1b1b20;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding: .75rem 1rem;
+  justify-content: space-between;
+}
+.app-modal .btn-close {
+  filter: invert(1);
+}
+.app-modal .modal-footer .btn {
+  background: #fff;
+  color: #000;
+  border: 1px solid #ced4da;
+  border-radius: .375rem;
+  font-weight: 500;
+  min-width: 120px;
+  font-size: .9rem;
+  padding: .45rem .9rem;
+}
+.app-modal .modal-footer .btn:hover {
+  background: #f8f9fa;
+  border-color: #bdbdbd;
+}
+
 .app-modal .form-control,
 .app-modal .form-select,
-.app-modal .input-group-text{height:40px;padding:.5rem .65rem;font-size:.95rem;line-height:1.2;}
-.app-modal .form-control,.app-modal .form-select{background:#fff;color:#212529;border-color:#ced4da;}
-.app-modal .input-group-text{background:#f8f9fa;color:#212529;border-color:#ced4da;}
-
-/* ---------- EXPENSE MODAL: alinhamento de pares ---------- */
-#expenseModal .row.g-2>.col-6 .form-control,
-#expenseModal .row.g-2>.col-6 .form-select{width:100%;}
-/* garante a mesma altura no input-group (R$ + input) */
-#expenseModal .input-group .input-group-text{width:42px;justify-content:center;}
-#expenseModal .input-group .form-control{min-width:0;}
-
-/* ---------- CLOSE CASHIER: tabela sem overflow ---------- */
-.cc-table{table-layout:fixed;width:100%;font-size:.9rem;border-collapse:separate;border-spacing:0;}
-.cc-table thead tr{background:#2f2f36;}
-.cc-table thead th{color:#fff;border-color:rgba(255,255,255,.18);font-weight:600;letter-spacing:.1px;}
-.cc-table tbody td{background:#1f1f26;color:#fff;border-color:rgba(255,255,255,.1);}
-.cc-table tbody tr:hover td{background:#24242c;}
-.cc-table th,.cc-table td{padding:.45rem .55rem;vertical-align:middle;}
-/* larguras proporcionais (desktop) */
-.cc-table th:nth-child(1),.cc-table td:nth-child(1){width:30%;}
-.cc-table th:nth-child(2),.cc-table td:nth-child(2){width:22%;}
-.cc-table th:nth-child(3),.cc-table td:nth-child(3){width:28%;}
-.cc-table th:nth-child(4),.cc-table td:nth-child(4){width:20%;}
-/* campo “Contado” compacto e sem quebrar */
-.cc-table .input-group{max-width:168px;margin-left:auto;margin-right:auto;}
-.cc-table .input-group-text{width:40px;flex:0 0 40px;padding:.4rem .5rem;}
-.cc-table .form-control{height:36px;padding:.35rem .5rem;font-size:.95rem;min-width:0;}
-
-/* evita rolagem horizontal dentro da área da tabela */
-.app-modal .table-responsive{overflow-x:hidden;}
-
-/* ---------- Mobile (≤576px) ---------- */
-@media (max-width:576.98px){
-  #histSearchBtn .d-none.d-sm-inline{display:inline!important;}
-  #cashierTitle{font-size:1.25rem;}
-  #cashierHistoryCard{font-size:12px;}
-  #cashierHistoryCard .card-header{position:sticky;top:56px;z-index:2;background:#202026;}
-  #cashierHistoryCard .card-header strong{font-size:.9rem;}
-  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center>*{flex:1 1 100%;}
-  #cashierHistoryCard .hist-w,#cashierHistoryCard .hist-pagesize{width:100%;min-width:0;}
-  #cashierHistoryCard .btn-group.hist-range-group{width:100%;}
-  #cashierHistoryCard #histFilters{background:#1e1e22;border:1px solid var(--hist-border);border-radius:.5rem;padding:.5rem;margin-top:.5rem;}
-  #cashierHistoryCard #histFilters .form-control,#cashierHistoryCard #histFilters .form-select{background:#1e1e22;color:var(--hist-text);border-color:var(--hist-border);}
-  #cashierHistoryCard #histFilters .hist-range-group .btn{background:#1e1e22;color:var(--hist-text);border-color:var(--hist-border);}
-  #cashierHistoryCard .form-control.form-control-sm,#cashierHistoryCard .form-select.form-select-sm{height:32px;font-size:.8rem;padding:.25rem .5rem;}
-
-  /* tabela do histórico compacta */
-  #cashierHistoryCard .table-responsive{overflow-x:visible;}
-  #cashierHistoryCard .table{table-layout:fixed;width:100%;font-size:.78rem;}
-  #cashierHistoryCard thead th{font-size:.72rem;padding:.3rem .35rem;}
-  #cashierHistoryCard thead th,#cashierHistoryCard tbody td{white-space:normal;word-break:normal;overflow-wrap:break-word;}
-  #cashierHistoryCard .table>:not(caption)>*>*{padding:.28rem .35rem;line-height:1.25;vertical-align:middle;}
-  #cashierHistoryCard .text-nowrap{white-space:normal!important;}
-  /* status + entradas estreitos */
-  #cashierHistoryCard thead th:nth-child(3),#cashierHistoryCard tbody td:nth-child(3){width:68px;white-space:nowrap;}
-  #cashierHistoryCard thead th:nth-child(4),#cashierHistoryCard tbody td:nth-child(4){width:72px;white-space:nowrap;}
-  #cashierHistoryCard tbody td.text-end{width:1%;}
-  #cashierHistoryCard thead th.text-end{width:auto;}
-  #cashierHistoryCard thead th:last-child{width:44px;white-space:nowrap;}
-  #cashierHistoryCard td:last-child{width:36px;}
-  #cashierHistoryCard td:last-child .btn{padding:.2rem .35rem;line-height:1;min-width:28px;min-height:28px;}
-  #cashierHistoryCard td:last-child .btn i{margin:0;font-size:.9rem;}
-  #cashierHistoryCard .badge{font-size:.6rem;padding:.15rem .3rem;}
-
-  .cc-table{font-size:.8rem;}
-  .cc-table th,.cc-table td{padding:.35rem .45rem;}
-  .cc-table th:nth-child(1),.cc-table td:nth-child(1){width:34%;}
-  .cc-table th:nth-child(2),.cc-table td:nth-child(2){width:22%;}
-  .cc-table th:nth-child(3),.cc-table td:nth-child(3){width:24%;}
-  .cc-table th:nth-child(4),.cc-table td:nth-child(4){width:20%;}
-  .cc-table .input-group{max-width:146px;}
-  .cc-table .input-group-text{width:36px;flex:0 0 36px;padding:.35rem .45rem;}
-  .cc-table .form-control{height:34px;font-size:.85rem;}
+.app-modal .input-group-text {
+  height: 38px;
+  padding: .45rem .6rem;
+  font-size: .9rem;
+  line-height: 1.2;
+}
+.app-modal label.form-label {
+  font-size: .85rem;
+  margin-bottom: .25rem;
+}
+.app-modal .form-control,
+.app-modal .form-select {
+  background: #fff;
+  color: #212529;
+  border-color: #ced4da;
+}
+.app-modal .input-group-text {
+  background: #f8f9fa;
+  color: #212529;
+  border-color: #ced4da;
 }
 
-.modal{ z-index:2000; }
-.modal-backdrop{ z-index:1995; }
-
-.app-modal .modal-dialog{
-  margin: calc(env(safe-area-inset-top,0px) + 64px) auto 16px;
+#expenseModal .input-group-text {
+  width: 42px;
+  justify-content: center;
+  padding: .4rem .5rem;
 }
-@media (max-width:576.98px){
-  .app-modal .modal-dialog{ margin: calc(env(safe-area-inset-top,0px) + 56px) auto 12px; }
+#expenseModal .form-control,
+#expenseModal .form-select {
+  border-color: #ced4da;
+  font-size: .9rem;
+}
+#expenseModal .row.g-2 > .col-6 {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 
+.cc-table {
+  table-layout: fixed;
+  width: 100%;
+  font-size: .85rem;
+  border-collapse: collapse;
+}
+.cc-table thead tr {
+  background: #2f2f36;
+}
+.cc-table thead th {
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  padding: .4rem .45rem;
+  font-size: .8rem;
+  border-bottom: 1px solid rgba(255,255,255,.15);
+}
+.cc-table td {
+  background: #1f1f26;
+  color: #fff;
+  padding: .4rem .45rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.cc-table th:nth-child(1),
+.cc-table td:nth-child(1) { width: 30%; }
+.cc-table th:nth-child(2),
+.cc-table td:nth-child(2) { width: 22%; text-align: right; }
+.cc-table th:nth-child(3),
+.cc-table td:nth-child(3) { width: 26%; }
+.cc-table th:nth-child(4),
+.cc-table td:nth-child(4) { width: 22%; text-align: right; }
+.cc-table .input-group {
+  max-width: 130px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.cc-table .input-group-text {
+  width: 34px;
+  padding: .3rem .4rem;
+  font-size: .8rem;
+  flex: 0 0 34px;
+}
+.cc-table .form-control {
+  height: 32px;
+  padding: .3rem .4rem;
+  font-size: .85rem;
+  text-align: right;
+}
+.app-modal .table-responsive {
+  overflow-x: hidden;
+}
+
+@media (max-width:576.98px) {
+  #histSearchBtn .d-none.d-sm-inline {
+    display: inline !important;
+  }
+  #cashierTitle {
+    font-size: 1.25rem;
+  }
+  #cashierHistoryCard {
+    font-size: 12px;
+  }
+  #cashierHistoryCard .card-header {
+    position: sticky;
+    top: 56px;
+    z-index: 2;
+    background: #202026;
+  }
+  #cashierHistoryCard .card-header strong {
+    font-size: .9rem;
+  }
+  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > * {
+    flex: 1 1 100%;
+  }
+  #cashierHistoryCard .hist-w,
+  #cashierHistoryCard .hist-pagesize {
+    width: 100%;
+    min-width: 0;
+  }
+  #cashierHistoryCard .btn-group.hist-range-group {
+    width: 100%;
+  }
+  #cashierHistoryCard #histFilters {
+    background: #1e1e22;
+    border: 1px solid var(--hist-border);
+    border-radius: .5rem;
+    padding: .5rem;
+    margin-top: .5rem;
+  }
+  #cashierHistoryCard #histFilters .form-control,
+  #cashierHistoryCard #histFilters .form-select {
+    background: #1e1e22;
+    color: var(--hist-text);
+    border-color: var(--hist-border);
+  }
+  #cashierHistoryCard #histFilters .hist-range-group .btn {
+    background: #1e1e22;
+    color: var(--hist-text);
+    border-color: var(--hist-border);
+  }
+  #cashierHistoryCard .form-control.form-control-sm,
+  #cashierHistoryCard .form-select.form-select-sm {
+    height: 32px;
+    font-size: .8rem;
+    padding: .25rem .5rem;
+  }
+  #cashierHistoryCard .table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: .78rem;
+  }
+  #cashierHistoryCard thead th {
+    font-size: .72rem;
+    padding: .3rem .35rem;
+  }
+  #cashierHistoryCard .table>:not(caption)>*>* {
+    padding: .28rem .35rem;
+    line-height: 1.25;
+    vertical-align: middle;
+  }
+  #cashierHistoryCard .text-nowrap {
+    white-space: normal !important;
+  }
+  .cc-table {
+    font-size: .78rem;
+  }
+  .cc-table thead th {
+    font-size: .7rem;
+  }
+  .cc-table td {
+    padding: .35rem .35rem;
+  }
+  .cc-table .input-group {
+    max-width: 110px;
+  }
+  .cc-table .input-group-text {
+    width: 30px;
+    padding: .25rem .35rem;
+  }
+  .cc-table .form-control {
+    height: 30px;
+    font-size: .8rem;
+  }
+  .app-modal .modal-dialog {
+    margin: calc(env(safe-area-inset-top, 0px) + 56px) auto 12px;
+  }
+}
 </style>
 
 <script src="/js/cashier.js"></script>

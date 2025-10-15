@@ -464,6 +464,12 @@ function applyQuickRange(type) {
   document.getElementById('histFrom').value = from || '';
   document.getElementById('histTo').value = to || '';
 }
+// === Evita auto-focus ao abrir modais no mobile ===
+document.addEventListener('shown.bs.modal', (e) => {
+  // remove foco automático de qualquer campo dentro do modal
+  const inputs = e.target.querySelectorAll('input, select, textarea');
+  inputs.forEach(i => i.blur());
+});
 
 // Inicializações
 document.addEventListener('DOMContentLoaded', () => {
