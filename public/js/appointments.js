@@ -1428,7 +1428,7 @@ async function openActionPanel(id) {
     if (canCheckout) {
       html += `
         <button class="btn btn-success w-100 mb-2" onclick="openCheckoutModal(${id})">
-          <i class="fas fa-cash-register me-2"></i> Finalizar e Receber
+          <i class="fas fa-cash-register me-2"></i> Receber
         </button>
       `;
     }
