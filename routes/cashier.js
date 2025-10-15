@@ -201,19 +201,19 @@ router.get('/sessions', async (req, res) => {
     const limit = Math.max(1, Math.min(parseInt(pageSize) || 20, 100));
     const offset = (Math.max(1, parseInt(page) || 1) - 1) * limit;
 
-    const { rows, count } = await CashSession.findAndCountAll({
+  const { rows, count } = await CashSession.findAndCountAll({
   where,
   order: [['openedAt', 'DESC']],
   limit,
   offset,
-  distinct: true,            
-  col: 'CashSession.id',     
-  subQuery: false,          
+  distinct: true,      
+  subQuery: false,     
   include: [
     { model: Payment, as: 'payments', attributes: ['id','amount','method'] },
     { model: Expense, as: 'expenses', attributes: ['id','amount'] }
   ]
 });
+
 
     const sessions = rows.map(s => {
       const entradasTotal = (s.payments || []).reduce((acc, p) => acc + Number(p.amount || 0), 0);
