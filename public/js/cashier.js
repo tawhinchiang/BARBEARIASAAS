@@ -360,10 +360,10 @@ function renderHistTable(list = []) {
         <td class="text-end d-none d-sm-table-cell">${resultado}</td>
         <td class="text-end d-none d-sm-table-cell">${diffCash}</td>
         <td>
-          <button type="button" class="btn btn-light btn-icon-xs" data-view-session="${s.id}" title="Ver detalhes">
-           <i class="bi bi-eye"></i>
+          <button class="btn btn-outline-light w-100 mb-2" data-view-session="${s.id}" title="Ver detalhes">
+           <i class="fas fa-eye me-2"></i>
           </button>
-        </td>
+      </td>
       </tr>
     `;
   }).join('');
