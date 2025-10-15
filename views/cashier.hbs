@@ -375,6 +375,11 @@ body.modal-open .col-12{
   background:#fff; color:#000 !important; border-color:var(--primary-color);
 }
 
+#cashierHistoryCard .card-header strong,
+#cashierHistoryCard .card-header .bi {
+  color: #fff !important;
+}
+
 @media (max-width:576.98px){
   #histSearchBtn .d-none.d-sm-inline{ display:inline !important; }
 
@@ -442,7 +447,10 @@ body.modal-open .col-12{
     width:68px;
     white-space:nowrap;
   }
-
+  #cashierHistoryCard thead th:nth-child(4),#cashierHistoryCard tbody td:nth-child(4){
+  width: 72px;        
+  white-space: nowrap; 
+}
   #cashierHistoryCard tbody td.text-end{ width:1%; }
   #cashierHistoryCard thead th.text-end{ width:auto; }
 
@@ -460,6 +468,7 @@ body.modal-open .col-12{
   }
 
   #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
+
 }
 
 @media (min-width:577px){
