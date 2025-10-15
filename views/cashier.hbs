@@ -403,6 +403,7 @@ body.modal-open .col-12{
   #cashierHistoryCard .hist-w, 
   #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
   #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
+
   #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
   #cashierTitle{ font-size:1.25rem; }
   #cashierHistoryCard{ font-size:12px; }
@@ -413,30 +414,40 @@ body.modal-open .col-12{
   }
   #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
 
+  /* Tabela sem scroll e mais densa */
   #cashierHistoryCard .table-responsive{ overflow-x:visible; }
   #cashierHistoryCard .table{
     table-layout:fixed;
     width:100%;
     font-size:.78rem;
   }
+  /* NÃO quebrar letras: só quebra entre palavras ou quando necessário */
   #cashierHistoryCard thead th,
   #cashierHistoryCard tbody td{
     white-space:normal !important;
-    word-break:break-word;
-    overflow-wrap:anywhere;
+    word-break:normal;
+    overflow-wrap:break-word;
   }
   #cashierHistoryCard .table>:not(caption)>*>*{
     padding:.28rem .35rem;
     line-height:1.25;
+    vertical-align:middle;
   }
+  /* Neutraliza qualquer .text-nowrap dentro do card */
   #cashierHistoryCard .text-nowrap{ white-space:normal !important; }
   #cashierHistoryCard tbody td.text-nowrap{
     max-width:none;
     overflow:visible;
     text-overflow:clip;
   }
-  #cashierHistoryCard td.text-end,
-  #cashierHistoryCard th.text-end{ width:1%; }
+
+  /* Alinhamento e largura das colunas numéricas apenas no BODY */
+  #cashierHistoryCard tbody td.text-end{ width:1%; }
+  /* Cabeçalhos numéricos não ficam espremidos */
+  #cashierHistoryCard thead th.text-end{ width:auto; }
+
+  /* Coluna de ações enxuta, mas sem estourar o TH */
+  #cashierHistoryCard thead th:last-child{ width:44px; white-space:nowrap; }
   #cashierHistoryCard td:last-child{ width:36px; }
   #cashierHistoryCard .btn-icon-xs{
     --bs-btn-padding-y:.2rem;
@@ -444,6 +455,7 @@ body.modal-open .col-12{
     --bs-btn-font-size:.75rem;
     min-width:28px;
   }
+
   #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
 }
 
