@@ -261,9 +261,6 @@
   font-weight: 600;
   letter-spacing: .2px;
 }
-@media (max-width:576.98px){
-  #cashierTitle{ font-size:1.25rem; }
-}
 
 /* =========================================================
    MODAIS — z-index padrão + backdrop mais leve
@@ -342,14 +339,7 @@ body.modal-open .col-12{
 #cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
 #cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
 
-@media (max-width:576.98px){
-  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
-  #cashierHistoryCard .hist-w, #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
-  #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
-  #cashierHistoryCard .table{ font-size:.84rem; }
-  #cashierHistoryCard .table>:not(caption)>*>*{ padding:.4rem .5rem; }
-  #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
-}
+
 
 #cashierHistoryCard{
   --hist-bg:var(--bg-light);
@@ -408,18 +398,55 @@ body.modal-open .col-12{
 
 /* Mobile: densidade */
 @media (max-width:576.98px){
+  #histSearchBtn .d-none.d-sm-inline{ display:inline !important; }
+  #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
+  #cashierHistoryCard .hist-w, 
+  #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
+  #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
+  #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
+  #cashierTitle{ font-size:1.25rem; }
   #cashierHistoryCard{ font-size:12px; }
   #cashierHistoryCard .card-header strong{ font-size:.9rem; }
-  #cashierHistoryCard .form-control.form-control-sm, #cashierHistoryCard .form-select.form-select-sm{
+  #cashierHistoryCard .form-control.form-control-sm, 
+  #cashierHistoryCard .form-select.form-select-sm{
     height:32px; font-size:.8rem; padding:.25rem .5rem;
   }
   #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
-  #cashierHistoryCard .table>:not(caption)>*>*{ padding:.3rem .4rem; }
+
+  #cashierHistoryCard .table-responsive{ overflow-x:visible; }
+  #cashierHistoryCard .table{
+    table-layout:fixed;
+    width:100%;
+    font-size:.78rem;
+  }
+  #cashierHistoryCard thead th,
+  #cashierHistoryCard tbody td{
+    white-space:normal !important;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+  #cashierHistoryCard .table>:not(caption)>*>*{
+    padding:.28rem .35rem;
+    line-height:1.25;
+  }
+  #cashierHistoryCard .text-nowrap{ white-space:normal !important; }
   #cashierHistoryCard tbody td.text-nowrap{
-    max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    max-width:none;
+    overflow:visible;
+    text-overflow:clip;
+  }
+  #cashierHistoryCard td.text-end,
+  #cashierHistoryCard th.text-end{ width:1%; }
+  #cashierHistoryCard td:last-child{ width:36px; }
+  #cashierHistoryCard .btn-icon-xs{
+    --bs-btn-padding-y:.2rem;
+    --bs-btn-padding-x:.35rem;
+    --bs-btn-font-size:.75rem;
+    min-width:28px;
   }
   #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
 }
+
 
 /* =========================================================
    MODAL: DETALHES DA SESSÃO — tema escuro legível
@@ -496,9 +523,7 @@ body.modal-open .col-12{
 }
 #cashierHistoryCard #histSearchBtn.btn i{ color:#000; }
 /* No mobile, sempre mostrar o texto "Aplicar" */
-@media (max-width:576.98px){
-  #histSearchBtn .d-none.d-sm-inline{ display:inline !important; }
-}
+
 
 /* ====== Padronização de alturas/larguras no desktop ====== */
 @media (min-width:577px){
