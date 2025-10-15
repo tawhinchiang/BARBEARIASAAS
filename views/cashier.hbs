@@ -253,25 +253,16 @@
 </div>
 
 <style>
-  /* =========================================================
-   TÍTULO
-========================================================= */
 #cashierTitle{
   color: var(--cashier-title-color,#fff) !important;
   font-weight: 600;
   letter-spacing: .2px;
 }
 
-/* =========================================================
-   MODAIS — z-index padrão + backdrop mais leve
-   (mantém comportamento do Bootstrap e evita modal "travado")
-========================================================= */
 .modal{ z-index:1055; }
 .modal-backdrop{ z-index:1050; }
 .modal-backdrop.show{ opacity:.45; }
 
-/* Neutraliza qualquer transform/filter que crie stacking-context
-   quando um modal está aberto (evita modal ficar atrás / tela cinza) */
 body.modal-open .fade-in-soft,
 body.modal-open .admin-dashboard,
 body.modal-open .container-fluid,
@@ -283,7 +274,6 @@ body.modal-open .col-12{
   will-change:auto !important;
 }
 
-/* Campos e botões nos modais (altura uniforme) */
 #openCashierModal .input-group-text, #openCashierModal .form-control, #openCashierModal .form-select,
 #expenseModal   .input-group-text,   #expenseModal   .form-control,   #expenseModal   .form-select,
 #closeCashierModal .input-group-text,#closeCashierModal .form-control,#closeCashierModal .form-select{
@@ -299,15 +289,11 @@ body.modal-open .col-12{
 }
 .btn-uniform{ padding:.5rem .9rem; font-size:.9rem; min-width:128px; line-height:1.2; }
 
-/* =========================================================
-   MODAL: FECHAR CAIXA (visual claro)
-========================================================= */
 #closeCashierModal{ --brand-primary: var(--primary-color, var(--bs-primary, #0d6efd)); }
 #closeCashierModal .modal-content{ background:#fff !important; color:#212529 !important; }
 #closeCashierModal .modal-header{ background:#dc3545 !important; color:#fff !important; }
 #closeCashierModal .btn-close, #closeCashierModal .btn-close-white{ filter: invert(1); }
 #closeCashierModal .text-muted{ color:#6c757d !important; }
-
 #closeCashierModal .table thead tr{ background: var(--brand-primary) !important; }
 #closeCashierModal .table thead th{ color:#fff !important; border-color: rgba(255,255,255,.25) !important; }
 #closeCashierModal .table tbody tr, #closeCashierModal .table tfoot tr{ background: var(--brand-primary) !important; }
@@ -320,9 +306,6 @@ body.modal-open .col-12{
 #closeCashierModal .table tfoot td{ border-color: rgba(255,255,255,.15) !important; }
 #closeCashierModal #cc-counted-sum{ text-align:right; background:#fff !important; color:#212529 !important; }
 
-/* =========================================================
-   AÇÕES DO TOPO
-========================================================= */
 .cashier-actions{ display:flex; flex-wrap:wrap; gap:.5rem; }
 @media (min-width:577px){
   .cashier-actions .btn{
@@ -331,15 +314,10 @@ body.modal-open .col-12{
   }
 }
 
-/* =========================================================
-   CARD: HISTÓRICO (cores + responsivo)
-========================================================= */
 #cashierHistoryCard .card-header{ border-bottom:1px solid rgba(255,255,255,.075); }
 #cashierHistoryCard .hist-w{ min-width:160px; }
 #cashierHistoryCard .hist-pagesize{ width:84px; min-width:84px; }
 #cashierHistoryCard .hist-range-group{ overflow-x:auto; white-space:nowrap; max-width:100%; }
-
-
 
 #cashierHistoryCard{
   --hist-bg:var(--bg-light);
@@ -373,10 +351,12 @@ body.modal-open .col-12{
   height:38px; min-width:92px;
 }
 #cashierHistoryCard #histSearchBtn.btn{
-  background:var(--primary-color); border:1px solid var(--primary-color);
-  color:#000; height:38px; padding:.35rem .75rem;
+  background:#fff;
+  color:#000; 
+  border:1px solid #ced4da;
+  height:38px; padding:.35rem .75rem;
 }
-#cashierHistoryCard #histSearchBtn.btn:hover{ filter:brightness(1.05); }
+#cashierHistoryCard #histSearchBtn.btn i{ color:#000; }
 
 #cashierHistoryCard thead.table-light th{
   background:#202026 !important; color:var(--hist-text) !important; border-color:var(--hist-border) !important;
@@ -385,7 +365,6 @@ body.modal-open .col-12{
 #cashierHistoryCard tbody tr:hover td{ background:#1d1d22; }
 
 #cashierHistoryCard .badge.bg-success{ background-color:#198754 !important; color:#fff !important; }
-
 #cashierHistoryCard .card-body + .d-flex{
   background:var(--hist-bg); border-top:1px solid var(--hist-border);
 }
@@ -396,32 +375,50 @@ body.modal-open .col-12{
   background:#fff; color:#000 !important; border-color:var(--primary-color);
 }
 
-/* Mobile: densidade */
 @media (max-width:576.98px){
   #histSearchBtn .d-none.d-sm-inline{ display:inline !important; }
+
   #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center > *{ flex:1 1 100%; }
   #cashierHistoryCard .hist-w, 
   #cashierHistoryCard .hist-pagesize{ width:100%; min-width:0; }
   #cashierHistoryCard .btn-group.hist-range-group{ width:100%; }
 
-  #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:var(--bs-card-bg,#1e1e1e); }
   #cashierTitle{ font-size:1.25rem; }
   #cashierHistoryCard{ font-size:12px; }
+  #cashierHistoryCard .card-header{ position:sticky; top:56px; z-index:2; background:#202026; }
   #cashierHistoryCard .card-header strong{ font-size:.9rem; }
+
+  #cashierHistoryCard #histFilters{
+    background:#1e1e22;
+    border:1px solid var(--hist-border);
+    border-radius:.5rem;
+    padding:.5rem;
+    margin-top:.5rem;
+  }
+  #cashierHistoryCard #histFilters .form-control,
+  #cashierHistoryCard #histFilters .form-select{
+    background:#1e1e22;
+    color:var(--hist-text);
+    border-color:var(--hist-border);
+  }
+  #cashierHistoryCard #histFilters .hist-range-group .btn{
+    background:#1e1e22;
+    color:var(--hist-text);
+    border-color:var(--hist-border);
+  }
+
   #cashierHistoryCard .form-control.form-control-sm, 
   #cashierHistoryCard .form-select.form-select-sm{
     height:32px; font-size:.8rem; padding:.25rem .5rem;
   }
-  #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
 
-  /* Tabela sem scroll e mais densa */
   #cashierHistoryCard .table-responsive{ overflow-x:visible; }
   #cashierHistoryCard .table{
     table-layout:fixed;
     width:100%;
     font-size:.78rem;
   }
-  /* NÃO quebrar letras: só quebra entre palavras ou quando necessário */
+  #cashierHistoryCard thead th{ font-size:.72rem; padding:.3rem .35rem; }
   #cashierHistoryCard thead th,
   #cashierHistoryCard tbody td{
     white-space:normal !important;
@@ -433,7 +430,6 @@ body.modal-open .col-12{
     line-height:1.25;
     vertical-align:middle;
   }
-  /* Neutraliza qualquer .text-nowrap dentro do card */
   #cashierHistoryCard .text-nowrap{ white-space:normal !important; }
   #cashierHistoryCard tbody td.text-nowrap{
     max-width:none;
@@ -441,110 +437,36 @@ body.modal-open .col-12{
     text-overflow:clip;
   }
 
-  /* Alinhamento e largura das colunas numéricas apenas no BODY */
+  #cashierHistoryCard thead th:nth-child(3),
+  #cashierHistoryCard tbody td:nth-child(3){
+    width:68px;
+    white-space:nowrap;
+  }
+
   #cashierHistoryCard tbody td.text-end{ width:1%; }
-  /* Cabeçalhos numéricos não ficam espremidos */
   #cashierHistoryCard thead th.text-end{ width:auto; }
 
-  /* Coluna de ações enxuta, mas sem estourar o TH */
   #cashierHistoryCard thead th:last-child{ width:44px; white-space:nowrap; }
   #cashierHistoryCard td:last-child{ width:36px; }
-  #cashierHistoryCard .btn-icon-xs{
-    --bs-btn-padding-y:.2rem;
-    --bs-btn-padding-x:.35rem;
-    --bs-btn-font-size:.75rem;
-    min-width:28px;
+  #cashierHistoryCard td:last-child .btn{
+    padding:.2rem .35rem !important;
+    line-height:1 !important;
+    min-width:28px !important;
+    min-height:28px !important;
+  }
+  #cashierHistoryCard td:last-child .btn i{
+    margin:0 !important;
+    font-size:.9rem !important;
   }
 
   #cashierHistoryCard .badge{ font-size:.6rem; padding:.15rem .3rem; }
 }
 
-
-/* =========================================================
-   MODAL: DETALHES DA SESSÃO — tema escuro legível
-========================================================= */
-#sessionDetailModal .modal-content{
-  background:#1e1e22 !important;
-  color:#fff !important;
-}
-#sessionDetailModal .modal-header{
-  background:#2a2a30 !important;
-  color:#fff !important;
-  border-bottom: 1px solid rgba(255,255,255,.12) !important;
-}
-#sessionDetailModal .btn-close{ filter: invert(1); }
-
-/* Cards/resumos do topo dentro do modal */
-#sessionDetailModal .modal-body .border.rounded.p-2{
-  background:#23232a !important;
-  border-color: rgba(255,255,255,.15) !important;
-}
-#sessionDetailModal .modal-body .small.text-muted{
-  color:#c8c8c8 !important;
-}
-#sessionDetailModal .modal-body .fw-bold{ color:#fff !important; }
-
-/* Tabela dentro do modal */
-#sessionDetailModal .table{ --bs-table-color:#fff; }
-#sessionDetailModal thead tr{ background:#2f2f36 !important; }
-#sessionDetailModal thead th{
-  color:#fff !important; border-color: rgba(255,255,255,.18) !important;
-}
-#sessionDetailModal tbody td{
-  background:#1f1f26 !important; color:#fff !important;
-  border-color: rgba(255,255,255,.1) !important;
-}
-#sessionDetailModal tbody tr:hover td{ background:#24242c !important; }
-
-/* Rodapé do modal */
-#sessionDetailModal .modal-footer{
-  background:#1b1b20 !important;
-  border-top: 1px solid rgba(255,255,255,.08) !important;
-}
-
-/* Botão "Fechar" igual ao "Aplicar" (branco, texto preto, borda suave) */
-#sessionDetailModal .modal-footer .btn.btn-secondary{
-  background:#fff !important;
-  color:#000 !important;
-  border:1px solid #ced4da !important;
-  border-radius:.375rem !important;
-  font-weight:500;
-  transition: background-color .15s ease, box-shadow .15s ease;
-  box-shadow:none !important;
-}
-#sessionDetailModal .modal-footer .btn.btn-secondary:hover{
-  background:#f8f9fa !important;
-  border-color:#bdbdbd !important;
-}
-#sessionDetailModal .modal-footer .btn.btn-secondary:focus{
-  box-shadow:0 0 0 .2rem rgba(108,117,125,.25) !important;
-}
-/* ====== Header/título ====== */
-#cashierHistoryCard .card-header,
-#cashierHistoryCard .card-header strong,
-#cashierHistoryCard .card-header .bi{
-  color:#fff !important;
-}
-
-/* ====== Botão "Aplicar" ====== */
-#cashierHistoryCard #histSearchBtn.btn{
-  background:#fff;                     /* igual ao print */
-  color:#000; 
-  border:1px solid #ced4da;
-  height:38px; padding:.35rem .75rem;
-}
-#cashierHistoryCard #histSearchBtn.btn i{ color:#000; }
-/* No mobile, sempre mostrar o texto "Aplicar" */
-
-
-/* ====== Padronização de alturas/larguras no desktop ====== */
 @media (min-width:577px){
-  /* mesma largura para os atalhos */
   #cashierHistoryCard .hist-range-group .btn{
     width:100px; height:38px; 
     display:inline-flex; align-items:center; justify-content:center;
   }
-  /* select e aplicar do mesmo tamanho visual */
   #cashierHistoryCard .hist-pagesize{
     width:100px; height:38px; 
   }
@@ -553,7 +475,6 @@ body.modal-open .col-12{
   }
 }
 
-/* ====== Botão de ação "ver detalhes" (ícone preto) ====== */
 #cashierHistoryCard .btn-icon-xs{
   --bs-btn-padding-y: .25rem; 
   --bs-btn-padding-x: .45rem; 
@@ -562,32 +483,24 @@ body.modal-open .col-12{
 }
 #cashierHistoryCard .btn-icon-xs i{ color:#000 !important; }
 
-/* ====== Paginação – setas « » pretas ====== */
 #cashierHistoryCard .pagination .page-link{
   color:var(--primary-color); border-color:var(--primary-color); background:transparent;
 }
 #cashierHistoryCard .pagination .page-item.active .page-link{
   background:#fff; color:#000 !important; border-color:var(--primary-color);
 }
-/* Primeira/última (setas) em preto com fundo branco */
 #cashierHistoryCard .pagination .page-item:first-child .page-link,
 #cashierHistoryCard .pagination .page-item:last-child .page-link{
   background:#fff !important; color:#000 !important; border-color:#ced4da !important;
 }
 
-/* ====== Modal Detalhes – offset do topo e altura segura ====== */
-#sessionDetailModal .modal-dialog{
-  margin-top:72px;                /* espaço abaixo da navbar/título */
-}
+#sessionDetailModal .modal-dialog{ margin-top:72px; }
 #sessionDetailModal .modal-content{
-  max-height:calc(100dvh - 96px); /* cabe na viewport com margem */
+  max-height:calc(100dvh - 96px);
   display:flex; flex-direction:column;
 }
-#sessionDetailModal .modal-body{
-  overflow:auto;                  /* rola o corpo, mantém header/footer */
-}
+#sessionDetailModal .modal-body{ overflow:auto; }
 
-/* ====== Modal Detalhes – tema escuro legível (mantido) ====== */
 #sessionDetailModal .modal-content{ background:#1e1e22 !important; color:#fff !important; }
 #sessionDetailModal .modal-header{ background:#2a2a30 !important; color:#fff !important; border-bottom:1px solid rgba(255,255,255,.12)!important; }
 #sessionDetailModal .btn-close{ filter:invert(1); }
@@ -600,26 +513,21 @@ body.modal-open .col-12{
 #sessionDetailModal tbody td{ background:#1f1f26 !important; color:#fff !important; border-color:rgba(255,255,255,.1)!important; }
 #sessionDetailModal tbody tr:hover td{ background:#24242c !important; }
 #sessionDetailModal .modal-footer{ background:#1b1b20 !important; border-top:1px solid rgba(255,255,255,.08)!important; }
-
-/* Botão "Fechar" igual ao "Aplicar" branco */
 #sessionDetailModal .modal-footer .btn.btn-primary{
   background:#fff !important; color:#000 !important; border:1px solid #ced4da !important;
 }
 #sessionDetailModal .modal-footer .btn.btn-primary:hover{
   background:#f8f9fa !important; border-color:#bdbdbd !important;
 }
-/* Bloqueia a rolagem do body quando marcado via JS */
+
 body.scroll-locked{
-  position: fixed;   /* prende a página no ponto atual */
+  position: fixed;
   overflow: hidden !important;
   width: 100%;
 }
-
-/* Fallback geral: quando QUALQUER modal do Bootstrap estiver aberto */
-body.modal-open{
-  overflow: hidden !important;
-}
+body.modal-open{ overflow: hidden !important; }
 </style>
+
 
 
 <script src="/js/cashier.js"></script>
