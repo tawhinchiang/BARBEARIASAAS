@@ -618,54 +618,53 @@
 
   /* ====== Mobile ====== */
   @media (max-width:576.98px) {
-
     .cashier-actions {
       flex-direction: column;
       align-items: center;
-      gap: .65rem;
+      gap: .65rem
     }
 
     .cashier-actions .btn {
       width: 80%;
       max-width: 440px;
-      justify-content: center;
+      justify-content: center
     }
 
     #histSearchBtn .d-none.d-sm-inline {
-      display: inline !important;
+      display: inline !important
     }
 
     #cashierTitle {
-      font-size: 1.25rem;
+      font-size: 1.25rem
     }
 
     #cashierHistoryCard {
-      font-size: 12px;
+      font-size: 12px
     }
 
     #cashierHistoryCard .card-header {
       position: sticky;
       top: 56px;
       z-index: 2;
-      background: #202026;
+      background: #202026
     }
 
     #cashierHistoryCard .card-header strong {
-      font-size: .9rem;
+      font-size: .9rem
     }
 
     #cashierHistoryCard .d-flex.flex-wrap.gap-2.align-items-center>* {
-      flex: 1 1 100%;
+      flex: 1 1 100%
     }
 
     #cashierHistoryCard .hist-w,
     #cashierHistoryCard .hist-pagesize {
       width: 100%;
-      min-width: 0;
+      min-width: 0
     }
 
     #cashierHistoryCard .btn-group.hist-range-group {
-      width: 100%;
+      width: 100%
     }
 
     #cashierHistoryCard #histFilters {
@@ -673,135 +672,148 @@
       border: 1px solid var(--hist-border);
       border-radius: .5rem;
       padding: .5rem;
-      margin-top: .5rem;
+      margin-top: .5rem
     }
 
     #cashierHistoryCard #histFilters .form-control,
     #cashierHistoryCard #histFilters .form-select {
       background: #1e1e22;
       color: var(--hist-text);
-      border-color: var(--hist-border);
+      border-color: var(--hist-border)
     }
 
     #cashierHistoryCard #histFilters .hist-range-group .btn {
       background: #1e1e22;
       color: var(--hist-text);
-      border-color: var(--hist-border);
+      border-color: var(--hist-border)
     }
 
     #cashierHistoryCard .form-control.form-control-sm,
     #cashierHistoryCard .form-select.form-select-sm {
       height: 32px;
       font-size: .8rem;
-      padding: .25rem .5rem;
+      padding: .25rem .5rem
     }
 
     #cashierHistoryCard .table {
       table-layout: fixed;
       width: 100%;
-      font-size: .78rem;
+      font-size: .76rem
     }
 
     #cashierHistoryCard thead th {
-      font-size: .72rem;
-      padding: .3rem .35rem;
+      font-size: .7rem;
+      padding: .28rem .32rem
     }
 
     #cashierHistoryCard .table>:not(caption)>*>* {
-      padding: .28rem .35rem;
-      line-height: 1.25;
-      vertical-align: middle;
+      padding: .26rem .32rem;
+      line-height: 1.22
+    }
+
+    #cashierHistoryCard .badge,
+    #cashierHistoryCard .badge-status {
+      font-size: .62rem;
+      padding: .22em .4em;
+      border-radius: .35rem;
+      line-height: 1.1
     }
 
     #cashierHistoryCard .text-nowrap {
-      white-space: normal !important;
+      white-space: normal !important
     }
 
     #cashierHistoryCard .table-responsive {
-      overflow-x: hidden;
-      /* desliga a barra no mobile */
+      overflow-x: hidden
     }
 
-    /* Inclui padding dentro do % da largura, evitando “estourar” */
     #cashierHistoryCard .table th,
     #cashierHistoryCard .table td {
       box-sizing: border-box;
       padding: .25rem .35rem;
-      /* um pouco menor para caber */
-      line-height: 1.25;
+      line-height: 1.25
     }
 
-    /* Abertura (coluna 1) – mais larga */
     #cashierHistoryCard .table thead th:nth-child(1),
     #cashierHistoryCard .table tbody td:nth-child(1) {
-      width: 33%;
-      /* antes 34%: guardamos 2% para margem de segurança */
+      width: 31%;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
+      text-overflow: ellipsis
     }
 
-    /* Fechamento (coluna 2) – mais larga */
     #cashierHistoryCard .table thead th:nth-child(2),
     #cashierHistoryCard .table tbody td:nth-child(2) {
-      width: 27%;
+      width: 25%;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
+      text-overflow: ellipsis
     }
 
-    /* Status (coluna 3) – mais estreita */
     #cashierHistoryCard .table thead th:nth-child(3),
     #cashierHistoryCard .table tbody td:nth-child(3) {
-      width: 18%;
+      width: 17%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-align: left;
-      /* ou center, se preferir */
+      text-align: left
     }
 
-    /* Entradas (coluna 4) – mais estreita */
     #cashierHistoryCard .table thead th:nth-child(4),
     #cashierHistoryCard .table tbody td:nth-child(4) {
-      width: 15%;
+      width: 19%;
       text-align: right;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
+      text-overflow: ellipsis
     }
 
-    /* Ações (coluna 8) – compacta */
     #cashierHistoryCard .table thead th:nth-child(8),
     #cashierHistoryCard .table tbody td:nth-child(8) {
-      width: 5%;
-      white-space: nowrap;
+      width: 8%;
+      min-width: 48px;
+      text-align: right;
+      white-space: nowrap
     }
 
-    /* Se o botão de ação ainda “apertar”, deixe só o ícone visível no mobile: */
     #cashierHistoryCard .table tbody td:nth-child(8) .btn span,
     #cashierHistoryCard .table thead th:nth-child(8) span {
-      display: none;
-      /* opcional: oculta textos dentro do botão/thead no mobile */
+      display: none !important
     }
 
-    /* Fechar Caixa – inputs grandes, fáceis de tocar */
+    #cashierHistoryCard .table tbody td:nth-child(8) .btn,
+    #cashierHistoryCard .table tbody td:nth-child(8) .btn-icon-xs {
+      padding: .2rem;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .8rem;
+      line-height: 1
+    }
+
+    #cashierHistoryCard .table tbody td:nth-child(8) .btn i {
+      margin: 0 !important
+    }
+
     .cc-table {
-      font-size: .78rem;
+      font-size: .78rem
     }
 
     .cc-table thead th {
-      font-size: .7rem;
+      font-size: .7rem
     }
 
     .cc-table td {
-      padding: .35rem .35rem;
+      padding: .35rem .35rem
     }
 
     .app-modal .cc-table .input-group {
       max-width: none;
       width: 100%;
-      justify-content: flex-end;
+      justify-content: flex-end
     }
 
     .app-modal .cc-table .input-group-text {
@@ -809,22 +821,21 @@
       width: 40px;
       flex: 0 0 40px;
       padding: .35rem .5rem;
-      font-size: .9rem;
+      font-size: .9rem
     }
 
     .app-modal .cc-table .input-group .form-control {
       height: 36px !important;
       font-size: 1rem;
-      padding: .4rem .55rem;
+      padding: .4rem .55rem
     }
 
     .app-modal .modal-content {
-      max-height: calc(100dvh - 96px);
+      max-height: calc(100dvh - 96px)
     }
 
     .app-modal .modal-dialog {
-      margin: calc(env(safe-area-inset-top, 0px) + 56px) auto 12px;
-
+      margin: calc(env(safe-area-inset-top, 0px) + 56px) auto 12px
     }
   }
 </style>

@@ -491,6 +491,36 @@
     .admin-table td .slot-no_show { background: #858796; color: #fff; }
     .admin-table td .slot-pending { background: #36b9cc; color: #fff; }
   }
+  /* === Checkout Modal - mesma pele do Encaixe === */
+#checkoutModal .modal-content {
+  background-color: var(--bg-light) !important;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  color: var(--text-dark) !important;
+}
+
+#checkoutModal .modal-header,
+#checkoutModal .modal-footer {
+  background: var(--bg-light);
+  border-color: var(--border-color);
+  color: var(--text-dark);
+}
+
+/* X visível no tema escuro (igual ao Encaixe) */
+#checkoutModal .btn-close {
+  filter: invert(1);
+  opacity: .8;
+}
+#checkoutModal .btn-close:hover { opacity: 1; }
+
+/* “Total esperado” com visual neutro e consistente */
+#checkoutModal #expectedWrapper {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-dark);
+}
+
 </style>
 
 
