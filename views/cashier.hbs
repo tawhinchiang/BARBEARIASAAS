@@ -275,7 +275,7 @@
       align-items: center;
       justify-content: center;
       padding: .6rem 1rem;
-      min-width: 150px;
+      width: 180px;
       font-size: .95rem;
       line-height: 1.2;
     }
@@ -306,12 +306,14 @@
     will-change: auto;
   }
 
- .app-modal .modal-dialog{
-  margin: 1.75rem auto;
-}
-.app-modal .modal-dialog.modal-dialog-centered{
-  margin: 0 auto; 
-}
+  .app-modal .modal-dialog {
+    margin: 1.75rem auto;
+  }
+
+  .app-modal .modal-dialog.modal-dialog-centered {
+    margin: 0 auto;
+  }
+
   .app-modal .modal-content {
     background: #1e1e22;
     color: #fff;
@@ -541,23 +543,26 @@
 
   .cc-table th:nth-child(1),
   .cc-table td:nth-child(1) {
-    width: 30%;
+    width: 22%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .cc-table th:nth-child(2),
   .cc-table td:nth-child(2) {
-    width: 22%;
+    width: 20%;
     text-align: right;
   }
 
   .cc-table th:nth-child(3),
   .cc-table td:nth-child(3) {
-    width: 26%;
+    width: 38%;
   }
 
   .cc-table th:nth-child(4),
   .cc-table td:nth-child(4) {
-    width: 22%;
+    width: 20%;
     text-align: right;
   }
 
@@ -571,7 +576,7 @@
     flex-wrap: nowrap;
     align-items: stretch;
     width: 100%;
-    max-width: 200px;
+    max-width: none;
     margin-left: auto;
     margin-right: auto;
   }
@@ -613,6 +618,19 @@
 
   /* ====== Mobile ====== */
   @media (max-width:576.98px) {
+
+    .cashier-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: .65rem;
+    }
+
+    .cashier-actions .btn {
+      width: 80%;
+      max-width: 440px;
+      justify-content: center;
+    }
+
     #histSearchBtn .d-none.d-sm-inline {
       display: inline !important;
     }
@@ -697,6 +715,74 @@
 
     #cashierHistoryCard .text-nowrap {
       white-space: normal !important;
+    }
+
+    #cashierHistoryCard .table-responsive {
+      overflow-x: hidden;
+      /* desliga a barra no mobile */
+    }
+
+    /* Inclui padding dentro do % da largura, evitando “estourar” */
+    #cashierHistoryCard .table th,
+    #cashierHistoryCard .table td {
+      box-sizing: border-box;
+      padding: .25rem .35rem;
+      /* um pouco menor para caber */
+      line-height: 1.25;
+    }
+
+    /* Abertura (coluna 1) – mais larga */
+    #cashierHistoryCard .table thead th:nth-child(1),
+    #cashierHistoryCard .table tbody td:nth-child(1) {
+      width: 33%;
+      /* antes 34%: guardamos 2% para margem de segurança */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Fechamento (coluna 2) – mais larga */
+    #cashierHistoryCard .table thead th:nth-child(2),
+    #cashierHistoryCard .table tbody td:nth-child(2) {
+      width: 27%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Status (coluna 3) – mais estreita */
+    #cashierHistoryCard .table thead th:nth-child(3),
+    #cashierHistoryCard .table tbody td:nth-child(3) {
+      width: 18%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+      /* ou center, se preferir */
+    }
+
+    /* Entradas (coluna 4) – mais estreita */
+    #cashierHistoryCard .table thead th:nth-child(4),
+    #cashierHistoryCard .table tbody td:nth-child(4) {
+      width: 15%;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Ações (coluna 8) – compacta */
+    #cashierHistoryCard .table thead th:nth-child(8),
+    #cashierHistoryCard .table tbody td:nth-child(8) {
+      width: 5%;
+      white-space: nowrap;
+    }
+
+    /* Se o botão de ação ainda “apertar”, deixe só o ícone visível no mobile: */
+    #cashierHistoryCard .table tbody td:nth-child(8) .btn span,
+    #cashierHistoryCard .table thead th:nth-child(8) span {
+      display: none;
+      /* opcional: oculta textos dentro do botão/thead no mobile */
     }
 
     /* Fechar Caixa – inputs grandes, fáceis de tocar */
