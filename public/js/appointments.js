@@ -1460,6 +1460,17 @@ function toMoney(n) {
 }
 
 // ---- Finalizar e Receber ----
+async function fetchAppointmentExpected(appointmentId) {
+  // Ajuste esta rota se a sua for diferente
+  const r = await fetch(`/admin/appointments/${appointmentId}`);
+  const { appointment } = await r.json();
+
+  const total = Number(appointment?.totalPrice || 0);
+  const already = (appointment?.payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const expected = Math.max(0, total - already);
+
+  return { expected, total, already };
+}
 
 async function submitCheckout(appointmentId) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -1483,7 +1494,20 @@ async function submitCheckout(appointmentId) {
     notify({ type: 'warning', message: 'Informe pelo menos um pagamento com valor maior que 0,00.' });
     return;
   }
+  const expectedEl = document.getElementById('expectedAmount');
+  const expected = expectedEl ? parseFloat(expectedEl.dataset.expected || '0') : 0;
 
+  const sum = Math.round(payments.reduce((s, p) => s + Number(p.amount || 0), 0) * 100) / 100;
+
+  if (sum + 1e-6 < expected) {
+    notify({
+      type: 'warning',
+      message: `O total informado (${sum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}) é menor que o esperado (${expected.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}).`
+    });
+    return;
+  }
+
+  
   payments.forEach(p => { if (p.notes.length > 200) p.notes = p.notes.slice(0, 200); });
 
   const btn = document.getElementById('finalizarCheckoutBtn');
@@ -1560,56 +1584,26 @@ async function submitCheckout(appointmentId) {
 
 
 
-function openCheckoutModal(appointmentId) {
-  const modal = document.getElementById('checkoutModal');
-  if (!modal) {
-    notify({ type: 'error', message: 'Modal de checkout não encontrado!' });
-    return;
-  }
+async function openCheckoutModal(appointmentId) {
+  try { closeAllMenus?.(); } catch(_) {}
+  try { closeActionPanel?.(); } catch(_) {}
 
-  // Preencher hidden field com o ID do agendamento
+  const modal = document.getElementById('checkoutModal');
+  if (!modal) { notify({ type: 'error', message: 'Modal de checkout não encontrado!' }); return; }
+
+  if (modal.parentElement !== document.body) document.body.appendChild(modal);
+
+  // Preenche o hidden
   const hidden = document.getElementById('checkoutAppointmentId');
   if (hidden) hidden.value = appointmentId;
 
-  // Resetar corpo da tabela (tbody) com 1 linha padrão
+  // Linhas default (mantém seu código)
   const tbody = document.querySelector('#checkoutPaymentsTable tbody');
   if (tbody) {
     tbody.innerHTML = `
-      <tr>
-        <td>
-          <select class="form-select method-select">
-            <option value="cash">Dinheiro</option>
-            <option value="pix">Pix</option>
-            <option value="credit_card">Cartão Crédito</option>
-            <option value="debit_card">Cartão Débito</option>
-            <option value="voucher">Voucher</option>
-            <option value="other">Outros</option>
-          </select>
-        </td>
-        <td>
-          <!-- use placeholder ao invés de default 0.00 para evitar envio acidental -->
-          <input type="number" class="form-control amount-input" min="0.01" step="0.01" placeholder="0,00">
-        </td>
-        <td>
-          <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
-        </td>
-      </tr>
-    `;
-  }
-
-  // Abrir modal
-  const bsModal = new bootstrap.Modal(modal);
-  bsModal.show();
-}
-
-// Adicionar nova linha de pagamento
-document.getElementById('addPaymentRow')?.addEventListener('click', () => {
-  const tbody = document.querySelector('#checkoutPaymentsTable tbody');
-  if (!tbody) return;
-  const row = document.createElement('tr');
-  row.innerHTML = `
+     <tr>
     <td>
-      <select class="form-select method-select">
+      <select class="form-select form-select-sm method-select">
         <option value="cash">Dinheiro</option>
         <option value="pix">Pix</option>
         <option value="credit_card">Cartão Crédito</option>
@@ -1619,12 +1613,61 @@ document.getElementById('addPaymentRow')?.addEventListener('click', () => {
       </select>
     </td>
     <td>
-      <input type="number" class="form-control amount-input" min="0.01" step="0.01" placeholder="0,00">
+      <input type="number" class="form-control form-control-sm amount-input" min="0.01" step="0.01" placeholder="0,00">
     </td>
     <td>
-      <input type="text" class="form-control notes-input" placeholder="Obs. opcional">
+      <input type="text" class="form-control form-control-sm notes-input" placeholder="Obs. opcional">
     </td>
-  `;
+  </tr>
+`;
+  }
+
+  // 🔢 Busca e exibe o valor esperado
+  try {
+    const { expected } = await fetchAppointmentExpected(appointmentId);
+    const expectedEl = document.getElementById('expectedAmount');
+    if (expectedEl) {
+      expectedEl.dataset.expected = String(expected);
+      expectedEl.textContent = expected.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+  } catch (_) {
+    // se der erro, mantém 0 e deixa o back-end validar
+  }
+
+  // Garante fechar o menu ao exibir
+  modal.addEventListener('show.bs.modal', () => {
+    try { closeAllMenus?.(); } catch(_) {}
+    try { closeActionPanel?.(); } catch(_) {}
+  }, { once: true });
+
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+}
+
+
+// Adicionar nova linha de pagamento
+document.getElementById('addPaymentRow')?.addEventListener('click', () => {
+  const tbody = document.querySelector('#checkoutPaymentsTable tbody');
+  if (!tbody) return;
+  const row = document.createElement('tr');
+  row.innerHTML = `
+     <td>
+    <select class="form-select form-select-sm method-select">
+      <option value="cash">Dinheiro</option>
+      <option value="pix">Pix</option>
+      <option value="credit_card">Cartão Crédito</option>
+      <option value="debit_card">Cartão Débito</option>
+      <option value="voucher">Voucher</option>
+      <option value="other">Outros</option>
+    </select>
+  </td>
+  <td>
+    <input type="number" class="form-control form-control-sm amount-input" min="0.01" step="0.01" placeholder="0,00">
+  </td>
+  <td>
+    <input type="text" class="form-control form-control-sm notes-input" placeholder="Obs. opcional">
+  </td>
+`;
   tbody.appendChild(row);
 });
 

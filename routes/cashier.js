@@ -74,8 +74,30 @@ router.post('/expenses', async (req, res) => {
 
     // Verifica sessão aberta
     const session = await CashSession.findOne({ where: { status: 'open' } });
+
     if (!session) {
       return res.status(400).json({ success: false, error: 'Não há caixa aberto.' });
+    }
+    if (String(method).toLowerCase() === 'cash') {
+      
+      const paymentsCash = await Payment.sum('amount', {
+        where: { cashSessionId: session.id, method: 'cash' }
+      }) || 0;
+
+     
+      const expensesCash = await Expense.sum('amount', {
+        where: { cashSessionId: session.id, method: 'cash' }
+      }) || 0;
+
+      const opening = Number(session.openingAmount || 0);
+      const availableCash = opening + Number(paymentsCash) - Number(expensesCash);
+
+      if (Number(amount) > availableCash) {
+        return res.status(400).json({
+          success: false,
+          error: `Saldo insuficiente no caixa para retirada em dinheiro. Disponível: R$ ${availableCash.toFixed(2)}`
+        });
+      }
     }
 
     const expense = await Expense.create({
