@@ -29,9 +29,9 @@
                 <input type="date" class="form-control" name="endDate" id="endDate" value="{{filters.endDate}}">
               </div>
               <div class="col-md-3">
-                <label class="form-label">Barbeiro</label>
+                <label class="form-label">Profissional</label>
                 <select name="barberId" id="barberId"  class="form-control">
-                  <option value="">Todos os barbeiros</option>
+                  <option value="">Todos os Profissionais</option>
                   {{#each barbers}}
                   <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
                   {{/each}}
