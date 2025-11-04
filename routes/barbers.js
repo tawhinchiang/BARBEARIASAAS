@@ -93,23 +93,23 @@ router.get('/', async (req, res) => {
       };
     });
 
-    log(`${barbers.length} barbeiros carregados`);
+    log(`${barbers.length} Profissionais carregados`);
     const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     res.render('admin/barbers', {
 
-      title: 'Gerenciar Barbeiros',
-      pageTitle: 'Gerenciar Barbeiros',
+      title: 'Gerenciar Profissionais',
+      pageTitle: 'Gerenciar Profissionais',
       adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-admin.png',
       barbers: barbersWithStats,
       layout: 'admin'
     });
   } catch (error) {
-    logError('Erro ao carregar barbeiros', error);
+    logError('Erro ao carregar Profissionais', error);
     res.render('admin/barbers', {
-      title: 'Gerenciar Barbeiros',
+      title: 'Gerenciar Profissionais',
       barbers: [],
-      error: 'Erro ao carregar barbeiros',
+      error: 'Erro ao carregar Profissionais',
       layout: 'admin'
     });
   }
@@ -118,7 +118,7 @@ router.get('/', async (req, res) => {
 // ===== CRIAR BARBEIRO =====
 router.post('/create', upload.single('photo'), async (req, res) => {
   try {
-    log('Criando novo barbeiro', req.body);
+    log('Criando novo Profissionais', req.body);
 
     const { name, phone, email, cpf, specialties, workingHours, isActive } = req.body;
 
@@ -163,16 +163,16 @@ router.post('/create', upload.single('photo'), async (req, res) => {
 
     const barber = await Barber.create(barberData);
 
-    log('Barbeiro criado com sucesso', { id: barber.id, name: barber.name, photo: barber.photo });
-    console.log('Barbeiro criado:', barber.toJSON()); // <-- Adicione isso
+    log('Profissional criado com sucesso', { id: barber.id, name: barber.name, photo: barber.photo });
+    console.log('Profissional criado:', barber.toJSON()); // <-- Adicione isso
     res.json({
       success: true,
-      message: 'Barbeiro criado com sucesso',
+      message: 'Profissional criado com sucesso',
       barber: barber
     });
 
   } catch (error) {
-    logError('Erro ao criar barbeiro', error);
+    logError('Erro ao criar Profissionais', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'
@@ -184,7 +184,7 @@ router.post('/create', upload.single('photo'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    log(`Buscando barbeiro ID: ${id}`);
+    log(`Buscando Profissional ID: ${id}`);
 
     const barber = await Barber.findByPk(id, {
       include: [
@@ -203,18 +203,18 @@ router.get('/:id', async (req, res) => {
     if (!barber) {
       return res.status(404).json({
         success: false,
-        error: 'Barbeiro não encontrado'
+        error: 'Profissional não encontrado'
       });
     }
 
-    log('Barbeiro encontrado', { id: barber.id, name: barber.name });
+    log('Profissional encontrado', { id: barber.id, name: barber.name });
 
     res.json({
       success: true,
       barber: barber
     });
   } catch (error) {
-    logError('Erro ao buscar barbeiro', error);
+    logError('Erro ao buscar Profissional', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'
@@ -226,13 +226,13 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', upload.single('photo'), async (req, res) => {
   try {
     const { id } = req.params;
-    log(`Atualizando barbeiro ID: ${id}`, req.body);
+    log(`Atualizando Profissional ID: ${id}`, req.body);
 
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
         success: false,
-        error: 'Barbeiro não encontrado'
+        error: 'Profissional não encontrado'
       });
     }
 
@@ -249,7 +249,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       if (existingBarber) {
         return res.status(400).json({
           success: false,
-          error: 'CPF já cadastrado para outro barbeiro'
+          error: 'CPF já cadastrado para outro Profissional'
         });
       }
     }
@@ -278,15 +278,15 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
 
     await barber.update(updateData);
 
-    log('Barbeiro atualizado com sucesso', { id: barber.id, name: barber.name });
+    log('Profissional atualizado com sucesso', { id: barber.id, name: barber.name });
 
     res.json({
       success: true,
-      message: 'Barbeiro atualizado com sucesso',
+      message: 'Profissional atualizado com sucesso',
       barber: barber
     });
   } catch (error) {
-    logError('Erro ao atualizar barbeiro', error);
+    logError('Erro ao atualizar Profissional', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'
@@ -298,13 +298,13 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    log(`Deletando barbeiro ID: ${id}`);
+    log(`Deletando Profissional ID: ${id}`);
 
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
         success: false,
-        error: 'Barbeiro não encontrado'
+        error: 'Profissional não encontrado'
       });
     }
 
@@ -324,7 +324,7 @@ router.delete('/:id', async (req, res) => {
     if (futureAppointments > 0) {
       return res.status(400).json({
         success: false,
-        error: `Não é possível deletar. Barbeiro tem ${futureAppointments} agendamento(s) futuro(s).`
+        error: `Não é possível deletar. Profissional tem ${futureAppointments} agendamento(s) futuro(s).`
       });
     }
 
@@ -338,14 +338,14 @@ router.delete('/:id', async (req, res) => {
 
     await barber.destroy();
 
-    log('Barbeiro deletado com sucesso', { id, name: barber.name });
+    log('Profissional deletado com sucesso', { id, name: barber.name });
 
     res.json({
       success: true,
-      message: 'Barbeiro deletado com sucesso'
+      message: 'Profissional deletado com sucesso'
     });
   } catch (error) {
-    logError('Erro ao deletar barbeiro', error);
+    logError('Erro ao deletar Profissional', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor'
@@ -359,13 +359,13 @@ router.get('/:id/report', async (req, res) => {
     const { id } = req.params;
     const { startDate, endDate } = req.query;
 
-    log(`Gerando relatório para barbeiro ID: ${id}`, { startDate, endDate });
+    log(`Gerando relatório para Profissional ID: ${id}`, { startDate, endDate });
 
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
         success: false,
-        error: 'Barbeiro não encontrado'
+        error: 'Profissional não encontrado'
       });
     }
 
@@ -461,13 +461,13 @@ router.get('/:id/report', async (req, res) => {
 router.patch('/:id/toggle', async (req, res) => {
   try {
     const { id } = req.params;
-    log(`Alterando status do barbeiro ID: ${id}`);
+    log(`Alterando status do Profissional ID: ${id}`);
 
     const barber = await Barber.findByPk(id);
     if (!barber) {
       return res.status(404).json({
         success: false,
-        error: 'Barbeiro não encontrado'
+        error: 'Profissional não encontrado'
       });
     }
 
@@ -480,7 +480,7 @@ router.patch('/:id/toggle', async (req, res) => {
 
     res.json({
       success: true,
-      message: `Barbeiro ${barber.isActive ? 'ativado' : 'desativado'} com sucesso`,
+      message: `Profissional ${barber.isActive ? 'ativado' : 'desativado'} com sucesso`,
       isActive: barber.isActive
     });
   } catch (error) {

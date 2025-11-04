@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   modalElement.addEventListener('hidden.bs.modal', () => {
     form.reset();
     form.barberId.value = '';
-    modalTitle.textContent = 'Novo Barbeiro';
+    modalTitle.textContent = 'Novo Profissional';
     document.getElementById('photoPreview').classList.add('d-none');
   });
   modalElement.addEventListener('shown.bs.modal', () => {
