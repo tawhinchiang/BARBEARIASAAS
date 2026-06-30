@@ -34,6 +34,10 @@ Para preparar e rodar o projeto localmente, siga:
 
 [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)
 
+Para ver o mapeamento do dump antigo para o schema local, veja:
+
+[docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
+
 O guia inclui:
 
 - instalacao;
@@ -54,6 +58,7 @@ O guia inclui:
 cd C:\Users\milenasilesio\Downloads\BARBEARIASAAS
 copy .env.example .env
 npm install
+npm run db:schema
 npm run seed
 npm start
 ```
@@ -107,7 +112,8 @@ Assim o app cria agendamentos sem depender do WhatsApp. Para testar envio automa
 ```powershell
 npm start          # inicia o servidor
 npm run dev        # inicia com nodemon
-npm run seed       # cria tabelas principais e dados iniciais
+npm run db:schema  # cria o schema mapeado do dump antigo
+npm run seed       # popula dados iniciais e sincroniza models principais
 npm run migrate    # legado; migrations precisam revisao antes de uso confiavel
 ```
 

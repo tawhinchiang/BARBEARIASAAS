@@ -150,15 +150,24 @@ Teste via psql:
 
 ## 6. Criar Tabelas E Dados Iniciais
 
-As migrations atuais sao legadas/incompletas. Para rodar localmente, use o seed:
+As migrations atuais sao legadas/incompletas. Para um banco local novo, use o schema mapeado do backup antigo e depois o seed:
 
 ```powershell
+npm run db:schema
 npm run seed
 ```
 
+O comando `db:schema` aplica o arquivo:
+
+```txt
+database/schema-from-backup.sql
+```
+
+Esse arquivo foi reconstruido a partir do dump SQL antigo e cria as tabelas encontradas no backup, incluindo tabelas de financeiro, logs de mensagens e Google Calendar.
+
 O seed:
 
-- sincroniza os models principais com o banco;
+- sincroniza os models principais com o banco atual;
 - cria o admin local;
 - cria profissionais iniciais;
 - cria servicos iniciais;
@@ -299,6 +308,7 @@ npm start
 
 ```powershell
 npm install
+npm run db:schema
 npm run seed
 npm start
 npm run dev
@@ -370,7 +380,10 @@ Subir:
 - codigo-fonte;
 - `README.md`;
 - `docs/LOCAL_SETUP.md`;
+- `docs/DATABASE_SCHEMA.md`;
 - `.env.example`;
+- `database/schema-from-backup.sql`;
+- `scripts/applySchema.js`;
 - `package.json`;
 - `package-lock.json`;
 - migrations existentes, mesmo que precisem revisao futura.
