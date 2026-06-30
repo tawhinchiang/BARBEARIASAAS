@@ -2,7 +2,7 @@
 require('dotenv').config();
 
 const { syncDatabase } = require('./models');
-const { initializeWhatsApp } = require('./utils/whatsapp');
+const { initializeWhatsApp, isWhatsAppEnabled } = require('./utils/whatsapp');
 const app = require('./app');
 
 const http = require('http');
@@ -52,14 +52,18 @@ async function startServer() {
     });
 
     // 4) Inicializa WhatsApp e CRON em background
-    (async () => {
-      try {
-        console.log('[BOOT] Inicializando WhatsApp em background...');
-        await initializeWhatsApp();
-      } catch (err) {
-        console.error('[BOOT] Falha ao inicializar WhatsApp (app continua):', err?.message || err);
-      }
-    })();
+    if (isWhatsAppEnabled()) {
+      (async () => {
+        try {
+          console.log('[BOOT] Inicializando WhatsApp em background...');
+          await initializeWhatsApp();
+        } catch (err) {
+          console.error('[BOOT] Falha ao inicializar WhatsApp (app continua):', err?.message || err);
+        }
+      })();
+    } else {
+      console.log('[BOOT] WhatsApp desabilitado por WHATSAPP_ENABLED=false');
+    }
 
     if (!global.__CRON_STARTED__) {
       global.__CRON_STARTED__ = true;

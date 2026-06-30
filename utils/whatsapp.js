@@ -1,7 +1,7 @@
 const whatsapp = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const SafeLocalAuth = require('./CustomLocalAuth');
-const {cleanPhone } = require('./smartphoneformatter');
+const { cleanPhone, findWhatsAppContactId } = require('./smartphoneformatter');
 const deleteSession = require('../utils/deleteSession');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -9,6 +9,7 @@ const path = require("path");
 const puppeteer = require('puppeteer');
 const chromiumPath = puppeteer.executablePath();
 const DEBUG = process.env.DEBUG_WHATSAPP === 'true';
+const WHATSAPP_ENABLED = process.env.WHATSAPP_ENABLED !== 'false';
 const TIMEOUTS = {
   send: parseInt(process.env.WHATSAPP_SEND_TIMEOUT || '10000', 10),
   ack: parseInt(process.env.WHATSAPP_ACK_TIMEOUT || '12000', 10),
@@ -75,6 +76,11 @@ function delay(ms) {
 
 // Inicializar cliente WhatsApp
 async function initializeWhatsApp() {
+  if (!WHATSAPP_ENABLED) {
+    console.log('[WHATSAPP] Integração desabilitada por WHATSAPP_ENABLED=false');
+    return;
+  }
+
   // Destrava lock 'fantasma': initializing=true sem client por > 15s
   if (initializing && !client) {
     const elapsed = Date.now() - (initializingStartedAt || 0);
@@ -390,14 +396,24 @@ async function sendMessageWithTimeout(numberId, message, timeoutMs = TIMEOUTS.se
 }
 
 async function sendWhatsAppMessage(phone, message) {
-  
-
-  await ensureClientReady();
-  await waitWhatsAppReady(30000);
-
   try {
+    if (!WHATSAPP_ENABLED) {
+      return { ok: false, delivered: false, error: 'disabled' };
+    }
+
+    if (!client) {
+      return { ok: false, delivered: false, error: 'not-initialized' };
+    }
+
+    const ready = isReady || await waitWhatsAppReady(30000);
+    if (!ready) {
+      return { ok: false, delivered: false, error: 'not-ready' };
+    }
+
+    await ensureClientReady();
+
     const cleaned = cleanPhone(phone);
-    const numberId = await client.getNumberId(cleaned);
+    const numberId = await findWhatsAppContactId(client, cleaned);
 
     if (!numberId) {
       console.warn(`[WHATSAPP] ⚠️ Número não registrado no WhatsApp: ${cleaned}`);
@@ -447,7 +463,7 @@ async function sendWhatsAppMessageDebug(phone, message) {
     await waitWhatsAppReady(30000);
 
     const cleaned = cleanPhone(phone);
-    const numberId = await client.getNumberId(cleaned);
+    const numberId = await findWhatsAppContactId(client, cleaned);
 
     if (!numberId) {
       console.warn(`[DEBUG] ⚠️ Número não registrado no WhatsApp: ${cleaned}`);
@@ -493,13 +509,17 @@ async function sendWhatsAppMessageDebug(phone, message) {
 
 function getWhatsAppStatus() {
   return {
+    isEnabled: WHATSAPP_ENABLED,
     isConnected: isReady,
     state: lastState,           // Novo: vizualização do estado (CONNECTED/OPENING/etc.)
     qrCode: isReady ? null : latestQrCode
   };
 }
+function isWhatsAppEnabled() {
+  return WHATSAPP_ENABLED;
+}
 function isWhatsAppReady() {
-  return isReady;
+  return WHATSAPP_ENABLED && isReady;
 }
 
 async function waitWhatsAppReady(timeoutMs = 20000) {
@@ -540,6 +560,7 @@ module.exports = {
   getWhatsAppStatus,
   getLastQRCode,
   disconnectWhatsApp,
+  isWhatsAppEnabled,
   isWhatsAppReady,
   waitWhatsAppReady
 };

@@ -7,6 +7,53 @@ const { isAuthenticated } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
 const router = express.Router();
+const WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DEFAULT_WORKING_HOURS = {
+  monday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  tuesday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  wednesday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  thursday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  friday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  saturday: { morning: '08:00-12:00', afternoon: '14:00-16:00' },
+  sunday: { morning: 'closed', afternoon: 'closed' }
+};
+
+function normalizePeriod(value, fallback = 'closed') {
+  const trimmed = String(value || '').trim();
+  return trimmed || fallback;
+}
+
+function parseSpecialties(value) {
+  if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+  return String(value || '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean);
+}
+
+function buildWorkingHoursFromBody(body, fallback = DEFAULT_WORKING_HOURS) {
+  const nested = body.workingHours && typeof body.workingHours === 'object'
+    ? body.workingHours
+    : {};
+
+  return WEEKDAYS.reduce((hours, day) => {
+    const current = fallback?.[day] || DEFAULT_WORKING_HOURS[day] || {};
+    const dayBody = nested[day] || {};
+
+    hours[day] = {
+      morning: normalizePeriod(
+        body[`workingHours[${day}][morning]`] ?? dayBody.morning,
+        current.morning || 'closed'
+      ),
+      afternoon: normalizePeriod(
+        body[`workingHours[${day}][afternoon]`] ?? dayBody.afternoon,
+        current.afternoon || 'closed'
+      )
+    };
+
+    return hours;
+  }, {});
+}
 
 // ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
@@ -120,7 +167,7 @@ router.post('/create', upload.single('photo'), async (req, res) => {
   try {
     log('Criando novo Profissionais', req.body);
 
-    const { name, phone, email, cpf, specialties, workingHours, isActive } = req.body;
+    const { name, phone, email, cpf, specialties, isActive } = req.body;
 
     // Validações
     if (!name || !phone || !cpf) {
@@ -155,8 +202,8 @@ router.post('/create', upload.single('photo'), async (req, res) => {
       phone: phone.trim(),
       email: email ? email.trim() : null,
       cpf: cpf.trim(),
-      specialties: specialties ? specialties.trim() : null,
-      workingHours: typeof workingHours === 'object' ? workingHours : barber.workingHours,
+      specialties: parseSpecialties(specialties),
+      workingHours: buildWorkingHoursFromBody(req.body),
       isActive: isActive === 'true' || isActive === true || isActive === 'on',
       photo: req.file ? `/uploads/barbers/${req.file.filename}` : null
     };
@@ -236,7 +283,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
       });
     }
 
-    const { name, phone, email, cpf, specialties, workingHours, isActive } = req.body;
+    const { name, phone, email, cpf, specialties, isActive } = req.body;
 
     // Verificar se CPF já existe em outro barbeiro
     if (cpf && cpf !== barber.cpf) {
@@ -257,11 +304,11 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     const updateData = {
       name: name ? name.trim() : barber.name,
       phone: phone ? phone.trim() : barber.phone,
-      email: email ? email.trim() : barber.email,
+      email: email ? email.trim() : null,
       cpf: cpf ? cpf.trim() : barber.cpf,
-      specialties: specialties ? specialties.trim() : barber.specialties,
-      workingHours: typeof workingHours === 'object' ? workingHours : null,
-      isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : barber.isActive
+      specialties: specialties !== undefined ? parseSpecialties(specialties) : barber.specialties,
+      workingHours: buildWorkingHoursFromBody(req.body, barber.workingHours),
+      isActive: isActive === 'true' || isActive === true || isActive === 'on'
     };
 
     // Se nova foto foi enviada

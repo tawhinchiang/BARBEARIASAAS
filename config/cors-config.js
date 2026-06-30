@@ -65,8 +65,8 @@ const corsConfig = {
 const adminApiCorsConfig = {
   development: {
     allowedOrigins: [
-      'lochalhost:3000',
-      'lochalhost:3000/admin'
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
     
     ],
     allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

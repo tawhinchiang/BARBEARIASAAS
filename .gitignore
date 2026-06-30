@@ -3,6 +3,7 @@
 # ========================================
 .env
 node_modules/
+.local-postgres/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

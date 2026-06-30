@@ -657,17 +657,8 @@ phoneInput.addEventListener('input', function (e) {
 
 // Formatar telefone para WhatsApp
 function formatPhoneForWhatsApp(phone) {
-  let digits = phone.replace(/\D/g, '');
-
-  if (digits.length === 11 && digits[2] === '9') {
-    digits = digits.slice(0, 2) + digits.slice(3);
-  }
-
-  if (digits.length === 10) {
-    return '55' + digits;
-  }
-
-  return null;
+  const digits = phone.replace(/\D/g, '');
+  return (digits.length === 10 || digits.length === 11) ? digits : null;
 }
 
 // Validação do formulário do cliente

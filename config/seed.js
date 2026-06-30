@@ -1,182 +1,141 @@
-// const bcrypt = require('bcryptjs');
-// const { syncDatabase } = require('../models');
+const bcrypt = require('bcryptjs');
+const { sequelize, User, Barber, ServiceType, SystemConfig } = require('../models');
 
-// async function seedDatabase() {
-//   try {
-//     // Sincronizar banco (recriar tabelas)
-//     await syncDatabase(true);
-    
-//     const { User, Barber, ServiceType } = require('../models');
-    
-//     // Criar usuário admin
-//     const hashedPassword = await bcrypt.hash('admin123', 10);
-//     await User.create({
-//       username: 'admin',
-//       password: hashedPassword,
-//       email: 'admin@barbearia.com',
-//       role: 'admin',
-//       isActive: true
-//     });
-    
-//     // Criar barbeiros
-//     await Barber.bulkCreate([
-//       {
-//         name: 'Junior Alves',
-//         phone: '(11) 99999-9999',
-//         email: 'joao@barbearia.com',
-//         specialties: ['Corte', 'Barba', 'Bigode'],
-//         workingHours: {
-//           monday: '09:00-19:40',
-//           tuesday: '09:00-19:40',
-//           wednesday: '09:00-19:40',
-//           thursday: '09:00-19:40',
-//           friday: '09:00-19:40',
-//           saturday: '09:00-19:40',
-//           sunday: 'closed'
-//         },
-//         isActive: true
-//       },
-//       {
-//         name: 'Daniel Barone',
-//         phone: '(11) 88888-8888',
-//         email: '',
-//         specialties: ['Corte', 'Barba', 'Sobrancelha'],
-//         workingHours: {
-//            monday: '09:00-19:40',
-//           tuesday: '09:00-19:40',
-//           wednesday: '09:00-19:40',
-//           thursday: '09:00-19:40',
-//           friday: '09:00-19:40',
-//           saturday: '09:00-19:40',
-//           sunday: 'closed'
-//         },
-//         isActive: true
-//       },
-//       {
-//         name: 'Pedro Assunção',
-//         phone: '(11) 77777-7777',
-//         email: '',
-//         specialties: ['Corte', 'Barba', 'Relaxamento'],
-//         workingHours: {
-//           monday: '09:00-19:40',
-//           tuesday: '09:00-19:40',
-//           wednesday: '09:00-19:40',
-//           thursday: '09:00-19:40',
-//           friday: '09:00-19:40',
-//           saturday: '09:00-19:40',
-//           sunday: 'closed'
-//         },
-//         isActive: true
-//       } , {
-//         name: 'Enzo Muralha',
-//         phone: '(11) 77777-7777',
-//         email: '',
-//         specialties: ['Corte', 'Barba', 'Relaxamento'],
-//         workingHours: {
-//           monday: '09:00-19:40',
-//           tuesday: '09:00-19:40',
-//           wednesday: '09:00-19:40',
-//           thursday: '09:00-19:40',
-//           friday: '09:00-19:40',
-//           saturday: '09:00-19:40',
-//           sunday: 'closed'
-//         },
-//         isActive: true
-//       },{
-//         name: 'Adenilson',
-//         phone: '(11) 77777-7777',
-//         email: '',
-//         specialties: ['Corte', 'Barba', 'Relaxamento'],
-//         workingHours: {
-//            monday: '09:00-19:40',
-//           tuesday: '09:00-19:40',
-//           wednesday: '09:00-19:40',
-//           thursday: '09:00-19:40',
-//           friday: '09:00-19:40',
-//           saturday: '09:00-19:40',
-//           sunday: 'closed'
-//         },
-//         isActive: true
-//       },{
-//         name: 'Hugo Gonçalves',
-//         phone: '(11) 77777-7777',
-//         email: 'carlos@barbearia.com',
-//         specialties: ['Corte', 'Barba', 'Relaxamento'],
-//         workingHours: {
-//            monday: '09:00-19:40',
-//           tuesday: '09:00-19:40',
-//           wednesday: '09:00-19:40',
-//           thursday: '09:00-19:40',
-//           friday: '09:00-19:40',
-//           saturday: '09:00-19:40',
-//           sunday: 'closed'
-//         },
-//         isActive: true
-//       }
-//     ]);
-    
-//     // Criar tipos de serviço
-//     await ServiceType.bulkCreate([
-//       {
-//         name: 'Corte Simples',
-//         description: 'Corte de cabelo tradicional',
-//         price: 25.00,
-//         duration: 30,
-//         isActive: true
-//       },
-//       {
-//         name: 'Corte + Barba',
-//         description: 'Corte de cabelo + barba completa',
-//         price: 35.00,
-//         duration: 45,
-//         isActive: true
-//       },
-//       {
-//         name: 'Barba Completa',
-//         description: 'Barba, bigode e acabamento',
-//         price: 20.00,
-//         duration: 30,
-//         isActive: true
-//       },
-//       {
-//         name: 'Corte Premium',
-//         description: 'Corte estilizado + lavagem + finalização',
-//         price: 45.00,
-//         duration: 60,
-//         isActive: true
-//       },
-//       {
-//         name: 'Sobrancelha',
-//         description: 'Design e limpeza de sobrancelha',
-//         price: 15.00,
-//         duration: 20,
-//         isActive: true
-//       },
-//       {
-//         name: 'Relaxamento',
-//         description: 'Relaxamento capilar completo',
-//         price: 80.00,
-//         duration: 120,
-//         isActive: true
-//       }
-//     ]);
-    
-//     console.log('✅ Banco de dados populado com sucesso!');
-//     console.log('👤 Usuário admin criado: admin / admin123');
-//     console.log('💇 3 barbeiros criados');
-//     console.log('✂️ 6 tipos de serviço criados');
-    
-//   } catch (error) {
-//     console.error('❌ Erro ao popular banco de dados:', error);
-//   } finally {
-//     process.exit();
-//   }
-// }
+const DEFAULT_WORKING_HOURS = {
+  monday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  tuesday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  wednesday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  thursday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  friday: { morning: '08:00-12:00', afternoon: '14:00-18:00' },
+  saturday: { morning: '08:00-12:00', afternoon: '14:00-16:00' },
+  sunday: { morning: 'closed', afternoon: 'closed' }
+};
 
-// // Executar se chamado diretamente
-// if (require.main === module) {
-//   seedDatabase();
-// }
+const barbers = [
+  {
+    name: 'Junior Alves',
+    phone: '(63) 99999-0001',
+    email: 'junior@example.com',
+    cpf: '000.000.000-01',
+    specialties: ['Corte', 'Barba'],
+    photo: '/images/barbers/junior_alves.png'
+  },
+  {
+    name: 'Daniel Barone',
+    phone: '(63) 99999-0002',
+    email: 'daniel@example.com',
+    cpf: '000.000.000-02',
+    specialties: ['Corte', 'Acabamento'],
+    photo: '/images/barbers/daniel_barone.png'
+  },
+  {
+    name: 'Pedro Assuncao',
+    phone: '(63) 99999-0003',
+    email: 'pedro@example.com',
+    cpf: '000.000.000-03',
+    specialties: ['Corte', 'Sobrancelha'],
+    photo: '/images/barbers/pedro_assuncao.png'
+  }
+];
 
-// module.exports = { seedDatabase };
+const services = [
+  {
+    name: 'Corte Simples',
+    description: 'Corte de cabelo tradicional',
+    price: 25,
+    duration: 30,
+    isActive: true,
+    isPromo: false
+  },
+  {
+    name: 'Corte + Barba',
+    description: 'Corte de cabelo e barba completa',
+    price: 40,
+    duration: 60,
+    isActive: true,
+    isPromo: false
+  },
+  {
+    name: 'Barba Completa',
+    description: 'Barba, bigode e acabamento',
+    price: 20,
+    duration: 30,
+    isActive: true,
+    isPromo: false
+  },
+  {
+    name: 'Sobrancelha',
+    description: 'Design e limpeza de sobrancelha',
+    price: 15,
+    duration: 20,
+    isActive: true,
+    isPromo: false
+  }
+];
 
+async function upsertBy(Model, where, values) {
+  const [record, created] = await Model.findOrCreate({
+    where,
+    defaults: values
+  });
+
+  if (!created) {
+    await record.update(values);
+  }
+
+  return record;
+}
+
+async function seedDatabase() {
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync();
+
+    const password = await bcrypt.hash('admin123', 10);
+    await User.findOrCreate({
+      where: { username: 'admin' },
+      defaults: {
+        username: 'admin',
+        password,
+        email: 'admin@barbearia.local',
+        role: 'admin',
+        isActive: true
+      }
+    });
+
+    for (const barber of barbers) {
+      await upsertBy(Barber, { cpf: barber.cpf }, {
+        ...barber,
+        workingHours: DEFAULT_WORKING_HOURS,
+        isActive: true
+      });
+    }
+
+    for (const service of services) {
+      await upsertBy(ServiceType, { name: service.name }, service);
+    }
+
+    await upsertBy(SystemConfig, { key: 'reminderHoursBefore' }, {
+      key: 'reminderHoursBefore',
+      value: '5'
+    });
+    await upsertBy(SystemConfig, { key: 'followUpHoursAfter' }, {
+      key: 'followUpHoursAfter',
+      value: '2'
+    });
+
+    console.log('Seed concluido com sucesso.');
+    console.log('Admin local: admin / admin123');
+  } catch (error) {
+    console.error('Erro ao popular banco de dados:', error);
+    process.exitCode = 1;
+  } finally {
+    await sequelize.close();
+  }
+}
+
+if (require.main === module) {
+  seedDatabase();
+}
+
+module.exports = { seedDatabase };

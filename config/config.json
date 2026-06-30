@@ -1,28 +1,23 @@
-
 {
   "development": {
     "username": "postgres",
-    "password": "92162055",
-    "database": "barbershop_db", 
+    "password": "postgres",
+    "database": "barbeariadoblack_db",
+    "host": "127.0.0.1",
+    "port": 6543,
     "dialect": "postgres"
   },
   "test": {
     "username": "postgres",
-    "password": "92162055",
-    "database": "barbershop_db",
+    "password": "postgres",
+    "database": "barbeariadoblack_test",
     "host": "127.0.0.1",
+    "port": 6543,
     "dialect": "postgres"
   },
- "production": {
-  "username": "postgres",
-  "password": "92162055",
-  "database": "barbershop_db",
-  "host": "127.0.0.1",
-  "port": 6543,
-  "dialect": "postgres",
-  "logging": false
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres",
+    "logging": false
+  }
 }
-
-}
-
- 

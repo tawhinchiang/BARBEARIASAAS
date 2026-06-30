@@ -1215,7 +1215,7 @@ router.post('/api/appointments/:id/whatsapp', async (req, res) => {
     const msg = `Olá, ${appointment.client.firstName}! Seu agendamento em nossa barbearia está confirmado para o dia ${appointment.appointmentDate} às ${appointment.appointmentTime}.`;
     const sent = await sendWhatsAppMessage(appointment.client.phone, msg);
 
-    if (!sent) throw new Error('Erro ao enviar WhatsApp');
+    if (!sent?.ok) throw new Error(sent?.error || 'Erro ao enviar WhatsApp');
 
     await appointment.update({ whatsappSent: true });
 

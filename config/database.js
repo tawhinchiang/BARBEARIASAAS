@@ -1,13 +1,19 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+const database = process.env.DB_NAME || 'barbeariadoblack_db';
+const username = process.env.DB_USER || 'postgres';
+const password = process.env.DB_PASSWORD || 'postgres';
+const host = process.env.DB_HOST || 'localhost';
+const port = process.env.DB_PORT || 6543;
+
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
+  database,
+  username,
+  password,
   {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    host,
+    port,
     dialect: 'postgres',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
 
@@ -30,9 +36,9 @@ const sequelize = new Sequelize(
 );
 console.log('[DB-CONNECT]', {
   NODE_ENV: process.env.NODE_ENV,
-  DB_HOST: process.env.DB_HOST,
-  DB_NAME: process.env.DB_NAME,
-  DB_USER: process.env.DB_USER
+  DB_HOST: host,
+  DB_NAME: database,
+  DB_USER: username
 });
 
 module.exports = sequelize;

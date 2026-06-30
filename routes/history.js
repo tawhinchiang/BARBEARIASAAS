@@ -72,7 +72,8 @@ router.post('/send-code', async (req, res) => {
     const variants = buildPhoneVariants(cleanPhone);
     let sent = false;
     for (const v of variants) {
-      if (await sendWhatsAppMessage(v, msg)) {
+      const result = await sendWhatsAppMessage(v, msg);
+      if (result?.ok || result?.delivered) {
         sent = true;
         break;
       }
@@ -164,7 +165,7 @@ router.post('/verify-code', async (req, res) => {
       }
     });
 
-    if (record.attempts >= 5 || recentAttempts >= 10) {
+    if (recentAttempts >= 10) {
       return res.status(429).json({
         success: false,
         message: 'Muitas tentativas inválidas. Aguarde alguns minutos para tentar novamente.'
@@ -173,7 +174,6 @@ router.post('/verify-code', async (req, res) => {
 
     // Código inválido
     if (record.code !== code) {
-      await record.increment('attempts');
       return res.status(401).json({ success: false, message: 'Código incorreto.' });
     }
 
@@ -339,7 +339,8 @@ router.post('/cancel/:id', async (req, res) => {
   const variants = buildPhoneVariants(appointment.client.phone);
   let sent = false;
   for (const v of variants) {
-    if (await sendWhatsAppMessage(v, msg)) {
+    const result = await sendWhatsAppMessage(v, msg);
+    if (result?.ok || result?.delivered) {
       sent = true;
       break;
     }

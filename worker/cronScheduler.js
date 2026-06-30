@@ -7,6 +7,7 @@ const cleanupExpiredCodes = require('../utils/cleanUpCodes');
 
 const {
   sendWhatsAppMessage,
+  isWhatsAppEnabled,
   isWhatsAppReady,
   waitWhatsAppReady
 } = require('../utils/whatsapp');
@@ -43,12 +44,12 @@ async function getIntConfig(key, fallback) {
 
 cron.schedule('*/5 * * * *', async () => {
   // Garante sessão WhatsApp
-  if (!isWhatsAppReady()) {
+  let canSendWhatsApp = isWhatsAppEnabled() && isWhatsAppReady();
+  if (isWhatsAppEnabled() && !canSendWhatsApp) {
     console.log('⏳ WhatsApp ainda não conectado; aguardando até 15s...');
-    const ok = await waitWhatsAppReady(15000);
-    if (!ok) {
+    canSendWhatsApp = await waitWhatsAppReady(15000);
+    if (!canSendWhatsApp) {
       console.log('⏭️ WhatsApp não conectou a tempo; pulando este ciclo.');
-      return;
     }
   }
 
@@ -101,7 +102,8 @@ cron.schedule('*/5 * * * *', async () => {
 
       // === LEMBRETE (usa reminderSent, NÃO whatsappSent) ===
       const reminderTargetMin = reminderHours * 60;
-      if (!apt.reminderSent &&
+      if (canSendWhatsApp &&
+          !apt.reminderSent &&
           diffMin <= reminderTargetMin &&
           diffMin >= (reminderTargetMin - WINDOW_MIN)) {
 
@@ -143,7 +145,8 @@ Seu agendamento é hoje às ${hhmm} com ${barberName}. ✂️
 
       // === ACOMPANHAMENTO ===
       const followUpTargetMin = followUpHours * 60;
-      if (!apt.followUpSent &&
+      if (canSendWhatsApp &&
+          !apt.followUpSent &&
           sinceStartMin >= followUpTargetMin &&
           sinceStartMin < (followUpTargetMin + WINDOW_MIN)) {
 

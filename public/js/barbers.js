@@ -185,13 +185,20 @@ async function submitForm(e) {
 
   // validação de horários
   const hourFields = [
-    'defaultWorkingHour',
-    'workingHoursMonday',
-    'workingHoursTuesday',
-    'workingHoursWednesday',
-    'workingHoursThursday',
-    'workingHoursFriday',
-    'workingHoursSaturday'
+    'defaultMorningHour',
+    'defaultAfternoonHour',
+    'workingHoursMondayMorning',
+    'workingHoursMondayAfternoon',
+    'workingHoursTuesdayMorning',
+    'workingHoursTuesdayAfternoon',
+    'workingHoursWednesdayMorning',
+    'workingHoursWednesdayAfternoon',
+    'workingHoursThursdayMorning',
+    'workingHoursThursdayAfternoon',
+    'workingHoursFridayMorning',
+    'workingHoursFridayAfternoon',
+    'workingHoursSaturdayMorning',
+    'workingHoursSaturdayAfternoon'
   ];
 
   for (const fieldId of hourFields) {
@@ -271,12 +278,14 @@ window.editBarber = function (id) {
         form.phone.value = b.phone;
         form.email.value = b.email || '';
         form.cpf.value = b.cpf;
-        form.specialties.value = b.specialties || '';
+        form.specialties.value = Array.isArray(b.specialties) ? b.specialties.join(', ') : (b.specialties || '');
 
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         days.forEach(day => {
-          const input = document.querySelector(`[name="workingHours[${day}]"]`);
-          if (input) input.value = b.workingHours?.[day] || '';
+          const morning = document.querySelector(`[name="workingHours[${day}][morning]"]`);
+          const afternoon = document.querySelector(`[name="workingHours[${day}][afternoon]"]`);
+          if (morning) morning.value = b.workingHours?.[day]?.morning || '';
+          if (afternoon) afternoon.value = b.workingHours?.[day]?.afternoon || '';
         });
 
         form.isActive.checked = b.isActive;

@@ -7,14 +7,14 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 92162055
-      POSTGRES_DB: barbershop_db
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barbeariadoblack_db
     ports:
       - "6543:5432"
     volumes:
       - pgdata_external:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d barbershop_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d barbeariadoblack_db"]
       interval: 10s
       timeout: 5s
       retries: 5
