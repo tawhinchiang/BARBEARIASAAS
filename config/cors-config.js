@@ -134,37 +134,61 @@ production: {
 };
 
 // Função para criar configuração CORS dinâmica
+function resolveAllowedOrigins(config, req) {
+  const list = []
+    .concat(config && config.allowedOrigins ? config.allowedOrigins : [])
+    .concat(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : [])
+    .concat(process.env.BASE_URL ? [process.env.BASE_URL] : [])
+    .map(v => String(v || '').trim())
+    .filter(Boolean);
+  if (req && req.headers && req.headers.host) {
+    const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+    list.push(proto + '://' + req.headers.host);
+  }
+  return [...new Set(list)];
+}
+
+function isOriginAllowed(origin, allowedOrigins, req) {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    if (req && req.headers && req.headers.host) {
+      const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+      if (origin === proto + '://' + req.headers.host) return true;
+    }
+  } catch {}
+  const explicit = [
+    ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
+    ...(process.env.BASE_URL ? [process.env.BASE_URL] : [])
+  ].map(v => String(v || '').trim()).filter(Boolean);
+  if (explicit.length === 0) return true;
+  return false;
+}
+
 function createCorsConfig(configType = 'default') {
   const env = process.env.NODE_ENV || 'development';
-
   let config;
   switch (configType) {
     case 'admin':
-      config = adminApiCorsConfig[env];
+      config = adminApiCorsConfig[env] || adminApiCorsConfig.development;
       break;
     case 'public':
-      config = publicApiCorsConfig[env];
+      config = publicApiCorsConfig[env] || publicApiCorsConfig.development;
       break;
     default:
-      config = corsConfig[env];
+      config = corsConfig[env] || corsConfig.development;
   }
-
   return {
     origin: function (origin, callback) {
-      // Permitir requisições sem origin (ex: formulário POST tradicional, Postman)
       if (!origin) return callback(null, true);
-
-      // DEBUG: mostrar origem e lista permitida
-      console.log(`[CORS CHECK] Origin recebida: ${origin}`);
-      console.log(`[CORS CHECK] Permitidas: ${config.allowedOrigins.join(', ')}`);
-
-      // Verifica se a origin está permitida
-      if (config.allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        console.warn(`[CORS BLOQUEIO] Origin não permitida: ${origin}`);
-        return callback(new Error('Não permitido pelo CORS'), false);
-      }
+      const explicit = resolveAllowedOrigins(config).filter(Boolean);
+      if (explicit.includes(origin)) return callback(null, true);
+      const explicitEnv = [
+        ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
+        ...(process.env.BASE_URL ? [process.env.BASE_URL] : [])
+      ].map(v => String(v || '').trim()).filter(Boolean);
+      if (explicitEnv.length === 0) return callback(null, true);
+      return callback(new Error('Não permitido pelo CORS'), false);
     },
     methods: config.allowedMethods,
     allowedHeaders: config.allowedHeaders,
@@ -174,53 +198,21 @@ function createCorsConfig(configType = 'default') {
   };
 }
 
-// Middleware de logging para CORS
-function corsLogger(req, res, next) {
-  const origin = req.headers.origin;
-  const method = req.method;
-  
-  if (method === 'OPTIONS') {
-    console.log(`[CORS] Preflight request from: ${origin || 'unknown'}`);
-  } else if (origin) {
-    console.log(`[CORS] Request from: ${origin} - ${method} ${req.url}`);
-  }
-  
-  next();
-}
+function corsLogger(req, res, next) { next(); }
 
-// Middleware de validação adicional
 function additionalSecurityValidation(req, res, next) {
   const origin = req.headers.origin;
-  const userAgent = req.headers['user-agent'];
   const env = process.env.NODE_ENV || 'development';
-
-  // Bloquear user-agents suspeitos
-  const suspiciousUserAgents = [
-    'curl', 'wget', 'axios','okhttp','libwww','python-requests', 'bot', 'crawler','insomnia', 'aiohttp', 'httpclient', 'postman', 'java'
-  ];
-
-  if (userAgent && suspiciousUserAgents.some(ua => userAgent.toLowerCase().includes(ua))) {
-    console.warn(`[SECURITY] User-Agent suspeito bloqueado: ${userAgent}`);
-    return res.status(403).json({ error: 'Acesso negado' });
-  }
-
-  // 🔥 NOVO BLOCO - validar origem com base na ROTA acessada
-  let allowedOrigins = corsConfig[env].allowedOrigins;
-  if (req.url.startsWith('/admin')) {
-    allowedOrigins = adminApiCorsConfig[env].allowedOrigins;
-  } else if (req.url.startsWith('/api')) {
-    allowedOrigins = publicApiCorsConfig[env].allowedOrigins;
-  }
-
-  // Validar origem corretamente
-  if (origin && !allowedOrigins.includes(origin)) {
-    console.warn(`[SECURITY] Tentativa de acesso de origin não autorizada: ${origin}`);
+  let config = corsConfig[env] || corsConfig.development;
+  if (req.url.startsWith('/admin')) config = adminApiCorsConfig[env] || adminApiCorsConfig.development;
+  else if (req.url.startsWith('/api')) config = publicApiCorsConfig[env] || publicApiCorsConfig.development;
+  const allowedOrigins = resolveAllowedOrigins(config, req);
+  if (origin && !isOriginAllowed(origin, allowedOrigins, req)) {
     return res.status(403).json({
       error: 'Acesso negado por CORS',
       message: 'Sua origem não está autorizada a acessar este recurso'
     });
   }
-
   next();
 }
 
@@ -232,4 +224,3 @@ module.exports = {
   adminApiCorsConfig,
   publicApiCorsConfig
 };
-
