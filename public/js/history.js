@@ -3,8 +3,8 @@ let resendCooldown = 50; // segundos
 let codeExpireSeconds = 120;
 let resendTimerInterval = null;
 let expireTimerInterval = null;
-const phoneInput = document.getElementById('phoneInput');
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+let phoneInput = null;
+let csrfToken = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   const savedPhone = localStorage.getItem('lastPhone');
@@ -489,13 +489,13 @@ function showLoading(show) {
 
 function hideContainer() {
   const container = document.getElementById('historyContainer');
-  container.classList.add('d-none');
+  if (container) container.classList.add('d-none');
 }
 
 function showActiveAppointmentsButton() {
   const section = document.getElementById('activeAppointmentsSection');
+  if (!section) return;
   section.classList.remove('d-none');
-  // ✅ CORREÇÃO: Botão com posicionamento adequado
   section.style.position = 'relative';
   section.style.top = '0';
   section.style.marginTop = '20px';

@@ -680,7 +680,7 @@ function validateClientForm() {
   const isValidPhone = phoneRegex.test(phone);
   const isValid = firstName.length > 0 && lastName.length > 0 && isValidPhone;
 
-  const confirmBtn = document.getElementById('confirmBooking');
+  const confirmBtn = document.getElementById('btnConfirmBooking') || document.getElementById('confirmBooking');
   if (confirmBtn) {
     confirmBtn.disabled = !isValid;
     confirmBtn.classList.toggle('disabled', !isValid);
