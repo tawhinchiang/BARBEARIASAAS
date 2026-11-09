@@ -3,7 +3,7 @@ services:
     name: barbearia-saas-demo
     runtime: node
     plan: free
-    buildCommand: npm install --omit=optional && npm run seed
+    buildCommand: npm install --omit=optional
     startCommand: npm start
     envVars:
       - key: NODE_ENV
