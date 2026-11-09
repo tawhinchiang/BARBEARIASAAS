@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const { engine } = require('express-handlebars');
-const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
@@ -11,15 +10,11 @@ require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const {
   securityHeaders,
-  strictOriginValidation,
   attackDetection,
   securityLogger,
-  csrfValidation,
-  generateCSRFToken,
-  blockScanners 
+  blockScanners
 } = require('./middleware/security');
 const compression = require('compression');
-console.log('[DEBUG] NODE_ENV ativo:', process.env.NODE_ENV);
 
 
 // IMPORTAR CONFIGURAÇÃO SEGURA DE CORS
@@ -34,33 +29,12 @@ app.use(compression());
 app.use(securityHeaders);
 app.set('trust proxy', 1);
 app.locals.BARBERSHOP_LOGO = process.env.BARBERSHOP_LOGO || '/images/logo.jpg';
-// ===== LOGS DETALHADOS =====
 const log = (message, data = null) => {
+  if (process.env.NODE_ENV === 'production') return;
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [APP] ${message}`);
-  if (data) {
-    console.log(`[${timestamp}] [APP] Data:`, JSON.stringify(data, null, 2));
-  }
+  if (data) console.log(JSON.stringify(data, null, 2));
 };
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'production') {
-    log(`${req.method} ${req.url}`, {
-      method: req.method,
-      url: req.url,
-      origin: req.headers.origin,
-      userAgent: req.headers['user-agent'],
-      ip: req.ip || req.connection.remoteAddress
-    });
-  }
-  next();
-});
-const logError = (message, error) => {
-  const timestamp = new Date().toISOString();
-  console.error(`[${timestamp}] [APP ERROR] ${message}`);
-  console.error(`[${timestamp}] [APP ERROR] Stack:`, error.stack);
-};
-
-log('Inicializando aplicação BarberShop com CORS seguro');
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: process.env.NODE_ENV === 'production' ? '7d' : 0,
   etag: true,
@@ -91,32 +65,14 @@ app.engine('hbs', hbs);
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-log('Handlebars configurado');
-
-// ===== CONFIGURAÇÃO SEGURA DE CORS =====
-
-// Middleware de logging para CORS (aplicado globalmente)
 app.use(corsLogger);
-
-// Middleware de validação de segurança adicional
 app.use(additionalSecurityValidation);
-
-// CORS padrão para rotas gerais (mais restritivo)
 app.use(cors(createCorsConfig('default')));
 
-log('CORS seguro configurado');
-
-// Middlewares básicos
 app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true, limit: '20mb' }));
-app.use(bodyParser.json({ limit: '20mb' }));
-
-
-
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-
-log('Middlewares básicos configurados');
 
 app.use(securityLogger);       
 app.use(attackDetection);  
@@ -157,21 +113,7 @@ console.log('[SESSION] Store em uso:', sessionStore && sessionStore.constructor 
 
 log('Sessões configuradas com segurança aprimorada');
 
-// Middleware para log de todas as requisições
-// app.use((req, res, next) => {
-//   log(`${req.method} ${req.url}`, {
-//     method: req.method,
-//     url: req.url,
-//     origin: req.headers.origin,
-//     userAgent: req.headers['user-agent'],
-//     ip: req.ip || req.connection.remoteAddress
-//   });
-//   next();
-// });
-
-// ===== ROTAS COM CORS ESPECÍFICO =====
-
-log('Configurando rotas com CORS específico');
+// Rotas
 
 // Rotas principais (CORS padrão já aplicado)
 app.use('/', require('./routes/index'));
@@ -207,27 +149,6 @@ app.get('/sitemap.xml', (req, res) => {
     .send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
 });
 
-log('Rotas configuradas com CORS específico');
-
-// ===== MIDDLEWARE DE SEGURANÇA ADICIONAL =====
-
-// Middleware para detectar tentativas de bypass de CORS
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const referer = req.headers.referer;
-  
-  // Log de tentativas suspeitas
-  if (origin && referer && !origin.includes(new URL(referer).hostname)) {
-    log('Possível tentativa de bypass de CORS detectada', {
-      origin,
-      referer,
-      url: req.url,
-      method: req.method
-    });
-  }
-  
-  next();
-});
 // Evita ruído de 404 p/ favicon ausente
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
@@ -295,21 +216,6 @@ app.use((err, req, res, next) => {
     return res.status(status).type('txt').send(`Erro ${status}`);
   }
 });
-
-
-
-log('Aplicação configurada com sucesso - CORS seguro ativo');
-
-// Log da configuração de CORS ativa
-const env = process.env.NODE_ENV || 'development';
-log(`Ambiente: ${env}`);
-log('Configuração de CORS carregada para:', {
-  ambiente: env,
-  corsPublico: 'Configurado para APIs públicas',
-  corsAdmin: 'Configurado para área administrativa',
-  corsDefault: 'Configurado para rotas gerais'
-});
-
 
 
 

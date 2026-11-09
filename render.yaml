@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: barbearia-saas-demo
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=optional && npm run seed
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_DIALECT
+        value: sqlite
+      - key: SQLITE_STORAGE
+        value: ./data/database.sqlite
+      - key: WHATSAPP_ENABLED
+        value: "false"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: AUTO_SEED
+        value: "true"

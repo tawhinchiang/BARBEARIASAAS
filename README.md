@@ -1,130 +1,93 @@
-# Barbearia SaaS
+# Barbearia SaaS (demo de portfólio)
 
-Sistema de agendamento para barbearia com area publica para clientes, painel administrativo, cadastro de profissionais, servicos, agenda, historico por telefone e integracao opcional com WhatsApp.
+Aplicação web para agendamento de barbearia, com área pública para clientes e painel administrativo.
 
-## Status Do Projeto
+Este repositório foi preparado como **demo leve para portfólio**: roda localmente com poucos comandos, usa **SQLite por padrão** (sem custo de infraestrutura) e pode ser publicada em hospedagens gratuitas compatíveis com Node.js.
 
-Este projeto foi recuperado para voltar a rodar localmente.
+## Funcionalidades
 
-Funcional agora:
+- Página pública de agendamento
+- Listagem de serviços e profissionais
+- Criação e consulta de agendamentos
+- Painel administrativo (login, dashboard, profissionais, serviços, agenda/configurações)
+- Histórico por telefone
+- Integração com WhatsApp **opcional/desativada por padrão** (módulo pesado, não necessário para a demo)
 
-- pagina publica de agendamento;
-- listagem de servicos e profissionais;
-- criacao de agendamento;
-- painel administrativo;
-- login admin;
-- dashboard;
-- cadastro de profissionais;
-- cadastro de servicos;
-- agenda e bloqueio de horarios;
-- historico por telefone;
-- envio via WhatsApp opcional.
+## Stack
 
-Ainda pendente:
+- Node.js + Express
+- Handlebars (views server-side)
+- Sequelize
+- SQLite (padrão para demo) / PostgreSQL (opcional)
+- Socket.IO
 
-- login separado para profissionais/barbeiros;
-- revisao completa das migrations;
-- decisao entre manter `whatsapp-web.js` ou migrar para WhatsApp Cloud API oficial;
-- testes automatizados;
-- revisao de modulos legados de financeiro e Google Calendar.
-
-## Documentacao
-
-Para preparar e rodar o projeto localmente, siga:
-
-[docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md)
-
-Para ver o mapeamento do dump antigo para o schema local, veja:
-
-[docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md)
-
-O guia inclui:
-
-- instalacao;
-- configuracao do `.env`;
-- conexao com PostgreSQL;
-- criacao do banco local;
-- seed inicial;
-- execucao do app;
-- credenciais admin;
-- restauracao de backups antigos;
-- configuracao do WhatsApp;
-- comandos de troubleshooting;
-- cuidados antes de subir para o GitHub.
-
-## Uso Rapido
+## Execução local
 
 ```powershell
-cd C:\Users\milenasilesio\Downloads\BARBEARIASAAS
+cd C:\Users\milenasilesio\OneDrive\Documentos\BARBEARIASAAS
 copy .env.example .env
 npm install
-npm run db:schema
 npm run seed
 npm start
 ```
 
-Depois acesse:
+Acesse:
+- Público: `http://127.0.0.1:3000`
+- Admin: `http://127.0.0.1:3000/admin/login`
 
-```txt
-Publico: http://127.0.0.1:3000
-Admin:   http://127.0.0.1:3000/admin/login
-```
+Credenciais de demonstração:
+- Usuário: `admin`
+- Senha: `admin123`
 
-Credenciais locais:
+> O projeto cria automaticamente o banco SQLite em `data/database.sqlite` e popula dados iniciais quando o banco está vazio (`AUTO_SEED`).
 
-```txt
-Usuario: admin
-Senha: admin123
-```
+## Publicação online sem custo (portfólio)
 
-> Use `127.0.0.1` em vez de `localhost` se houver conflito de porta no Windows.
+Opção prática: **Render** (plano gratuito para Web Service).
 
-## Banco De Dados Local
+1. Suba o projeto para um repositório GitHub.
+2. No Render, crie um **Web Service** apontando para o repositório.
+3. Build command: `npm install --omit=optional && npm run seed`
+4. Start command: `npm start`
+5. Variáveis de ambiente sugeridas:
+   - `NODE_ENV=production`
+   - `DB_DIALECT=sqlite`
+   - `SQLITE_STORAGE=./data/database.sqlite`
+   - `WHATSAPP_ENABLED=false`
+   - `SESSION_SECRET` (valor seguro)
+   - `BASE_URL` / `CORS_ORIGINS` com a URL pública do serviço
 
-Configuracao padrao:
+O arquivo `render.yaml` inclui uma configuração base para esse cenário.
 
-```txt
-Host: 127.0.0.1
-Porta: 6543
-Banco: barbeariadoblack_db
-Usuario: postgres
-Senha: postgres
-```
+**Observação:** no plano gratuito, o disco pode ser efêmero e o serviço pode hibernar. Para um portfólio isso é aceitável; para produção real, use banco persistente (PostgreSQL gerenciado).
 
-String de conexao:
+## Variáveis principais
 
-```txt
-postgres://postgres:postgres@127.0.0.1:6543/barbeariadoblack_db
-```
-
-## WhatsApp
-
-Por padrao, o ambiente local usa:
-
-```env
-WHATSAPP_ENABLED=false
-```
-
-Assim o app cria agendamentos sem depender do WhatsApp. Para testar envio automatico via `whatsapp-web.js`, altere para `true`, reinicie o servidor e escaneie o QR Code em `/admin/config`.
+Veja `.env.example`. Destaques:
+- `DB_DIALECT=sqlite` (padrão) ou `postgres`
+- `WHATSAPP_ENABLED=false` evita dependências pesadas (Puppeteer/WhatsApp Web)
+- `AUTO_SEED=true` cria admin/serviços/profissionais de exemplo no primeiro boot
 
 ## Scripts
 
 ```powershell
-npm start          # inicia o servidor
-npm run dev        # inicia com nodemon
-npm run db:schema  # cria o schema mapeado do dump antigo
-npm run seed       # popula dados iniciais e sincroniza models principais
-npm run migrate    # legado; migrations precisam revisao antes de uso confiavel
+npm start   # inicia o servidor
+npm run dev # desenvolvimento com nodemon
+npm run seed
+npm test    # verificação de sintaxe (node --check)
 ```
 
-## Observacoes Para GitHub
+## Estrutura (resumo)
 
-Nao subir arquivos locais ou sensiveis:
+- `server.js` — bootstrap HTTP/Socket.IO
+- `app.js` — configuração Express, sessões, rotas e middlewares
+- `models/` — modelos Sequelize
+- `routes/` — rotas públicas e administrativas
+- `views/` — templates Handlebars
+- `public/` — assets estáticos
+- `config/` — banco, seed e helpers
 
-- `.env`
-- `.local-postgres/`
-- `node_modules/`
-- logs locais;
-- backups reais de banco de dados.
+## Notas
 
-Esses itens ja estao no `.gitignore`.
+- A integração com WhatsApp via `whatsapp-web.js` foi mantida como **opcional** e com carregamento sob demanda para não pesar na demo.
+- Arquivos locais/sensíveis (ex.: `.env`, `data/`, `node_modules/`, sessões) devem permanecer fora do Git.

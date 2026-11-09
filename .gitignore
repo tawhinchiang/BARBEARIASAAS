@@ -47,6 +47,11 @@ sessions/
 *.cache
 *.pid
 
+# Banco local (demo SQLite)
+data/
+*.sqlite
+*.sqlite3
+
 # ========================================
 # COBERTURA DE TESTES
 # ========================================

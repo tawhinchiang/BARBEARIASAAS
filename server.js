@@ -1,96 +1,64 @@
-// server.js
 require('dotenv').config();
-
-const { syncDatabase } = require('./models');
-const { initializeWhatsApp, isWhatsAppEnabled } = require('./utils/whatsapp');
-const app = require('./app');
 
 const http = require('http');
 const { Server } = require('socket.io');
+const { syncDatabase } = require('./models');
+const { initializeWhatsApp, isWhatsAppEnabled } = require('./utils/whatsapp');
+const app = require('./app');
 
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
 
 async function startServer() {
   try {
-    // 1) Banco primeiro (se falhar, encerra)
     const dbConnected = await syncDatabase();
     if (!dbConnected) {
       console.error('[BOOT] Falha ao conectar com o banco de dados');
       process.exit(1);
     }
 
-    // 2) Cria HTTP server e socket.io
     const server = http.createServer(app);
-  const allowedCorsOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',')
-  : [process.env.BASE_URL];
+    const allowedCorsOrigins = process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)
+      : (process.env.BASE_URL ? [process.env.BASE_URL] : true);
 
-  const io = new Server(server, {
-  cors: {
-    origin: allowedCorsOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
+    const io = new Server(server, {
+      cors: {
+        origin: allowedCorsOrigins,
+        methods: ['GET', 'POST'],
+        credentials: true,
+      },
+    });
 
     app.set('io', io);
-
     io.on('connection', (socket) => {
-      console.log('🟢 Cliente conectado ao socket:', socket.id);
-      socket.on('disconnect', () => {
-        console.log('🔴 Cliente desconectado:', socket.id);
-      });
+      socket.on('disconnect', () => {});
     });
 
-    // 3) Sobe o HTTP IMEDIATAMENTE (não bloqueie esperando WhatsApp)
-    console.log('[BOOT] Iniciando server.listen...');
     server.listen(PORT, HOST, () => {
-      console.log(`Servidor rodando na porta ${PORT}`);
-      // console.log(`Acesse: http://localhost:${PORT}`);
-      // console.log(`Admin: http://localhost:${PORT}/admin/login`);
+      console.log(`[BOOT] Servidor rodando em http://127.0.0.1:${PORT}`);
+      console.log(`[BOOT] Admin: http://127.0.0.1:${PORT}/admin/login`);
     });
 
-    // 4) Inicializa WhatsApp e CRON em background
     if (isWhatsAppEnabled()) {
-      (async () => {
-        try {
-          console.log('[BOOT] Inicializando WhatsApp em background...');
-          await initializeWhatsApp();
-        } catch (err) {
-          console.error('[BOOT] Falha ao inicializar WhatsApp (app continua):', err?.message || err);
-        }
-      })();
-    } else {
-      console.log('[BOOT] WhatsApp desabilitado por WHATSAPP_ENABLED=false');
+      initializeWhatsApp().catch((err) => {
+        console.error('[BOOT] WhatsApp não inicializado:', err?.message || err);
+      });
     }
 
     if (!global.__CRON_STARTED__) {
       global.__CRON_STARTED__ = true;
-      require('./worker/cronScheduler'); // agenda os jobs
+      try { require('./worker/cronScheduler'); } catch (err) {
+        console.warn('[BOOT] Cron não iniciado:', err?.message || err);
+      }
     }
 
-    // 5) Tratamento de erros globais (não derrubar o processo sem log)
-    process.on('unhandledRejection', (err) => {
-      console.error('[UNHANDLED REJECTION]', err);
-    });
-    process.on('uncaughtException', (err) => {
-      console.error('[UNCAUGHT EXCEPTION]', err);
-    });
+    process.on('unhandledRejection', (err) => console.error('[UNHANDLED REJECTION]', err));
+    process.on('uncaughtException', (err) => console.error('[UNCAUGHT EXCEPTION]', err));
 
-    // 6) Finalização graciosa do HTTP (PM2 gerencia o ciclo de vida)
-    const isPM2 = !!process.env.pm_id;
-    ['SIGINT', 'SIGTERM', 'SIGHUP'].forEach((sig) => {
-      process.on(sig, () => {
-        console.log(`[BOOT] Sinal ${sig} recebido — encerrando HTTP...`);
-        server.close(() => {
-          console.log('[BOOT] HTTP fechado.');
-          if (!isPM2) process.exit(0);
-          // sob PM2, deixe ele encerrar o processo
-        });
-      });
+    ['SIGINT', 'SIGTERM'].forEach((sig) => {
+      process.on(sig, () => server.close(() => process.exit(0)));
     });
-
   } catch (error) {
     console.error('Erro ao iniciar servidor:', error);
     process.exit(1);
