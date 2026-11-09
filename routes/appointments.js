@@ -31,33 +31,28 @@ function isTimeInRange(time, range) {
   return time >= start && time < end;
 }
 async function existeConflito({ barberId, appointmentDate, appointmentTime, serviceDuration }) {
-  const rows = await sequelize.query(
-    `
-    WITH novo AS (
-      SELECT
-        (:date::date + :time::time) AS start_at,
-        (:date::date + :time::time) + (:durationMin || ' minutes')::interval AS end_at
-    )
-    SELECT 1
-    FROM appointments a, novo n
-    WHERE a."barberId" = :barberId
-      AND a."status" NOT IN ('cancelled', 'no_show')
-      AND (a."appointmentDate"::timestamp + a."appointmentTime") < n.end_at
-      AND ((a."appointmentDate"::timestamp + a."appointmentTime")
-           + (a."serviceDuration" || ' minutes')::interval) > n.start_at
-    LIMIT 1;
-    `,
-    {
-      type: QueryTypes.SELECT, // use QueryTypes importado do sequelize
-      replacements: {
-        barberId,
-        date: appointmentDate,
-        time: appointmentTime,
-        durationMin: serviceDuration
-      }
-    }
-  );
-  return rows.length > 0;
+  const { Op } = require('sequelize');
+  const toMin = (value) => {
+    const [h, m] = String(value || '0:0').slice(0, 5).split(':').map(Number);
+    return (h * 60) + (m || 0);
+  };
+  const start = toMin(appointmentTime);
+  const end = start + Number(serviceDuration || 0);
+
+  const rows = await Appointment.findAll({
+    where: {
+      barberId,
+      appointmentDate,
+      status: { [Op.notIn]: ['cancelled', 'no_show'] }
+    },
+    attributes: ['appointmentTime', 'serviceDuration']
+  });
+
+  return rows.some((a) => {
+    const s = toMin(a.appointmentTime);
+    const e = s + Number(a.serviceDuration || 0);
+    return s < end && start < e;
+  });
 }
 
 // API para criar novo agendamento
