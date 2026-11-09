@@ -63,10 +63,10 @@ const securityHeaders = (req, res, next) => {
 
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com https://*.fontawesome.com",
-    "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.google.com https://*.fontawesome.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com https://use.fontawesome.com https://kit.fontawesome.com",
-    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com https://use.fontawesome.com https://kit.fontawesome.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com https://kit.fontawesome.com https://accounts.google.com https://*.fontawesome.com",
+    "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com https://kit.fontawesome.com https://accounts.google.com https://*.fontawesome.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com https://use.fontawesome.com https://kit.fontawesome.com",
+    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com https://use.fontawesome.com https://kit.fontawesome.com",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://use.fontawesome.com https://kit.fontawesome.com",
     "connect-src 'self' https: wss:",
