@@ -28,7 +28,10 @@ const app = express();
 app.use(compression());
 app.use(securityHeaders);
 app.set('trust proxy', 1);
-app.locals.BARBERSHOP_LOGO = process.env.BARBERSHOP_LOGO || '/images/logo.jpg';
+app.locals.BARBERSHOP_LOGO = process.env.BARBERSHOP_LOGO || '/images/logo-barbearia.svg';
+app.locals.adminFavicon = process.env.ADMIN_FAVICON || '/images/favicon-barbearia.svg';
+app.locals.barbershopName = process.env.BARBERSHOP_NAME || 'Barbearia';
+app.locals.appVersion = process.env.npm_package_version || '1.0.0';
 const log = (message, data = null) => {
   if (process.env.NODE_ENV === 'production') return;
   const timestamp = new Date().toISOString();

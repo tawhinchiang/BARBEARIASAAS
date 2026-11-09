@@ -48,7 +48,8 @@ router.get('/', (req, res) => {
 
     // Cabeçalho
     barbershopName: process.env.BARBERSHOP_NAME || '',
-    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo.png',
+    barbershopLogo: process.env.BARBERSHOP_LOGO || '/images/logo-barbearia.svg',
+    adminFavicon: process.env.ADMIN_FAVICON || '/images/favicon-barbearia.svg',
     tagline: process.env.BARBERSHOP_TAGLINE || '',
 
     // Detalhes do Estabelecimento

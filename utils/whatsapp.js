@@ -1,17 +1,101 @@
-const WHATSAPP_ENABLED = process.env.WHATSAPP_ENABLED !== 'false';
+const WHATSAPP_ENABLED_ENV = process.env.WHATSAPP_ENABLED !== 'false';
+const PROVIDER = String(process.env.WHATSAPP_PROVIDER || 'wwebjs').toLowerCase();
+const CLOUD_TOKEN = process.env.WHATSAPP_TOKEN || process.env.META_WHATSAPP_TOKEN || '';
+const CLOUD_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.META_WHATSAPP_PHONE_NUMBER_ID || '';
+const CLOUD_API_VERSION = process.env.WHATSAPP_API_VERSION || 'v20.0';
+const DEFAULT_COUNTRY_CODE = String(process.env.WHATSAPP_DEFAULT_COUNTRY_CODE || '55').replace(/\D/g, '') || '55';
 
-const noopStatus = () => ({
-  isEnabled: false,
-  isConnected: false,
-  state: 'DISABLED',
-  qrCode: null
-});
+const isCloudConfigured = () => PROVIDER === 'cloud' || PROVIDER === 'meta' || PROVIDER === 'cloudapi' || (!!CLOUD_TOKEN && !!CLOUD_PHONE_NUMBER_ID && PROVIDER !== 'wwebjs');
+const useCloud = () => isCloudConfigured() && !!CLOUD_TOKEN && !!CLOUD_PHONE_NUMBER_ID && process.env.WHATSAPP_ENABLED !== 'false';
 
-let impl = null;
+function noopStatus() {
+  if (useCloud()) return { isEnabled: true, isConnected: true, state: 'CONNECTED', qrCode: null, provider: 'cloud' };
+  return { isEnabled: false, isConnected: false, state: 'DISABLED', qrCode: null, provider: PROVIDER };
+}
 
-function getImpl() {
-  if (!WHATSAPP_ENABLED) return null;
-  if (impl) return impl;
+function normalizeCloudPhone(phone) {
+  let digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  // BR common cases: DDD+8/9 digits (10-11) => prefix country code
+  if (digits.length === 10 || digits.length === 11) digits = DEFAULT_COUNTRY_CODE + digits;
+  // If someone passed 55 + DDD + 8 (missing 9th digit) keep as-is; Cloud API may still deliver depending on number.
+  return digits;
+}
+
+async function sendCloudMessage(phone, message) {
+  if (!CLOUD_TOKEN || !CLOUD_PHONE_NUMBER_ID) {
+    return { ok: false, delivered: false, error: 'cloud-misconfigured' };
+  }
+  const to = normalizeCloudPhone(phone);
+  if (!to) return { ok: false, delivered: false, error: 'invalid-phone' };
+  const url = `https://graph.facebook.com/${CLOUD_API_VERSION}/${CLOUD_PHONE_NUMBER_ID}/messages`;
+  const body = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to,
+    type: 'text',
+    text: { preview_url: false, body: String(message || '') }
+  };
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${CLOUD_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const errMsg = data?.error?.message || data?.error?.error_user_msg || `HTTP ${res.status}`;
+      console.error('[WHATSAPP CLOUD] Falha no envio:', res.status, errMsg);
+      return { ok: false, delivered: false, error: errMsg, provider: 'cloud', status: res.status, details: data?.error };
+    }
+    const messageId = data?.messages?.[0]?.id || null;
+    console.log('[WHATSAPP CLOUD] Mensagem aceita pela API.', { to, messageId });
+    return { ok: true, delivered: true, provider: 'cloud', messageId, to };
+  } catch (err) {
+    console.error('[WHATSAPP CLOUD] Erro de rede:', err?.message || err);
+    return { ok: false, delivered: false, error: String(err?.message || err), provider: 'cloud' };
+  }
+}
+
+function createCloudImpl() {
+  const configured = !!CLOUD_TOKEN && !!CLOUD_PHONE_NUMBER_ID;
+  const status = () => ({
+    isEnabled: configured,
+    isConnected: configured,
+    state: configured ? 'CONNECTED' : 'MISCONFIGURED',
+    qrCode: null,
+    provider: 'cloud',
+    phoneNumberId: configured ? String(CLOUD_PHONE_NUMBER_ID).slice(0, 4) + '…' : null
+  });
+  return {
+    initializeWhatsApp: async () => {
+      if (!configured) console.warn('[WHATSAPP CLOUD] WHATSAPP_TOKEN ou WHATSAPP_PHONE_NUMBER_ID ausente.');
+      else console.log('[WHATSAPP CLOUD] Provider configurado (Graph API).');
+      return status();
+    },
+    sendWhatsAppMessage: async (phone, message) => sendCloudMessage(phone, message),
+    sendWhatsAppMessageDebug: async (phone, message) => sendCloudMessage(phone, message),
+    getWhatsAppStatus: () => status(),
+    getLastQRCode: () => null,
+    disconnectWhatsApp: async () => undefined,
+    isWhatsAppEnabled: () => configured,
+    isWhatsAppReady: () => configured,
+    waitWhatsAppReady: async () => configured
+  };
+}
+
+let wwebjsImpl = null;
+let wwebjsTried = false;
+
+function getWWebImpl() {
+  if (!WHATSAPP_ENABLED_ENV) return null;
+  if (wwebjsImpl) return wwebjsImpl;
+  if (wwebjsTried) return null;
+  wwebjsTried = true;
 
   try {
     const whatsapp = require('whatsapp-web.js');
@@ -50,11 +134,6 @@ function getImpl() {
       if (typeof ackMsg?.ack === 'number') return ackMsg.ack;
       const n = Number(ack);
       return Number.isFinite(n) ? n : 0;
-    }
-
-    function ackLabel(ack) {
-      const code = toAckCode(null, ack);
-      return ({ 0: 'pending', 1: 'server', 2: 'device', 3: 'read', 4: 'played' })[code] ?? String(code);
     }
 
     async function ensureClientReady() {
@@ -167,20 +246,20 @@ function getImpl() {
 
     async function sendWhatsAppMessage(phone, message) {
       try {
-        if (!client) return { ok: false, delivered: false, error: 'not-initialized' };
-        if (!isReady) return { ok: false, delivered: false, error: 'not-ready' };
+        if (!client) return { ok: false, delivered: false, error: 'not-initialized', provider: 'wwebjs' };
+        if (!isReady) return { ok: false, delivered: false, error: 'not-ready', provider: 'wwebjs' };
         await ensureClientReady();
         const cleaned = cleanPhone(phone);
         const numberId = await findWhatsAppContactId(client, cleaned);
-        if (!numberId) return { ok: false, delivered: false, error: 'not-registered' };
+        if (!numberId) return { ok: false, delivered: false, error: 'not-registered', provider: 'wwebjs' };
         const jid = numberId._serialized || numberId;
         const msgObj = await sendMessageWithTimeout(jid, message, TIMEOUTS.send);
         const ackInfo = await waitForAck(msgObj);
         const ackCode = toAckCode(msgObj, ackInfo);
         const delivered = !!(ackInfo?.delivered || ackCode >= ACK_SUCCESS_LEVEL);
-        return { ok: true, delivered, ack: ackCode, used: jid };
+        return { ok: true, delivered, ack: ackCode, used: jid, provider: 'wwebjs' };
       } catch (err) {
-        return { ok: false, delivered: false, error: String(err?.message || err) };
+        return { ok: false, delivered: false, error: String(err?.message || err), provider: 'wwebjs' };
       }
     }
 
@@ -190,7 +269,7 @@ function getImpl() {
     }
 
     function getWhatsAppStatus() {
-      return { isEnabled: true, isConnected: isReady, state: isReady ? 'CONNECTED' : (initializing ? 'OPENING' : 'DISCONNECTED'), qrCode: isReady ? null : latestQrCode };
+      return { isEnabled: true, isConnected: isReady, state: isReady ? 'CONNECTED' : (initializing ? 'OPENING' : 'DISCONNECTED'), qrCode: isReady ? null : latestQrCode, provider: 'wwebjs' };
     }
     function isWhatsAppEnabled() { return true; }
     function isWhatsAppReady() { return !!(isReady && client); }
@@ -202,30 +281,30 @@ function getImpl() {
     }
     function getLastQRCode() { return latestQrCode; }
 
-    impl = {
+    wwebjsImpl = {
       initializeWhatsApp, sendWhatsAppMessage, sendWhatsAppMessageDebug, getWhatsAppStatus,
       getLastQRCode, disconnectWhatsApp, isWhatsAppEnabled, isWhatsAppReady, waitWhatsAppReady
     };
-    return impl;
+    return wwebjsImpl;
   } catch (err) {
-    console.warn('[WHATSAPP] Dependências do WhatsApp indisponíveis. A integração ficará desativada.', err?.message || err);
+    console.warn('[WHATSAPP] Dependências do whatsapp-web.js indisponíveis. Provider wwebjs desativado.', err?.message || err);
     return null;
   }
 }
 
-function disabled(name) {
-  return async (..._args) => {
-    if (name === 'sendWhatsAppMessage' || name === 'sendWhatsAppMessageDebug') return { ok: false, delivered: false, error: 'disabled' };
-    if (name === 'waitWhatsAppReady') return false;
-    if (name === 'getLastQRCode') return null;
-    if (name === 'getWhatsAppStatus') return noopStatus();
-    return undefined;
-  };
+function getImpl() {
+  if (useCloud()) return createCloudImpl();
+  // Provider explicitly set to cloud but missing credentials: report misconfiguration clearly.
+  if ((PROVIDER === 'cloud' || PROVIDER === 'meta' || PROVIDER === 'cloudapi') && process.env.WHATSAPP_ENABLED !== 'false') {
+    return createCloudImpl();
+  }
+  if (WHATSAPP_ENABLED_ENV) return getWWebImpl();
+  return null;
 }
 
 module.exports = new Proxy({}, {
   get(_t, prop) {
-    if (prop === 'isWhatsAppEnabled') return () => WHATSAPP_ENABLED;
+    if (prop === 'isWhatsAppEnabled') return () => { const i = getImpl(); return i ? i.isWhatsAppEnabled() : false; };
     if (prop === 'isWhatsAppReady') return () => { const i = getImpl(); return i ? i.isWhatsAppReady() : false; };
     if (prop === 'getWhatsAppStatus') return () => { const i = getImpl(); return i ? i.getWhatsAppStatus() : noopStatus(); };
     if (prop === 'getLastQRCode') return () => { const i = getImpl(); return i ? i.getLastQRCode() : null; };
@@ -235,7 +314,7 @@ module.exports = new Proxy({}, {
     if (prop === 'sendWhatsAppMessage') return async (...a) => { const i = getImpl(); return i ? i.sendWhatsAppMessage(...a) : { ok: false, delivered: false, error: 'disabled' }; };
     if (prop === 'sendWhatsAppMessageDebug') return async (...a) => { const i = getImpl(); return i ? i.sendWhatsAppMessageDebug(...a) : { ok: false, delivered: false, error: 'disabled' }; };
     const i = getImpl();
-    if (i && typeof i[prop] === 'function') return i[prop];
-    return disabled(String(prop));
+    if (i && typeof i[prop] === 'function') return i[prop].bind(i);
+    return async () => undefined;
   }
 });

@@ -39,38 +39,14 @@ const barbers = [
 ];
 
 const services = [
-  {
-    name: 'Corte Simples',
-    description: 'Corte de cabelo tradicional',
-    price: 25,
-    duration: 30,
-    isActive: true,
-    isPromo: false
-  },
-  {
-    name: 'Corte + Barba',
-    description: 'Corte de cabelo e barba completa',
-    price: 40,
-    duration: 60,
-    isActive: true,
-    isPromo: false
-  },
-  {
-    name: 'Barba Completa',
-    description: 'Barba, bigode e acabamento',
-    price: 20,
-    duration: 30,
-    isActive: true,
-    isPromo: false
-  },
-  {
-    name: 'Sobrancelha',
-    description: 'Design e limpeza de sobrancelha',
-    price: 15,
-    duration: 20,
-    isActive: true,
-    isPromo: false
-  }
+  { name: 'Corte Simples', description: 'Corte clássico com acabamento na máquina e tesoura', price: 35, duration: 30, isActive: true, isPromo: false, photo: '/images/services/corte.svg' },
+  { name: 'Corte + Barba', description: 'Combo completo: corte de cabelo e barba com toalha/acabamento', price: 60, duration: 60, isActive: true, isPromo: false, photo: '/images/services/corte-barba.svg' },
+  { name: 'Barba Completa', description: 'Modelagem de barba e bigode com acabamento preciso', price: 30, duration: 30, isActive: true, isPromo: false, photo: '/images/services/barba.svg' },
+  { name: 'Sobrancelha', description: 'Design e limpeza de sobrancelha', price: 15, duration: 15, isActive: true, isPromo: false, photo: '/images/services/sobrancelha.svg' },
+  { name: 'Acabamento / Pézinho', description: 'Manutenção rápida do contorno e acabamento', price: 20, duration: 15, isActive: true, isPromo: false, photo: '/images/services/acabamento.svg' },
+  { name: 'Hidratação Capilar', description: 'Tratamento para hidratar e revitalizar os fios', price: 45, duration: 40, isActive: true, isPromo: false, photo: '/images/services/hidratacao.svg' },
+  { name: 'Pigmentação', description: 'Pigmentação para realçar barba ou cabelo com aspecto natural', price: 40, duration: 35, isActive: true, isPromo: false, photo: '/images/services/pigmentacao.svg' },
+  { name: 'Corte Infantil', description: 'Corte para crianças, com atenção e conforto', price: 30, duration: 30, isActive: true, isPromo: false, photo: '/images/services/infantil.svg' }
 ];
 
 async function upsertBy(Model, where, values) {

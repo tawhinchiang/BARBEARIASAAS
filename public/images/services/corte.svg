@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1452"/><stop offset="1" stop-color="#16216E"/></linearGradient>
+    <linearGradient id="a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2943F0"/><stop offset="1" stop-color="#1430C8"/></linearGradient>
+  </defs>
+  <rect width="240" height="180" rx="22" fill="url(#bg)"/>
+  <circle cx="120" cy="78" r="42" fill="rgba(41,67,240,.18)" stroke="rgba(247,216,90,.35)"/>
+  <g stroke="#F7D85A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M98 62 L120 84 L142 62"/>
+    <path d="M120 84 L120 108"/>
+    <circle cx="98" cy="62" r="5" fill="#F7D85A"/>
+    <circle cx="142" cy="62" r="5" fill="#F7D85A"/>
+  </g>
+  <path d="M92 104c8 10 48 10 56 0" stroke="#F5F7FF" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".8"/>
+  <text x="120" y="154" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="16" font-weight="700" fill="#F5F7FF">Corte</text>
+</svg>

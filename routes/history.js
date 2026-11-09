@@ -78,7 +78,12 @@ router.post('/send-code', async (req, res) => {
         break;
       }
     }
+    const demoShowCode = process.env.DEMO_SHOW_CODE === 'true' || (process.env.WHATSAPP_ENABLED === 'false' && process.env.DEMO_SHOW_CODE !== 'false');
     if (!sent) {
+      if (demoShowCode) {
+        log('WhatsApp indisponível; retornando código em modo demo', { phone: cleanPhone });
+        return res.json({ success: true, demo: true, demoCode: code, message: 'WhatsApp indisponível no ambiente de demo. Use o código exibido para continuar.' });
+      }
       return res.status(500).json({ success: false, message: 'Erro ao enviar mensagem via WhatsApp.' });
     }
     res.json({ success: true });

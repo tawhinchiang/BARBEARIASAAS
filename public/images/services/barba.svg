@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B1452"/><stop offset="1" stop-color="#16216E"/></linearGradient></defs>
+  <rect width="240" height="180" rx="22" fill="url(#bg)"/>
+  <circle cx="120" cy="76" r="44" fill="rgba(41,67,240,.18)" stroke="rgba(247,216,90,.35)"/>
+  <path d="M90 66c6 30 54 30 60 0 0 0-10 34-30 34s-30-34-30-34z" fill="rgba(25,162,133,.18)" stroke="#19A285" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M102 78h36" stroke="#F5F7FF" stroke-width="3.5" stroke-linecap="round" opacity=".85"/>
+  <text x="120" y="154" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="16" font-weight="700" fill="#F5F7FF">Barba</text>
+</svg>
