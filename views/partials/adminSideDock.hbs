@@ -1,0 +1,55 @@
+<!-- views/partials/adminSideDock.hbs -->
+<aside class="admin-sidenav" aria-label="Menu principal">
+
+
+  <nav class="sidenav-menu" id="adminDockMenu">
+    <a class="sidenav-item" href="/admin/dashboard" data-label="Início">
+      <i class="fa-solid fa-gauge-high icon"></i><span class="label">Início</span>
+    </a>
+    <a class="sidenav-item" href="/admin/appointments" data-label="Agendamentos">
+      <i class="fa-regular fa-calendar-check icon"></i><span class="label">Agendamentos</span>
+    </a>
+    <a class="sidenav-item" href="/admin/reports" data-label="Relatórios">
+      <i class="fa-solid fa-chart-line icon"></i><span class="label">Relatórios</span>
+    </a>
+    <a class="sidenav-item" href="/admin/barbers" data-label="Barbeiros">
+      <i class="fa-solid fa-user-tie icon"></i><span class="label">Profissionais</span>
+    </a>
+    <a class="sidenav-item" href="/admin/services" data-label="Serviços">
+      <i class="fa-solid fa-scissors icon"></i><span class="label">Serviços</span>
+    </a>
+    <a class="sidenav-item" href="/admin/config" data-label="Configurações">
+      <i class="fa-solid fa-gear icon"></i><span class="label">Configurações</span>
+    </a>
+    <a class="sidenav-item" href="/" target="_blank" data-label="Ver site">
+      <i class="fa-solid fa-up-right-from-square icon"></i><span class="label">Ver site</span>
+    </a>
+
+    {{#if isBarber}}
+    <a class="sidenav-item" href="/barber/appointments" data-label="Minha Agenda">
+      <i class="fa-regular fa-calendar icon"></i><span class="label">Minha Agenda</span>
+    </a>
+    {{/if}}
+  </nav>
+
+  <div class="sidenav-footer mt-auto">
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <div class="user-avatar">{{#if user.username}}{{substring user.username 0 1}}{{else}}A{{/if}}</div>
+      <div class="user-box">
+        <div class="fw-semibold small">{{#if user.username}}{{user.username}}{{else}}Admin{{/if}}</div>
+        <small class="text-muted d-block">Conectado</small>
+      </div>
+    </div>
+    <div class="d-grid gap-2">
+      <div class="d-grid gap-2">
+        <a class="btn btn-outline-secondary btn-sm" href="/admin/profile">
+          <i class="fa-solid fa-user me-2"></i><span class="label">Meu Perfil</span>
+        </a>
+        <a class="btn btn-danger btn-sm" href="/admin/logout">
+          <i class="fa-solid fa-right-from-bracket me-2"></i><span class="label">Sair</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</aside>

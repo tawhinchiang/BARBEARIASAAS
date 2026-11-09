@@ -1,0 +1,77 @@
+{{#if success}}
+  <div class="alert alert-success text-center">
+    ✅ Configurações salvas com sucesso!
+  </div>
+{{/if}}
+
+<div class="admin-dashboard fade-in-soft">
+  <div class="container py-4">
+    <div class="row">
+      <!-- Coluna Esquerda - Formulário de mensagens automáticas -->
+      <div class="col-lg-8">
+        <div class="admin-card mb-4">
+          <h2 class="fw-bold mb-3">⏰ Mensagens Automáticas</h2>
+          <form method="POST" action="/admin/config">
+            <div class="mb-3">
+              <label>Horas antes do serviço para enviar lembrete:</label>
+              <input type="number" class="form-control" name="reminderHoursBefore" value="{{config.reminderHoursBefore}}" min="1" required>
+            </div>
+            <div class="mb-3">
+              <label>Horas após o serviço para enviar mensagem de acompanhamento:</label>
+              <input type="number" class="form-control" name="followUpHoursAfter" value="{{config.followUpHoursAfter}}" min="1" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Coluna Direita - Status WhatsApp -->
+      <div class="col-lg-4">
+        <div class="admin-card position-relative" style="min-height: 100%;">
+          <h5 class="fw-bold mb-2">📲 WhatsApp</h5>
+          <p class="mb-2">Status: <span id="whatsappStatusConfig" class="badge bg-secondary">Carregando...</span></p>
+
+           <!-- Wrapper do QR + Loading -->
+            <div id="qrCodeSection" class="qr-wrapper mt-3" style="display:none;">
+              <!-- LOADING enquanto reinicia / gera QR -->
+              <div id="qrLoading" class="qr-loading show">
+                <div class="text-white text-center">
+                  <i class="fa-solid fa-circle-notch fa-spin fa-2x mb-2"></i>
+                  <p class="mb-0 fw-semibold">Reiniciando WhatsApp…</p>
+                  <small class="text-muted">Gerando um novo QR Code. Isso pode levar alguns segundos.</small>
+                </div>
+              </div>
+
+              <!-- Onde o QR será desenhado -->
+              <div id="qrCode" class="qr-canvas d-inline-block"></div>
+            </div>
+          
+          <button id="btnDisconnectWhatsApp" type="button" class="btn btn-outline-danger w-100 mt-2">
+            🔌 Desconectar WhatsApp
+          </button>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"
+  onload="document.dispatchEvent(new Event('qrcodejs:ready'))">
+</script>
+
+
+<style>
+  .fade-in-soft {
+    opacity: 0;
+    animation: fadeIn 0.6s ease-in forwards;
+  }
+
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
+</style>

@@ -1,0 +1,698 @@
+<!-- PÁGINA DE GERENCIAMENTO DE AGENDAMENTOS - CORRIGIDA DESIGN CLEAN -->
+<div class="admin-dashboard fade-in-soft">
+  <div class="container-fluid">
+
+
+    <!-- Filtros Suspensos -->
+    <div class="row mb-2 mt-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Agenda</h5>
+
+          <button id="filterToggleBtn" class="btn btn-outline-primary btn-sm" type="button"
+            data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+            <i class="fas fa-filter me-1"></i> Filtros
+          </button>
+
+        </div>
+
+
+        <div class="collapse" id="filtersCollapse">
+          <div class="admin-card p-3">
+            <form id="filterForm">
+              <div class="row g-2 align-items-end">
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Data</label>
+                  <input type="date" name="startDate" id="startDate" class="form-control" value="{{filters.startDate}}">
+                </div>
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Profissional</label>
+                  <select class="form-control" name="barberId" id="barberId">
+                    <option value="">Todos Os Profissionais</option>
+                    {{#each barbers}}
+                    <option value="{{id}}" {{#eq ../filters.barberId id}}selected{{/eq}}>{{name}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Status</label>
+                  <select name="status" id="statusFilter" class="form-control">
+                    <option value="">Todos os status</option>
+                    <option value="confirmed" {{#eq filters.status 'confirmed' }}selected{{/eq}}>Confirmado</option>
+                    <option value="in_progress" {{#eq filters.status 'in_progress' }}selected{{/eq}}>Em andamento
+                    </option>
+                    <option value="completed" {{#eq filters.status 'completed' }}selected{{/eq}}>Concluído</option>
+                    <option value="cancelled" {{#eq filters.status 'cancelled' }}selected{{/eq}}>Cancelado</option>
+                    <option value="no_show" {{#eq filters.status 'no_show' }}selected{{/eq}}>Não compareceu</option>
+                  </select>
+                </div>
+
+                <div class="col-md-auto">
+                  <label class="form-label mb-1">Ordenar por</label>
+                  <select class="form-control" name="sort" id="sort">
+                    <option value="">Ordenar por</option>
+                    <option value="date_desc" {{#eq filters.sort 'date_desc' }}selected{{/eq}}>Data/Hora (Mais recente)
+                    </option>
+                    <option value="date_asc" {{#eq filters.sort 'date_asc' }}selected{{/eq}}>Data/Hora (Mais antigo)
+                    </option>
+                    <option value="value_desc" {{#eq filters.sort 'value_desc' }}selected{{/eq}}>Valor (Maior primeiro)
+                    </option>
+                    <option value="value_asc" {{#eq filters.sort 'value_asc' }}selected{{/eq}}>Valor (Menor primeiro)
+                    </option>
+                    <option value="barber_asc" {{#eq filters.sort 'barber_asc' }}selected{{/eq}}>Profissional (A-Z)</option>
+                    <option value="barber_desc" {{#eq filters.sort 'barber_desc' }}selected{{/eq}}>Profissional (Z-A)
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-auto d-flex gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Aplicar
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Limpar
+                  </button>
+                  <button id="openFitInBtn" type="button" class="btn btn-success" data-bs-toggle="modal"
+                    data-bs-target="#fitInModal">
+                    <i class="fas fa-plus"></i> Encaixe
+                  </button>
+                </div>
+
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    {{!-- <!-- BOTÃO DE ALTERNÂNCIA DE VISUALIZAÇÃO -->
+    <div class="toggle-btn-wrapper mb-3">
+      <button class="btn btn-secondary" id="toggleView">
+        <i class="fas fa-columns"></i> Alternar Visualização
+      </button>
+    </div> --}}
+
+
+    <!-- VISUALIZAÇÃO EM TABELA -->
+    <div id="appointmentsTableView" class="view-mode">
+      <div class="row">
+        <div class="col-12">
+
+
+
+          <table class="table table-hover admin-table">
+
+            <tbody id="appointmentsTableBody">
+              {{> appointments-table-rows}}
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+
+    {{!-- <!-- VISUALIZAÇÃO EM CARDS AGRUPADOS POR BARBEIRO -->
+    <div id="appointmentsCardView" class="view-mode hidden">
+      <div id="appointmentsCardsContainer">
+        {{> appointments-cards-grouped appointments=appointments }}
+      </div>
+      <div class="text-center my-3">
+        <button id="loadMoreCards" class="btn btn-outline-primary" data-page="2" data-limit="10" {{#unless
+          pagination.hasNext}}hidden{{/unless}}>
+          Ver mais
+        </button>
+      </div>
+    </div> --}}
+
+
+  </div>
+
+</div>
+
+<div id="actionPanel" class="action-slideout">
+  <div class="action-slideout-header">
+    <h5>Ações</h5>
+    <button class="btn-close" onclick="closeActionPanel()">&times;</button>
+  </div>
+  <div class="action-slideout-body" id="actionPanelBody">
+    <!-- Conteúdo dinâmico -->
+  </div>
+</div>
+
+<div class="modal fade appointment-view-modal" id="viewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg  modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalhes do Agendamento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+
+      </div>
+      <div class="modal-body" id="modalContent">
+        <!-- Conteúdo será carregado dinamicamente -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <form id="editAppointmentForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Agendamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- ✅ loader começa escondido -->
+          <div id="edit-loading" class="d-none justify-content-center align-items-center py-5">
+            <div class="spinner-border" role="status" aria-label="Carregando"></div>
+          </div>
+
+          <!-- ✅ wrapper dos campos -->
+          <div id="edit-fields">
+            <input type="hidden" name="id" id="edit-id">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label">Nome</label>
+                <input type="text" id="edit-client-name" class="form-control" disabled>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Telefone</label>
+                <input type="text" id="edit-client-phone" class="form-control" disabled>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Serviço</label>
+                <select id="edit-service" class="form-control" required></select>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Barbeiro</label>
+                <select id="edit-barber" class="form-control" required></select>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Data</label>
+                <input type="date" id="edit-date" class="form-control" required>
+              </div>
+              <div class="col-md-6 mt-3">
+                <label class="form-label">Horário</label>
+                <input type="time" id="edit-time" class="form-control" required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal de Encaixe -->
+<div class="modal fade" id="fitInModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="fitInForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Novo Encaixe</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-3">
+
+          <div class="col-md-6">
+            <label class="form-label">Nome *</label>
+            <input type="text" class="form-control" id="fitInFirstName" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Sobrenome *</label>
+            <input type="text" class="form-control" id="fitInLastName" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Telefone *</label>
+            <input type="tel" class="form-control" id="fitInPhone" required>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Serviço *</label>
+            <select class="form-control" id="fitInService" required></select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Barbeiro *</label>
+            <select class="form-control" id="fitInBarber" required></select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Data *</label>
+            <input type="date" class="form-control" id="fitInDate" required>
+          </div>
+
+          <div class="mb-3 position-relative">
+            <label for="fitInTime" class="form-label">Horário</label>
+            <input type="time" id="fitInTime" name="fitInTime" class="form-control" step="60">
+
+
+          </div>
+
+
+
+
+
+          <div class="col-md-12">
+            <label class="form-label">Observação (opcional)</label>
+            <textarea class="form-control" id="fitInNote" rows="3"></textarea>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" type="submit">Salvar Encaixe</button>
+        </div>
+        <input type="hidden" id="fitInMode" value="fitin">
+
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div id="global-loading" class="global-loading d-none">
+  <div class="spinner-border text-light" role="status">
+    <span class="visually-hidden">Carregando...</span>
+  </div>
+</div>
+
+
+
+
+
+<style>
+  
+  /* --- Layout mobile (até tablets) --- */
+  @media (max-width: 768px) {
+    #filterToggleBtn {
+    margin-top: 0.75rem;   /* espaço extra acima */
+  }
+
+  /* opcional: deixar o botão mais "clicável" */
+  #filterToggleBtn.btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* se quiser dar respiro no header inteiro */
+  .d-flex.justify-content-between.align-items-center.mb-2 {
+    margin-top: 0.75rem;
+  }
+    .admin-card .d-flex {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    .admin-card .btn {
+      align-self: flex-start;
+      width: 100%;
+    }
+
+    #filterForm .row.mt-3 {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    #filterForm .col-md-9 {
+      margin-top: 0;
+    }
+
+    .admin-dashboard {
+      overflow-y: auto;
+      padding-bottom: 3rem;
+    }
+
+    /* Força tabela ocupar só largura da tela */
+    .admin-table-wrapper table,
+    .admin-table table {
+      min-width: 100% !important;
+      width: 100% !important;
+      table-layout: fixed;
+    }
+
+    table.admin-table {
+      display: block;
+      border-collapse: collapse;
+    }
+
+    table.admin-table tbody {
+      display: block;
+      width: 100%;
+    }
+
+    /* Linha = horário + card lado a lado */
+    table.admin-table tr {
+      display: flex;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: 0.3rem;
+      margin-bottom: 0.3rem;
+      border: none;
+      background: transparent;
+      padding: 0;
+      min-height: 32px;
+    }
+
+    /* Coluna do horário */
+    table.admin-table td:first-child {
+      flex: 0 0 42px;
+      font-weight: bold;
+      font-size: 0.7rem;
+      color: #111;
+      text-align: center;
+      background: #f1f1f1;
+      border-radius: 0.25rem 0 0 0.25rem;
+      padding: 0.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+    }
+
+    /* Coluna do agendamento */
+    table.admin-table td:not(:first-child) {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0;
+      display: flex;
+      align-items: stretch;
+      min-height: 32px;
+    }
+
+    /* Card dentro da célula → flexível, quebra quando necessário */
+    table.admin-table td:not(:first-child)>div {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      /* ✅ permite quebrar linhas */
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.25rem;
+      border-radius: 0.25rem;
+      padding: 0.3rem 0.4rem;
+      font-size: 0.7rem;
+      font-weight: 500;
+      line-height: 1.3;
+      max-width: 100%;
+
+      white-space: normal;
+      /* ✅ permite quebra */
+      overflow-wrap: break-word;
+
+      min-height: 32px;
+      box-sizing: border-box;
+    }
+
+    /* Livre */
+    .slot-blocked {
+  background: #888888; /* cinza */
+  color: #fff;
+  border-radius: 0.25rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  min-height: 44px;
+  box-sizing: border-box;
+  text-align: center;
+  cursor: pointer;       /* força Safari a entender como botão */
+      user-select: none;
+      touch-action: manipulation;  
+}
+    .slot-free {
+      background: transparent;
+      border: 0.5px solid #ccc;
+      cursor: pointer;       /* força Safari a entender como botão */
+      user-select: none;
+      touch-action: manipulation;  
+    }
+
+    /* Status → cores no fundo */
+    .slot-confirmed {
+      background: #4e73df;
+      color: #fff;
+    }
+
+    .slot-in_progress {
+      background: #f6c23e;
+      color: #000;
+    }
+
+    .slot-completed {
+      background: #1cc88a;
+      color: #fff;
+    }
+
+    .slot-cancelled {
+      background: #e74a3b;
+      color: #fff;
+    }
+
+    .slot-no_show {
+      background: #858796;
+      color: #fff;
+    }
+
+    .slot-pending {
+      background: #36b9cc;
+      color: #fff;
+    }
+  }
+
+  /* Extra pequeno (iPhones menores) */
+  @media (max-width: 576px) {
+    W .admin-table td:first-child {
+      flex: 0 0 36px;
+      font-size: 0.6rem;
+      padding: 0.15rem;
+    }
+
+    table.admin-table td:not(:first-child)>div {
+      font-size: 0.6rem;
+      padding: 0.2rem 0.3rem;
+    }
+  }
+
+
+  /* --- Desktop mantém tabela normal --- */
+  @media (min-width: 769px) {
+    .admin-table {
+      display: table !important;
+      width: 100% !important;
+      border-collapse: collapse;
+      table-layout: fixed;
+      /* garante colunas uniformes */
+    }
+
+    .admin-table-wrapper {
+      overflow-x: auto;
+      /* 🔥 ativa scroll horizontal se não couber */
+      width: 100%;
+    }
+
+    /* Coluna do horário */
+    .admin-table td:first-child,
+    .admin-table th:first-child {
+      width: 80px;
+      text-align: center;
+      font-weight: bold;
+      background: #222;
+      color: #fff;
+    }
+
+    /* Colunas dos barbeiros → mais largas */
+    .admin-table td:not(:first-child),
+    .admin-table th:not(:first-child) {
+      min-width: 300px;
+      /* 🔥 largura mínima maior */
+      max-width: 400px;
+      /* 🔥 limite confortável */
+    }
+
+    .admin-table td,
+    .admin-table th {
+      display: table-cell !important;
+      vertical-align: middle;
+      padding: 0.5rem;
+      white-space: nowrap;
+      /* 🔥 mantém tudo em uma linha */
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .admin-table td>div {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      border-radius: 0.25rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.8rem;
+      line-height: 1.2;
+      min-height: 44px;
+      box-sizing: border-box;
+    }
+
+    /* Slots livres */
+    .admin-table td .slot-free {
+      border: 0.5px solid #ccc;
+      background: transparent;
+      font-size: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      color: #888;
+      min-height: 44px;
+    }
+
+    /* Status coloridos */
+    .admin-table td .slot-blocked {
+      background: #888888; /* cinza */
+      color: #fff;
+      border-radius: 0.25rem;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.8rem;
+      line-height: 1.3;
+      min-height: 44px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .admin-table td .slot-confirmed {
+      background: #4e73df;
+      color: #fff;
+    }
+
+    .admin-table td .slot-in_progress {
+      background: #f6c23e;
+      color: #000;
+    }
+
+    .admin-table td .slot-completed {
+      background: #1cc88a;
+      color: #fff;
+    }
+
+    .admin-table td .slot-cancelled {
+      background: #e74a3b;
+      color: #fff;
+    }
+
+    .admin-table td .slot-no_show {
+      background: #858796;
+      color: #fff;
+    }
+
+    .admin-table td .slot-pending {
+      background: #36b9cc;
+      color: #fff;
+    }
+  }
+
+
+
+
+
+  .admin-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+
+  .actions-menu {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .actions-menu .js-toggle-actions {
+    background: var(--bg-gray);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    z-index: 2;
+  }
+
+  .actions-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    min-width: 180px;
+    white-space: nowrap;
+    z-index: 9999;
+  }
+
+  .actions-dropdown .action-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+  }
+
+  .actions-dropdown .action-item:hover {
+    background-color: var(--bg-gray);
+  }
+
+  .actions-menu.show .actions-dropdown {
+    display: block;
+  }
+</style>
+
+
+
+
+
+
+
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- Seu CSS customizado -->
+<link href="/css/style.css" rel="stylesheet">
+
+
+
+<!-- jQuery (obrigatório antes do Select2) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Bootstrap Bundle (inclui Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Seu script principal com defer (deve estar em um arquivo .js separado) -->
+<script src="/socket.io/socket.io.js"></script>
+
+<script src="/js/appointments.js" defer></script>

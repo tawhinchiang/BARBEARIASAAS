@@ -1,0 +1,102 @@
+{{!-- Mobile --}}
+<div class="d-flex justify-content-between align-items-center mb-2 d-block d-md-none">
+  <button class="btn btn-sm btn-outline-secondary prevDay">&lt;</button>
+  <div class="fw-bold text-center flex-grow-1">
+    {{formatDate currentDateRaw}}, {{dayOfWeek currentDateRaw}}
+  </div>
+  <button class="btn btn-sm btn-outline-secondary nextDay">&gt;</button>
+</div>
+
+{{!-- Desktop --}}
+<div class="d-none d-md-flex justify-content-between align-items-center mb-3">
+  <button class="btn btn-outline-secondary prevDay">&laquo; Dia anterior</button>
+  <div class="fw-bold text-center flex-grow-1 fs-5">
+    {{dayOfWeek currentDateRaw}}, {{formatDate currentDateRaw}}
+  </div>
+  <button class="btn btn-outline-secondary nextDay">Próximo dia &raquo;</button>
+</div>
+
+
+<thead>
+  <tr>
+    <!-- ✅ Coluna fixa de horário -->
+    <th class="text-center align-middle" style="width:100px;">Horário</th>
+
+    <!-- ✅ Colunas por barbeiro -->
+    {{#each barbers}}
+    <th class="text-start align-middle">
+      <div class="d-flex align-items-center">
+        <div class="avatar-sm me-2">
+          <img src="{{photo}}" alt="Foto de {{name}}" class="avatar-img">
+        </div>
+        <span class="fw-semibold">{{name}}</span>
+      </div>
+    </th>
+    {{/each}}
+  </tr>
+</thead>
+
+<tbody>
+  {{#each timeSlots as |slot|}}
+  <tr>
+    <!-- Coluna fixa do horário -->
+    <td class="text-center fw-semibold align-middle" style="width:100px;">
+      {{slot.time}}
+    </td>
+
+    <!-- Colunas por barbeiro -->
+    {{#each slot.cells as |cell|}}
+    <td class="align-top
+    {{#if cell.appointment}}
+      {{#unless (eq cell.appointment.status "blocked")}}js-appointment-cell{{/unless}} {{/if}}" {{#if
+      cell.appointment}}data-id="{{cell.appointment.id}}" {{/if}}>
+
+      {{#if cell.appointment}}
+      {{#if (eq cell.appointment.status "blocked")}}
+      <!-- Card para BLOQUEADO -->
+      <div class="slot-blocked js-open-blocked d-flex justify-content-center align-items-center" role="button"
+        tabindex="0" data-id="{{cell.appointment.id}}">
+        <span class="text-muted fw-bold">Bloqueado</span>
+      </div>
+      {{else if cell.appointment.isEncaixe}}
+      <!-- Card para ENCAIXE -->
+      <div class="slot-fitin d-flex justify-content-between align-items-center flex-wrap">
+        <span class="fw-semibold">
+          {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+        </span>
+        <span>
+          {{cell.appointment.serviceType.name}}
+        </span>
+        <span class="fw-bold">
+          {{formatCurrency cell.appointment.totalPrice}}
+        </span>
+      </div>
+      {{else}}
+      <!-- Card normal -->
+      <div class="slot-{{cell.appointment.status}} d-flex justify-content-between align-items-center flex-wrap">
+        <span class="fw-semibold">
+          {{cell.appointment.client.firstName}} {{cell.appointment.client.lastName}}
+        </span>
+        <span>
+          {{cell.appointment.serviceType.name}}
+        </span>
+        <span class="fw-bold">
+          {{formatCurrency cell.appointment.totalPrice}}
+        </span>
+      </div>
+      {{/if}}
+      {{else}}
+      <div class="slot-free js-open-schedule d-flex justify-content-center align-items-center" role="button"
+        tabindex="0" data-barber="{{cell.barber.id}}" data-date="{{cell.appointmentDate}}" data-time="{{cell.time}}">
+      
+      </div>
+
+
+      {{/if}}
+
+
+    </td>
+    {{/each}}
+  </tr>
+  {{/each}}
+</tbody>
